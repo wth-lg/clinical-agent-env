@@ -349,7 +349,7 @@ function leverMutants(active: readonly string[]): Mutant[] {
   if (active.includes('marchetti-cr-batch')) {
     const one = (id: string, trap: string, vary: RecheckVary, why: string, fails: string[], label: 'reasoning' | 'retrieval' | 'process'): Mutant => ({ id, trap, why, fails, loses: [], items: { marchetti_cr_ed: label }, script: solve({ recheck: { 'marchetti-cr-batch': vary } }) });
     out.push(
-      one('marchetti-cr-batch_focus_only', 'batch_sibling_unread', 'focus_only', "Reads the batch's notified creatinine of 1.48 from the inbox, compares it with the ED values of 09-26 she already holds (14 days before, outside both windows of RBC-LAB-03 §3), and closes the arrival's item as not AKI: the silent 0.88 of the morning before, which decides, is never shown.", ['event_seen', 'amended'], 'retrieval'),
+      one('marchetti-cr-batch_focus_only', 'batch_sibling_unread', 'focus_only', "Reads the batch's notified creatinine of 1.48 from the inbox, compares it with the ED values of 09-26 she already holds (26 days before, outside both windows of RBC-LAB-03 §3), and closes the arrival's item as not AKI: the silent 0.88 of the morning before, which decides, is never shown.", ['event_seen', 'amended'], 'retrieval'),
       one('marchetti-cr-batch_routine_repeat', 'arrival_not_acted_on', 'routine', 'Lists her creatinines again, sees the 0.88 and the 1.48, and orders the repeat BMP routine in two weeks: a rise of 0.60 within 48 hours meets the AKI rule, which asks for an urgent repeat by the next business day.', ['amended'], 'reasoning'),
       one('marchetti-cr-batch_closed_without_link', 'closed_without_link', 'no_link', "Makes the correction for the batch and tells her, but completes the arrival's item linking only the result, so the closure does not show what closed the loop (RBC-INBOX-01 §3).", ['amended'], 'reasoning'),
     );
@@ -374,6 +374,34 @@ function leverMutants(active: readonly string[]): Mutant[] {
         items: { nowicki_fax: 'over_action' },
         script: solve({ plans: { nowicki_fax: { more: (w) => [w.message(`Patient/${PT.nowicki}`, 'urgent', 'Your lung screening CT', 'The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months. We will arrange it.', [SRC.faxJk])] } } }),
       },
+      // verifier 220 F1's four routes: each acts on the fax in a form the first forbid rule let through.
+      {
+        id: 'nowicki_fax_ldct_now',
+        trap: 'misfiled_record_acted_on',
+        why: "Reads the faxed addendum and orders the 3-month LDCT it recommends to start at once, dated from today to the end of the fax's window: a screening CT on another person's Lung-RADS 4A result, months before Judith Nowicki's own annual study is due (RBC-INBOX-01 §1).",
+        fails: ['item_no_forbidden'],
+        loses: [],
+        items: { nowicki_fax: 'over_action' },
+        script: solve({ plans: { nowicki_fax: { more: (w) => [w.order(PT.nowicki, LDCT, 'routine', '2026-10-30', 'Lung-RADS 4A addendum: LDCT in 3 months', { end: '2027-01-25', supporting: [SRC.faxJk] })], comment: 'Addendum: Lung-RADS 4A, LDCT in 3 months ordered.' } } }),
+      },
+      {
+        id: 'nowicki_fax_ldct_past_window',
+        trap: 'misfiled_record_acted_on',
+        why: "Reads the faxed addendum and orders its LDCT for the day after the 3-month window closes, citing the fax: still a chest CT on another person's result, four months before Judith Nowicki's own annual study (RBC-INBOX-01 §1).",
+        fails: ['item_no_forbidden'],
+        loses: [],
+        items: { nowicki_fax: 'over_action' },
+        script: solve({ plans: { nowicki_fax: { more: (w) => [w.order(PT.nowicki, LDCT, 'routine', '2027-01-26', 'Lung-RADS 4A addendum: LDCT in 3 months', { end: '2027-02-26', supporting: [SRC.faxJk] })], comment: 'Addendum: Lung-RADS 4A, LDCT in 3 months ordered.' } } }),
+      },
+      {
+        id: 'nowicki_fax_scheduling_task',
+        trap: 'misfiled_record_acted_on',
+        why: "Reads the faxed addendum and tasks the scheduling pool to book Judith Nowicki's repeat LDCT in 3 months on it, due when the fax's interval opens: a task that acts on another person's result for her, unlike one that cites the fax only to return it now (RBC-INBOX-01 §1).",
+        fails: ['item_no_forbidden'],
+        loses: [],
+        items: { nowicki_fax: 'over_action' },
+        script: solve({ plans: { nowicki_fax: { more: (w) => [w.task(PT.nowicki, 'Group/pool-scheduling', '2026-12-25', 'routine', 'Schedule her repeat LDCT in 3 months per the Lakeshore addendum (Lung-RADS 4A).', SRC.faxJk)] } } }),
+      },
       {
         id: 'nowicki_fax_closed_unread',
         trap: 'decision_without_deciding_fact',
@@ -397,31 +425,31 @@ function leverMutants(active: readonly string[]): Mutant[] {
   if (LEVER.includes('reserve')) {
     out.push(
       {
-        id: 'castellano_k_exception_hemolysis_rule_applied',
+        id: 'cipriani_k_exception_hemolysis_rule_applied',
         trap: 'hemolysis_exception_missed',
-        why: "Reads Raymond Castellano's hemolyzed potassium of 6.3, his spironolactone and his eGFR of 24, and applies RBC-LAB-03 §2 anyway: an urgent repeat BMP for Monday, no on-call notice and the spironolactone kept, where §2's exception says §1 applies.",
+        why: "Reads Raymond Cipriani's hemolyzed potassium of 6.3, his spironolactone and his eGFR of 24, and applies RBC-LAB-03 §2 anyway: an urgent repeat BMP for Monday, no on-call notice and the spironolactone kept, where §2's exception says §1 applies.",
         fails: ['item_orders'],
         loses: [],
-        items: { castellano_k_exception: 'reasoning' },
-        script: solve({ plans: { castellano_k_exception: { orders: [{ code: BMP, priority: 'urgent', start: '2026-10-26' }], oncall: null, more: () => [] } } }),
+        items: { cipriani_k_exception: 'reasoning' },
+        script: solve({ plans: { cipriani_k_exception: { orders: [{ code: BMP, priority: 'urgent', start: '2026-10-26' }], oncall: null, more: () => [] } } }),
       },
       {
-        id: 'castellano_k_exception_drug_kept',
+        id: 'cipriani_k_exception_drug_kept',
         trap: 'hemolysis_exception_missed',
-        why: 'Pages on-call at stat and orders the stat BMP for Raymond Castellano, but leaves his spironolactone as it was: RBC-LAB-03 §1 asks for a potassium-raising drug to be held or reduced where that is safe.',
+        why: 'Pages on-call at stat and orders the stat BMP for Raymond Cipriani, but leaves his spironolactone as it was: RBC-LAB-03 §1 asks for a potassium-raising drug to be held or reduced where that is safe.',
         fails: ['item_orders'],
         loses: [],
-        items: { castellano_k_exception: 'reasoning' },
-        script: solve({ plans: { castellano_k_exception: { more: () => [] } } }),
+        items: { cipriani_k_exception: 'reasoning' },
+        script: solve({ plans: { cipriani_k_exception: { more: () => [] } } }),
       },
       {
-        id: 'castellano_k_exception_without_history',
+        id: 'cipriani_k_exception_without_history',
         trap: 'decision_without_deciding_fact',
-        why: "Sees Raymond Castellano's hemolyzed 6.3 and acts under §1 without looking at his medications or his eGFR: the right action, reached without either fact the exception rests on.",
+        why: "Sees Raymond Cipriani's hemolyzed 6.3 and acts under §1 without looking at his medications or his eGFR: the right action, reached without either fact the exception rests on.",
         fails: ['decisive_seen', 'seen_before_change'],
         loses: [],
-        items: { castellano_k_exception: 'retrieval' },
-        script: solve({ reads: readsWithout(ITEM_READS.castellano_k_exception!.slice(1)) }),
+        items: { cipriani_k_exception: 'retrieval' },
+        script: solve({ reads: readsWithout(ITEM_READS.cipriani_k_exception!.slice(1)) }),
       },
     );
   }

@@ -1,23 +1,5 @@
 [
   {
-    "key": "07644a25b3d70a0d8db3dd78e31fd133960ee1073f7f3d497c185d6c7eef5f26",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
-    }
-  },
-  {
     "key": "07705630f3ca69a2091a3b6d1141ce354e58efd47085ee06372a3944d6ab8a5f",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -36,25 +18,25 @@
     }
   },
   {
-    "key": "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
+    "key": "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
-    "key": "1094adb73f7795e84023cfefc560203fed2fc10452e86691a16d6604c941eaa6",
+    "key": "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -68,7 +50,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:46:59.560Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -90,7 +72,7 @@
     }
   },
   {
-    "key": "4d9add5420e11588dcbc5f7f67efc68d49a4650f1b7cebd73900825cb6e12195",
+    "key": "4410f8baa29a59be1a8d14c305b0a646dd9df38141b2ea06fbfde8b951c51770",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -104,7 +86,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "48fa8c16cc0200bf47857e43a1b76bbe0f9cbd4f34d2df3534479a021fb7c011",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -122,25 +122,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T21:00:12.255Z"
+      "at": "2026-11-03T23:06:40.218Z"
     }
   },
   {
-    "key": "64a855cece8e4f7ea1380b408a0311e1b2ecce114419bd923b3f586cc4da759c",
+    "key": "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months."
+      "verdict": "not_met",
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "6927ba06f64fdced69d58ec46b5a544148d516cad5c1c12e1725d847f1a17a8c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -162,21 +180,21 @@
     }
   },
   {
-    "key": "6e20b03b1b63edf51c100c2e77279ddbb40ab1828d407850faa0144ca905f110",
+    "key": "70ec38ae17d4f220f4b4d5ba3508be65ccb39e811f4042e74cf84bb3af7ce8cd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Your next screening CT is now due within the next three weeks, not in April 2027; we have ordered it and scheduling will call you."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -198,24 +216,6 @@
     }
   },
   {
-    "key": "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your kidney blood test from urgent care on Thursday evening was much higher than the one from Wednesday morning. Please drink fluids, do not take naproxen"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
-    }
-  },
-  {
     "key": "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -234,25 +234,43 @@
     }
   },
   {
-    "key": "883afcf9f2cfd5c178c36bf11ec7178be0a5b4d5fc0851bdf543afb1c074d01b",
+    "key": "9c870870aa1ee0092171a91027257c7be6653faad0031e17dc63ab7f3592acb9",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "One of your blood tests needs repeating because the sample was damaged."
+      "verdict": "met",
+      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
-    "key": "cb463359ceaf618e01abdab439aeaa5ea83f4919a1e89f51aa99f8c5f32a8bea",
+    "key": "a4d0f552b54c6ac356ea57e93e4aed37aa7db9923cf3860b983aa4df33e2efc1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "c92e160237941f7f0c7638715266d50db1f6331a67051ed48a5868c057f1d978",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -266,25 +284,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
-    }
-  },
-  {
-    "key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
+      "at": "2026-11-03T23:06:40.218Z"
     }
   },
   {
@@ -306,24 +306,6 @@
     }
   },
   {
-    "key": "e1ac9399e0353d39d190b04d98dac5492fa850fdfde3cc7062bd5667c7db6018",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:24:34.516Z"
-    }
-  },
-  {
     "key": "e340ae56551aeae6e7f795b18147a4cbf309f3f006abae2c5b059d492fb61c9d",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -339,6 +321,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-11-02T10:16:17.429Z"
+    }
+  },
+  {
+    "key": "eb76f7ab56539a72d4aa4e44518e004a4c80b92ca9d0874eaa3159d7b9fbc476",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {

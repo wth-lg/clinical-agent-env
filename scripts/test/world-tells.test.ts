@@ -407,8 +407,8 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // by hand, so every LEVER state passes: each added Patient (TASK_IDS pt- keys) with its lever item's
 // class from the task's expected list (an inactive item's patient is off the list: 'off the list'),
 // and its chart's planted-only types computed, every record of the chart being planted (the test
-// below asserts that). T1's lever patients: pt-0061 Castellano (B), pt-0062 Fairweather (A),
-// pt-0063 Whitcombe (the reserve); T2's: pt-0064 Marchetti (A), pt-0065 Nowicki (B), pt-0066 Castellano (the reserve).
+// below asserts that). T1's lever patients: pt-0061 Cipriani (B), pt-0062 Fairweather (A),
+// pt-0063 Whitcombe (the reserve); T2's: pt-0064 Marchetti (A), pt-0065 Nowicki (B), pt-0066 Cipriani (the reserve).
 // T2's (builder-300): its three hosts are in the world in every state (a toggle moves only the
 // host's inbox item's owner), so an inactive item's host reads 'off the list' here.
 const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }, { items: T2_LEVER_ITEMS, list: T2_EXPECTED.items }];

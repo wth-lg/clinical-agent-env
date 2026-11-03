@@ -21,7 +21,7 @@ export const PT = {
   // is in expected.ts LEVER; otherwise their key, which no script names.
   marchetti: idOf('pt-t2-marchetti'),
   nowicki: idOf('pt-t2-nowicki'),
-  castellano: idOf('pt-t2-castellano'),
+  cipriani: idOf('pt-t2-cipriani'),
 } as const;
 const lever = (_l: string, key: `${string}/${string}`) => refOf(key);
 
@@ -104,7 +104,7 @@ export const ITEM_READS: Record<string, ScriptCall[]> = {
   ...(LEVER.includes('A') ? { marchetti_cr_ed: [read(SRC.bmpHmEd), read(SRC.crHmEd), creatininesOf(PT.marchetti)] } : {}),
   // RBC-INBOX-01 §1: the fax, then the patient's own identifiers (the Patient record).
   ...(LEVER.includes('B') ? { nowicki_fax: [read(SRC.faxJk), read(SRC.ptJk)] } : {}),
-  ...(LEVER.includes('reserve') ? { castellano_k_exception: [read(SRC.kRc), activeOrdersOf(PT.castellano), egfrOf(PT.castellano)] } : {}),
+  ...(LEVER.includes('reserve') ? { cipriani_k_exception: [read(SRC.kRc), activeOrdersOf(PT.cipriani), egfrOf(PT.cipriani)] } : {}),
 };
 
 // The oracle's reads: the inbox, the policies, then each item's records in one answer per item.

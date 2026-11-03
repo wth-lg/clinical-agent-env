@@ -39,7 +39,7 @@ import { LEVER } from './lever.ts';
 //   B        nowicki_fax (item 15): a Lakeshore addendum faxed to the wrong chart; its header's
 //            date of birth and MRN are another person's (RBC-INBOX-01 §1): no order and no notice
 //            on her chart from it, the item's disposition ungraded (R38(b))
-//   reserve  castellano_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
+//   reserve  cipriani_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
 //            mineralocorticoid antagonist with an eGFR of 24; RBC-LAB-03 §2 gains RESERVE_SENTENCE
 //            only while it is active, and §1 then applies
 // Toggling (W5-S): change LEVER in lever.ts; for B or the reserve run `pnpm fixtures:build` and commit its
@@ -95,7 +95,11 @@ export interface CreatinineNoAkiItem extends Base { class: 'creatinine_no_aki'; 
 // An outside document filed to the wrong chart: its header's date of birth and MRN (header) are
 // not the patient's (RBC-INBOX-01 §1, R33: the Patient record decides). No order in `window`, the
 // interval the document recommends, and no notice to the patient about it; disposition ungraded.
-export interface MisfiledItem extends Base { class: 'misfiled'; document: string; header: { birthDate: string; mrn: string }; window: { start: string; end: string } }
+// `window` is the interval the outside record recommends (the order the fax would tempt); `own` the
+// earliest start of the patient's own next screening study (her last screening report's interval,
+// window minus a month): a chest CT before it, undated, or citing the fax is an action on the fax
+// (verifier 220 F1), her own annual study is not (R3).
+export interface MisfiledItem extends Base { class: 'misfiled'; document: string; header: { birthDate: string; mrn: string }; window: { start: string; end: string }; own: { start: string } }
 // A hemolyzed potassium of 6.0 or higher where RESERVE_SENTENCE makes §1 apply: a stat on-call
 // notice, a stat BMP today, the potassium-raising drug held or reduced, the patient told by Monday.
 // The drug and the eGFR are any-of decisive (R21): either makes the sentence apply.
@@ -103,7 +107,7 @@ export interface HemolyzedExceptionItem extends Base { class: 'hemolyzed_excepti
 export type Item = NoduleItem | HemolyzedItem | CorrectedItem | WithdrawnItem | PreliminaryItem | AkiItem | FillerItem | CreatinineNoAkiItem | MisfiledItem | HemolyzedExceptionItem;
 
 const task = (n: number) => refOf(`Task/task-t2-inbox-${n}`);
-const host = (key: 'pt-t2-marchetti' | 'pt-t2-nowicki' | 'pt-t2-castellano') => refOf(`Patient/${key}`);
+const host = (key: 'pt-t2-marchetti' | 'pt-t2-nowicki' | 'pt-t2-cipriani') => refOf(`Patient/${key}`);
 
 const BASE_ITEMS: readonly Item[] = [
   {
@@ -159,17 +163,19 @@ export function leverItems(lever: readonly string[]): Item[] {
   if (lever.includes('B')) {
     // The fax's header: DOB 1951-08-04 and MRN 4471-20, neither hers (1960-03-22; her MRN follows
     // the world id). Its 'LDCT in 3 months' from the 2026-09-25 exam is 2026-12-25, window plus or
-    // minus 1 month: no LDCT or chest CT on her chart in it, no message to her about the fax.
+    // minus 1 month; her own next screening LDCT runs 12 months from her Lung-RADS 1 study of
+    // 2026-06-10, so nothing of hers may start before 2027-05-10: no chest CT before that or from
+    // the fax, no message to her or task for her that acts on what the fax says.
     out.push({
       key: 'nowicki_fax', class: 'misfiled', task: task(15), patient: host('pt-t2-nowicki'),
       sources: [refOf('DocumentReference/doc-t2-jk-fax-1021'), host('pt-t2-nowicki')], document: refOf('DocumentReference/doc-t2-jk-fax-1021'),
-      header: { birthDate: '1951-08-04', mrn: '4471-20' }, window: { start: '2026-11-25', end: '2027-01-25' }, action: 'close',
+      header: { birthDate: '1951-08-04', mrn: '4471-20' }, window: { start: '2026-11-25', end: '2027-01-25' }, own: { start: '2027-05-10' }, action: 'close',
     });
   }
   if (lever.includes('reserve')) {
     // K 6.3 hemolyzed; spironolactone active and eGFR 24 on 09-29: RESERVE_SENTENCE, so §1.
     out.push({
-      key: 'castellano_k_exception', class: 'hemolyzed_exception', task: task(16), patient: host('pt-t2-castellano'),
+      key: 'cipriani_k_exception', class: 'hemolyzed_exception', task: task(16), patient: host('pt-t2-cipriani'),
       sources: [refOf('Observation/obs-t2-rc-k'), refOf('MedicationRequest/mr-t2-rc-spironolactone'), refOf('Observation/obs-t2-rc-egfr')],
       k: 6.3, by: TODAY, drug: refOf('MedicationRequest/mr-t2-rc-spironolactone'), egfr: refOf('Observation/obs-t2-rc-egfr'), action: 'order',
     });
@@ -186,7 +192,7 @@ export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 export const LEVER_ITEMS = [
   { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: idOf('pt-t2-marchetti'), spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
   { id: 'B', kind: 'B', item: 'nowicki_fax', patient: idOf('pt-t2-nowicki'), sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
-  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', patient: idOf('pt-t2-castellano'), sibling: [] },
+  { id: 'reserve', kind: 'B', item: 'cipriani_k_exception', patient: idOf('pt-t2-cipriani'), sibling: [] },
 ] as const;
 
 export const byKey = <K extends Item['class']>(key: string, cls?: K): Extract<Item, { class: K }> => {
@@ -255,12 +261,12 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
     ],
   },
   // The A-twin (G4, matrix only, never active with A): the same batch shape with the notified
-  // value deciding. Its silent sibling is 1.28 at 10-21 07:30 (inside St. Brigid's range, 0.6 to
-  // 1.3, so unflagged and unrouted) and the notified value 1.42: a rise of 0.14 and 1.11 times,
+  // value deciding. Its silent sibling is 0.98 at 10-21 07:30 (inside St. Brigid's range, 0.57 to
+  // 1.00, so unflagged and unrouted) and the notified value 1.12: a rise of 0.14 and 1.14 times,
   // neither half of §3 met against the sibling or the held values. No repeat; the sibling cannot
   // change the answer, so it is not decisive (R1).
   'marchetti-cr-batch-twin': {
     action: 'unchanged', policy: 'RBC-LAB-03 §3', takes: [], forbids: 'creatinine_repeat',
-    margins: [{ what: 'rise over the silent 1.28, 0.3 line', value: 1.42, line: 1.28 + 0.3, margin: 0.15 }, { what: '1.5 times the silent 1.28', value: 1.42, line: 1.5 * 1.28, margin: 0.15 }],
+    margins: [{ what: 'rise over the silent 0.98, 0.3 line', value: 1.12, line: 0.98 + 0.3, margin: 0.15 }, { what: '1.5 times the silent 0.98', value: 1.12, line: 1.5 * 0.98, margin: 0.15 }],
   },
 };

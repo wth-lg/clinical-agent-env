@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:11",
   "task_id": "results-inbox",
-  "task_version": "0532d8062e9571172cd9922f5156f371e433784c24822918515ba6eb25b34d53",
-  "env_version": "1e04ad4c07b861e8140ca2a587bba7c9fbb9d0d4a971f8c061b1341ba4acfa4c",
-  "grader_task_version": "217ad32f18f5efb44cbddaef2db080d7f476694f2535f6a54f5102339a358198",
-  "fixture_hash": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
+  "task_version": "b4dfeaf0caf32d70d9b148e84d47ac507970011ac987c656c7a75f1462879a3c",
+  "env_version": "b67db18fb4ac349a3eab493862c233d1f2ad1f668c28de2b28ecba46dae32702",
+  "grader_task_version": "9a690a7ac183ec865fad9658e0696f56c277cfd573145ce70857dc711c11396e",
+  "fixture_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
   "state_hash": {
-    "initial": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
-    "final": "4197c1dd794a797a594d5b13080f70c2d77b239fa5788fc4813b44f3b026278e",
-    "replay_final": "4197c1dd794a797a594d5b13080f70c2d77b239fa5788fc4813b44f3b026278e"
+    "initial": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
+    "final": "22e90eab7a1800761790e5826303eff78af67b83dfcbee7ac23ff328c8a65551",
+    "replay_final": "22e90eab7a1800761790e5826303eff78af67b83dfcbee7ac23ff328c8a65551"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -1134,7 +1134,7 @@
         "recipient": "Patient/pt-0006",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
+        "cache_key": "6927ba06f64fdced69d58ec46b5a544148d516cad5c1c12e1725d847f1a17a8c",
         "recipients": [
           "Patient/pt-0006 false",
           "Patient/pt-0008 false",
@@ -1172,17 +1172,17 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
-      "883afcf9f2cfd5c178c36bf11ec7178be0a5b4d5fc0851bdf543afb1c074d01b",
-      "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
-      "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
+      "6927ba06f64fdced69d58ec46b5a544148d516cad5c1c12e1725d847f1a17a8c",
+      "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
+      "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
+      "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
       "2835328eb4bc85ee75f9e68198df34033c7b2db07e16a66114192f896436dadf",
       "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
       "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa"
     ],
     "cache": [
       {
-        "key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
+        "key": "6927ba06f64fdced69d58ec46b5a544148d516cad5c1c12e1725d847f1a17a8c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1196,11 +1196,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-03T08:24:34.516Z"
+          "at": "2026-11-03T22:31:06.093Z"
         }
       },
       {
-        "key": "883afcf9f2cfd5c178c36bf11ec7178be0a5b4d5fc0851bdf543afb1c074d01b",
+        "key": "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1214,11 +1214,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-03T08:24:34.516Z"
+          "at": "2026-11-03T22:31:06.093Z"
         }
       },
       {
-        "key": "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
+        "key": "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1232,25 +1232,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-03T08:24:34.516Z"
+          "at": "2026-11-03T22:31:06.093Z"
         }
       },
       {
-        "key": "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
+        "key": "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Your kidney blood test from urgent care on Thursday evening was much higher than the one from Wednesday morning. Please drink fluids, do not take naproxen"
+          "quote": ""
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-03T08:24:34.516Z"
+          "at": "2026-11-03T22:31:06.093Z"
         }
       },
       {

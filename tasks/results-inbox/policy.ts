@@ -27,7 +27,7 @@ const CORRECTED = ['corrected', 'amended'];
 // lever items (plan-amendment-w5), each present only while its patient is in the world (expected.ts
 // LEVER, overlay.ts LEVER_HOSTS): the derivation never reads LEVER, it classifies what the queue holds.
 const ORDER = ['nodule_scheduled', 'hemolyzed_note', 'corrected_down', 'eie_baseline', 'prelim_negative', 'aki_48h', 'normal_tsh'];
-const LEVER_ORDER = ['marchetti_cr_ed', 'nowicki_fax', 'castellano_k_exception'];
+const LEVER_ORDER = ['marchetti_cr_ed', 'nowicki_fax', 'cipriani_k_exception'];
 // RBC-LAB-03 §2's exception (the reserve's sentence, expected.ts RESERVE_SENTENCE): a hemolyzed
 // potassium on a patient whose most recent eGFR is below 30, or who takes a potassium-raising drug,
 // is graded under §1. The rule is applied whether or not the sentence is in the policy file; while
@@ -163,7 +163,7 @@ export function derive(world: WorldView): Json {
         // A potassium filed on its own, flagged hemolyzed on the result (W5-E's reserve host).
         const exception = hemolysisException(world, patient, o.effectiveDateTime!);
         if (!exception) throw new Error(`${key(o)}: a hemolyzed potassium filed on its own without the exception is not in this probe`);
-        put('castellano_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(o), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: o.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
+        put('cipriani_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(o), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: o.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
       } else if (hasCode(o.code, TSH) && normal(o)) {
         put('normal_tsh', { class: 'filler', ...base, sources: [key(o)], action: 'close' });
       } else throw new Error(`${key(t)}: result not classified`);
@@ -183,7 +183,12 @@ export function derive(world: WorldView): Json {
       const interval = /\bLDCT in (\d+) months\b/.exec(words);
       if (!exam || !interval) throw new Error(`${key(focus)}: outside document names no exam date and interval`);
       const due = plusMonths(exam[1]!, Number(interval[1]));
-      put('nowicki_fax', { class: 'misfiled', ...base, sources: [key(focus), patient], document: key(focus), header: { birthDate: header[1]!, mrn: header[2]! }, window: { start: plusMonths(due, -1), end: plusMonths(due, 1) }, action: 'close' });
+      // Her own next screening study, on her last screening report's schedule (RBC-RAD-05 §1):
+      // nothing may start before its window opens (verifier 220 F1).
+      const screen = screening(world, patient);
+      if (!screen) throw new Error(`${patient}: a misfiled screening record on a patient outside lung cancer screening is not in this probe`);
+      const own = plusMonths(plusMonths(screen.index, screen.months), -1);
+      put('nowicki_fax', { class: 'misfiled', ...base, sources: [key(focus), patient], document: key(focus), header: { birthDate: header[1]!, mrn: header[2]! }, window: { start: plusMonths(due, -1), end: plusMonths(due, 1) }, own: { start: own }, action: 'close' });
       continue;
     }
     if (focus.resourceType !== 'DiagnosticReport') throw new Error(`${key(t)}: focus ${key(focus)} not classified`);
@@ -245,7 +250,7 @@ export function derive(world: WorldView): Json {
       if (!onResult && !onReport) throw new Error(`${key(k)}: a potassium of 6.0 or higher that is not hemolyzed is not in this probe`);
       const exception = hemolysisException(world, patient, k.effectiveDateTime!);
       if (exception) {
-        put('castellano_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(k), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: k.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
+        put('cipriani_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(k), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: k.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
         continue;
       }
       put(onResult ? 'hemolyzed_note' : 'hemolyzed_report', { class: 'hemolyzed', ...base, sources: onResult ? [key(k)] : [key(report), key(k)], k: k.valueQuantity!.value!, by: nextBusinessDay(NOW_DATE), action: 'order' });

@@ -50,7 +50,7 @@
 //                                                                  faxed and filed to her chart whose header
 //                                                                  carries another person's DOB and MRN; her
 //                                                                  own screening LDCT (06-10) is Lung-RADS 1
-//   16    pt-t2-castellano         Raymond Castellano, 1954 reserve  a hemolyzed potassium of 6.3 on spironolactone
+//   16    pt-t2-cipriani         Raymond Cipriani, 1954 reserve  a hemolyzed potassium of 6.3 on spironolactone
 //                                                                  with an eGFR of 24: RBC-LAB-03 §2's exception
 //                                                                  sentence (present only with the reserve)
 //
@@ -236,7 +236,7 @@ const OFF_LIST = new Set([1, 3, 5, 6, 9, 13]);
 // the task loader hashes into env_version (packages/core/tasks.ts leverOf). expected.ts names a
 // lever host's registry keys through ids.ts refOf, which tolerates a key this build is about to
 // number for the first time, so the import is safe before the first build in a new state.
-export const LEVER_HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' } as const;
+export const LEVER_HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-cipriani' } as const;
 const REYES = { reference: 'Practitioner/pr-reyes' };
 // `owner`: a lever host's item is the signed-in user's while its item is active and Jordan Reyes's
 // otherwise (W5-E, F3): the item stays in the world in every LEVER state, so no id moves.
@@ -735,13 +735,13 @@ function nowicki(world: WorldReader, active: boolean): Resource[] {
   ];
 }
 
-// ---- Item 16: Raymond Castellano (reserve host, inactive). Heart failure on spironolactone, CKD 4
+// ---- Item 16: Raymond Cipriani (reserve host, inactive). Heart failure on spironolactone, CKD 4
 // (eGFR 24 on 09-29); his clinic potassium of 10-22 is 6.3 on a hemolyzed specimen.
 // With the reserve's RBC-LAB-03 §2 sentence (expected.ts RESERVE_SENTENCE) the hemolysis rule does
 // not apply: §1, a stat on-call notice, a stat BMP today and the spironolactone held.
-const RC = 'pt-t2-castellano';
+const RC = 'pt-t2-cipriani';
 const NOTE_CASTELLANO = `Riverbend Family Medicine - Progress Note
-Patient: Raymond Castellano   DOB 1954-07-19
+Patient: Raymond Cipriani   DOB 1954-07-19
 Date: 2026-09-29
 Follow-up of heart failure with reduced ejection fraction and chronic kidney disease stage 4. Breathing stable on current diuretic; weight steady at home. No chest pain.
 Medications reviewed: carvedilol 12.5 mg twice daily, furosemide 40 mg daily, spironolactone 25 mg daily, atorvastatin 40 mg daily.
@@ -749,9 +749,9 @@ Examination: BP 118/72, HR 64, no edema. Lungs clear.
 Labs today: creatinine 2.6, eGFR 24, potassium 5.0. Kidney function and potassium stable at his baseline; continue current doses with a repeat potassium and creatinine in 3 weeks.
 Return in 3 months; nephrology follow-up in December.
 Maya Okafor, MD`;
-function castellano(world: WorldReader, active: boolean): Resource[] {
+function cipriani(world: WorldReader, active: boolean): Resource[] {
   return [
-    patient(world, 'pt-0001', RC, 'Castellano', ['Raymond', 'Paul'], '1954-07-19', 'male', '555-0189', '7 Bridge Road', 'Easthampton', '01027', ['M', 'Married'], 'Angela Ferraro', 'Chicopee', [42.2668, -72.6687]),
+    patient(world, 'pt-0001', RC, 'Cipriani', ['Raymond', 'Paul'], '1954-07-19', 'male', '555-0189', '7 Bridge Road', 'Easthampton', '01027', ['M', 'Married'], 'Angela Ferraro', 'Chicopee', [42.2668, -72.6687]),
     condition('cond-t2-rc-hf', RC, '88805009', 'Chronic congestive heart failure (disorder)', '2021-03-15T11:00:00-04:00'),
     condition('cond-t2-rc-ckd4', RC, '431857002', 'Chronic kidney disease stage 4 (disorder)', '2025-11-18T09:30:00-05:00'),
     condition('cond-t2-rc-htn', RC, '59621000', 'Essential hypertension (disorder)', '2019-06-03T10:20:00-04:00'),
@@ -783,7 +783,7 @@ function castellano(world: WorldReader, active: boolean): Resource[] {
 // (scripts/test/tells.ts CMODE; the planted clock pass has no generated record to draw from here).
 const onClock = (rs: Resource[], mmss: string): Resource[] => rs.map((r) => JSON.parse(JSON.stringify(r).replace(/T(\d{2}):\d{2}:\d{2}(?=(?:\.\d+)?[+-]\d{2}:\d{2}")/g, `T$1:${mmss}`)) as Resource);
 function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
-  return [...onClock(marchetti(world, lever.includes('A')), '26:14'), ...onClock(nowicki(world, lever.includes('B')), '41:07'), ...onClock(castellano(world, lever.includes('reserve')), '13:52')];
+  return [...onClock(marchetti(world, lever.includes('A')), '26:14'), ...onClock(nowicki(world, lever.includes('B')), '41:07'), ...onClock(cipriani(world, lever.includes('reserve')), '13:52')];
 }
 
 // The overlay for a LEVER state (tests build other states in memory); the default export is the
@@ -791,7 +791,7 @@ function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
 export const overlayFor = (lever: readonly string[]): Overlay => ({
   task: 'T2',
   // The fixed slot of each lever host in T2's added-Patient range (packages/env/overlay.ts TASKS
-  // added: pt-0064 Marchetti, pt-0065 Nowicki, pt-0066 Castellano), the same in every LEVER state.
+  // added: pt-0064 Marchetti, pt-0065 Nowicki, pt-0066 Cipriani), the same in every LEVER state.
   added: { [LEVER_HOSTS.A]: 0, [LEVER_HOSTS.B]: 1, [LEVER_HOSTS.reserve]: 2 },
   names: {
     'org-t2-lakeshore': 'org-lakeshore',

@@ -370,7 +370,7 @@ export const TASK_IDS = {
     'obs-t2-rp-na': 'obs-00544',
     'obs-t2-tsh-1020': 'obs-01401',
     'org-t2-lakeshore': 'org-lakeshore',
-    'pt-t2-castellano': 'pt-0066',
+    'pt-t2-cipriani': 'pt-0066',
     'pt-t2-marchetti': 'pt-0064',
     'pt-t2-nowicki': 'pt-0065',
     'pr-t2-brandt': 'pr-brandt',

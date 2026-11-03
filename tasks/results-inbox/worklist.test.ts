@@ -30,7 +30,7 @@ describe('results-inbox worklist', () => {
 
   it('puts every base item on a T2 slot patient, and each active lever item on the Patient the overlay adds for it (overlay.ts LEVER_HOSTS; every host is in the registry, F3)', () => {
     const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0016', 'pt-0033'];
-    const HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' } as const;
+    const HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-cipriani' } as const;
     const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[HOSTS[l]]!);
     expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual([...slots, ...hosts].sort());
     expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).sort()).toEqual(Object.values(HOSTS).sort());

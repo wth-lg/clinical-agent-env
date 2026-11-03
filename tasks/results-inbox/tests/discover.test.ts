@@ -75,7 +75,7 @@ const TRAP: Record<string, string | null> = {
   normal_tsh: null,
   ...(LEVER.includes('A') ? { marchetti_cr_ed: null } : {}),
   ...(LEVER.includes('B') ? { nowicki_fax: SRC.ptJk } : {}),
-  ...(LEVER.includes('reserve') ? { castellano_k_exception: SRC.spironolactoneRc } : {}),
+  ...(LEVER.includes('reserve') ? { cipriani_k_exception: SRC.spironolactoneRc } : {}),
 };
 // The task.toml trap of each item's own class mutant.
 const OWN_TRAP: Record<string, string> = {
@@ -88,7 +88,7 @@ const OWN_TRAP: Record<string, string> = {
   normal_tsh: 'normal_control',
   ...(LEVER.includes('A') ? { marchetti_cr_ed: 'batch_sibling_unread' } : {}),
   ...(LEVER.includes('B') ? { nowicki_fax: 'misfiled_record_acted_on' } : {}),
-  ...(LEVER.includes('reserve') ? { castellano_k_exception: 'hemolysis_exception_missed' } : {}),
+  ...(LEVER.includes('reserve') ? { cipriani_k_exception: 'hemolysis_exception_missed' } : {}),
 };
 const NEWEST_CREATININE = 'the creatinine list newest first shows it: its own results are the newest in the clinic, and the comparison value sits inside the window just below them';
 const OWN_RESULT = 'the deciding fact is on the item\'s own result (status, comment or conclusion), the newest of its kind in the clinic';

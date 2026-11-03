@@ -206,7 +206,7 @@ const FINDINGS: Record<string, Finding> = {
     contrary: 'a stable or unchanged creatinine, a normal kidney function needing no repeat, or a creatinine that fell',
   },
   // W5-E reserve (in the list only while 'reserve' is in LEVER).
-  castellano_k_exception: {
+  cipriani_k_exception: {
     result: 'basic metabolic panel of 2026-10-22, with his eGFR of 24 on 2026-09-29 and his spironolactone',
     finding: 'a potassium of 6.3 mmol/L on a hemolyzed specimen, on a patient with an eGFR below 30 who takes spironolactone, so it is handled as a true critical potassium: a stat repeat, on-call notified and the spironolactone held',
     contrary: 'a normal potassium, a potassium that needs only a routine repeat because the specimen was hemolyzed, or a normal kidney function',
@@ -263,7 +263,7 @@ const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
   // reads the same in every lever state: a patient not on the queue is simply never messaged.
   'Patient/pt-t2-marchetti': ['Helen Marchetti', 'her emergency visit of September 26 for vomiting and dehydration, her kidney blood tests (creatinine) there and from St. Brigid since, a repeat test, fluids and the naproxen she takes for her knee'],
   'Patient/pt-t2-nowicki': ['Judith Nowicki', 'her lung cancer screening CT of June 2026 (negative) and a faxed radiology addendum filed to her chart that belongs to another person'],
-  'Patient/pt-t2-castellano': ['Raymond Castellano', 'his potassium of 6.3 on a blood sample of October 22 reported as damaged (hemolyzed), a repeat blood test (BMP) today, his spironolactone and his kidney function (eGFR 24)'],
+  'Patient/pt-t2-cipriani': ['Raymond Cipriani', 'his potassium of 6.3 on a blood sample of October 22 reported as damaged (hemolyzed), a repeat blood test (BMP) today, his spironolactone and his kidney function (eGFR 24)'],
 };
 // A patient's matters once an amend event on the patient's item has arrived (events.ts; builder-292,
 // G3, pilot-4a results-inbox/0-2): the criterion names what the chart as delivered says, so a reply
@@ -274,7 +274,7 @@ const MATTERS_AFTER: Record<string, [patient: string, matters: string]> = {
 };
 // The lever hosts' keys resolved to their world ids while they are in the world (ids.ts); a host
 // not in the world keeps its key, which no message can name.
-const HOST_IDS: Readonly<Record<string, string>> = Object.fromEntries(['pt-t2-marchetti', 'pt-t2-nowicki', 'pt-t2-castellano'].map((key) => [`Patient/${key}`, `Patient/${idOf(key)}`]));
+const HOST_IDS: Readonly<Record<string, string>> = Object.fromEntries(['pt-t2-marchetti', 'pt-t2-nowicki', 'pt-t2-cipriani'].map((key) => [`Patient/${key}`, `Patient/${idOf(key)}`]));
 const MATTERS: Record<string, [name: string, matters: string]> = Object.fromEntries(Object.entries(PATIENT_MATTERS).map(([p, m]) => [HOST_IDS[p] ?? p, m]));
 // Each patient's matters on the chart the trial's steps delivered: PATIENT_MATTERS, with the matters
 // of every amend event among `specs` that fired put in their patient's place.
