@@ -47,6 +47,14 @@ describe('lever agent declarations are checked before any case runs', () => {
     expect(inactiveItem.text).toMatch(/inactive lever item A names event toy-a1, which is active \(an inactive item's event is absent, G1\)/);
     const dup = await matrix({ lever: { active: ['A'], items: [...LEVER.items, ...LEVER.items] }, agents: agents(GOOD) }, { ...ONE, cases: ['null'] });
     expect(dup.text).toMatch(/lever item A is declared twice/);
+    // Every A item declares the deciding sibling records (R39(b)); a B item need not.
+    const noSibling = await matrix({ lever: { active: ['A'], items: [{ id: 'A', kind: 'A', item: 'note', spec: 'toy-a1' }] }, agents: agents(GOOD) }, { ...ONE, cases: ['null'] });
+    expect(noSibling.code).toBe(1);
+    expect(noSibling.text).toMatch(/lever item A is an A item and declares no sibling \(the deciding sibling record ids, R39\(b\)\)/);
+    const emptySibling = await matrix({ lever: { active: ['A'], items: [{ ...LEVER.items[0]!, sibling: [] }] }, agents: agents(GOOD) }, { ...ONE, cases: ['null'] });
+    expect(emptySibling.text).toMatch(/declares no sibling/);
+    const bNoSibling = await matrix({ lever: { active: ['B'], items: [{ id: 'B', kind: 'B', item: 'note' }] } }, { ...ONE, cases: ['null'] });
+    expect(bNoSibling.code).toBe(0);
   });
 
   it('a task without lever items runs as before, with no lever line', async () => {

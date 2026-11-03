@@ -62,8 +62,9 @@
 //                     updated only when a later call wrote it (diff.ts, C3)
 //   lever             (a task with lever items, MatrixTask.lever: expected.ts LEVER_ITEMS and
 //                     LEVER, plan-amendment-w5 G1/G3) checked before any case runs, like loses:
-//                     each id once, LEVER naming only declared items, every A item naming an
-//                     event that is an active spec exactly when the item is active, and every
+//                     each id once, LEVER naming only declared items, every A item naming its
+//                     deciding sibling records and an event that is an active spec exactly when
+//                     the item is active, and every
 //                     active A item having both agents in tests/agents.ts `lever[<id>]`, which no
 //                     other item may have. Then, per active A item, two cases: focus-only must be
 //                     a model FAIL whose failed items are exactly that item, labelled retrieval
@@ -233,6 +234,7 @@ export function leverDeclarations(task: Pick<MatrixTask, 'lever' | 'events' | 'a
   for (const i of lever.items) {
     const active = lever.active.includes(i.id);
     if (i.kind !== 'A') continue;
+    if ((i.sibling ?? []).length === 0) problems.push(`lever item ${i.id} is an A item and declares no sibling (the deciding sibling record ids, R39(b))`);
     if (i.spec === undefined) {
       problems.push(`lever item ${i.id} is an A item and names no event spec`);
       continue;
