@@ -1,0 +1,925 @@
+{
+ "schema_version": 1,
+ "run_dirs": [
+  "results/runs/final-1"
+ ],
+ "grader_versions": [
+  "21"
+ ],
+ "tasks": {
+  "contrast-ct-prep": {
+   "trials_valid": 20,
+   "pass": 5,
+   "wilson": {
+    "lo": 0.11186170140766569,
+    "hi": 0.468700877618744
+   },
+   "split": {
+    "model": 15,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 5,
+    "rate": 0.25
+   },
+   "classes": [
+    {
+     "class": "egfr_window",
+     "fails": 15,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 0.25,
+     "wilson": {
+      "lo": 0.11186170140766569,
+      "hi": 0.468700877618744
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 8,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 9,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 12,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 13,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 15,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 18,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0047",
+       "label": "Britt Vincenzo Mohr",
+       "fails": 15,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "allergy_grade",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0015",
+       "label": "Daniel Ferreira",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "metformin_hold",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0049",
+       "label": "Anisha Margarita Schuster",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0046",
+       "label": "Lauren Sixta Beahan",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "t5-mohr-scr",
+     "item": "Patient/pt-0047",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 15,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.11186170140766569,
+      "hi": 0.468700877618744
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 8,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 9,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 12,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 13,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 15,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 18,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0047",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 5,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "t5-ferreira-scr",
+     "item": "Patient/pt-0015",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "t5-schuster-rxn",
+     "item": "Patient/pt-0049",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "t5-beahan-rxn",
+     "item": "Patient/pt-0046",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "t5-ferreira-msg",
+     "item": "Patient/pt-0015",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 5,
+    "expected_per_item": 5,
+    "expected_per_class": 5
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    }
+   ]
+  },
+  "crc-care-gap": {
+   "trials_valid": 20,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.1454772448676043,
+    "hi": 0.5189728183535235
+   },
+   "split": {
+    "model": 14,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 20,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "frailty_advanced_illness",
+     "fails": 8,
+     "base_fails": 8,
+     "observations": 20,
+     "pass_rate": 0.6,
+     "wilson": {
+      "lo": 0.38658150076225317,
+      "hi": 0.7811934676271829
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 8,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 12,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0009",
+       "label": "Elly Shyla Trantow",
+       "fails": 8,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "hospice_revoked",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0020",
+       "label": "Kelsie Wanetta Rohan",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "collection_vs_report_date",
+     "fails": 8,
+     "base_fails": 8,
+     "observations": 20,
+     "pass_rate": 0.6,
+     "wilson": {
+      "lo": 0.38658150076225317,
+      "hi": 0.7811934676271829
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 14,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 17,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 18,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0022",
+       "label": "Tiny Darline Koss",
+       "fails": 8,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "colonoscopy_never_done",
+     "fails": 2,
+     "base_fails": 2,
+     "observations": 20,
+     "pass_rate": 0.9,
+     "wilson": {
+      "lo": 0.6989663547715128,
+      "hi": 0.9721335187862319
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0024",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0024",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0024",
+       "label": "Delaine Evelyn MacGyver",
+       "fails": 2,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "crc-b1",
+     "item": "Patient/pt-0009",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-b2",
+     "item": "Patient/pt-0022",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-o1",
+     "item": "Patient/pt-0024",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d1",
+     "item": "Patient/pt-0020",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6.48,
+    "expected_per_class": 6.48
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    }
+   ]
+  }
+ }
+}

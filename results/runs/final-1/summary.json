@@ -1,0 +1,255 @@
+{
+  "schema_version": 10,
+  "run_id": "final-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "tasks": {
+    "contrast-ct-prep": {
+      "task_versions": [
+        "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc"
+      ],
+      "env_versions": [
+        "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
+      ],
+      "grader_task_versions": [
+        "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca"
+      ],
+      "records": 20,
+      "trials": 20,
+      "passes": 5,
+      "pass_rate": 0.25,
+      "wilson95": {
+        "lo": 0.11186170140766569,
+        "hi": 0.468700877618744
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.25,
+      "outcomes": {
+        "FAIL": 15,
+        "PASS": 5
+      },
+      "recorded_outcomes": {
+        "FAIL": 15,
+        "PASS": 5
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.6250761599999997,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.8846153846153848,
+      "pass_no_harm": 5,
+      "pass_no_harm_rate": 0.25,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 20,
+      "infra_counted_rate": 0.25,
+      "metric_trials": {
+        "mean_score": 20,
+        "raw_mean_score": 20,
+        "gate_fraction": 20
+      },
+      "pass_k": {
+        "1": 0.25,
+        "3": 0.008771929824561403,
+        "5": 0.00006449948400412796
+      },
+      "consistency": {
+        "valid": 20,
+        "passes": 5,
+        "failures": 15,
+        "shared": {
+          "check": "event_seen",
+          "count": 15,
+          "found": "{\"failed_items\":[\"Patient/pt-0047\"]}",
+          "found_count": 15,
+          "found_values": 1
+        },
+        "flags": [
+          "shared_failure"
+        ]
+      },
+      "fault_counts": {
+        "failures": 15,
+        "taxonomy": {
+          "retrieval": 15,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "event_seen",
+          "count": 15
+        }
+      ]
+    },
+    "crc-care-gap": {
+      "task_versions": [
+        "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535"
+      ],
+      "env_versions": [
+        "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee"
+      ],
+      "grader_task_versions": [
+        "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3"
+      ],
+      "records": 20,
+      "trials": 20,
+      "passes": 6,
+      "pass_rate": 0.3,
+      "wilson95": {
+        "lo": 0.1454772448676043,
+        "hi": 0.5189728183535235
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.3,
+      "outcomes": {
+        "FAIL": 14,
+        "PASS": 6
+      },
+      "recorded_outcomes": {
+        "FAIL": 14,
+        "PASS": 6
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.9875,
+      "mean_cost_usd": 2.19150636,
+      "raw_mean_score": 0.9875,
+      "gate_fraction": 0.8727272727272728,
+      "pass_no_harm": 6,
+      "pass_no_harm_rate": 0.3,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 20,
+      "infra_counted_rate": 0.3,
+      "metric_trials": {
+        "mean_score": 20,
+        "raw_mean_score": 20,
+        "gate_fraction": 20
+      },
+      "pass_k": {
+        "1": 0.3,
+        "3": 0.017543859649122806,
+        "5": 0.0003869969040247678
+      },
+      "consistency": {
+        "valid": 20,
+        "passes": 6,
+        "failures": 14,
+        "shared": {
+          "check": "fit_orders",
+          "count": 14,
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0002\"],\"Patient/pt-0024\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"unreviewed\":[\"Patient/pt-0009\"],\"want\":[\"Patient/pt-0009\",\"Patient/pt-0022\",\"Patient/pt-0024\"]}",
+          "found_count": 3,
+          "found_values": 10
+        },
+        "flags": [
+          "shared_failure"
+        ]
+      },
+      "fault_counts": {
+        "failures": 14,
+        "taxonomy": {
+          "retrieval": 14,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "fit_orders",
+          "count": 14
+        }
+      ]
+    }
+  },
+  "totals": {
+    "records": 40,
+    "trials": 40,
+    "passes": 11,
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "grader_error": 0,
+    "grader_error_history": 0,
+    "regraded": 0,
+    "requeued": 0,
+    "internal_errors": 0,
+    "cost_usd": 76.3316504
+  },
+  "mode": "live",
+  "expected_tasks": {
+    "tasks": [
+      "contrast-ct-prep",
+      "crc-care-gap"
+    ],
+    "from": "--tasks"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86"
+  ],
+  "replay": {
+    "ran": true,
+    "matched": 40,
+    "mismatched": [],
+    "missing": []
+  },
+  "requirements": {
+    "valid": 20,
+    "band_rate": [
+      0.2,
+      0.7
+    ],
+    "env_error_raw": 0,
+    "grader_error": 0,
+    "model": "claude-opus-5-5",
+    "replay": "all",
+    "tasks": [
+      "crc-care-gap",
+      "contrast-ct-prep"
+    ]
+  },
+  "violations": []
+}
