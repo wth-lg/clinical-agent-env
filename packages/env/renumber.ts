@@ -4,6 +4,8 @@
 // one sequence, so a planted Observation takes its place among its patient's Observations by
 // date, never a number above the cohort's last, and its id says nothing its patient and date do
 // not. The types only overlays write (Task, Communication, ...) are numbered by the same rule.
+// The one exception is a Patient an overlay adds (packages/env/overlay.ts TASKS added, W5): its
+// resources are numbered in a block of its slot, apart from the cohort's sequence (worldIds).
 //
 // What gets a number: every resource whose build id is numbered (obs-00040, as base.ndjson.gz has
 // it) or is a registry key (obs-t1-scr-1020), apart from Patients (pt-0001 stays; the task slots
@@ -73,10 +75,21 @@ export function numberedPrefix(r: Resource): string | null {
   return (NUMBERED.exec(r.id ?? '') ?? REGISTRY_KEY.exec(r.id ?? ''))?.[1] ?? null;
 }
 
+// The most resources of one type an added Patient's slot holds, and the highest slot number: a
+// block id is <prefix>-<2-digit slot><3 digits>, five digits like every generated id.
+export const SLOT_BLOCK = 999;
+const LAST_SLOT = 99;
+
 // Build id -> world id for every numbered resource, keyed by Type/id. Throws when two resources
-// of one type carry different prefixes.
-export function worldIds(resources: readonly Resource[]): Map<string, string> {
-  const byType = new Map<string, Array<{ r: Resource; patient: string; date: number; code: string }>>();
+// of one type carry different prefixes. A resource of one of `addedPatients` (the world ids of the
+// Patients the overlays add, W5 slots: packages/env/overlay.ts TASKS added) is numbered apart, in
+// a block of its Patient's slot per type (pt-0070's Observations are obs-70001 on, in (date, code)
+// order), so the cohort's sequence is what it is without it and no toggle moves another block;
+// more than SLOT_BLOCK resources of a type for one such Patient, or a slot past 99, fails loudly.
+export function worldIds(resources: readonly Resource[], addedPatients: ReadonlySet<string> = new Set()): Map<string, string> {
+  type Row = { r: Resource; patient: string; date: number; code: string };
+  const byType = new Map<string, Row[]>();
+  const blocks = new Map<string, Row[]>(); // `${type}/${patient}` -> the added Patient's resources of the type
   const prefixes = new Map<string, string>();
   for (const r of resources) {
     const prefix = numberedPrefix(r);
@@ -85,14 +98,26 @@ export function worldIds(resources: readonly Resource[]): Map<string, string> {
     if (seen !== undefined && seen !== prefix) throw new Error(`renumber: ${r.resourceType}/${r.id} has prefix ${prefix}, other ${r.resourceType} ids ${seen}`);
     prefixes.set(r.resourceType, prefix);
     const json = r as unknown as Json;
-    const list = byType.get(r.resourceType) ?? [];
-    list.push({ r, patient: patientOf(r) ?? '￿', date: ms(dateOf(json)), code: codeOf(json) });
-    byType.set(r.resourceType, list);
+    const patient = patientOf(r) ?? '￿';
+    const row: Row = { r, patient, date: ms(dateOf(json)), code: codeOf(json) };
+    const into = addedPatients.has(patient) ? blocks : byType;
+    const key = addedPatients.has(patient) ? `${r.resourceType}/${patient}` : r.resourceType;
+    into.set(key, [...(into.get(key) ?? []), row]);
   }
+  const order = (a: Row, b: Row) => cmp(a.patient, b.patient) || a.date - b.date || cmp(a.code, b.code) || cmp(a.r.id!, b.r.id!);
   const out = new Map<string, string>();
   for (const [type, list] of byType) {
-    list.sort((a, b) => cmp(a.patient, b.patient) || a.date - b.date || cmp(a.code, b.code) || cmp(a.r.id!, b.r.id!));
+    list.sort(order);
     list.forEach(({ r }, i) => out.set(`${type}/${r.id}`, `${prefixes.get(type)}-${String(i + 1).padStart(5, '0')}`));
+  }
+  for (const [key, list] of blocks) {
+    const type = key.slice(0, key.indexOf('/'));
+    const patient = key.slice(key.indexOf('/') + 1);
+    const slot = Number(/^pt-(\d{4})$/.exec(patient)?.[1] ?? NaN);
+    if (!(slot >= 1 && slot <= LAST_SLOT)) throw new Error(`renumber: Patient/${patient} is an added Patient whose slot is not 1 to ${LAST_SLOT}; its ${type} resources cannot take a block`);
+    if (list.length > SLOT_BLOCK) throw new Error(`renumber: Patient/${patient}: ${list.length} ${type} resources, at most ${SLOT_BLOCK} in its slot`);
+    list.sort(order);
+    list.forEach(({ r }, i) => out.set(`${type}/${r.id}`, `${prefixes.get(type)}-${String(slot).padStart(2, '0')}${String(i + 1).padStart(3, '0')}`));
   }
   return out;
 }
