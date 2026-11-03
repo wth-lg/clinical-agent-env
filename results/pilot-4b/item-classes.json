@@ -358,7 +358,8 @@
      "crc-o1",
      "crc-d1"
     ]
-   }
+   },
+   "lever": null
   }
  }
 }
