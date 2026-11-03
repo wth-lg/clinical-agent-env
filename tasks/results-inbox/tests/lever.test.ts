@@ -30,6 +30,7 @@ import { IDS, idOf } from '../ids.ts';
 import overlay, { LEVER_HOSTS } from '../overlay.ts';
 
 const STATES: ReadonlyArray<readonly string[]> = [['A', 'B'], ['A'], ['B'], ['A', 'B', 'reserve']];
+const LEVER_TRAPS: Readonly<Record<string, string>> = { A: 'batch_sibling_unread', B: 'misfiled_record_acted_on', reserve: 'hemolysis_exception_missed' };
 const LEVER_IDS = Object.keys(LEVER_HOSTS) as Array<keyof typeof LEVER_HOSTS>;
 const store = await loadStore(matrixEnv().world);
 // The committed world stands in for the base cohort the build hands the overlay: the slot Patients
@@ -99,9 +100,12 @@ describe('results-inbox lever toggles (W5-E)', () => {
     }
   });
 
-  it("task.toml declares the reserve's trap exactly when the reserve is active", () => {
+  // A declared trap needs a mutant, and a lever item's mutants exist only with its patient, so
+  // task.toml [matrix] traps lists each lever item's trap exactly while the item is active (the
+  // toggle checklist in expected.ts).
+  it("task.toml declares each lever item's trap exactly when the item is active", () => {
     const toml = FILES['task.toml']!;
-    expect(toml.includes('"hemolysis_exception_missed"')).toBe(LEVER.includes('reserve'));
+    for (const [id, trap] of Object.entries(LEVER_TRAPS)) expect(toml.includes(`"${trap}"`), trap).toBe(LEVER.includes(id));
   });
 
   it("RBC-LAB-03 §2 holds the reserve's sentence exactly when the reserve is active", () => {

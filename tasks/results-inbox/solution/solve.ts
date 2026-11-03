@@ -128,7 +128,9 @@ const sourcesOf = (x: Item) => [...x.sources];
 
 // Who each record a script names belongs to, for the after_write trigger (steps.ts Write.patient).
 for (const x of items) for (const r of [x.task, ...x.sources]) notePatient(r, x.patient);
-for (const s of SPECS) for (const r of s.resources) notePatient(`${r.resourceType}/${r.id}`, items.find((x) => x.key === s.item)!.patient);
+// A spec whose item is not on the list (a lever item's event while the item is inactive) names no
+// patient a script writes about.
+for (const s of SPECS) for (const r of s.resources) { const x = items.find((i) => i.key === s.item); if (x) notePatient(`${r.resourceType}/${r.id}`, x.patient); }
 const arrivalKey = (spec: string) => {
   const r = SPECS.find((s) => s.id === spec)!.resources[0]!;
   return `${r.resourceType}/${r.id}`;
@@ -340,7 +342,7 @@ export function solve(over: Options = {}): Script {
       p.close === 'complete' ? [w.complete(N[x.key]!, linked, p.comment)]
         : p.close === 'handoff' ? [w.other({ name: 'update_inbox_item', input: { task_id: ITEM(N[x.key]!), action: 'reassign', new_owner: 'Group/pool-oncall', comment: 'Handing this critical potassium to on-call, notified at stat above: please follow up with the patient today.' } })]
           : p.close === 'reassign' ? [w.other({ name: 'update_inbox_item', input: { task_id: ITEM(N[x.key]!), action: 'reassign', new_owner: 'Group/pool-scheduling', ...(p.comment ? { comment: p.comment } : {}) } })]
-            : p.close === 'cancel' ? [w.other({ name: 'update_inbox_item', input: { task_id: ITEM(N[x.key]!), action: 'cancel', ...(p.comment ? { comment: p.comment } : {}) } })]
+            : p.close === 'cancel' ? [w.other({ name: 'update_inbox_item', input: { task_id: ITEM(N[x.key]!), action: 'cancel', reason: p.comment ?? 'Not actionable for this patient.' } })]
               : [];
     answers.push([...made, ...doc, ...end]);
   }
