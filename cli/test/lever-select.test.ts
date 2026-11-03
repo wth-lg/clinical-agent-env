@@ -109,13 +109,25 @@ describe('S5-2 band edges', () => {
     expect(t.selected).toEqual(['A', 'B']);
   });
 
-  it('every prediction above 0.60: the set nearest 0.45 with the reserve activated (v3)', async () => {
-    const spec: Spec = { n: 8, pass: 7, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 7, observed: 8 }, { id: 'B', kind: 'B', passed: 8, observed: 8 }] };
+  it('every prediction above 0.60: the set nearest 0.45 with the reserve activated (v3), the reserve in final and marked for the rebuild it needs (F1)', async () => {
+    const spec: Spec = { n: 8, pass: 7, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 7, observed: 8 }, { id: 'B', kind: 'B', passed: 8, observed: 8 }, { id: 'reserve', kind: 'B', passed: 0, observed: 0, active: false }] };
     const { json } = await run(['--classes', file('reserve', classesJson({ t: spec })), '--json']);
     const t = json!.tasks.t!;
     expect([t.selected, t.rule, t.reserve, t.freeze]).toEqual([['A', 'B'], 'S5-2 reserve', true, false]);
+    expect(t.final).toEqual(['A', 'B', 'reserve']);
+    expect(t.toggles).toEqual([{ id: 'reserve', kind: 'B', on: true, rebuild: true }]);
+    expect(t.notes.join('\n')).toMatch(/toggling reserve on changes static chart records: fixtures:build, and every task's env_version moves \(R40\)/);
     const text = (await run(['--classes', file('reserve-text', classesJson({ t: spec }))])).out.join('\n');
     expect(text).toContain('selected {A,B}: S5-2 reserve (every prediction is above 0.60: activate the reserve alongside {A,B}, v3)');
+    expect(text).toContain('final {A,B,reserve}');
+    // An A reserve toggles by LEVER and events.ts; a task with no inactive item has no reserve to activate.
+    const aReserve: Spec = { ...spec, items: [...spec.items.slice(0, 2), { id: 'reserve', kind: 'A', passed: 0, observed: 0, active: false }] };
+    const ar = (await run(['--classes', file('reserve-a', classesJson({ t: aReserve })), '--json'])).json!.tasks.t!;
+    expect(ar.toggles).toEqual([{ id: 'reserve', kind: 'A', on: true, rebuild: false }]);
+    const none: Spec = { ...spec, items: spec.items.slice(0, 2) };
+    const nr = (await run(['--classes', file('reserve-none', classesJson({ t: none })), '--json'])).json!.tasks.t!;
+    expect([nr.reserve, nr.final, nr.toggles]).toEqual([true, ['A', 'B'], []]);
+    expect(nr.notes.join('\n')).toMatch(/no inactive reserve item is declared: the reserve is missing/);
   });
 
   it('every prediction below 0.30: S5-3, naming the set nearest 0.45', async () => {
@@ -124,6 +136,23 @@ describe('S5-2 band edges', () => {
     const t = json!.tasks.t!;
     expect([t.selected, t.rule, t.reserve, t.freeze]).toEqual([['A'], 'S5-3', false, false]);
     expect(t.notes.join('\n')).toMatch(/every prediction is below 0\.30: S5-3 \(fairness audit, then the pre-declared softening once, v3\)/);
+    // F4 ruling: under S5-3 the set does not change; the nearest set is advisory.
+    expect([t.final, t.toggles]).toEqual([['A', 'B'], []]);
+    expect(t.notes.join('\n')).toMatch(/S5-3 changes no item: final stays the active set \{A,B\}; \{A\} is nearest 0\.45, advisory only \(toggling B off\)/);
+  });
+
+  it('F4 ruling: an exact {A}/{B} tie goes to the lower --item-cost, else to {A}', async () => {
+    const spec: Spec = { n: 8, pass: 2, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 4, observed: 8 }, { id: 'B', kind: 'B', passed: 4, observed: 8 }] };
+    const plain = (await run(['--classes', file('tie-ab', classesJson({ t: spec })), '--json'])).json!.tasks.t!;
+    expect(plain.predictions.map((p) => Number(p.pred.toFixed(6)))).toEqual([0.45, 0.45, 0.225]);
+    expect(plain.selected).toEqual(['A']);
+    expect(plain.notes.join('\n')).toMatch(/\{A\} and \{B\} tie at 0\.450: \{A\} \(the measured mechanism\)/);
+    const priced = (await run(['--classes', file('tie-ab-cost', classesJson({ t: spec })), '--item-cost', 't.A=0.30,t.B=0.10', '--json'])).json!.tasks.t!;
+    expect(priced.selected).toEqual(['B']);
+    expect(priced.notes.join('\n')).toMatch(/\{A\} and \{B\} tie at 0\.450: \{B\} \(lower projected p90 by --item-cost, \$0\.10 vs \$0\.30\)/);
+    // The B-only order puts {B} first, so {A} does not win by enumeration.
+    const ba: Spec = { ...spec, items: [spec.items[1]!, spec.items[0]!] };
+    expect((await run(['--classes', file('tie-ba', classesJson({ t: ba })), '--json'])).json!.tasks.t!.selected).toEqual(['A']);
   });
 
   it('no set in band and the predictions straddle it: the set nearest 0.45, flagged for a ruling', async () => {
@@ -148,24 +177,44 @@ describe('S5-6 over --p90', () => {
   it('a task whose p90 exceeds $3.00 drops its most expensive lever item: an A over a B, the later-declared among equals', async () => {
     const { json } = await run(['--classes', file('cap', classesJson(SIZING)), '--p90', 't1=3.10,t2=2.00,t4=2.00,t6=2.00', '--json']);
     expect(Object.values(json!.tasks).map((t) => [t.p90, t.drop, t.final])).toEqual([[3.1, 'A', ['B']], [2, null, ['A', 'B']], [2, null, ['A']], [2, null, ['B']]]);
-    expect(json!.tasks.t1!.notes.join('\n')).toMatch(/p90 \$3\.10 exceeds \$3\.00: drops A \(an A item, one event\)/);
+    expect(json!.tasks.t1!.notes.join('\n')).toMatch(/p90 \$3\.10 exceeds \$3\.00: drops A \(an A item, one event, \$0\.20\); p90 \$2\.90 after it/);
     expect(json!.mean_p90).toBeCloseTo(2.275, 9);
+    expect(json!.mean_p90_after).toBeCloseTo(2.225, 9);
+    expect(json!.steps).toEqual(['t1: p90 $3.10 exceeds $3.00: drops A ($0.20), p90 $2.90']);
   });
 
-  it('a mean p90 above $2.40 drops the most expensive item of the task with the highest p90, once', async () => {
+  it('F5 ruling: while the four-task mean exceeds $2.40, the highest-p90 task drops one item, each step printed', async () => {
     const { json } = await run(['--classes', file('mean', classesJson(SIZING)), '--p90', 't1=2.30,t2=2.50,t4=2.45,t6=2.50', '--json']);
     expect(json!.mean_p90).toBeCloseTo(2.4375, 9);
-    expect(Object.values(json!.tasks).map((t) => [t.drop, t.final])).toEqual([[null, ['A', 'B']], ['A', ['B']], [null, ['A']], [null, ['B']]]);
-    expect(json!.tasks.t2!.notes.join('\n')).toMatch(/mean p90 \$2\.44 over 4 tasks exceeds \$2\.40: t2 has the highest p90 and drops A/);
+    // t2 and t6 tie at $2.50; the earlier task drops first; one drop brings the mean to $2.3875.
+    expect(Object.values(json!.tasks).map((t) => [t.drop, t.final, t.p90_after])).toEqual([[null, ['A', 'B'], 2.3], ['A', ['B'], 2.3], [null, ['A'], 2.45], [null, ['B'], 2.5]]);
+    expect(json!.steps).toEqual(['mean p90 $2.44 exceeds $2.40: t2 has the highest p90 and drops A ($0.20), p90 $2.30; mean $2.39']);
+    expect(json!.mean_p90_after).toBeCloseTo(2.3875, 9);
+    // Every task high: the loop walks the highest task each time, until the mean holds or no item is left.
+    const high = await run(['--classes', file('mean-high', classesJson(SIZING)), '--p90', 't1=2.60,t2=2.60,t4=2.60,t6=2.60', '--json']);
+    expect(high.json!.steps).toEqual([
+      'mean p90 $2.60 exceeds $2.40: t1 has the highest p90 and drops A ($0.20), p90 $2.40; mean $2.55',
+      'mean p90 $2.55 exceeds $2.40: t2 has the highest p90 and drops A ($0.20), p90 $2.40; mean $2.50',
+      'mean p90 $2.50 exceeds $2.40: t4 has the highest p90 and drops A ($0.20), p90 $2.40; mean $2.45',
+      // (2.40 + 2.40 + 2.40 + 2.50) / 4 = 2.425, printed by toFixed as $2.42.
+      'mean p90 $2.45 exceeds $2.40: t6 has the highest p90 and drops B ($0.10), p90 $2.50; mean $2.42',
+      'mean p90 $2.42 exceeds $2.40: t1 has the highest p90 with an item left and drops B ($0.10), p90 $2.30; mean $2.40',
+    ]);
+    expect(Object.values(high.json!.tasks).map((t) => [t.drops, t.final])).toEqual([[['A', 'B'], []], [['A'], ['B']], [['A'], []], [['B'], []]]);
+    expect(high.json!.mean_p90_after).toBeCloseTo(2.4, 9);
   });
 
-  it('--item-cost ranks the items instead of their kinds; dropping the only item leaves the set empty', async () => {
-    const { json } = await run(['--classes', file('item-cost', classesJson(SIZING)), '--p90', 't1=3.10,t4=3.50', '--item-cost', 't1.B=0.90,t1.A=0.20', '--json']);
-    expect([json!.tasks.t1!.drop, json!.tasks.t1!.final]).toEqual(['B', ['A']]);
+  it('--item-cost prices the drops; dropping the only item leaves the set empty; --p90 needs all four tasks', async () => {
+    const { json } = await run(['--classes', file('item-cost', classesJson(SIZING)), '--p90', 't1=3.10,t2=2.00,t4=3.50,t6=2.00', '--item-cost', 't1.B=0.90,t1.A=0.20', '--json']);
+    expect([json!.tasks.t1!.drop, json!.tasks.t1!.final, json!.tasks.t1!.p90_after]).toEqual(['B', ['A'], 2.2]);
     expect([json!.tasks.t4!.drop, json!.tasks.t4!.final]).toEqual(['A', []]);
     expect(json!.tasks.t4!.notes.join('\n')).toMatch(/no lever item is left/);
-    // Tasks --p90 leaves out are not in the mean and drop nothing.
-    expect([json!.tasks.t2!.p90, json!.tasks.t2!.drop, json!.mean_p90]).toEqual([null, null, 3.3]);
+    expect([json!.tasks.t2!.p90, json!.tasks.t2!.drop]).toEqual([2, null]);
+    expect(json!.mean_p90).toBeCloseTo(2.65, 9);
+    expect(json!.mean_p90_after).toBeCloseTo(2.375, 9);
+    const two = await run(['--classes', file('p90-two', classesJson(SIZING)), '--p90', 't1=3.10,t4=3.50']);
+    expect(two.code).toBe(2);
+    expect(two.err.join('\n')).toMatch(/S5-6's mean is over the four W5 tasks: give --p90 for all four \(got 2: t1, t4\)/);
   });
 });
 

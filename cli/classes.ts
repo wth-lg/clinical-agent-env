@@ -29,8 +29,13 @@
 //   declares) and catch = passed / observed with Wilson 95%, each failure's gates and label and the
 //   retrieval / reasoning / process / other split, and how many observed trials exposed every sibling
 //   record it declares (the trajectory's exposed ids, exposure.ts sameId; null without siblings);
-//   with the task's base_pass, the valid trials that passed every item no active lever item claims,
-//   for S5's b_t. A task without lever items prints exactly what it printed before (no `lever` key).
+//   with the task's base_pass, the valid trials that passed every gate no active lever item claims
+//   (an item with declared gates claims only those (item, gate) pairs; one without claims the whole
+//   item), for S5's b_t. A task without lever items prints exactly what it printed before (no
+//   `lever` key). A historical run (R37) takes its lever table from <run>/item-classes.json
+//   `lever`; when the checkout's expected.ts declares LEVER_ITEMS and the pin has no `lever` key,
+//   classes exits 1 rather than tabulating without the rows (`lever: null` in the pin says the run
+//   predates lever items). The pin of every run from pilot-5a on must carry `lever`.
 //   The item table is the matrix's (packages/grader/matrix/types.ts LeverItem: id, kind, item,
 //   patient, spec, sibling, gates), read through matrixLever so the module's LEVER is the list the
 //   task loader hashed.
@@ -216,12 +221,13 @@ export interface Deps {
 
 // <run>/item-classes.json (R37): per task, the items with classes and labels, and the event specs,
 // as the commit the run's README.md names had them.
+// `lever` absent: the pin has no lever key; null: the run predates lever items.
 export interface PinnedItems { items: ItemClass[]; events: TaskEvents | null; lever?: TaskLever | null }
 export function pinnedItemsOf(run: string, task: string): PinnedItems | null {
   const file = join(run, 'item-classes.json');
   if (!existsSync(file)) return null;
   const t = (JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, PinnedItems> }).tasks?.[task];
-  return t === undefined ? null : { items: t.items, events: t.events ?? null, lever: t.lever ?? null };
+  return t === undefined ? null : { items: t.items, events: t.events ?? null, ...('lever' in t ? { lever: t.lever ?? null } : {}) };
 }
 
 const versionCache = new Map<string, Promise<string | null>>();
@@ -418,8 +424,9 @@ const SPLIT_LABELS = ['retrieval', 'reasoning', 'process'] as const;
 // The lever rows of a task (the header's lever block) over its valid trials.
 function leverRows(valid: readonly Trial[], lever: Lever): NonNullable<TaskClasses['lever']> {
   const active = (i: LeverItem) => lever.active.includes(i.id);
-  const claimed = new Set(lever.items.filter(active).map((i) => i.item));
-  const base_pass = valid.filter((t) => ![...t.failed.keys()].some((k) => !claimed.has(k))).length;
+  // What the active lever items claim: a whole item, or only its declared gates (F3).
+  const claimed = (item: string, gate: string) => lever.items.some((i) => active(i) && i.item === item && (i.gates === undefined || i.gates.includes(gate)));
+  const base_pass = valid.filter((t) => ![...t.failed].some(([item, gates]) => gates.some((g) => !claimed(item, g)))).length;
   const items = lever.items.map((i): LeverRow => {
     const observed = i.kind === 'A' ? valid.filter((t) => i.spec !== undefined && t.fired.includes(i.spec)) : active(i) ? [...valid] : [];
     const counts = (g: string) => i.gates === undefined || i.gates.includes(g);
@@ -619,6 +626,10 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
     if (checkout !== null && versions.some((v) => v !== checkout)) {
       // R37: historical data. The items the records graded, classed by the run's pinned table.
       const pinned = runs.map((r) => (deps.pinnedItems ?? pinnedItemsOf)(r, id)).find((x) => x !== null) ?? null;
+      // F7: a checkout with lever items needs the run's lever pinned too (or lever: null).
+      if (pinned?.lever === undefined && (await (deps.lever ?? taskLeverOf)(id)) !== null) {
+        throw new Error(`${id}: tasks/${id}/expected.ts declares LEVER_ITEMS, and ${runs.map((r) => join(r, 'item-classes.json')).join(', ')} pins no lever table for this historical run; add lever (its items and active list at the run's commit), or lever: null for a run from before lever items`);
+      }
       const recorded = new Set(trials.filter((t) => t.valid).flatMap((t) => [...t.items]).filter((k) => k !== OUTSIDE));
       const known = (pinned?.items ?? []).filter((i) => recorded.has(i.key));
       const rest = [...recorded].filter((k) => !known.some((i) => i.key === k)).sort().map((key) => ({ key, class: 'unclassified', label: key }));

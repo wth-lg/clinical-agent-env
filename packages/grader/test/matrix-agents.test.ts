@@ -16,6 +16,7 @@ const LEVER: Lever = { active: ['A'], items: [{ id: 'A', kind: 'A', item: 'note'
 const script = (kind: 'mutants' | 'alternatives', id: string) => (TOY[kind] as ReadonlyArray<{ id: string; script: LeverAgents['focus_only'] }>).find((x) => x.id === id)!.script;
 const unread = script('mutants', 'event_cited_unread');
 const notAmended = script('mutants', 'event_not_amended');
+const lureUnread = script('mutants', 'event_lure_unread');
 const handled = script('alternatives', 'event_handled');
 const agents = (lever: Agents['lever']): Agents => ({ ...TOY.agents, ...(lever === undefined ? {} : { lever }) });
 const GOOD: Agents['lever'] = { A: { focus_only: unread, read_all_newest: handled } };
@@ -80,6 +81,19 @@ describe('the lever cases', () => {
     const reasoning = await matrix({ lever: LEVER, agents: agents({ A: { focus_only: notAmended, read_all_newest: handled } }) }, { ...ONE, cases: ['focus-only:A'] });
     expect(reasoning.code).toBe(1);
     expect(reasoning.text).toMatch(/focus-only A: item note fails as reasoning, want retrieval/);
+  });
+
+  it('F2: focus-only must fail a gate of its own lever item and must not have exposed the sibling', async () => {
+    // event_lure_unread reads obs-toy-a1 (the sibling) and fails event_seen of toy-d1, another event on the same item.
+    const { code, text } = await matrix({ lever: LEVER, agents: agents({ A: { focus_only: lureUnread, read_all_newest: handled } }) }, { ...ONE, cases: ['focus-only:A'] });
+    expect(code).toBe(1);
+    expect(text).toMatch(/focus-only A: item note fails no gate of lever item A \(its gates, or an event gate failing toy-a1\)/);
+    expect(text).toMatch(/focus-only A: exposed the sibling Observation\/obs-toy-a1; a focus-only agent never reads the deciding sibling/);
+    // With the lever's gates declared, a failure on one of them is the lever's even without the event.
+    const gated = { ...LEVER, items: [{ ...LEVER.items[0]!, gates: ['event_seen'] }] };
+    const g = await matrix({ lever: gated, agents: agents({ A: { focus_only: lureUnread, read_all_newest: handled } }) }, { ...ONE, cases: ['focus-only:A'] });
+    expect(g.text).not.toMatch(/fails no gate of lever item/);
+    expect(g.text).toMatch(/exposed the sibling/);
   });
 
   it('read-all-newest that fails, or loses an undeclared rubric item, fails the task', async () => {

@@ -67,10 +67,13 @@
 //                     the item is active, and every
 //                     active A item having both agents in tests/agents.ts `lever[<id>]`, which no
 //                     other item may have. Then, per active A item, two cases: focus-only must be
-//                     a model FAIL whose failed items are exactly that item, labelled retrieval
-//                     (it read the arrival's focus and never the deciding sibling), and
-//                     read-all-newest must PASS with no judge item unknown and exactly its
-//                     declared `loses` lost, like an alternative
+//                     a model FAIL whose failed items are exactly that item, labelled retrieval,
+//                     failing a gate that is the lever item's (one of its `gates`, or an event
+//                     gate whose failure names its `spec`) with none of its `sibling` ids among
+//                     the ids its tool results exposed (it read the arrival's focus and never the
+//                     deciding sibling; verifier-phase-P17i-W5H-212-1 F2), and read-all-newest
+//                     must PASS with no judge item unknown and exactly its declared `loses` lost,
+//                     like an alternative
 //   decisive reachability  every gate check's decisive ids were exposed or referenced to a
 //                     passing oracle or alternative (unreachedDecisive), checked when the oracle and
 //                     every alternative ran and passed: an id no correct solution reaches is not one
@@ -419,12 +422,20 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   if (c.kind === 'oracle' && unknown > 0) problems.push(`oracle judge.unknown ${unknown}, want 0`);
   if ((c.kind === 'alternative' || c.kind === 'read-all-newest') && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
   if (c.kind === 'focus-only' && c.lever && grade.valid && grade.outcome === 'FAIL') {
+    const lever = c.lever;
     const got = itemLabels(grade);
-    const label = got[c.lever.item];
-    if (label === undefined) problems.push(`item ${c.lever.item} does not fail, want retrieval`);
-    else if (label !== 'retrieval') problems.push(`item ${c.lever.item} fails as ${label}, want retrieval`);
-    const others = Object.keys(got).filter((k) => k !== c.lever!.item);
-    if (others.length > 0) problems.push(`fails ${others.join(', ')} beside ${c.lever.item}; a focus-only agent fails only its item`);
+    const label = got[lever.item];
+    if (label === undefined) problems.push(`item ${lever.item} does not fail, want retrieval`);
+    else if (label !== 'retrieval') problems.push(`item ${lever.item} fails as ${label}, want retrieval`);
+    const others = Object.keys(got).filter((k) => k !== lever.item);
+    if (others.length > 0) problems.push(`fails ${others.join(', ')} beside ${lever.item}; a focus-only agent fails only its item`);
+    // The failed gate is the lever's: one it declares, or an event gate whose failure names its spec.
+    const owned = grade.checks.some((r) => r.kind === 'gate' && r.met === false && (r.items ?? []).some((it) => it.item === lever.item && !it.met
+      && ((lever.gates ?? []).includes(r.id) || (lever.spec !== undefined && (it.event === lever.spec || (Array.isArray(it.evidence?.failed) && (it.evidence.failed as unknown[]).includes(lever.spec)))))));
+    if (label !== undefined && !owned) problems.push(`item ${lever.item} fails no gate of lever item ${lever.id} (its gates, or an event gate failing ${lever.spec ?? 'its spec'})`);
+    const exposed = stepsOf(run.events).flatMap((s) => s.exposed_ids);
+    const seen = (lever.sibling ?? []).filter((id) => exposed.some((k) => sameId(k, id)));
+    if (seen.length > 0) problems.push(`exposed the sibling ${seen.join(', ')}; a focus-only agent never reads the deciding sibling`);
   }
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
   if (c.attribution !== undefined && grade.attribution?.auto !== c.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.attribution}`);

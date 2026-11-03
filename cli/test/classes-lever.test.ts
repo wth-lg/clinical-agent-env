@@ -125,9 +125,9 @@ describe('pnpm cli classes lever rows (W5-H)', () => {
     expect([A.observed, A.passed]).toEqual([3, 1]);
     expect(A.fails.map((f) => [f.trial, f.gates, f.label])).toEqual([[1, ['dose'], 'process'], [2, ['dose'], '?']]);
     expect(A.split).toEqual({ retrieval: 0, reasoning: 0, process: 1, other: 1 });
-    // la is an active lever item's list item, so its gates outside the declared ones count against
-    // neither the lever item nor base_pass, which reads the non-lever items only.
-    expect(json!.tasks.tk!.lever!.base_pass).toBe(3);
+    // F3: with gates declared, only the (la, dose) pair is the lever's; la's event_seen failures in
+    // trials 0 and 1 still count against base_pass, so only trial 2 passed every non-lever gate.
+    expect(json!.tasks.tk!.lever!.base_pass).toBe(1);
   });
 
   it('prints the lever table in markdown', async () => {
@@ -168,6 +168,24 @@ describe('pnpm cli classes lever rows (W5-H)', () => {
     expect(t.historical).toEqual({ task_versions: ['v1'], checkout: 'v2' });
     expect(t.lever!.items.map((i) => [i.id, i.observed, i.passed])).toEqual([['A', 2, 1], ['B', 2, 2], ['R', 0, 0]]);
     expect(t.lever!.base_pass).toBe(2);
+  });
+
+  it('F7: a historical run whose pin has no lever table errors when the checkout declares LEVER_ITEMS; lever: null in the pin means the run predates lever items', async () => {
+    const dir = tempDir('classes-lever-unpinned');
+    writeRun(dir, [{ outcome: 'PASS', fired: ['ea'], exposed: [SIB] }]);
+    put(join(dir, 'item-classes.json'), JSON.stringify({ schema_version: 1, commit: 'abc', tasks: { tk: { items: ITEMS, events: EVENTS } } }));
+    const r = await run([dir, '--json'], { ...deps, checkoutVersion: async () => 'v2' });
+    expect(r.code).toBe(1);
+    expect(r.err.join('\n')).toMatch(/tk: tasks\/tk\/expected\.ts declares LEVER_ITEMS, and .*item-classes\.json pins no lever table for this historical run; add lever \(its items and active list at the run's commit\), or lever: null for a run from before lever items/);
+    put(join(dir, 'item-classes.json'), JSON.stringify({ schema_version: 1, commit: 'abc', tasks: { tk: { items: ITEMS, events: EVENTS, lever: null } } }));
+    const ok = await run([dir, '--json'], { ...deps, checkoutVersion: async () => 'v2' });
+    expect([ok.code, ok.err]).toEqual([0, []]);
+    expect((JSON.parse(ok.out.join('\n')) as ClassesJson).tasks.tk!.lever).toBeUndefined();
+    // No pin at all is the same error; a checkout without LEVER_ITEMS needs no pin.
+    const bare = tempDir('classes-lever-nopin');
+    writeRun(bare, [{ outcome: 'PASS' }]);
+    expect((await run([bare, '--json'], { ...deps, checkoutVersion: async () => 'v2' })).code).toBe(1);
+    expect((await run([bare, '--json'], { ...deps, checkoutVersion: async () => 'v2', lever: async () => null })).code).toBe(0);
   });
 
   it('classesJsonProblems names a malformed lever block', () => {
