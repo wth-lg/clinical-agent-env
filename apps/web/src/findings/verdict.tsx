@@ -7,7 +7,7 @@
 // The verdict is text, never a colour alone. Over fewer valid trials than the final sample it is
 // labelled provisional, with the count (overview/band.ts verdictLabel).
 import { bandVerdict } from '../../../../packages/core/summary.ts';
-import { verdictLabel } from '../overview/band.ts';
+import { officialRunLabel, verdictLabel } from '../overview/band.ts';
 import { noPassCount, runBlock } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { Card, GlossaryLink, LINK } from '../data/ui.tsx';
@@ -36,7 +36,8 @@ function ratesOf(run: RunData): Record<string, { passes: number; trials: number 
   return Object.fromEntries(pilotRates(run).map((r) => [r.task, { passes: r.passes, trials: r.valid }]));
 }
 
-// One row per task, one column per run, oldest first (the pilots by number, then the official run):
+// One row per task, one column per run, oldest first (the pilots by number, then the official run,
+// "(final)" only once every task in it has the final sample, else "(official, in progress)"):
 // k/n and the verdict in each cell.
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
@@ -50,7 +51,7 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
           <thead className="text-xs text-ink-muted">
             <tr>
               <th scope="col" className="py-1 pr-3 font-medium">Task</th>
-              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run">{c.run.runId}{c.run.official ? ' (final)' : ''}</th>)}
+              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run">{c.run.runId}{c.run.official && c.run.summary !== null ? ` ${officialRunLabel(c.run.summary.tasks)}` : ''}</th>)}
             </tr>
           </thead>
           <tbody>

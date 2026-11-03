@@ -51,7 +51,7 @@ export function notFinalLine(c: BandCount): string | null {
   if (counts.size === 1 && !counts.has(null)) {
     const v = [...counts][0];
     const each = `${v} of ${FINAL_TRIALS_PER_TASK} valid trials${n === 1 ? '' : ' each'}`;
-    if (c.final === 0 && n > 1) return `All ${word(n)} tasks are in progress: ${each}.`;
+    if (c.final === 0 && n > 1) return `${n === 2 ? 'Both' : `All ${word(n)}`} tasks are in progress: ${each}.`;
     return `${n} ${n === 1 ? 'task is' : 'tasks are'} in progress and not counted, ${each}: ${c.notFinal.map((t) => t.id).join(', ')}.`;
   }
   const names = c.notFinal.map((t) => (t.trials === null ? t.id : `${t.id} (in progress, ${t.trials} of ${FINAL_TRIALS_PER_TASK} valid trials)`));
@@ -64,4 +64,11 @@ export function notFinalLine(c: BandCount): string | null {
 export function verdictLabel(verdict: BandVerdict, trials: number): { label: string; count: string | null } {
   if (trials >= FINAL_TRIALS_PER_TASK) return { label: verdict, count: null };
   return { label: `${verdict}, provisional`, count: `${trials} of ${FINAL_TRIALS_PER_TASK} valid trials` };
+}
+
+// The official run's column label in the difficulty history: "(final)" only when every task in it
+// has the final sample of valid trials, else "(official, in progress)" (verifier UIBAND-219-3 N1-r3).
+export function officialRunLabel(tasks: Readonly<Record<string, { trials: number }>>): '(final)' | '(official, in progress)' {
+  const all = Object.values(tasks);
+  return all.length > 0 && all.every((t) => t.trials >= FINAL_TRIALS_PER_TASK) ? '(final)' : '(official, in progress)';
 }

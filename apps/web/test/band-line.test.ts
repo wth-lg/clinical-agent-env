@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FINAL_TRIALS_PER_TASK } from '../../../packages/core/cost.ts';
-import { bandCount, bandLine, notFinalLine, verdictLabel } from '../src/overview/band.ts';
+import { bandCount, bandLine, notFinalLine, officialRunLabel, verdictLabel } from '../src/overview/band.ts';
 
 const N = FINAL_TRIALS_PER_TASK;
 const inBand = { band_verdict: 'In band' as const, trials: N };
@@ -75,7 +75,8 @@ describe('bandCount', () => {
     expect(c.final).toBe(0);
     expect(bandLine(c)).toBe('0 of 0 tasks in band');
     expect(notFinalLine(c)).toBe('All six tasks are in progress: 12 of 20 valid trials each.');
-    expect(notFinalLine(bandCount({ a: { band_verdict: 'Below band', trials: 3 }, b: { band_verdict: 'In band', trials: 3 } }, ['a', 'b']))).toBe('All two tasks are in progress: 3 of 20 valid trials each.');
+    expect(notFinalLine(bandCount({ a: { band_verdict: 'Below band', trials: 3 }, b: { band_verdict: 'In band', trials: 3 } }, ['a', 'b']))).toBe('Both tasks are in progress: 3 of 20 valid trials each.');
+    expect(notFinalLine(bandCount({ a: { band_verdict: 'In band', trials: 3 }, b: { band_verdict: 'In band', trials: 3 }, c: { band_verdict: 'In band', trials: 3 } }, ['a', 'b', 'c']))).toBe('All three tasks are in progress: 3 of 20 valid trials each.');
   });
 
   it('some tasks final and the rest in progress at one count: one line that names them', () => {
@@ -109,6 +110,15 @@ describe('verdictLabel', () => {
     expect(verdictLabel('In band', 12)).toEqual({ label: 'In band, provisional', count: '12 of 20 valid trials' });
     expect(verdictLabel('Above band', 19)).toEqual({ label: 'Above band, provisional', count: '19 of 20 valid trials' });
     expect(verdictLabel('Below band', 8)).toEqual({ label: 'Below band, provisional', count: '8 of 20 valid trials' });
+  });
+});
+
+describe('officialRunLabel', () => {
+  it('is (final) only when every task of the run has the final sample of valid trials', () => {
+    expect(officialRunLabel({ a: { trials: 20 }, b: { trials: 21 } })).toBe('(final)');
+    expect(officialRunLabel({ a: { trials: 20 }, b: { trials: 12 } })).toBe('(official, in progress)');
+    expect(officialRunLabel({ a: { trials: 12 } })).toBe('(official, in progress)');
+    expect(officialRunLabel({})).toBe('(official, in progress)');
   });
 });
 

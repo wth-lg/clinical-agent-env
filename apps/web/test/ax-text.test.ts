@@ -77,20 +77,30 @@ function files(path: string): string[] {
 // leading and trailing comment trivia of every token (punctuation included, via getChildren, so a
 // comment before a closing brace or at the end of the file counts). A string, template, regex or
 // JSX text is a token, so a // or /* inside one is kept (verifier UIBAND-219-2 N2: the glob
-// strings of tasks/matrix-task.ts). JSX text is never scanned for comments: its own start, and the
-// end of the token before it, are not comment positions. Markdown is not code.
+// strings of tasks/matrix-task.ts). JSX text is never scanned for comments: no leading ranges are
+// read at a position where JSX text starts (the text, or a list or element that starts with it),
+// and no trailing ranges at a position where the next token is JSX text (after the > of its
+// opening element, the } of the expression or the > of the child element before it). Markdown is
+// not code.
 export function stripComments(s: string, file: string): string {
   if (!/\.tsx?$/.test(file)) return s;
   const sf = ts.createSourceFile(file, s, ts.ScriptTarget.Latest, false, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const ranges = new Map<number, number>();
   const add = (r: ts.CommentRange) => ranges.set(r.pos, Math.max(r.end, ranges.get(r.pos) ?? 0));
+  // Where JSX text starts: a JsxText node has no leading trivia, so its pos is its first character,
+  // and the token before it ends there.
+  const jsxText = new Set<number>();
+  const mark = (node: ts.Node) => {
+    if (node.kind === ts.SyntaxKind.JsxText) jsxText.add(node.pos);
+    ts.forEachChild(node, mark);
+  };
+  mark(sf);
   const visit = (node: ts.Node) => {
-    const kids = node.getChildren(sf);
-    kids.forEach((k, i) => {
-      if (k.kind !== ts.SyntaxKind.JsxText) for (const r of ts.getLeadingCommentRanges(s, k.pos) ?? []) add(r);
-      if (k.kind !== ts.SyntaxKind.JsxText && kids[i + 1]?.kind !== ts.SyntaxKind.JsxText) for (const r of ts.getTrailingCommentRanges(s, k.end) ?? []) add(r);
+    for (const k of node.getChildren(sf)) {
+      if (!jsxText.has(k.pos)) for (const r of ts.getLeadingCommentRanges(s, k.pos) ?? []) add(r);
+      if (!jsxText.has(k.end)) for (const r of ts.getTrailingCommentRanges(s, k.end) ?? []) add(r);
       visit(k);
-    });
+    }
   };
   visit(sf);
   let out = s;
@@ -136,6 +146,15 @@ describe('stripComments', () => {
     expect(stripComments(literals, 'x.ts')).toBe("const a = 'see // this'; const b = `and /* that */ ${x} // too`; const r = /\\/\\/ok/;  const c = 1; ");
     const jsx = "const el = <p title=\"a // b\">See // this and /* that */ here {/* a JSX comment */}</p>; // trailing";
     expect(stripComments(jsx, 'x.tsx')).toBe("const el = <p title=\"a // b\">See // this and /* that */ here {}</p>; ");
+  });
+
+  // JSX text that starts with // or /*, first in its element or after an expression or a child
+  // element (verifier UIBAND-219-3 N2-r3).
+  it('keeps JSX text that starts with // or /*', () => {
+    for (const src of ['const a = <p>// x</p>;', 'const a = <p>{a}// x</p>;', 'const a = <p><b>x</b>// x</p>;', 'const a = <>// frag</>;', 'const a = <p>\n  /* not a comment */ x\n</p>;', 'const a = <p>{a} /* y */ x</p>;']) {
+      expect(stripComments(src, 'x.tsx'), src).toBe(src);
+    }
+    expect(stripComments('const a = <p>// x</p>; // gone', 'x.tsx')).toBe('const a = <p>// x</p>; ');
   });
 });
 

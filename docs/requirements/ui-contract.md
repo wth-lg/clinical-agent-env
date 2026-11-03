@@ -187,7 +187,8 @@ launcher (P15) shows the Run lines.
   (`All six tasks are in progress: 12 of 20 valid trials each.` on the 12-trial sample). A task's
   verdict beside its Wilson interval (Overview, Findings, the difficulty history) reads
   `<verdict>, provisional (<v> of 20 valid trials)` while its valid trials are short of the final
-  sample, so a card never reads against the line.
+  sample, so a card never reads against the line; the difficulty history's official column is
+  `(final)` only when every task in it has the final sample, else `(official, in progress)`.
 - The pass rate is the text `<k>/<N> passed, Wilson 95% <lo>-<hi>%`, with k the passes out of N
   valid trials, N read from the run (never a constant), and lo and hi whole percentages joined
   by an ASCII hyphen. A 12-trial sample shows `/12`. It shows on each Overview task row, on the

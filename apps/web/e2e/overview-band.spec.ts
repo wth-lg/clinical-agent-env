@@ -4,7 +4,8 @@
 // its group, and a note naming the tasks with no final result yet. On the band fixture (three tasks
 // of 20 trials: In band, Above band, Saturated) the line reads 1 of 3 and the note names the other
 // three tasks of the environment; on the sample run (six tasks of 12 trials, so none final) it
-// reads 0 of 0 and the note names all six as in progress with their counts. At 375 px and on the
+// reads 0 of 0, the note names all six as in progress with their counts, and the Findings
+// difficulty history labels the run "(official, in progress)", not "(final)". At 375 px and on the
 // desktop the line is inside the viewport with no sideways scroll; axe finds nothing serious or
 // critical, light and dark. With SHOTS_DIR set, the Overview is screenshotted in both themes at
 // both widths.
@@ -92,6 +93,10 @@ for (const size of SIZES) {
     await expect(group).toHaveAttribute('data-final', '0');
     await expect(group).toContainText('No task has a final result yet: a final result is 20 valid trials.');
     await expect(group.getByTestId('band-not-final')).toHaveText(want.note!);
+    // Findings' difficulty history does not call this run final: its column reads "(official, in progress)".
+    await sample(page, './?view=findings');
+    await expect(page.getByTestId('difficulty-history').getByTestId('history-run').last()).toHaveText(`${sampleSummary.run_id} (official, in progress)`);
+    await sample(page, './?view=overview');
     // Each row's verdict says it is provisional, with the count, so it cannot read against the line.
     for (const [id, t] of Object.entries(sampleSummary.tasks)) {
       const v = page.locator(`[data-testid="overview-row"][data-task="${id}"] [data-testid="band-verdict"]`);
