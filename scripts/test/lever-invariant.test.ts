@@ -1,36 +1,42 @@
 // The W5 lever invariant (the #215 gate, F1; plan-amendment-w5 Correction 3(b)): a LEVER toggle
-// moves no world id outside its own item's added-Patient block. Two standing checks over every task
-// whose expected.ts exports LEVER_ITEMS, each run with the task's lever.ts mocked to each state
-// (the committed LEVER, then each declared item toggled):
-//   (a) the overlay's edits carry OverlayEdits.lever, and it lists every key the toggles add
-//       (a put key present in one state and not another), and no toggle changes the overlay's
-//       removals (a LEVER-driven remove is of a cohort resource and would renumber the cohort;
-//       applyOverlays refuses one that is declared, N3);
-//   (b) the world fixtures:build assembles (scripts/fixtures-build.ts assembleWorld, every overlay)
-//       differs between the states only in the toggled item's own block: every registry key present
-//       in both states keeps its world id, every other task's registry and the cohort's map
-//       (synthea) are identical.
-// On main today no task exports LEVER_ITEMS, so both loops are vacuous: they bind once the W5-E
-// branches land. The synthetic fixtures below prove the checks bite today: an undeclared toggled
-// resource on a cohort Patient is reported by (a)'s rule and moves cohort ids under (b)'s.
-import { existsSync, readdirSync } from 'node:fs';
+// moves no world id outside its own item's added-Patient block. One harness, run over every task
+// whose expected.ts exports LEVER_ITEMS: with the task's lever.ts mocked to each state (the
+// committed LEVER, then each declared item toggled), the world fixtures:build assembles
+// (scripts/fixtures-build.ts assembleWorld, every overlay, the overlays' edits returned with it)
+// is built per state, and from those builds:
+//   (a) the overlay's edits carry OverlayEdits.lever; it lists every key the toggles add (a put key
+//       present in one state and absent in another); every key it lists is put in some state (a
+//       typo is caught); and no toggle changes the overlay's removals (a LEVER-driven remove is of
+//       a cohort resource and would renumber the cohort; applyOverlays refuses one that is
+//       declared, N3);
+//   (b) the world differs between the states only in the toggled item's own block: every registry
+//       key present in both states keeps its world id, every other task's registry and the
+//       cohort's map (synthea) are identical.
+// On main today no task exports LEVER_ITEMS, so the loop over this checkout's tasks is vacuous: it
+// binds once the W5-E branches land. The same harness (the task scan, the lever.ts mock,
+// assembleWorld with the tasks root pointed at a temporary task directory) runs here on a synthetic
+// lever task in four variants: `good` passes; `omit` (no lever list) fails (a); `late` (an undeclared
+// cohort resource that sorts last in its type, so no other id moves) passes (b) and fails (a), which
+// is why (a) carries the rule; `typo` (a listed key never put) fails (a).
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
-import { applyOverlays, type Overlay, type OverlayEdits, type TaskId, type World } from '../../packages/env/overlay.ts';
-import type { Resource } from '../../packages/env/store.ts';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { TASKS, type OverlayEdits, type TaskId, type World } from '../../packages/env/overlay.ts';
 import { assembleWorld, repo } from '../fixtures-build.ts';
 
-// (a)'s rule: the keys the toggles add that `lever` (of the all-on edits) does not list, and the
-// removals that differ between states.
-export function leverGaps(on: OverlayEdits, off: OverlayEdits): { undeclared: string[]; removes: string[] } {
+// (a)'s rules over one task's edits per state (the committed state first): the keys the toggles add
+// that `lever` does not list, the listed keys no state puts, and the removals that differ.
+export function leverGaps(states: ReadonlyArray<OverlayEdits>): { undeclared: string[]; unput: string[]; removes: string[] } {
   const keys = (e: OverlayEdits) => new Set((e.put ?? []).map((r) => r.id!));
   const removes = (e: OverlayEdits) => new Set((e.remove ?? []).map((r) => `${r.resourceType}/${r.id}`));
-  const [a, b] = [keys(on), keys(off)];
-  const toggled = [...new Set([...a, ...b])].filter((k) => a.has(k) !== b.has(k)).sort();
-  const declared = new Set(on.lever ?? []);
-  const [ra, rb] = [removes(on), removes(off)];
-  return { undeclared: toggled.filter((k) => !declared.has(k)), removes: [...new Set([...ra, ...rb])].filter((k) => ra.has(k) !== rb.has(k)).sort() };
+  const all = states.map(keys);
+  const union = new Set(all.flatMap((s) => [...s]));
+  const toggled = [...union].filter((k) => all.some((s) => !s.has(k))).sort();
+  const declared = new Set(states[0]?.lever ?? []);
+  const rs = states.map(removes);
+  const ru = new Set(rs.flatMap((s) => [...s]));
+  return { undeclared: toggled.filter((k) => !declared.has(k)), unput: [...declared].filter((k) => !union.has(k)).sort(), removes: [...ru].filter((k) => rs.some((s) => !s.has(k))).sort() };
 }
 
 // (b)'s rule: the ids a toggle moved: every registry key present in both worlds whose world id
@@ -45,100 +51,143 @@ export function movedIds(on: World, off: World): string[] {
   return out.sort();
 }
 
-// The lever tasks of this checkout: each tasks/<id> whose expected.ts exports LEVER_ITEMS, with its
-// committed LEVER (lever.ts, which the task loader reads and this test mocks per state).
-async function leverTasks(): Promise<Array<{ id: string; dir: string; items: string[]; lever: string[] }>> {
-  const out = [];
-  for (const id of readdirSync(join(repo, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()) {
-    const dir = join(repo, 'tasks', id);
+// The lever tasks under a tasks root: each <root>/tasks/<id> whose expected.ts exports LEVER_ITEMS,
+// with its committed LEVER (lever.ts, which the task loader reads and this harness mocks per state).
+interface LeverTask { id: string; dir: string; items: string[]; lever: string[] }
+export async function leverTasks(root: string): Promise<LeverTask[]> {
+  const out: LeverTask[] = [];
+  const tasks = join(root, 'tasks');
+  for (const id of readdirSync(tasks, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()) {
+    const dir = join(tasks, id);
     if (!existsSync(join(dir, 'expected.ts'))) continue;
     const mod = (await import(pathToFileURL(join(dir, 'expected.ts')).href)) as { LEVER_ITEMS?: ReadonlyArray<{ id: string }>; LEVER?: readonly string[] };
     if (mod.LEVER_ITEMS === undefined) continue;
-    expect(existsSync(join(dir, 'lever.ts')), `${id} declares LEVER_ITEMS: its LEVER must live in lever.ts (the file this test mocks per state)`).toBe(true);
+    if (!existsSync(join(dir, 'lever.ts'))) throw new Error(`${id} declares LEVER_ITEMS: its LEVER must live in lever.ts (the file this test mocks per state)`);
     out.push({ id, dir, items: mod.LEVER_ITEMS.map((i) => i.id), lever: [...(mod.LEVER ?? [])] });
   }
   return out;
 }
 const toggled = (lever: readonly string[], item: string) => (lever.includes(item) ? lever.filter((l) => l !== item) : [...lever, item]);
-// The overlay module of a task imported fresh under a LEVER state.
-async function overlayIn(dir: string, state: readonly string[]): Promise<Overlay> {
+// The world and the overlays' edits assembled with the task's lever.ts mocked to `state`.
+async function buildIn(root: string, dir: string, state: readonly string[]): Promise<{ world: World; edits: Partial<Record<TaskId, OverlayEdits>> }> {
   vi.resetModules();
   vi.doMock(join(dir, 'lever.ts'), () => ({ LEVER: state }));
   try {
-    return ((await import(pathToFileURL(join(dir, 'overlay.ts')).href)) as { default: Overlay }).default;
+    const { world, edits } = await assembleWorld({ tasksRoot: root });
+    return { world, edits };
   } finally {
     vi.doUnmock(join(dir, 'lever.ts'));
   }
 }
-async function worldIn(dir: string, state: readonly string[]): Promise<World> {
-  vi.resetModules();
-  vi.doMock(join(dir, 'lever.ts'), () => ({ LEVER: state }));
-  try {
-    return (await assembleWorld()).world;
-  } finally {
-    vi.doUnmock(join(dir, 'lever.ts'));
-  }
-}
+// The TaskId of a task directory: the TASKS entry of its slug (a synthetic task names its own).
+const taskOf = (slug: string): TaskId => {
+  const t = (Object.keys(TASKS) as TaskId[]).find((id) => TASKS[id].slug === slug);
+  if (t === undefined) throw new Error(`tasks/${slug} is no TASKS entry (packages/env/overlay.ts)`);
+  return t;
+};
 
-// ---- the synthetic fixtures ----
-const id4 = (n: number) => `pt-${String(n).padStart(4, '0')}`;
-const COHORT: Resource[] = Array.from({ length: 60 }, (_, i) => ({ resourceType: 'Patient', id: id4(i + 1), birthDate: '1970-01-01', name: [{ family: `F${i + 1}` }] }) as Resource);
-const generated = (n: number, subject: string, at: string): Resource =>
-  ({ resourceType: 'Observation', id: `obs-${String(n).padStart(5, '0')}`, status: 'final', code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: `Patient/${subject}` }, effectiveDateTime: at }) as Resource;
-const BASE: Resource[] = [...COHORT, generated(1, 'pt-0001', '2026-01-01T09:00:00-05:00'), generated(2, 'pt-0002', '2026-02-01T09:00:00-05:00'), generated(3, 'pt-0060', '2026-03-01T09:00:00-05:00')];
-const patient = (key: string, family: string): Resource => ({ resourceType: 'Patient', id: key, birthDate: '1961-04-02', gender: 'female', name: [{ use: 'official', family, given: ['Ada'] }] }) as Resource;
-const obs = (key: string, subject: string, at = '2026-10-01T09:00:00-04:00'): Resource =>
-  ({ resourceType: 'Observation', id: key, status: 'final', code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: `Patient/${subject}` }, effectiveDateTime: at }) as Resource;
-// A synthetic lever task: item B adds a host and her result; `badly` also plants a result on the
-// cohort's pt-0001 while B is on, undeclared.
-const synthetic = (b: boolean, badly: boolean): Overlay => ({
+// Every finding of the harness on one lever task: (a) and (b) per toggled item.
+interface Findings { noLever: boolean; gaps: Record<string, { undeclared: string[]; unput: string[]; removes: string[] }>; moved: Record<string, string[]> }
+export async function checkTask(root: string, t: LeverTask, task?: TaskId): Promise<Findings> {
+  const on = await buildIn(root, t.dir, t.lever);
+  const id = task ?? taskOf(t.id);
+  const edits = [on.edits[id]!];
+  const findings: Findings = { noLever: on.edits[id]?.lever === undefined, gaps: {}, moved: {} };
+  for (const item of t.items) {
+    const off = await buildIn(root, t.dir, toggled(t.lever, item));
+    edits.push(off.edits[id]!);
+    findings.moved[item] = movedIds(on.world, off.world);
+  }
+  const g = leverGaps(edits);
+  if (g.undeclared.length || g.unput.length || g.removes.length) for (const item of t.items) findings.gaps[item] = g;
+  return findings;
+}
+const clean = (items: readonly string[]): Findings => ({ noLever: false, gaps: {}, moved: Object.fromEntries(items.map((i) => [i, []])) });
+
+// ---- the synthetic lever task, written to a temporary tasks root inside the repo ----
+// Its overlay is T1's shape: a result on the cohort's pt-0045 (a T1 slot) in every state, as a real
+// task writes on its slots, and item B adds a host (slot 0 of T1's range) with a result. `omit`
+// leaves the lever list out; `late` adds, while B is on, an EpisodeOfCare on pt-0045 that sorts
+// last in its type (the cohort's two are on pt-0011 and pt-0020), undeclared; `typo` lists a key
+// the overlay never puts.
+type Variant = 'good' | 'omit' | 'late' | 'typo';
+const ENV = join(repo, 'packages', 'env');
+function plant(root: string, variant: Variant): string {
+  const dir = join(root, 'tasks', 'lever-fixture');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'lever.ts'), "export const LEVER = ['B'];\n");
+  writeFileSync(join(dir, 'expected.ts'), "export { LEVER } from './lever.ts';\nexport const LEVER_ITEMS = [{ id: 'B', kind: 'B', item: 'host' }];\n");
+  const lever = variant === 'omit' ? '' : variant === 'typo' ? "lever: ['pt-t1-host', 'obs-t1-hots']," : "lever: ['pt-t1-host', 'obs-t1-host-cr'],";
+  const late = variant === 'late' ? "put.push({ resourceType: 'EpisodeOfCare', id: 'eoc-t1-late', status: 'active', patient: { reference: 'Patient/pt-0045' }, period: { start: '2026-10-01T09:00:00-04:00' } } as Resource);" : '';
+  writeFileSync(
+    join(dir, 'overlay.ts'),
+    `import type { Overlay } from '${ENV}/overlay.ts';
+import type { Resource } from '${ENV}/store.ts';
+import { LEVER } from './lever.ts';
+const host: Resource = { resourceType: 'Patient', id: 'pt-t1-host', birthDate: '1961-04-02', gender: 'female', name: [{ use: 'official', family: 'Host', given: ['Ada'] }] } as Resource;
+const cr = (id: string, subject: string): Resource => ({ resourceType: 'Observation', id, status: 'final', category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'laboratory' }] }], code: { coding: [{ system: 'http://loinc.org', code: '2160-0', display: 'Creatinine' }] }, subject: { reference: 'Patient/' + subject }, effectiveDateTime: '2026-10-01T09:00:00-04:00', valueQuantity: { value: 1.1, unit: 'mg/dL', system: 'http://unitsofmeasure.org', code: 'mg/dL' } }) as Resource;
+const overlay: Overlay = {
   task: 'T1',
   added: { 'pt-t1-host': 0 },
-  build: () => ({
-    put: [obs('obs-t1-always', 'pt-0002'), ...(b ? [patient('pt-t1-host', 'Host'), obs('obs-t1-host-cr', 'pt-t1-host'), ...(badly ? [obs('obs-t1-slip', 'pt-0001')] : [])] : [])],
-    lever: ['pt-t1-host', 'obs-t1-host-cr'],
-  }),
-});
-const other: Overlay = { task: 'T6', added: { 'pt-t6-k': 0 }, build: () => ({ put: [patient('pt-t6-k', 'K'), obs('obs-t6-k-cr', 'pt-t6-k')] }) };
-const build = (overlays: Overlay[]) => applyOverlays(BASE, [], {}, overlays);
-
-describe('the lever invariant, proven on synthetic fixtures today', () => {
-  it('(a) reports a toggled key the overlay does not declare, and a removal a toggle changes; a well-formed overlay has no gap', () => {
-    expect(leverGaps(synthetic(true, true).build(null as never), synthetic(false, true).build(null as never))).toEqual({ undeclared: ['obs-t1-slip'], removes: [] });
-    expect(leverGaps(synthetic(true, false).build(null as never), synthetic(false, false).build(null as never))).toEqual({ undeclared: [], removes: [] });
-    const removing = (on: boolean): OverlayEdits => ({ put: [], remove: on ? [{ resourceType: 'Observation', id: 'obs-00001' }] : [] });
-    expect(leverGaps(removing(true), removing(false))).toEqual({ undeclared: [], removes: ['Observation/obs-00001'] });
-  });
-
-  it('(b) sees the cohort ids an undeclared toggled resource moves, and none when every toggled resource is on the added Patient', () => {
-    // The slip sits on pt-0001 after its generated result, so every later id of the cohort's
-    // sequence shifts, the task's own always-present key among them.
-    expect(movedIds(build([synthetic(true, true), other]), build([synthetic(false, true), other]))).toEqual(['T1 obs-t1-always: obs-00004 -> obs-00003', 'cohort obs-00002: obs-00003 -> obs-00002', 'cohort obs-00003: obs-00005 -> obs-00004']);
-    expect(movedIds(build([synthetic(true, false), other]), build([synthetic(false, false), other]))).toEqual([]);
-  });
+  build() {
+    const put: Resource[] = [cr('obs-t1-slot-cr', 'pt-0045')];
+    if ((LEVER as readonly string[]).includes('B')) { put.push(host, cr('obs-t1-host-cr', 'pt-t1-host')); ${late} }
+    return { ${lever} put };
+  },
+};
+export default overlay;
+`,
+  );
+  return dir;
+}
+const roots: string[] = [];
+const fixture = (variant: Variant) => {
+  const root = mkdtempSync(join(repo, 'scripts', 'test', '.lever-fixture-'));
+  roots.push(root);
+  return { root, dir: plant(root, variant) };
+};
+afterAll(() => {
+  for (const r of roots) rmSync(r, { recursive: true, force: true });
 });
 
-describe('the lever invariant over this checkout\'s lever tasks (vacuous until a task exports LEVER_ITEMS)', () => {
-  it('(a) every lever task\'s overlay declares lever, listing every key its toggles add, and no toggle changes its removals', { timeout: 600_000 }, async () => {
-    for (const t of await leverTasks()) {
-      const on = (await overlayIn(t.dir, t.lever)).build(null as never);
-      expect(on.lever, `${t.id}: the overlay's edits must carry lever (the keys its toggles add)`).toBeDefined();
-      for (const item of t.items) {
-        const off = (await overlayIn(t.dir, toggled(t.lever, item))).build(null as never);
-        expect(leverGaps(on, off), `${t.id} toggling ${item}`).toEqual({ undeclared: [], removes: [] });
-      }
-    }
+describe('the lever invariant harness on a synthetic lever task (the real loops, a temporary tasks root)', () => {
+  it('finds the fixture as a lever task and passes the well-formed variant', { timeout: 300_000 }, async () => {
+    const { root } = fixture('good');
+    const tasks = await leverTasks(root);
+    expect(tasks.map((t) => [t.id, t.items, t.lever])).toEqual([['lever-fixture', ['B'], ['B']]]);
+    expect(await checkTask(root, tasks[0]!, 'T1')).toEqual(clean(['B']));
   });
 
-  it('(b) toggling any item of any lever task moves no world id outside the item\'s own block', { timeout: 1_800_000 }, async () => {
-    const tasks = await leverTasks();
-    if (tasks.length === 0) return;
+  it('fails (a) when the lever list is left out', { timeout: 300_000 }, async () => {
+    const { root } = fixture('omit');
+    const f = await checkTask(root, (await leverTasks(root))[0]!, 'T1');
+    expect(f.noLever).toBe(true);
+    expect(f.gaps.B).toEqual({ undeclared: ['obs-t1-host-cr', 'pt-t1-host'], unput: [], removes: [] });
+    expect(f.moved.B).toEqual([]);
+  });
+
+  it('fails (a) and passes (b) on an undeclared cohort resource that sorts last in its type: (a) carries the rule', { timeout: 300_000 }, async () => {
+    const { root } = fixture('late');
+    const f = await checkTask(root, (await leverTasks(root))[0]!, 'T1');
+    expect(f.noLever).toBe(false);
+    expect(f.gaps.B).toEqual({ undeclared: ['eoc-t1-late'], unput: [], removes: [] });
+    expect(f.moved.B).toEqual([]);
+  });
+
+  it('fails (a) on a listed key the overlay never puts', { timeout: 300_000 }, async () => {
+    const { root } = fixture('typo');
+    const f = await checkTask(root, (await leverTasks(root))[0]!, 'T1');
+    expect(f.gaps.B).toEqual({ undeclared: ['obs-t1-host-cr'], unput: ['obs-t1-hots'], removes: [] });
+  });
+});
+
+describe("the lever invariant over this checkout's lever tasks (vacuous until a task exports LEVER_ITEMS)", () => {
+  it('(a) every lever task lists every key its toggles add and no key it never puts, no toggle changes its removals; (b) no toggle moves a world id outside its own block', { timeout: 1_800_000 }, async () => {
+    const tasks = await leverTasks(repo);
     for (const t of tasks) {
-      const on = await worldIn(t.dir, t.lever);
-      for (const item of t.items) {
-        const off = await worldIn(t.dir, toggled(t.lever, item));
-        expect(movedIds(on, off), `${t.id} toggling ${item}`).toEqual([]);
-      }
+      const f = await checkTask(repo, t);
+      expect(f.noLever, `${t.id}: the overlay's edits must carry lever (the keys its toggles add)`).toBe(false);
+      expect(f, t.id).toEqual(clean(t.items));
     }
   });
 });

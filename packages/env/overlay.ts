@@ -54,9 +54,11 @@ import { Store } from './store.ts';
 // resources on added Patients: a resource on a cohort Patient is numbered in the cohort's sequence,
 // and adding or removing it would renumber that sequence. What applyOverlays checks is the keys an
 // overlay lists in OverlayEdits.lever: each in this build's put sits on an added Patient, and none
-// names a removal. That every lever task lists every key its toggles add, and that no toggle moves
-// an id outside its item's block, is scripts/test/lever-invariant.test.ts's standing check over
-// every task that exports LEVER_ITEMS. The frozen tasks (T3, T5) declare no slots and may add no
+// names a removal. That the list is complete (every key a toggle adds is listed, every listed key
+// is put in some state, no toggle changes the removals) and that no toggle moves an id outside its
+// item's block is scripts/test/lever-invariant.test.ts: it builds the world per LEVER state of every
+// task that exports LEVER_ITEMS (none on main, so it binds when the W5-E branches land; its loops
+// run on a synthetic task today). The frozen tasks (T3, T5) declare no slots and may add no
 // Patient. A range may not reach past pt-0099.
 export const TASKS = {
   T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'], added: { first: 61, count: 3 } },
@@ -82,11 +84,14 @@ export interface OverlayEdits {
   put?: readonly Resource[];
   remove?: ReadonlyArray<{ resourceType: string; id: string }>;
   // The keys of every resource the task's LEVER toggles can add (an active or inactive lever item's
-  // Patient and records, W5), whether or not this build's put holds them. Each in put must sit on an
-  // added Patient of the task (its own key, or at least one Patient reference, all of them the
-  // task's added keys), so that toggling it moves no other id (TASKS added); one on a cohort
-  // Patient, one with no Patient reference, or one that names a removal fails the build. A lever
-  // task must list every key its toggles add (scripts/test/lever-invariant.test.ts).
+  // Patient and records, W5), whether or not this build's put holds them. applyOverlays checks the
+  // listed keys: each in put must sit on an added Patient of the task (its own key, or at least one
+  // Patient reference, all of them the task's added keys), so that toggling it moves no other id
+  // (TASKS added); one on a cohort Patient, one with no Patient reference, or one that names a
+  // removal fails the build. A key absent from put passes (an inactive item's). Whether the list is
+  // complete is not checked here: scripts/test/lever-invariant.test.ts builds the world per LEVER
+  // state and requires every key a toggle adds to be listed and every listed key to be put in some
+  // state.
   lever?: readonly string[];
   // The task's margins, windows, answers and prompts for the fixture lint.
   lint?: LintSpec;
@@ -291,8 +296,8 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
     // absent from this build's put is an inactive item's) are checked: one that names a removal is
     // refused (a removal is of a base resource, on a cohort Patient, N3), and one in put must sit
     // on an added Patient: its own key for a Patient, else at least one Patient reference, all of
-    // them the task's added keys (F4: no reference is no Patient). That a task lists every key its
-    // toggles add is scripts/test/lever-invariant.test.ts's check.
+    // them the task's added keys (F4: no reference is no Patient). Whether the list is complete is
+    // scripts/test/lever-invariant.test.ts's check, per LEVER state, not this build's.
     const addedKeys = new Set([...owner].filter(([p, t]) => t === task && !start.has(`Patient/${p}`)).map(([p]) => p));
     const put = new Map((edits.put ?? []).map((r) => [r.id!, r]));
     const removed = new Set((edits.remove ?? []).map((r) => r.id));
