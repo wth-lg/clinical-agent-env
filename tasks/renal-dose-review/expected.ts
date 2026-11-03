@@ -45,7 +45,8 @@ import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
 // into env_version); LEVER_ITEMS is the matrix's and cli classes' table of the items (kind, list
 // item key, patient, the event spec of an A item, the deciding sibling records). Item A's patient
 // is always built: A toggles its event only, without a rebuild (coordinator, W5 interface (5)).
-export { LEVER, LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
+export { LEVER } from './lever.ts';
+export { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
 // A planted reference for a lever item: the world id when the world holds it, else '#unbuilt'.
 const lref = (reference: string): string => {
   const key = reference.slice(reference.indexOf('/') + 1);
