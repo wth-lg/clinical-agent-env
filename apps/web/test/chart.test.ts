@@ -12,13 +12,17 @@ import { id as t2 } from '../../../tasks/results-inbox/ids.ts';
 import { id as t3 } from '../../../tasks/crc-care-gap/ids.ts';
 import { id as t5 } from '../../../tasks/contrast-ct-prep/ids.ts';
 import { id as t6 } from '../../../tasks/message-queue/ids.ts';
+import { TASK_IDS } from '../../../fixtures/ids.ts';
+import { TASKS } from '../../../packages/env/overlay.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
 
 describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {
-    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
+    // T1: its slots and the Patients its overlay adds (W5-E: the lever patients, from the registry).
+    const t1Added = Object.entries(TASK_IDS.T1).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);
+    expect(taskPatients(world, 'renal-dose-review')).toEqual([...TASKS.T1.slots.map((p) => `Patient/${p}`), ...t1Added].sort());
     expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
     expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
   });

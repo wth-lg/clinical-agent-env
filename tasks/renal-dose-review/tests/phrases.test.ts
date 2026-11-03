@@ -21,9 +21,9 @@ import { READ_TOOLS, type ReadContext } from '../../../packages/env/tools/read/i
 import { callTool } from '../../../packages/env/tools/registry.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
-import { EVENT_EXPECT } from '../expected.ts';
+import { DECISIVE_ATOMS, EVENT_EXPECT } from '../expected.ts';
 import { SPECS } from '../events.ts';
-import { seenAfter } from './grader.ts';
+import { firstSeenBy, seenAfter } from './grader.ts';
 
 const comparable = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
 const WORD = /[\p{L}\p{N}]+/gu;
@@ -44,10 +44,19 @@ const shows = (line: string, atoms: readonly string[], snippet: string) => stret
 type Row = { note: string; snippet: string };
 type Route = { patient: string; doc: string; atoms: readonly string[] };
 
-// Rows a later edit must keep as they are, each by its query.
+// Rows a later edit must keep as they are, each by its query. W5 item B's letter (a base record,
+// expected.ts DECISIVE_ATOMS): a search for 'completed' shows the assessment line's atoms; one for
+// 'itraconazole' or 'apixaban' lands in the copied-forward medication block, whose snippet ends
+// before 'no longer takes', so the letter must be opened (R29).
+const B_LETTER = Object.keys(DECISIVE_ATOMS).map((k) => k.slice('DocumentReference/'.length))[0];
 const PINNED: ReadonlyArray<{ doc: string; query: string; seen: boolean; why: string }> = [
   { doc: 'doc-00301', query: 'itraconazole', seen: true, why: 'the targeted route: a search for the drug (rulings R12)' },
   { doc: 'doc-00302', query: 'clarithromycin', seen: true, why: 'the targeted route: a search for the drug (rulings R12)' },
+  ...(B_LETTER === undefined ? [] : [
+    { doc: B_LETTER, query: 'completed', seen: true, why: "the assessment line from 'completed 08/14' to 'no longer takes' fits one snippet" },
+    { doc: B_LETTER, query: 'itraconazole', seen: false, why: 'the first match is the medication block, and the snippet ends before the assessment' },
+    { doc: B_LETTER, query: 'apixaban', seen: false, why: 'the first match is the medication block, and the snippet ends before the assessment' },
+  ]),
 ];
 
 const world = await loadStore(matrixEnv().world);
@@ -79,7 +88,11 @@ const rowOf = (doc: string, query: string, patient: string) => {
   return { row: hit.row, step: stepsOf(trajectory([{ name: 'search_notes', input: hit.input, content: hit.content, exposed: hit.exposed, referenced: hit.referenced }]))[0]! };
 };
 
-const routes: Route[] = ARRIVALS.map((a) => ({ patient: a.patient, doc: a.doc, atoms: a.atoms }));
+// The base records with atoms (item B's letter), already in the store; the gate counts one seen by
+// firstSeenBy (tests/grader.ts), an arrival by seenAfter.
+const BASE: Route[] = Object.entries(DECISIVE_ATOMS).map(([doc, atoms]) => ({ patient: (world.get('DocumentReference', doc.split('/')[1]!) as { subject: { reference: string } }).subject.reference.slice('Patient/'.length), doc, atoms }));
+const seenRule = (e: Route) => (step: ReturnType<typeof stepsOf>[number]) => (ARRIVALS.some((a) => a.doc === e.doc) ? seenAfter(e.doc, e.atoms)([step], 0) !== null : firstSeenBy([step], e.doc) !== null);
+const routes: Route[] = [...ARRIVALS.map((a) => ({ patient: a.patient, doc: a.doc, atoms: a.atoms })), ...BASE];
 const sweep = routes.map((e) => {
   const lines = textOf(e.doc).split('\n').map(comparable).filter((l) => stretches(l, e.atoms).length > 0);
   const words = [...new Set((textOf(e.doc).toLowerCase().match(WORD) ?? []) as string[])];
@@ -88,7 +101,7 @@ const sweep = routes.map((e) => {
     const hit = rowOf(e.doc, q, e.patient);
     if (hit === null) continue;
     const snip = comparable(hit.row.snippet.replace(/…/g, ' '));
-    rows.push({ query: q, snippet: hit.row.snippet, shown: lines.some((l) => shows(l, e.atoms, snip)), seen: seenAfter(e.doc, e.atoms)([hit.step], 0) !== null });
+    rows.push({ query: q, snippet: hit.row.snippet, shown: lines.some((l) => shows(l, e.atoms, snip)), seen: seenRule(e)(hit.step) });
   }
   return { ...e, lines: lines.length, words: words.length, rows };
 });
@@ -98,11 +111,12 @@ console.log(
 );
 
 describe('T1 arrival atoms: a snippet is seen exactly when it shows every atom (R29 sweep)', () => {
-  it('the two outside documents are the snippet-visible arrivals, new to the world; their atoms name no DOAC, and one line of each holds them', () => {
-    expect(routes.map((r) => `${r.patient} ${key(r.doc)}`)).toEqual(['pt-0002 doc-00301', 'pt-0002 doc-00302']);
+  it("the two outside documents are the snippet-visible arrivals, new to the world, and item B's letter the one base record with atoms; their atoms name no DOAC, and one line of each holds them", () => {
+    expect(routes.map((r) => `${r.patient} ${key(r.doc)}`)).toEqual(['pt-0002 doc-00301', 'pt-0002 doc-00302', ...BASE.map((r) => `${r.patient} ${key(r.doc)}`)]);
+    expect(BASE).toHaveLength(B_LETTER === undefined ? 0 : 1);
     expect([...before.values()]).toEqual([undefined, undefined]);
     expect(routes.filter((r) => r.atoms.length === 0 || r.atoms.some((a) => /apixaban|rivaroxaban/i.test(a)))).toEqual([]);
-    expect(sweep.map((s) => s.lines)).toEqual([1, 1]);
+    expect(sweep.map((s) => s.lines)).toEqual(routes.map(() => 1));
   });
 
   it.each(sweep.map((s) => [`${s.patient} ${key(s.doc)} ${s.atoms.join(' + ')}`, s] as const))('%s: a snippet is seen exactly when it shows every atom', (_k, s) => {
@@ -121,5 +135,14 @@ describe('T1 arrival atoms: a snippet is seen exactly when it shows every atom (
     // search_notes returns a note only when it holds the word.
     const hits = ['itraconazole', 'clarithromycin'].flatMap((w) => searchAll(w, 'pt-0002').map((h) => `${w} ${h.row.note}`));
     expect(hits).toEqual(['itraconazole DocumentReference/doc-00301', 'clarithromycin DocumentReference/doc-00302']);
+  });
+
+  it("item B: the ID letter is the only note on her chart that says the course is completed or that she no longer takes it; the clinic's May note names the start (R21)", () => {
+    if (B_LETTER === undefined) return;
+    const cas = BASE[0]!.patient;
+    const hits = (w: string) => searchAll(w, cas).map((h) => h.row.note);
+    expect(hits('completed')).toEqual([`DocumentReference/${B_LETTER}`]);
+    expect(hits('longer')).toEqual([`DocumentReference/${B_LETTER}`]);
+    expect(hits('itraconazole')).toHaveLength(2);
   });
 });
