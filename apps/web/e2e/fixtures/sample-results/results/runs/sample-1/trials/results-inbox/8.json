@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:8",
   "task_id": "results-inbox",
-  "task_version": "352e5eecdb2a84bfd2d36b92351229eb72d1e7145ac52671317873ea8d074023",
+  "task_version": "668c38967bb98f51d2f0d962b8bc83727a25076c7bdc82b1014310144b5be295",
   "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
-  "grader_task_version": "822ecf9f3bea7c68ba5215077d73527c730ce5fff0b3722e97af85461dfd695e",
+  "grader_task_version": "d6803083454c75a433843d55426b4d2e0e341b033fe69e6aea5adb81283bd7fb",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:39:41.000Z",
+  "started": "2026-10-23T15:39:53.000Z",
   "turns": 21,
   "tool_calls": 53,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:43:26.000Z",
+  "ended": "2026-10-23T15:43:38.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "19",
+  "grader_version": "20",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",

@@ -167,6 +167,15 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
     why: "Lists Carol Whitfield's creatinines from 1900 newest first, two at a time, then asks for the next pages without the date filter: every page counts the same results in the same order, so together they show her whole history, and she closes the item as the oracle does.",
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 2, 4].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 2, ...(offset ? { offset } : { date_ge: '1900-01-01' }) } }))) }),
   },
+  // builder-294, G5 (as T3's pilot-4b crc-care-gap/1; R27, R36): her newest two creatinines of 2026,
+  // then the same search bounded at the second one's date (10-21), one whole page. Every creatinine
+  // the first page did not show is dated 10-21 or earlier, so the bounded page shows the rest. Both
+  // carry date_ge (rows without a date sort last, and only a dated run can be bounded).
+  {
+    id: 'eie_baseline_narrowed_query',
+    why: "Lists Carol Whitfield's creatinines of 2026 newest first, two to a page, down to 10-21, then repeats the search up to 10-21 and reads it whole: together the two show every one, and she closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', count: 2 } }, { name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', date_le: '2026-10-21' } }]) }),
+  },
   {
     id: 'eie_baseline_sorted_pages_past_window',
     why: "Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the page of 10-09, before her 7-day window, without the last page: the window was read whole, and she closes the item as the oracle does.",

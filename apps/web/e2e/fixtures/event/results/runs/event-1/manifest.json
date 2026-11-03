@@ -7,13 +7,13 @@
   "api_version": "2026-10-21",
   "trials": 1,
   "task_versions": {
-    "_toy": "c0ef75c43e062c8f7dbfd11c2c169da18f46a89d6a0e1d3431e6d1bd2f9df7f9"
+    "_toy": "4dc75d2af9ef79e7e4492dd9bda196e49283ae9b3d70d9441598dcd3c2a502e5"
   },
   "env_versions": {
     "_toy": "a1b780da48c6d200ccbf9fb59b881b8a62d7c066808accb73f3c261977523a42"
   },
   "grader_task_versions": {
-    "_toy": "18a0ca5619032961199b0dac2d9282821ebcd8a4f69b3b1a8505034ea87feef1"
+    "_toy": "097bf92e6c1c839619fc4802849d2a0400254ee84398f85301be0b3609acecdb"
   },
   "batches": []
 }

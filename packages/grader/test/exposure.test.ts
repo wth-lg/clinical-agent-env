@@ -328,3 +328,108 @@ describe('runCompleteAt: the M3 arrival check is scoped to the searched patient'
     expect(runCompleteAt([st(1, c1), st(2, undefined, { arrivals: [{ spec: 'e', keys: ['Observation/obs-b'] }] }), st(3, c2)], all, never, patientOf)).toBe(null);
   });
 });
+
+// builder-294 G5 (pilot-4b crc-care-gap/1; R27, R36: a review is complete when the page run provably
+// shows every record in the window). A run sorted by date stops at a page; a later query keeps every
+// filter but bounds the date on the near side at or past the last row shown (newest first: date_le at
+// or after it; oldest first: date_ge at or before it), and is complete itself. Every record the run
+// did not show sorts at or beyond that row, so the later query holds it, and together they show the
+// whole set.
+describe('runCompleteAt: a narrower query that completes a stopped run (G5)', () => {
+  const st = (n: number, search?: StepSearch, more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...(search ? { search } : {}), ...more });
+  const at = (iso: string) => Date.parse(iso);
+  const q = { type: 'Observation', patient: 'Patient/pt-A', date_ge: '2017-01-01', sort: '-date', whole: false } satisfies StepSearch;
+  // The first page: 24 of 76 rows, newest first, the last on 2026-01-06 at 14:47 clinic time.
+  const p1: StepSearch = { ...q, offset: 0, next_offset: 24, total: 76, span: [at('2026-01-06T14:47:10-05:00'), at('2026-10-09T12:45:49-04:00')] };
+  const n1: StepSearch = { ...q, date_le: '2026-01-06', next_offset: 27, total: 54, span: [at('2025-12-16T14:47:10-05:00'), at('2026-01-06T14:47:10-05:00')] };
+  const n2: StepSearch = { ...q, date_le: '2026-01-06', offset: 27, total: 54, span: [at('2024-12-31T06:47:10-05:00'), at('2025-12-16T14:47:10-05:00')] };
+  // The window's own covering pages: no upper date bound (as T3's filtersCover, which needs date_le
+  // to reach today).
+  const covers = (s: StepSearch) => s.date_le === undefined;
+  const never = () => false;
+  const owner: Record<string, string> = { 'Observation/obs-a': 'Patient/pt-A', 'Observation/obs-b': 'Patient/pt-B' };
+  const patientOf = (k: string) => owner[k];
+
+  it('completes at the narrower query\'s last page (the pilot-4b crc-care-gap/1 shape)', () => {
+    expect(runCompleteAt([st(1, p1), st(2, n1), st(3, n2)], covers, never, patientOf)).toBe(3);
+  });
+  it('a bound equal to the last row\'s instant, or past it, also completes; a whole narrower page completes at once', () => {
+    expect(runCompleteAt([st(1, p1), st(2, { ...n1, date_le: '2026-01-06T14:47:10-05:00' }), st(3, { ...n2, date_le: '2026-01-06T14:47:10-05:00' })], covers, never)).toBe(3);
+    expect(runCompleteAt([st(1, p1), st(2, { ...n1, date_le: '2026-03' }), st(3, { ...n2, date_le: '2026-03' })], covers, never)).toBe(3);
+    const { next_offset: _n, ...wholeN } = n1;
+    expect(runCompleteAt([st(1, p1), st(2, { ...wholeN, whole: true })], covers, never)).toBe(2);
+  });
+  it('a narrower page that passes the window\'s edge completes there', () => {
+    const passes = (s: StepSearch) => s.span !== undefined && s.span[0] < at('2026-01-01T00:00:00-05:00');
+    expect(runCompleteAt([st(1, p1), st(2, n1)], covers, passes)).toBe(2);
+  });
+  it('refuses a gap between the last row shown and the new bound', () => {
+    expect(runCompleteAt([st(1, p1), st(2, { ...n1, date_le: '2026-01-05' }), st(3, { ...n2, date_le: '2026-01-05' })], covers, never)).toBe(null);
+    // A date-only bound covers its day in UTC, as fhir_search reads it: a last row at 22:00 clinic
+    // time on 01-06 is 03:00 UTC on 01-07, past the bound.
+    const late = { ...p1, span: [at('2026-01-06T22:00:00-05:00'), p1.span![1]] as [number, number] };
+    expect(runCompleteAt([st(1, late), st(2, n1), st(3, n2)], covers, never)).toBe(null);
+  });
+  it('refuses a narrower query sorted the other way, stopped short, or with a changed non-date filter', () => {
+    expect(runCompleteAt([st(1, p1), st(2, { ...n1, sort: 'date' }), st(3, { ...n2, sort: 'date' })], covers, never)).toBe(null);
+    expect(runCompleteAt([st(1, p1), st(2, n1)], covers, never)).toBe(null);
+    for (const change of [{ code: '4548-4' }, { category: 'laboratory' }, { status: 'final' }, { patient: 'Patient/pt-B' }, { date_ge: '2018-01-01' }, { type: 'DiagnosticReport' }])
+      expect([change, runCompleteAt([st(1, p1), st(2, { ...n1, ...change }), st(3, { ...n2, ...change })], covers, never)]).toEqual([change, null]);
+  });
+  it('refuses when the narrower query does not start at offset 0, or the stopped page has no span', () => {
+    expect(runCompleteAt([st(1, p1), st(2, { ...n1, offset: 24 }), st(3, n2)], covers, never)).toBe(null);
+    const { span: _s, ...noSpan } = p1;
+    expect(runCompleteAt([st(1, noSpan), st(2, n1), st(3, n2)], covers, never)).toBe(null);
+  });
+  it('refuses when the stopped run has no date filter: undated rows sort last and a date bound hides them', () => {
+    const { date_ge: _a, ...openP1 } = p1;
+    const { date_ge: _b, ...openN1 } = n1;
+    const { date_ge: _c, ...openN2 } = n2;
+    expect(runCompleteAt([st(1, openP1), st(2, openN1), st(3, openN2)], covers, never)).toBe(null);
+  });
+  it('refuses a same-patient arrival of the searched type between the queries or between the narrower pages (M3); another patient\'s does not', () => {
+    const arrival = (n: number, key: string) => st(n, undefined, { tool: 'update_inbox_item', arrivals: [{ spec: 'e', keys: [key] }] });
+    expect(runCompleteAt([st(1, p1), arrival(2, 'Observation/obs-a'), st(3, n1), st(4, n2)], covers, never, patientOf)).toBe(null);
+    expect(runCompleteAt([st(1, p1), st(2, n1), arrival(3, 'Observation/obs-a'), st(4, n2)], covers, never, patientOf)).toBe(null);
+    expect(runCompleteAt([st(1, p1, { arrivals: [{ spec: 'e', keys: ['Observation/obs-a'] }] }), st(2, n1), st(3, n2)], covers, never, patientOf)).toBe(null);
+    expect(runCompleteAt([st(1, p1), arrival(2, 'Observation/obs-b'), st(3, n1), st(4, n2)], covers, never, patientOf)).toBe(4);
+  });
+  it('oldest first: date_ge at or before the last row shown completes the run', () => {
+    const a = { type: 'Observation', patient: 'Patient/pt-A', date_le: '2026-10-23', sort: 'date', whole: false } satisfies StepSearch;
+    const first: StepSearch = { ...a, next_offset: 10, total: 30, span: [at('2017-02-01T09:00:00Z'), at('2020-05-05T09:00:00Z')] };
+    const rest: StepSearch = { ...a, date_ge: '2020-05-05', total: 21, whole: true, span: [at('2020-05-05T09:00:00Z'), at('2026-10-01T09:00:00Z')] };
+    expect(runCompleteAt([st(1, first), st(2, rest)], (s) => s.date_ge === undefined, never)).toBe(2);
+    expect(runCompleteAt([st(1, first), st(2, { ...rest, date_ge: '2020-05-06' })], (s) => s.date_ge === undefined, never)).toBe(null);
+  });
+  it('a narrower query may stop and be completed by a narrower one again', () => {
+    const n1Short: StepSearch = { ...n1, next_offset: 10, total: 54, span: [at('2025-10-01T09:00:00-04:00'), n1.span![1]] };
+    const n3: StepSearch = { ...q, date_le: '2025-10-01', total: 44, whole: true, span: [at('2024-12-31T06:47:10-05:00'), at('2025-10-01T09:00:00-04:00')] };
+    expect(runCompleteAt([st(1, p1), st(2, n1Short), st(3, n3)], covers, never)).toBe(3);
+  });
+});
+
+// verifier-phase-P17i-S0-208-r2-1 N1: a run with the same filters is refused too when an arrival of
+// the searched type for the searched patient lands between its pages (it shifts the offsets).
+// N4: a reference from a failed call never makes an arrival's key count as already present.
+describe('runCompleteAt: N1 (same-filter runs) and N4 (failed calls)', () => {
+  const st = (n: number, search?: StepSearch, more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...(search ? { search } : {}), ...more });
+  const q = { type: 'Observation', patient: 'Patient/pt-A', sort: '-date', whole: false, total: 45 } satisfies StepSearch;
+  const all = () => true;
+  const never = () => false;
+  const owner: Record<string, string> = { 'Observation/obs-a': 'Patient/pt-A', 'Observation/obs-b': 'Patient/pt-B' };
+  const patientOf = (k: string) => owner[k];
+  const arrival = (n: number, key: string, more: Partial<Step> = {}) => st(n, undefined, { tool: 'update_inbox_item', arrivals: [{ spec: 'e', keys: [key] }], ...more });
+  it('N1: a same-filter run with a same-patient arrival of the searched type between its pages is refused; another patient\'s is not', () => {
+    expect(runCompleteAt([st(1, { ...q, next_offset: 28 }), arrival(2, 'Observation/obs-a'), st(3, { ...q, offset: 28, total: 46 })], all, never, patientOf)).toBe(null);
+    expect(runCompleteAt([st(1, { ...q, next_offset: 28 }), arrival(2, 'Observation/obs-b'), st(3, { ...q, offset: 28 })], all, never, patientOf)).toBe(3);
+    // A correction in place of a record the run already showed keeps the set.
+    expect(runCompleteAt([st(1, { ...q, next_offset: 28 }, { exposed_ids: ['Observation/obs-a'], arrivals: [{ spec: 'e', keys: ['Observation/obs-a'] }] }), st(2, { ...q, offset: 28 })], all, never, patientOf)).toBe(2);
+  });
+  it('N4: a failed call that named the arrival\'s key before it arrived does not keep the join', () => {
+    const failed = st(1, undefined, { tool: 'fhir_read', is_error: true, referenced_ids: ['Observation/obs-a'], exposed_ids: ['Observation/obs-a'] });
+    const p1 = { ...q, date_ge: '2017-01-01', next_offset: 28 };
+    expect(runCompleteAt([failed, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(null);
+    // The same reference from a call that ran keeps it (the in-place case).
+    expect(runCompleteAt([{ ...failed, is_error: false }, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(4);
+  });
+});

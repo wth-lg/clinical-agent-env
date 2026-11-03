@@ -195,8 +195,9 @@ export function filtersCover(s: StepSearch, patient: string, a: Absence): boolea
 // The step at which the trial first completed a search whose filters cover absence `a` (ruling
 // R27), or null: one page that held every match (whole), or a run of pages with the same type,
 // filters and order from offset 0 (or nested filters with the same total: exposure.ts continuesRun,
-// runCompleteAt), each at the previous next_offset, the last with none. Other calls may
-// come between the pages. The absence is shown at the run's last page. A sorted run is also complete
+// runCompleteAt), each at the previous next_offset, the last with none, or a sorted run that stops
+// and is finished by the same search bounded at its last row shown, read to its end (builder-294 G5,
+// pilot-4b crc-care-gap/1; exposure.ts runCompleteAt). Other calls may come between the pages. The absence is shown at the run's last page. A sorted run is also complete
 // at its first page that passes the window's edge (R36, exposure.ts passesWindow): newest first, a
 // page whose earliest record falls before the window opens (the clinic's midnight on its first day,
 // as startCovers reads it); oldest first, one whose latest falls after now. This holds only for the

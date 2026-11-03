@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "86bdd8981a19a2ddfaa9bdb9a64a07f8cb5ee67c01715843e0589f62c1cdb779",
+  "task_version": "47bc0b973bf2c5d47b0e60c516a2b4a79cec4dd0d6b6891802d1905a282c4ea5",
   "env_version": "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751",
-  "grader_task_version": "aac34617ccad6393f64fe894e7c4882fef9a3cfa110a967dca34a468e3e148f6",
+  "grader_task_version": "bdd77f8812edfae2df691ea136bcbe38a38807161c42ad3b8821328edf9dc124",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:35:20.000Z",
+  "started": "2026-10-23T13:35:32.000Z",
   "turns": 8,
   "tool_calls": 42,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Reconciled the three post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:37:37.000Z",
+  "ended": "2026-10-23T13:37:49.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "19",
+  "grader_version": "20",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
