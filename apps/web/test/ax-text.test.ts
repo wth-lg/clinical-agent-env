@@ -9,6 +9,9 @@
 // (a committed result or document, such as results/runs/final-1 or docs/findings.md; trace-check
 // keeps that list true) is listed as a todo, not failed. Snapshots that are not
 // accessibility trees (.txt counts, not .ax.txt) are not UI text and are skipped.
+// Source comments (// and /* */, by the TypeScript parser) are stripped before the match, so a
+// phrase a comment quotes never counts as drawn (verifier UIBAND-219 F2: band.ts's header named
+// the band line it draws); strings, templates, regexes and JSX text are kept whole.
 // Limit: this is a grep by view, not by tab, and it reads the view's data files whole, so it shows
 // that the route's code or data holds the text, not that this exact screen draws it (a data file such
 // as packages/core/anthropic.ts passes a model-name row on its own). e2e/labels.spec.ts asserts the
@@ -16,6 +19,7 @@
 // prompt tab and the Live launcher.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const REPO = join(import.meta.dirname, '../../..');
@@ -26,7 +30,9 @@ const VIEW_DATA: Record<string, string[]> = {
   environment: ['apps/web/src/environment', 'packages/env/tools', 'packages/core/try-tool.ts'],
   // The model constant the Tasks prompt tab and the Live launcher show (via adapters/ledger-browser.ts).
   tasks: ['apps/web/src/tasks', 'tasks', 'packages/core/anthropic.ts'],
-  live: ['apps/web/src/live', 'packages/core/anthropic.ts'],
+  // The live trial's outcome and fault text (explainTrial's words and NOT_AUDITED_MARKER, which
+  // data/ui.tsx FaultMeta draws) come from packages/core/explain.ts, as on Runs.
+  live: ['apps/web/src/live', 'packages/core/anthropic.ts', 'packages/core/explain.ts'],
   runs: ['apps/web/src/runs', 'apps/web/src/trial', 'packages/core/explain.ts', 'packages/core/outcomes.ts'],
   overview: ['apps/web/src/overview'],
   findings: ['apps/web/src/findings'],
@@ -40,11 +46,11 @@ const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
   .map((e) => e.name);
 const LISTS_TASKS = new Set(['overview', 'tasks', 'runs', 'findings', 'live']);
 const viewOf = (route: string | undefined) => (route === undefined ? null : new URL(route, 'http://x/').searchParams.get('view'));
-// Rows whose UI a named later UI PR builds; each line says which. Remove the row when it lands.
-// The Overview band line (ui-contract P14: `<k> of 6 tasks in band`, k counted from the official
-// run's summary, never a fixed text) is pre-audit finding F1, owed to the UI follow-up of #218.
-const BAND_LINE = 'the Overview band line (pre-audit F1), the UI follow-up of #218';
-const BUILT_BY: Record<string, string> = { W1: BAND_LINE, W2: BAND_LINE, W3: BAND_LINE, U21: BAND_LINE, U26: BAND_LINE };
+// Rows whose UI a named later UI PR builds; each line says which. Remove the row when it lands: a
+// listed row whose text the route's source already draws fails below, so the list cannot go stale.
+// (The Overview band line, pre-audit F1, was listed here for W1, W2, W3, U21 and U26 until
+// apps/web/src/overview/band.ts drew it.)
+const BUILT_BY: Record<string, string> = {};
 
 type AxText = { file: string; text: string };
 type Row = { id: string; code?: string[]; pending?: string[]; ui?: { route: string }; expect?: unknown };
@@ -67,6 +73,46 @@ function files(path: string): string[] {
     .map((e) => join(e.parentPath, e.name));
 }
 
+// A TypeScript source without its comments, by the TypeScript parser's comment ranges: the
+// leading and trailing comment trivia of every token (punctuation included, via getChildren, so a
+// comment before a closing brace or at the end of the file counts). A string, template, regex or
+// JSX text is a token, so a // or /* inside one is kept (verifier UIBAND-219-2 N2: the glob
+// strings of tasks/matrix-task.ts). JSX text is never scanned for comments: no leading ranges are
+// read at a position where JSX text starts (the text, or a list or element that starts with it),
+// and no trailing ranges at a position where the next token is JSX text (after the > of its
+// opening element, the } of the expression or the > of the child element before it). Markdown is
+// not code.
+export function stripComments(s: string, file: string): string {
+  if (!/\.tsx?$/.test(file)) return s;
+  const sf = ts.createSourceFile(file, s, ts.ScriptTarget.Latest, false, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const ranges = new Map<number, number>();
+  const add = (r: ts.CommentRange) => ranges.set(r.pos, Math.max(r.end, ranges.get(r.pos) ?? 0));
+  // Where JSX text starts: a JsxText node has no leading trivia, so its pos is its first character,
+  // and the token before it ends there.
+  const jsxText = new Set<number>();
+  const mark = (node: ts.Node) => {
+    if (node.kind === ts.SyntaxKind.JsxText) jsxText.add(node.pos);
+    ts.forEachChild(node, mark);
+  };
+  mark(sf);
+  const visit = (node: ts.Node) => {
+    for (const k of node.getChildren(sf)) {
+      if (!jsxText.has(k.pos)) for (const r of ts.getLeadingCommentRanges(s, k.pos) ?? []) add(r);
+      if (!jsxText.has(k.end)) for (const r of ts.getTrailingCommentRanges(s, k.end) ?? []) add(r);
+      visit(k);
+    }
+  };
+  visit(sf);
+  let out = s;
+  for (const [pos, end] of [...ranges].sort((a, b) => b[0] - a[0])) out = out.slice(0, pos) + out.slice(end);
+  return out;
+}
+// Each source file is parsed once for every row that reads it.
+const stripped = new Map<string, string>();
+const sourceOf = (f: string) => {
+  if (!stripped.has(f)) stripped.set(f, stripComments(readFileSync(f, 'utf8'), f));
+  return stripped.get(f)!;
+};
 // A value placeholder, whitespace collapsed, and the typographic quotes of JSX text kept as is.
 const V = '\u0000';
 // JSX tags go (their text stays); outcome words are values, as numbers are.
@@ -84,6 +130,34 @@ const found = (text: string, raw: string) => {
 
 const checked = all.flatMap((r) => axTexts(r).filter((a) => a.file.endsWith('.ax.txt')).map((a) => ({ row: r, a })));
 
+describe('stripComments', () => {
+  it('drops // and /* */ comments of a .ts source and keeps strings, URLs and markdown', () => {
+    expect(stripComments('// the band line\nconst a = `tasks in band`; // note\n/* the\n band */ b', 'x.ts')).toBe('\nconst a = `tasks in band`; \n b');
+    expect(stripComments("const u = 'http://x/'; // c", 'x.tsx')).toBe("const u = 'http://x/'; ");
+    expect(stripComments('// kept in markdown', 'x.md')).toBe('// kept in markdown');
+  });
+
+  // The shapes of apps/web/src/tasks/matrix-task.ts (import.meta.glob patterns with /* in strings),
+  // and " //" inside a string, a template and JSX text (verifier UIBAND-219-2 N2).
+  it('keeps /* and // inside strings, templates, regexes and JSX text, and still drops the comments around them', () => {
+    const globs = "const MODULES = import.meta.glob<Record<string, unknown>>([\n  '../../../../tasks/*/tests/{grader,alternatives,mutants,agents}.ts',\n  '../../../../tasks/*/solution/solve.ts',\n  '../../../../tasks/*/{expected,policy}.ts',\n]); // the modules\nconst TEXT = import.meta.glob<string>(['../../../../tasks/*/task.toml'], { query: '?raw' });";
+    expect(stripComments(globs, 'matrix-task.ts')).toBe(globs.replace(' // the modules', ' '));
+    const literals = "const a = 'see // this'; const b = `and /* that */ ${x} // too`; const r = /\\/\\/ok/; /* gone */ const c = 1; // gone too";
+    expect(stripComments(literals, 'x.ts')).toBe("const a = 'see // this'; const b = `and /* that */ ${x} // too`; const r = /\\/\\/ok/;  const c = 1; ");
+    const jsx = "const el = <p title=\"a // b\">See // this and /* that */ here {/* a JSX comment */}</p>; // trailing";
+    expect(stripComments(jsx, 'x.tsx')).toBe("const el = <p title=\"a // b\">See // this and /* that */ here {}</p>; ");
+  });
+
+  // JSX text that starts with // or /*, first in its element or after an expression or a child
+  // element (verifier UIBAND-219-3 N2-r3).
+  it('keeps JSX text that starts with // or /*', () => {
+    for (const src of ['const a = <p>// x</p>;', 'const a = <p>{a}// x</p>;', 'const a = <p><b>x</b>// x</p>;', 'const a = <>// frag</>;', 'const a = <p>\n  /* not a comment */ x\n</p>;', 'const a = <p>{a} /* y */ x</p>;']) {
+      expect(stripComments(src, 'x.tsx'), src).toBe(src);
+    }
+    expect(stripComments('const a = <p>// x</p>; // gone', 'x.tsx')).toBe('const a = <p>// x</p>; ');
+  });
+});
+
 describe('ax_text strings are rendered on their routes', () => {
   it('the trace holds ax_text checks to test', () => {
     expect(checked.length).toBeGreaterThan(10);
@@ -94,17 +168,23 @@ describe('ax_text strings are rendered on their routes', () => {
     // The row's own pending list (trace-check fails a stale or done-phase one), listed as todo so
     // the test output shows what a later phase still owes.
     const pending = row.pending ?? [];
-    if (pending.length > 0 || BUILT_BY[row.id]) {
-      it.todo(`${row.id}: "${a.text}" pending ${pending.length > 0 ? pending.join(', ') : BUILT_BY[row.id]}`);
+    // Only the row's UI and document paths draw text; its other code (the loop, the CLI) does not.
+    const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
+    const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
+    const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
+    const source = () => [...paths.flatMap(files).map(sourceOf), ...data].join('\n');
+    if (pending.length > 0) {
+      it.todo(`${row.id}: "${a.text}" pending ${pending.join(', ')}`);
+      continue;
+    }
+    if (BUILT_BY[row.id]) {
+      // A listed row whose text the route already draws is stale: the list, not the UI, is wrong.
+      if (found(a.text, source())) it(`${row.id}: "${a.text}" is listed in BUILT_BY but is drawn`, () => expect.fail(`${row.id}: "${a.text}" is now drawn by ${paths.join(', ')}; remove it from BUILT_BY`));
+      else it.todo(`${row.id}: "${a.text}" pending ${BUILT_BY[row.id]}`);
       continue;
     }
     it(`${row.id}: "${a.text}" on ${row.ui?.route ?? '(no route)'}`, () => {
-      // Only the row's UI and document paths draw text; its other code (the loop, the CLI) does not.
-      const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
-      const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
-      const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
-      const source = [...paths.flatMap(files).map((f) => readFileSync(f, 'utf8')), ...data].join('\n');
-      expect(found(a.text, source), `"${a.text}" is not drawn by ${paths.join(', ')}`).toBe(true);
+      expect(found(a.text, source()), `"${a.text}" is not drawn by ${paths.join(', ')}`).toBe(true);
     });
   }
 });

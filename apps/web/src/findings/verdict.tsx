@@ -4,18 +4,26 @@
 // passes and every validation probe fails or passes as declared). The verdict is
 // packages/core/summary.ts bandVerdict, the one definition the CLI's result card and summary.json's
 // band_verdict use too, so the three never disagree; the glossary shows its rule (BAND_VERDICT_RULE).
-// The verdict is text, never a colour alone.
+// The verdict is text, never a colour alone. Over fewer valid trials than the final sample it is
+// labelled provisional, with the count (overview/band.ts verdictLabel).
 import { bandVerdict } from '../../../../packages/core/summary.ts';
+import { officialRunLabel, verdictLabel } from '../overview/band.ts';
 import { noPassCount, runBlock } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { Card, GlossaryLink, LINK } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
-// "In band", "Above band", "Saturated" or "Below band"; nothing with no valid trials.
+// "In band", "Above band", "Saturated" or "Below band"; nothing with no valid trials; ", provisional
+// (<v> of 20 valid trials)" after it short of the final sample (then the text may wrap).
 export function Verdict({ task, passes, trials, className = '' }: { task: string; passes: number; trials: number; className?: string }) {
   const v = bandVerdict(passes, trials);
   if (v === null) return null;
-  return <span data-testid="band-verdict" data-task={task} data-verdict={v} title={`${passes}/${trials} against the target band`} className={`whitespace-nowrap text-xs font-medium text-ink ${className}`}>{v}</span>;
+  const { label, count } = verdictLabel(v, trials);
+  return (
+    <span data-testid="band-verdict" data-task={task} data-verdict={v} data-provisional={count !== null} title={`${passes}/${trials} against the target band`} className={`${count === null ? 'whitespace-nowrap' : ''} text-xs font-medium text-ink ${className}`}>
+      {label}{count !== null && <span className="font-normal text-ink-muted"> ({count})</span>}
+    </span>
+  );
 }
 
 export const VerdictLink = () => <GlossaryLink anchor="band-verdict">What the verdicts mean</GlossaryLink>;
@@ -28,7 +36,8 @@ function ratesOf(run: RunData): Record<string, { passes: number; trials: number 
   return Object.fromEntries(pilotRates(run).map((r) => [r.task, { passes: r.passes, trials: r.valid }]));
 }
 
-// One row per task, one column per run, oldest first (the pilots by number, then the official run):
+// One row per task, one column per run, oldest first (the pilots by number, then the official run,
+// "(final)" only once every task in it has the final sample, else "(official, in progress)"):
 // k/n and the verdict in each cell.
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
@@ -42,7 +51,7 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
           <thead className="text-xs text-ink-muted">
             <tr>
               <th scope="col" className="py-1 pr-3 font-medium">Task</th>
-              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run">{c.run.runId}{c.run.official ? ' (final)' : ''}</th>)}
+              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run">{c.run.runId}{c.run.official && c.run.summary !== null ? ` ${officialRunLabel(c.run.summary.tasks)}` : ''}</th>)}
             </tr>
           </thead>
           <tbody>

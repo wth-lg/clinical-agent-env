@@ -892,7 +892,13 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/W1-overview-band.ax.txt",
-            "text": "6 of 6 tasks in band"
+            "text": "tasks in band"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/W1-overview-band.ax.txt",
+            "pattern": "\\b[0-9]+ of [0-9]+ tasks in band\\b"
           }
         }
       ],
@@ -940,7 +946,13 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/W2-overview-band.ax.txt",
-            "text": "6 of 6 tasks in band"
+            "text": "tasks in band"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/W2-overview-band.ax.txt",
+            "pattern": "\\b[0-9]+ of [0-9]+ tasks in band\\b"
           }
         }
       ],
@@ -985,7 +997,13 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/W3-overview-band.ax.txt",
-            "text": "6 of 6 tasks in band"
+            "text": "tasks in band"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/W3-overview-band.ax.txt",
+            "pattern": "\\b[0-9]+ of [0-9]+ tasks in band\\b"
           }
         }
       ],
@@ -2226,7 +2244,13 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "text": "6 of 6 tasks in band"
+            "text": "tasks in band"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
+            "pattern": "\\b[0-9]+ of [0-9]+ tasks in band\\b"
           }
         },
         {
@@ -2411,7 +2435,7 @@
       "ui_required": false,
       "ui": {
         "route": "/?view=overview",
-        "action": "Open Overview: the band line reads 6 of 6 tasks in band.",
+        "action": "Open Overview: the band line reads <k> of <n> tasks in band, k the tasks In band of the n tasks with a final result in the official run, and a note names the tasks with no final result yet.",
         "surface": "any"
       },
       "evidence": [
@@ -2429,7 +2453,13 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/U26-overview-band.ax.txt",
-            "text": "6 of 6 tasks in band"
+            "text": "tasks in band"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/U26-overview-band.ax.txt",
+            "pattern": "\\b[0-9]+ of [0-9]+ tasks in band\\b"
           }
         }
       ],
