@@ -65,9 +65,10 @@
 // a DiagnosticReport search row, which carries the BMP code and date) or by every other analyte of
 // the panel listed (an Observation search of the day; a row of one analyte carries no panel code in
 // this environment) (R39(b), (c); tests/grader.ts).
-// mercer-b1 (R39(b)): the deciding resource for m16 is the recalculated eGFR, the second resource,
-// filed with no inbox item of its own; the corrected creatinine (the focus) decides m15. The seen
-// rule requires both.
+// mercer-b1 (R39(b)): the deciding resource for m16 is the recalculated eGFR, a new result filed
+// with no inbox item of its own beside the withdrawn one (the base review read the eGFR of 52
+// under its own id, so a record the review never read is what the focus-only route must miss);
+// the corrected creatinine (the focus) decides m15. The seen rule requires both.
 //
 // Class O (R5, R28): the report is an outside laboratory's, in its own terms (its letterhead, its
 // result table and flag, "SPECIMEN CONDITION: acceptable"), and never the policy's hazard word; §1
@@ -118,7 +119,10 @@ export const ARRIVAL = {
   webbB2: id('obs-t6-webb-a1c-0928'),
   // W5-E: the re-specified panel's own ids (webb-c1 keeps its ids for the pilot-4a records, R37).
   webbA1: { k: 'obs-06011', panel: 'dr-00602', rest: ['obs-06012', 'obs-06013', 'obs-06014', 'obs-06015', 'obs-06016', 'obs-06017', 'obs-06018'], egfr: 'obs-06019' },
-  mercerB1: { cr: idOf('obs-t6-mercer-1015-cr'), egfr: idOf('obs-t6-mercer-1015-egfr'), panel: idOf('dr-t6-mercer-1015') },
+  // The reserve's correction: the creatinine and the panel corrected in place; the eGFR of 52
+  // withdrawn (entered in error) and the recalculated one filed as a new result, obs-06021, with
+  // no inbox item of its own (the deciding sibling; a record the base review never read).
+  mercerB1: { cr: idOf('obs-t6-mercer-1015-cr'), egfrOld: idOf('obs-t6-mercer-1015-egfr'), egfr: 'obs-06021', panel: idOf('dr-t6-mercer-1015') },
 } as const;
 
 // ---- odum-o1 (O): the outside laboratory's repeat panel, in its own report form ----
@@ -267,8 +271,8 @@ const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = w
 // The world's records (fixtures:build places the 10/15 panel at MERCER_1015), with the corrected
 // value, status and note; issued is the arrival stamp. Built only while the reserve is in LEVER
 // (the resources name her world ids).
-const MERCER_1015 = '2026-10-15T09:05:00-04:00';
-const MERCER_ISSUED = '2026-10-15T14:35:00-04:00';
+const MERCER_1015 = '2026-10-15T09:09:37-04:00';
+const MERCER_ISSUED = '2026-10-15T14:26:35.966-04:00';
 const mercerCr: Resource = {
   resourceType: 'Observation',
   id: ARRIVAL.mercerB1.cr,
@@ -281,12 +285,15 @@ const mercerCr: Resource = {
   performer: [CLINIC],
   valueQuantity: q(1.46, 'mg/dL'),
   interpretation: HIGH,
+  referenceRange: range(0.74, 1.35, 'mg/dL'),
   note: [{ text: 'Corrected result: previously reported 1.12 mg/dL on 10/15/2026. Specimen re-run after a dilution error on the chemistry analyzer.' }],
 } as Resource;
+// The eGFR recalculated from the corrected creatinine, filed as a new result; the one reported with
+// the first creatinine withdrawn.
 const mercerEgfr: Resource = {
   resourceType: 'Observation',
   id: ARRIVAL.mercerB1.egfr,
-  status: 'corrected',
+  status: 'final',
   category: LAB,
   code: EGFR_CODE,
   subject: MERCER,
@@ -294,7 +301,20 @@ const mercerEgfr: Resource = {
   issued: MERCER_ISSUED,
   performer: [CLINIC],
   valueQuantity: q(38, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
-  note: [{ text: 'Corrected result: previously reported 52 mL/min/1.73m2 on 10/15/2026, recalculated from the corrected creatinine.' }],
+  note: [{ text: 'Recalculated from the corrected creatinine of 10/15/2026; replaces the eGFR of 52 mL/min/1.73m2 reported with the first value.' }],
+} as Resource;
+const mercerEgfrOld: Resource = {
+  resourceType: 'Observation',
+  id: ARRIVAL.mercerB1.egfrOld,
+  status: 'entered-in-error',
+  category: LAB,
+  code: EGFR_CODE,
+  subject: MERCER,
+  effectiveDateTime: MERCER_1015,
+  issued: MERCER_ISSUED,
+  performer: [CLINIC],
+  valueQuantity: q(52, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
+  note: [{ text: 'Entered in error: calculated from a creatinine the laboratory has since corrected; the recalculated eGFR is reported with the correction.' }],
 } as Resource;
 const mercerPanel: Resource = {
   resourceType: 'DiagnosticReport',
@@ -431,8 +451,8 @@ export const SPECS: readonly EventSpec[] = [
           item: `Task/${idOf('task-t6-m16')}`,
           class: 'B' as const,
           trigger: wrote(MERCER_ID),
-          resources: [mercerCr, mercerEgfr, mercerPanel],
-          stampFields: [`Observation/${ARRIVAL.mercerB1.cr}.issued`, `Observation/${ARRIVAL.mercerB1.egfr}.issued`, `DiagnosticReport/${ARRIVAL.mercerB1.panel}.issued`],
+          resources: [mercerCr, mercerEgfr, mercerEgfrOld, mercerPanel],
+          stampFields: [`Observation/${ARRIVAL.mercerB1.cr}.issued`, `Observation/${ARRIVAL.mercerB1.egfr}.issued`, `Observation/${ARRIVAL.mercerB1.egfrOld}.issued`, `DiagnosticReport/${ARRIVAL.mercerB1.panel}.issued`],
         },
       ]
     : []),

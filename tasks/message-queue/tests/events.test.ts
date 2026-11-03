@@ -87,10 +87,12 @@ describe('message-queue events', () => {
   it('no arrival is in the world before its trigger; a correction replaces its record with a changed one; every inbox summary is generic', () => {
     const corrections = CORRECTIONS;
     for (const s of SPECS) {
+      // A correction replaces at least one world record; it may also file a new one (mercer-b1's
+      // recalculated eGFR), which is absent before the trigger like any other arrival.
+      if (corrections.has(s.id)) expect(s.resources.some((r) => store.get(r.resourceType, r.id!) !== undefined), s.id).toBe(true);
       for (const r of s.resources) {
         const there = store.get(r.resourceType, r.id!);
-        if (corrections.has(s.id)) {
-          expect(there, `${s.id}: ${r.resourceType}/${r.id}`).toBeDefined();
+        if (corrections.has(s.id) && there !== undefined) {
           expect(JSON.stringify(there)).not.toEqual(JSON.stringify(r));
           // A correction keeps every field of the world's record but the ones it corrects (the world's
           // jittered times, references and codes copied), so it is the same record, amended.

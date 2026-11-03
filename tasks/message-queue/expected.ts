@@ -35,9 +35,10 @@ export { LEVER } from './lever.ts';
 //            wrong answer is a 90/1 renewal. A world rebuild to toggle.
 //   reserve  m15, m16 Rosalind Mercer (overlay.ts, events.ts mercer-b1), inactive: lisinopril
 //            raised 10-01 and metformin, both renewed at base (creatinine 1.12, 12% up; eGFR 52).
-//            The event corrects the 10-15 creatinine to 1.46 (46% up: lisinopril held) and the
-//            eGFR, a separate resource, to 38 (below 45: metformin held). Its item is m16, whose
-//            deciding atom is the eGFR; m15 is graded on the chart as delivered by the base gates.
+//            The event corrects the 10-15 creatinine to 1.46 (46% up: lisinopril held), withdraws
+//            the eGFR of 52 and files the recalculated one, 38, as a new result (below 45:
+//            metformin held). Its item is m16, whose deciding atom is the new eGFR; m15 is graded
+//            on the chart as delivered by the base gates.
 export type Action = 'renew' | 'bridge' | 'hold' | 'duplicate';
 export type Lab = 'bmp' | 'hba1c' | null;
 
@@ -208,7 +209,7 @@ export const ITEMS: Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 export const LEVER_ITEMS = [
   { id: 'A', kind: 'A', item: T(12), patient: P.webb, spec: 'webb-a1', event: 'webb-a1', sibling: ['DiagnosticReport/dr-00602'], gates: ['event_seen', 'amended'] },
   { id: 'B', kind: 'B', item: TL(14), patient: host('kaplan'), sibling: [refOf('Observation/obs-t6-kaplan-0928-cr')] },
-  { id: 'reserve', kind: 'A', item: TL(16), patient: host('mercer'), spec: 'mercer-b1', event: 'mercer-b1', sibling: [refOf('Observation/obs-t6-mercer-1015-egfr')], gates: ['event_seen', 'amended'], reserve: true },
+  { id: 'reserve', kind: 'A', item: TL(16), patient: host('mercer'), spec: 'mercer-b1', event: 'mercer-b1', sibling: ['Observation/obs-06021'], gates: ['event_seen', 'amended'], reserve: true },
 ] as const;
 
 // The margins the lever items' arrivals turn on (R7), checked by tests/lever.test.ts against the

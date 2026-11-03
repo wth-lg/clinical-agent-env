@@ -25,8 +25,12 @@ const tablets = (patient: string, rxnorm_code: string, n: number, frequency: str
 const [WEBB_K, WEBB_EGFR, , WEBB_VISITS] = [WEBB_READS.calls[0]!, WEBB_READS.calls[1]!, WEBB_READS.calls[2]!, WEBB_READS.calls[3]!];
 // R20: a search that covers §2's 12-month window, counted back from today (2026-10-23) to the collection date.
 const inWindow = (code: string) => search('Observation', PT.webb, { code, date_ge: '2025-10-23', sort: '-date' });
-// R27 (gate 3 F1): the clinic's BMP panel reports under every code that counts as a BMP (expected.ts BMP_CODES).
-const CLINIC_PANELS = call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 50, sort: '-date' });
+// R27 (gate 3 F1): the clinic's BMP panel reports under every code that counts as a BMP (expected.ts
+// BMP_CODES), 10 a page so the page cut is by count, not the tool's size cap (W5-E: the B host adds
+// three panels to the window, which moved the cap's cut; the run reads six pages, 51 panels at most,
+// and a page past the end is empty).
+const CLINIC_PANELS = call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 10, sort: '-date' });
+const CLINIC_PANEL_PAGES = [0, 10, 20, 30, 40, 50].map((offset) => (offset === 0 ? CLINIC_PANELS : { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset } }));
 // A write the tools reject: the dose matches no whole or half tablet of the product.
 const rejected = (patient: string, rxnorm_code: string, frequency: string) => order(patient, rxnorm_code, 3, frequency, 90, 1, 'refill');
 const PRICE_FIRST = (lis = [priceLisinopril], met = [priceMetformin], c11 = [close(11, 'Same request as his message of 10/20; answered there.')]) => [...lis, ...met, close(9), close(10), ...c11];
@@ -92,7 +96,7 @@ export const alternatives: Alternative[] = [
   { id: 'm12_window_search', why: "Searches Marcus Webb's potassium (both codes) and eGFR from 10/23/2025 on: no potassium in 12 months, so 30 days and a BMP.", script: r({ reads: [[WEBB_K, [inWindow('2823-3,6298-4')]], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
   // R27: a complete clinic-wide search over the window counts for every patient it would show; the
   // page is cut by the tool's size cap, so the run takes two pages with one sort.
-  { id: 'm12_clinic_panels', why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, finds none for Marcus Webb, and gives 30 days and a BMP.', script: r({ reads: [[WEBB_K, [CLINIC_PANELS, { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset: 26 } }]], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
+  { id: 'm12_clinic_panels', why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, 10 a page, finds none for Marcus Webb, and gives 30 days and a BMP.', script: r({ reads: [[WEBB_K, CLINIC_PANEL_PAGES], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
   // R36 (builder-273): his whole Observation list newest first, read from offset 0 to a page whose
   // oldest result is before the window's first day, not to the last page.
   // verifier-phase-P17i-S0-208-1 M2 (as T3's G2, builder-292): page 1 dates from 1900, page 2 drops

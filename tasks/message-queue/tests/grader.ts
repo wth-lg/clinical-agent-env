@@ -378,7 +378,9 @@ const NO_LONGER_DECIDES: Record<string, (x: Item) => readonly string[]> = {
   'price-b1': () => [ref('Observation/obs-t6-price-1006-k')],
   'webb-c1': () => [ref('Encounter/enc-t6-webb-0928')],
   'webb-a1': (x) => x.decisive,
-  'mercer-b1': (x) => (x.name === 'm16' ? [refOf('Observation/obs-t6-mercer-a1c-0608')] : [refOf('Observation/obs-t6-mercer-1015-k')]),
+  // m16: the withdrawn eGFR and the HbA1c no longer decide (the recalculated eGFR, a new result,
+  // is required by the arrival's seen rule); m15: the potassium.
+  'mercer-b1': (x) => (x.name === 'm16' ? [refOf('Observation/obs-t6-mercer-1015-egfr'), refOf('Observation/obs-t6-mercer-a1c-0608')] : [refOf('Observation/obs-t6-mercer-1015-k')]),
 };
 const required = (at: AsOf): readonly string[] => (at.spec === null ? at.base.decisive : at.base.decisive.filter((id) => !(NO_LONGER_DECIDES[at.spec!.id]?.(at.base) ?? []).includes(id)));
 // A spec's second item on the chart as delivered (mercer-b1's m15): the policy's action there, as
