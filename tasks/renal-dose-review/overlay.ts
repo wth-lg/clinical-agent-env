@@ -30,9 +30,29 @@
 // a DOAC review would contradict (NSAIDs, antiplatelets, opioids, a CP patient's atropine), the
 // social and situation findings and the disorders that do not fit an older adult (pregnancy,
 // cerebral palsy), and every visit about a pregnancy or still in progress, with what references it.
+//
+// W5 lever items (plan-amendment-w5 W5-E, builder-299; LEVER in expected.ts, G1): three more
+// patients the overlay adds (pt-t1-<key>, numbered after the cohort's last Patient), each on the
+// list only while its item is active, so an inactive item leaves no trace in the world:
+//
+//   item     key          drug       what decides it                                       dose now -> right dose
+//   A        fairweather  apixaban   82, 71.0 kg, SCr 1.18: one criterion. An outside ED      5 unchanged
+//                                    batch arrives mid-trial (events.ts fairweather-scr-batch;
+//                                    his chart is built whatever LEVER says: A toggles its
+//                                    event only, with no rebuild)
+//   B        castellano   apixaban   74, 78.0 kg, SCr 1.02: no criterion. Reduced to 2.5 mg    2.5 -> 5 BID
+//                                    in May for a 12-week itraconazole course that ended
+//                                    08/14; the St. Brigid ID letter of 09/10 (inside 90
+//                                    days) still lists itraconazole in a medication block
+//                                    copied from the 06/02 visit, and its assessment says
+//                                    the course is completed and she no longer takes it
+//   reserve  whitcombe    apixaban   83, 56.5 kg: two criteria, 2.5 mg; an active itraconazole  2.5 unchanged,
+//                                    order (§2: keep 2.5, note the combination, tell the       note, message
+//                                    prescriber)
 import type { Resource } from '../../packages/env/store.ts';
-import { mrnOf } from '../../packages/env/mrn.ts';
+import { mrn, mrnOf } from '../../packages/env/mrn.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
@@ -342,7 +362,22 @@ export const PANEL = ['pt-0040', 'pt-0039', 'pt-0003', 'pt-0041', 'pt-0001', 'pt
 // The review list, in the order pharmacy built it (alphabetical by family name): one patient per
 // probe class and the filler (plan-amendment-w4 PW4-E3, n = 5). The other four keep their charts
 // and are off this week's list, so no id renumbers.
-export const LIST = ['pt-0003', 'pt-0041', 'pt-0038', 'pt-0043', 'pt-0002'] as const;
+// The lever patients' registry keys (lever.ts LEVER_KEYS): item A's patient is always built (A
+// toggles its event only); B's and the reserve's are on the list only while their item is on.
+export const LEVER_PATIENT = Object.fromEntries((Object.keys(LEVER_KEYS) as LeverId[]).map((id) => [id, `pt-t1-${LEVER_KEYS[id]}`])) as Record<LeverId, string>;
+const built = (id: LeverId) => id === 'A' || leverOn(id);
+const ADDED = (Object.keys(LEVER_KEYS) as LeverId[]).filter(built).map((id) => LEVER_PATIENT[id]).sort();
+const LIST_BY_NAME: ReadonlyArray<[family: string, pt: string]> = [
+  ['Castellano', LEVER_PATIENT.B],
+  ['Delgado', 'pt-0003'],
+  ['Duquette', 'pt-0041'],
+  ['Fairweather', LEVER_PATIENT.A],
+  ['Moravec', 'pt-0038'],
+  ['Pellegrino', 'pt-0043'],
+  ['Vance', 'pt-0002'],
+  ['Whitcombe', LEVER_PATIENT.reserve],
+];
+export const LIST: readonly string[] = LIST_BY_NAME.filter(([, pt]) => !pt.startsWith('pt-t1-') || ADDED.includes(pt)).map(([, pt]) => pt);
 
 const PEOPLE: Record<string, { given: string[]; family: string; birthDate?: string; prefix: string }> = {
   'pt-0001': { given: ['Walter'], family: 'Kowalczyk', birthDate: '1942-02-14', prefix: 'Mr.' },
@@ -354,7 +389,49 @@ const PEOPLE: Record<string, { given: string[]; family: string; birthDate?: stri
   'pt-0041': { given: ['Raymond'], family: 'Duquette', birthDate: '1956-01-09', prefix: 'Mr.' },
   'pt-0043': { given: ['Marjorie'], family: 'Pellegrino', birthDate: '1951-04-03', prefix: 'Mrs.' },
   'pt-0045': { given: ['Gregory'], family: 'Lindahl', birthDate: '1960-06-21', prefix: 'Mr.' },
+  'pt-t1-fairweather': { given: ['Norman'], family: 'Fairweather', birthDate: '1944-06-15', prefix: 'Mr.' },
+  'pt-t1-castellano': { given: ['Irene'], family: 'Castellano', birthDate: '1952-03-08', prefix: 'Mrs.' },
+  'pt-t1-whitcombe': { given: ['Lorraine'], family: 'Whitcombe', birthDate: '1943-02-20', prefix: 'Mrs.' },
 };
+
+// A Patient the overlay adds, in the shape of the cohort's own (scripts/test/tells.ts
+// addedPatientTells: the same top-level fields, identifier system and extension urls as a generated
+// Patient; the MRN by packages/env/mrn.ts from the world id fixtures:build will give it). The world
+// id: added Patients are numbered after the cohort's last, in key order across every overlay; T1's
+// keys (pt-t1-...) sort before every other task's, so the index among T1's own added keys is the
+// number. The build checks the MRN against the id it assigns, so a wrong guess fails the build.
+const US_CORE = 'http://hl7.org/fhir/us/core/StructureDefinition';
+const OMB = 'urn:oid:2.16.840.1.113883.6.238';
+interface Added { key: string; sex: 'male' | 'female'; mother: string; born: string; phone: string; line: string; city: string; postal: string; lat: number; lon: number; marital: [string, string] }
+const ADDED_PEOPLE: readonly Added[] = [
+  { key: 'pt-t1-fairweather', sex: 'male', mother: 'Gertrude Ashby', born: 'Lowell', phone: '555-410-2284', line: '412 Hillcrest Road', city: 'Methuen', postal: '01844', lat: 42.726142093564, lon: -71.190963384252, marital: ['W', 'Widowed'] },
+  { key: 'pt-t1-castellano', sex: 'female', mother: 'Rosa Bianchi', born: 'Lawrence', phone: '555-287-6690', line: '27 Linden Street', city: 'Andover', postal: '01810', lat: 42.658324141173, lon: -71.136945623099, marital: ['M', 'Married'] },
+  { key: 'pt-t1-whitcombe', sex: 'female', mother: 'Edith Marlow', born: 'Haverhill', phone: '555-162-3307', line: '9 Pond View Lane', city: 'Haverhill', postal: '01830', lat: 42.776198132605, lon: -71.077244813520, marital: ['W', 'Widowed'] },
+];
+function addedPatient(a: Added, worldId: string): Resource {
+  const who = PEOPLE[a.key]!;
+  return {
+    resourceType: 'Patient',
+    id: a.key,
+    extension: [
+      { extension: [{ url: 'ombCategory', valueCoding: { system: OMB, code: '2106-3', display: 'White' } }, { url: 'text', valueString: 'White' }], url: `${US_CORE}/us-core-race` },
+      { extension: [{ url: 'ombCategory', valueCoding: { system: OMB, code: '2186-5', display: 'Not Hispanic or Latino' } }, { url: 'text', valueString: 'Not Hispanic or Latino' }], url: `${US_CORE}/us-core-ethnicity` },
+      { url: 'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName', valueString: a.mother },
+      { url: `${US_CORE}/us-core-birthsex`, valueCode: a.sex === 'male' ? 'M' : 'F' },
+      { url: 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace', valueAddress: { city: a.born, state: 'Massachusetts', country: 'US' } },
+    ],
+    identifier: [{ type: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0203', code: 'MR' }] }, system: 'urn:riverbend:mrn', value: mrn(worldId) }],
+    name: [{ use: 'official', family: who.family, given: who.given, prefix: [who.prefix] }],
+    telecom: [{ system: 'phone', value: a.phone, use: 'home' }],
+    gender: a.sex,
+    birthDate: who.birthDate!,
+    address: [{ extension: [{ extension: [{ url: 'latitude', valueDecimal: a.lat }, { url: 'longitude', valueDecimal: a.lon }], url: 'http://hl7.org/fhir/StructureDefinition/geolocation' }], line: [a.line], city: a.city, state: 'MA', postalCode: a.postal, country: 'US' }],
+    maritalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus', code: a.marital[0], display: a.marital[1] }], text: a.marital[1] },
+    multipleBirthBoolean: false,
+    communication: [{ language: { coding: [{ system: 'urn:ietf:bcp:47', code: 'en-US', display: 'English (United States)' }], text: 'English (United States)' } }],
+    generalPractitioner: [OKAFOR],
+  } as Resource;
+}
 
 const GROUP: Resource = {
   resourceType: 'Group',
@@ -617,6 +694,104 @@ HIV: followed at St. Brigid infectious disease.
 Maya Okafor, MD`),
     ];
   },
+  // W5-E item A (the lever's A patient): Norman Fairweather, 82, 71.0 kg, SCr 1.18 (9/30): one
+  // criterion (age), apixaban 5 mg is right. The mid-trial outside batch is in events.ts.
+  'pt-t1-fairweather': () => {
+    const P = 'pt-t1-fairweather';
+    return [
+      ...lastYear(P, 'fw25', '2025-09-24', 1.12, 72.3, [RX.apixaban5, 5, 'BID']),
+      AF(P, 'cond-t1-fw-af', '2018-11-06T10:00:00-05:00'),
+      condition(P, 'cond-t1-fw-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2009-03-02T10:00:00-05:00'),
+      encounter(P, 'enc-t1-fw-0930', 'AMB', CHECKUP, '2026-09-30T09:00:00-04:00', '2026-09-30T09:30:00-04:00', CLINIC),
+      weight(P, 'obs-t1-fw-wt', '2026-09-30T09:05:00-04:00', 71.0, 'kg', 'enc-t1-fw-0930'),
+      scr(P, 'obs-t1-fw-scr', '2026-09-30T09:15:00-04:00', '2026-09-30T13:30:00-04:00', 1.18, 'enc-t1-fw-0930'),
+      medication(P, 'mr-t1-fw-doac', RX.apixaban5, 5, 'BID', '2018-11-06T10:00:00-05:00', NVAF, { requester: LIN }),
+      medication(P, 'mr-t1-fw-metoprolol', RX.metoprolol, 25, 'QD', '2018-11-06T10:00:00-05:00', 'Atrial fibrillation, rate control', { requester: LIN }),
+      note(P, 'doc-t1-fw-pn-0930', '2026-09-30T09:40:00-04:00', PROGRESS, 'enc-t1-fw-0930', OKAFOR, CLINIC, `Progress note - Riverbend Family Medicine
+Annual visit. Feels well; walks daily.
+AF: rate controlled on metoprolol, on apixaban. No bleeding, no falls.
+Hypertension: controlled.
+Weighed today; labs today. Return in 12 months.
+
+Maya Okafor, MD`),
+    ];
+  },
+  // W5-E item B: Irene Castellano, 74, 78.0 kg, SCr 1.02 (10/1): no criterion, 5 mg. Reduced to
+  // 2.5 mg on 5/22 for a 12-week itraconazole course (acute pulmonary histoplasmosis, St. Brigid
+  // infectious disease) that ended 8/14; the clinic's itraconazole order is completed. The ID
+  // clinic's 9/10 letter (inside 90 days) carries a medication block copied forward from the 6/2
+  // visit that still lists itraconazole, and its assessment says the course is completed and she
+  // no longer takes it. §1 counts a medication a letter says the patient takes: she does not.
+  'pt-t1-castellano': (mrn) => {
+    const P = 'pt-t1-castellano';
+    return [
+      ...lastYear(P, 'cas25', '2025-09-26', 0.98, 79.1, [RX.apixaban5, 5, 'BID']),
+      AF(P, 'cond-t1-cas-af', '2020-01-14T10:00:00-05:00'),
+      condition(P, 'cond-t1-cas-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2011-06-08T10:00:00-04:00'),
+      condition(P, 'cond-t1-cas-histo', '12962009', 'Histoplasmosis (disorder)', '2026-05-18T14:00:00-04:00', '2026-09-10T15:30:00-04:00'),
+      encounter(P, 'enc-t1-cas-0518', 'AMB', PROBLEM, '2026-05-18T14:00:00-04:00', '2026-05-18T14:40:00-04:00', HOSPITAL, VARGA),
+      encounter(P, 'enc-t1-cas-0522', 'AMB', PROBLEM, '2026-05-22T10:20:00-04:00', '2026-05-22T10:50:00-04:00', CLINIC),
+      encounter(P, 'enc-t1-cas-0602', 'AMB', PROBLEM, '2026-06-02T15:00:00-04:00', '2026-06-02T15:30:00-04:00', HOSPITAL, VARGA),
+      encounter(P, 'enc-t1-cas-0910', 'AMB', PROBLEM, '2026-09-10T15:00:00-04:00', '2026-09-10T15:30:00-04:00', HOSPITAL, VARGA),
+      encounter(P, 'enc-t1-cas-1001', 'AMB', CHECKUP, '2026-10-01T09:00:00-04:00', '2026-10-01T09:30:00-04:00', CLINIC),
+      weight(P, 'obs-t1-cas-wt', '2026-10-01T09:05:00-04:00', 78.0, 'kg', 'enc-t1-cas-1001'),
+      scr(P, 'obs-t1-cas-scr', '2026-10-01T09:15:00-04:00', '2026-10-01T13:10:00-04:00', 1.02, 'enc-t1-cas-1001'),
+      medication(P, 'mr-t1-cas-doac-5', RX.apixaban5, 5, 'BID', '2020-01-14T10:00:00-05:00', NVAF, { status: 'stopped', statusReason: { text: 'Dose reduced for itraconazole interaction' }, requester: REYES }),
+      medication(P, 'mr-t1-cas-doac', RX.apixaban2_5, 2.5, 'BID', '2026-05-22T10:40:00-04:00', NVAF),
+      medication(P, 'mr-t1-cas-itra', RX.itraconazole, 200, 'BID', '2026-05-22T10:35:00-04:00', 'Acute pulmonary histoplasmosis, 12-week course (St. Brigid infectious disease)', { status: 'completed', statusReason: { text: 'Course completed' }, dispenseRequest: { numberOfRepeatsAllowed: 2, expectedSupplyDuration: { value: 28, unit: 'days', system: UCUM, code: 'd' } } }),
+      medication(P, 'mr-t1-cas-metoprolol', RX.metoprolol, 25, 'QD', '2020-01-14T10:00:00-05:00', 'Atrial fibrillation, rate control', { requester: REYES }),
+      note(P, 'doc-t1-cas-pn-0522', '2026-05-22T11:00:00-04:00', PROGRESS, 'enc-t1-cas-0522', OKAFOR, CLINIC, `Progress note - Riverbend Family Medicine
+Seen after the St. Brigid infectious disease consultation of 5/18: acute pulmonary histoplasmosis (cough and fatigue since April, chest X-ray infiltrate, antigen positive). They advise itraconazole 200 mg twice daily for 12 weeks; prescribed today.
+AF: rate controlled on metoprolol. Itraconazole interaction: apixaban reduced to 2.5 mg twice daily.
+Hypertension: controlled.
+Return in 6 weeks.
+
+Maya Okafor, MD`),
+      note(P, 'doc-t1-cas-id-0910', '2026-09-10T15:30:00-04:00', CONSULT, 'enc-t1-cas-0910', VARGA, HOSPITAL, `St. Brigid Regional - Infectious Disease Clinic Letter
+Patient: Irene Castellano   MRN ${mrn}   DOB 1952-03-08
+Date: 2026-09-10
+To: Maya Okafor, MD, Riverbend Family Medicine
+
+Follow-up visit, acute pulmonary histoplasmosis.
+
+Current medications (from 06/02/2026 visit):
+- itraconazole 200 mg by mouth twice daily
+- apixaban 2.5 mg by mouth twice daily
+- metoprolol succinate 25 mg by mouth once daily
+
+Assessment: Itraconazole 12-week course completed 08/14/2026; she no longer takes it. Cough resolved; chest X-ray clear. No further antifungal treatment needed.
+
+Plan: no follow-up here unless symptoms return.
+
+Tomas Varga, MD
+Infectious Disease`),
+    ];
+  },
+  // W5-E reserve (inactive unless LEVER names it): Lorraine Whitcombe, 83, 56.5 kg, SCr 0.88: two
+  // criteria, 2.5 mg, and an active itraconazole order (onychomycosis, started 9/29). §2: keep
+  // 2.5 mg, record the combination in the note, tell the prescriber of the DOAC order.
+  'pt-t1-whitcombe': () => {
+    const P = 'pt-t1-whitcombe';
+    return [
+      ...lastYear(P, 'wh25', '2025-10-02', 0.9, 57.8, [RX.apixaban2_5, 2.5, 'BID']),
+      AF(P, 'cond-t1-wh-af', '2016-08-23T10:00:00-04:00'),
+      condition(P, 'cond-t1-wh-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2008-05-13T10:00:00-04:00'),
+      condition(P, 'cond-t1-wh-onych', '414941008', 'Onychomycosis due to dermatophyte (disorder)', '2026-09-29T11:00:00-04:00'),
+      encounter(P, 'enc-t1-wh-0929', 'AMB', PROBLEM, '2026-09-29T11:00:00-04:00', '2026-09-29T11:30:00-04:00', CLINIC),
+      weight(P, 'obs-t1-wh-wt', '2026-09-29T11:05:00-04:00', 56.5, 'kg', 'enc-t1-wh-0929'),
+      scr(P, 'obs-t1-wh-scr', '2026-09-29T11:15:00-04:00', '2026-09-29T15:20:00-04:00', 0.88, 'enc-t1-wh-0929'),
+      medication(P, 'mr-t1-wh-doac', RX.apixaban2_5, 2.5, 'BID', '2016-08-23T10:00:00-04:00', NVAF, { requester: REYES }),
+      medication(P, 'mr-t1-wh-itra', RX.itraconazole, 200, 'QD', '2026-09-29T11:20:00-04:00', 'Onychomycosis of toenails, 12 weeks'),
+      medication(P, 'mr-t1-wh-amlodipine', RX.amlodipine, 5, 'QD', '2008-05-13T10:00:00-04:00', 'Hypertension', { requester: REYES }),
+      note(P, 'doc-t1-wh-pn-0929', '2026-09-29T11:35:00-04:00', PROGRESS, 'enc-t1-wh-0929', OKAFOR, CLINIC, `Progress note - Riverbend Family Medicine
+Thickened, discolored toenails for a year; the clippings taken last month grew a dermatophyte. Itraconazole 200 mg daily for 12 weeks started today; liver tests in 6 weeks.
+AF: rate controlled, on apixaban. No bleeding.
+Hypertension: controlled.
+Weighed today; labs today.
+
+Maya Okafor, MD`),
+    ];
+  },
 };
 
 // Charts whose generated results name no visit (Synthea kept pt-0040's results, not their visits):
@@ -656,11 +831,23 @@ const overlay: Overlay = {
       put.push(...curated.put, ...(NO_VISIT_RESULTS.has(pt) ? chart.map(withoutVisit) : chart));
       remove.push(...curated.remove);
     }
+    // The lever patients (header): each added with its chart while its item is on. Its world id is
+    // the next Patient number after the cohort's last, in key order (addedPatient).
+    const last = Math.max(0, ...[...world.resources()].flatMap((r) => (r.resourceType === 'Patient' ? [Number(/^pt-(\d{4})$/.exec(r.id ?? '')?.[1] ?? 0)] : [])));
+    for (const key of ADDED) {
+      const a = ADDED_PEOPLE.find((x) => x.key === key)!;
+      const worldId = `pt-${String(last + 1 + ADDED.indexOf(key)).padStart(4, '0')}`;
+      put.push(addedPatient(a, worldId), ...CHARTS[key]!(mrn(worldId)));
+    }
+    const on = built;
     return {
       put,
       remove,
       lint: {
         thresholds: [
+          ...(on('A') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-fw-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-fw-scr' }] : []),
+          ...(on('B') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-cas-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-cas-scr' }] : []),
+          ...(on('reserve') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-wh-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-wh-scr' }] : []),
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-1103' },
           { quantity: 'scr', threshold: 1.5, observation: 'obs-t1-1105' },
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-wt-1020' },
@@ -682,8 +869,11 @@ const overlay: Overlay = {
           { patient: 'pt-0040', threshold: 80 },
           { patient: 'pt-0041', threshold: 80 },
           { patient: 'pt-0045', threshold: 80 },
+          ...ADDED.map((patient) => ({ patient, threshold: 80 })),
         ],
-        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210'] },
+        // §1's 90-day window for outside letters: the ID letter of item B is well inside it.
+        ...(on('B') ? { windows: [{ name: 'outside letters of the last 90 days (RBC-PHARM-07 §1)', boundary: { days: 90 }, resources: ['doc-t1-cas-id-0910'] }] } : {}),
+        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210', ...(on('B') ? ['doc-t1-cas-id-0910'] : [])] },
       },
     };
   },

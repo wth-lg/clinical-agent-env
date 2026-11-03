@@ -39,8 +39,26 @@
 // completing, cancelling or leaving an arrival's inbox item open is neither required nor failed
 // (R3, R4). What a careless close would hide still fails: an arrival never read fails event_seen,
 // and an amend not made fails amended (tests/mutants.ts arrivals_closed_blind).
+//
+// W5 item A (plan-amendment-w5, R39; builder-299): fairweather-scr-batch, active while LEVER names
+// A (expected.ts). An outside batch from St. Brigid's emergency department files two creatinines in
+// umol/L under 14682-9 on the lever patient's chart and notifies only the abnormal one, the way an
+// abnormal-only results interface does: obs-04003, 150 umol/L (1.70 mg/dL) drawn 10/21 06:10 on
+// arrival, flagged H, is the inbox item's focus; obs-04004, 116 umol/L (1.31 mg/dL) drawn 10/22
+// 07:40 before discharge, is filed with no inbox item. §1 takes the most recent valid result from
+// any laboratory: 1.31, with 71.0 kg and age 82, is still one criterion, so apixaban 5 mg stays
+// (EVENT_EXPECT keeps). Acting on the notified 1.70 gives two criteria and a wrong reduction. The
+// deciding resource is obs-04004 (R39(a)): the seen rule requires it (R39(b)), by a read or a
+// search row that shows it (an Observation search by code 14682-9 or by date, the routes §1
+// implies). The trigger is after_exposed on his weight and creatinine, the records every passing
+// route must show (his dose stays, as the filler's). The A-twin (fairweather-scr-twin, never
+// active; tests/events.test.ts runs it alone) is the same batch with the notified value the newest:
+// 150 umol/L on 10/22 is notified, 116 on 10/21 silent, and the dose is 2.5 mg: it shows A tests
+// the review of the batch, not a form trap (G3/G4).
 import type { EventSpec } from '../../packages/env/events.ts';
 import { mrn } from '../../packages/env/mrn.ts';
+import { LEVER_ITEMS } from './expected.ts';
+import { leverOn } from './lever.ts';
 import { ref } from './ids.ts';
 
 type Resource = EventSpec['resources'][number];
@@ -152,6 +170,47 @@ const weightMessage: Resource = {
 const PELLEGRINO_REVIEWED = { kind: 'after_exposed', ids: [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802'), 'Patient/pt-0043'] } as const;
 const wrote = (patient: string) => ({ kind: 'after_write', patient }) as const;
 
+// An outside laboratory's serum creatinine in umol/L (14682-9), performed by St. Brigid, from its
+// emergency department visit; `high` flags it H, as the laboratory flags a value over its range.
+const ED_HIGH = [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation', code: 'H', display: 'High' }] }];
+const outsideScr = (rid: string, pt: string, at: string, umol: number, enc: string, high: boolean): Resource => ({
+  resourceType: 'Observation',
+  id: rid,
+  status: 'final',
+  category: LAB,
+  code: { coding: [{ system: LOINC, code: '14682-9', display: 'Creatinine [Moles/volume] in Serum or Plasma' }], text: 'Creatinine [Moles/volume] in Serum or Plasma' },
+  subject: { reference: `Patient/${pt}` },
+  encounter: { reference: `Encounter/${enc}` },
+  effectiveDateTime: at,
+  issued: at,
+  performer: [HOSPITAL],
+  valueQuantity: { value: umol, unit: 'umol/L', system: UCUM, code: 'umol/L' },
+  ...(high ? { interpretation: ED_HIGH } : {}),
+  referenceRange: [{ low: { value: 59, unit: 'umol/L', system: UCUM, code: 'umol/L' }, high: { value: 104, unit: 'umol/L', system: UCUM, code: 'umol/L' } }],
+});
+const edVisit = (rid: string, pt: string, start: string, end: string): Resource => ({
+  resourceType: 'Encounter',
+  id: rid,
+  status: 'finished',
+  class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'EMER', display: 'emergency' },
+  type: [{ coding: [{ system: 'http://snomed.info/sct', code: '50849002', display: 'Emergency room admission (procedure)' }], text: 'Emergency room admission (procedure)' }],
+  subject: { reference: `Patient/${pt}` },
+  period: { start, end },
+  serviceProvider: HOSPITAL,
+});
+// The lever patient of item A (expected.ts LEVER_ITEMS), and his batch: the notified result first
+// (the inbox item's focus), then the silent sibling, then the visit both name.
+const FAIRWEATHER = LEVER_ITEMS.find((i) => i.id === 'A')!.item.slice('Patient/'.length);
+const fairweatherReviewed = () => ({ kind: 'after_exposed', ids: [ref('Observation/obs-t1-fw-wt'), ref('Observation/obs-t1-fw-scr')] }) as const;
+const batch = (id: string, notified: [rid: string, at: string, umol: number], silent: [rid: string, at: string, umol: number], enc: string): EventSpec => ({
+  id,
+  item: `Patient/${FAIRWEATHER}`,
+  class: 'A',
+  trigger: fairweatherReviewed(),
+  resources: [outsideScr(notified[0], FAIRWEATHER, notified[1], notified[2], enc, true), outsideScr(silent[0], FAIRWEATHER, silent[1], silent[2], enc, false), edVisit(enc, FAIRWEATHER, '2026-10-21T05:40:00-04:00', '2026-10-22T09:10:00-04:00')],
+  stampFields: [`Observation/${notified[0]}.issued`, `Observation/${silent[0]}.issued`],
+});
+
 export const SPECS: readonly EventSpec[] = [
   { id: 'pellegrino-scr-new', item: 'Patient/pt-0043', class: 'A', trigger: PELLEGRINO_REVIEWED, resources: [clinicScr('obs-04001', 'pt-0043', '2026-10-22T09:12:00-04:00', 1.25)], stampFields: ['Observation/obs-04001.issued'] },
   { id: 'delgado-scr-amended', item: 'Patient/pt-0003', class: 'B', trigger: wrote('pt-0003'), resources: [delgadoAmended], stampFields: [`Observation/${DELGADO_SCR}.issued`] },
@@ -159,10 +218,17 @@ export const SPECS: readonly EventSpec[] = [
   { id: 'moravec-weight-reported', item: 'Patient/pt-0038', class: 'D', trigger: wrote(MORAVEC), resources: [weightMessage], stampFields: ['Communication/comm-00101.sent', 'Communication/comm-00101.received'] },
   { id: 'moravec-scr-new', item: 'Patient/pt-0038', class: 'A', trigger: wrote(MORAVEC), resources: [clinicScr('obs-04002', MORAVEC, '2026-10-22T09:20:00-04:00', 1.85)], stampFields: ['Observation/obs-04002.issued'] },
   { id: 'vance-clarithromycin', item: 'Patient/pt-0002', class: 'D', trigger: wrote(VANCE), resources: [urgentCareNote], stampFields: ['DocumentReference/doc-00302.date'] },
+  ...(leverOn('A')
+    ? [
+        batch('fairweather-scr-batch', ['obs-04003', '2026-10-21T06:10:00-04:00', 150], ['obs-04004', '2026-10-22T07:40:00-04:00', 116], 'enc-04001'),
+        batch('fairweather-scr-twin', ['obs-04005', '2026-10-22T07:40:00-04:00', 150], ['obs-04006', '2026-10-21T06:10:00-04:00', 116], 'enc-04002'),
+      ]
+    : []),
 ];
 
-// pilot-4a: one amend each of classes A, B and O, and one lure (plan-amendment-w4 PW4-E3).
-export const ACTIVE: readonly string[] = ['pellegrino-scr-new', 'delgado-scr-amended', 'vance-itraconazole', 'moravec-weight-reported'];
+// pilot-4a: one amend each of classes A, B and O, and one lure (plan-amendment-w4 PW4-E3); W5
+// adds item A's batch while LEVER names A (the twin is matrix-only, never active).
+export const ACTIVE: readonly string[] = ['pellegrino-scr-new', 'delgado-scr-amended', 'vance-itraconazole', 'moravec-weight-reported', ...(leverOn('A') ? ['fairweather-scr-batch'] : [])];
 
 // The arrival ids, for the tests and the oracle (an id in the world is a class B correction).
-export const ARRIVAL = { delgadoScr: DELGADO_SCR, pellegrinoScr: 'obs-04001', moravecScr: 'obs-04002', vanceLetter: 'doc-00301', vanceUrgentCare: 'doc-00302', moravecMessage: 'comm-00101' } as const;
+export const ARRIVAL = { delgadoScr: DELGADO_SCR, pellegrinoScr: 'obs-04001', moravecScr: 'obs-04002', vanceLetter: 'doc-00301', vanceUrgentCare: 'doc-00302', moravecMessage: 'comm-00101', fairweatherNotified: 'obs-04003', fairweatherSilent: 'obs-04004', twinNotified: 'obs-04005', twinSilent: 'obs-04006' } as const;

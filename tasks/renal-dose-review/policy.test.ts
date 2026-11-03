@@ -16,7 +16,7 @@ describe('RBC-PHARM-07 text', () => {
 
   it('names no list patient and no arrival-only fact (rulings R11)', () => {
     const lower = POLICY.toLowerCase();
-    const named = [...expected.items.flatMap((x) => [x.name, ...x.name.split(' '), x.patient.split('/')[1]!]), 'aspergill', 'pneumonia', 'amended', '185', '118', '1.25', '1.85', '10/'];
+    const named = [...expected.items.flatMap((x) => [x.name, ...x.name.split(' '), x.patient.split('/')[1]!]), 'Fairweather', 'Castellano', 'Whitcombe', 'aspergill', 'pneumonia', 'amended', '185', '118', '1.25', '1.85', '10/', '150', '116', '1.70', '1.31', '08/14', '8/14', '09/10', 'histoplasm', 'emergency', 'copied', 'batch', 'silent', 'notified', 'flagged'];
     expect(named.filter((w) => lower.includes(w.toLowerCase()))).toEqual([]);
   });
 });

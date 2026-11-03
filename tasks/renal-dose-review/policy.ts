@@ -18,6 +18,10 @@ const WEIGHT = '29463-7';
 const UMOL_PER_MGDL = 88.4;
 const INHIBITORS = ['ketoconazole', 'itraconazole', 'ritonavir'];
 const INHIBITOR_TEXT = /\b(ketoconazole|itraconazole|ritonavir)\b/i;
+// A letter that names an inhibitor the patient no longer takes: a sentence of it says the drug's
+// course is completed, stopped or discontinued, or that the patient no longer takes it. §1 counts
+// a medication a letter says the patient takes; such a letter says the opposite.
+const INHIBITOR_STOPPED = /\b(ketoconazole|itraconazole|ritonavir)\b[^.\n]*\b(completed|stopped|discontinued|no longer)\b/i;
 const CLINIC = 'Organization/org-riverbend';
 const DAY = 86_400_000;
 
@@ -71,11 +75,14 @@ export function derive(world: WorldView): Json {
     const perDay = dosesPerDay(doac.dosageInstruction![0]!.timing!.repeat!)!;
     const mgNow = dailyDose(doac)!.value / perDay;
 
-    // Inhibitors: an active order, or an outside clinic's letter of the last 90 days.
+    // Inhibitors: an active order, or an outside clinic's letter of the last 90 days that says the
+    // patient takes one. A letter of the window that names an inhibitor and says the patient no
+    // longer takes it (INHIBITOR_STOPPED) is not one; it still decides the dose (R14).
     const ordered = meds.filter((m) => INHIBITORS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient }))).map((m) => `MedicationRequest/${m.id}`);
-    const letters = (world.all('DocumentReference') as readonly Doc[])
-      .filter((d) => d.subject?.reference === ref && d.status === 'current' && d.custodian?.reference !== CLINIC && now - Date.parse(d.date ?? '') <= 90 * DAY && INHIBITOR_TEXT.test(decode(d)))
-      .map((d) => `DocumentReference/${d.id}`);
+    const named = (world.all('DocumentReference') as readonly Doc[])
+      .filter((d) => d.subject?.reference === ref && d.status === 'current' && d.custodian?.reference !== CLINIC && now - Date.parse(d.date ?? '') <= 90 * DAY && INHIBITOR_TEXT.test(decode(d)));
+    const letters = named.filter((d) => !INHIBITOR_STOPPED.test(decode(d))).map((d) => `DocumentReference/${d.id}`);
+    const stopped = named.filter((d) => INHIBITOR_STOPPED.test(decode(d))).map((d) => `DocumentReference/${d.id}`);
     const inhibitor = [...ordered, ...letters];
 
     // The dose, and the records that decide it (and only those: a record that cannot change the
@@ -85,15 +92,29 @@ export function derive(world: WorldView): Json {
     const S = `Observation/${scrObs.id}`;
     let mg: number;
     let decisive: string[];
+    // The reserve branch of §2: an inhibitor at a criteria dose of 2.5 mg, kept; the review tells
+    // the prescriber of the DOAC order.
+    let tell: string | undefined;
+    let cls: string | undefined;
     if (drug === 'apixaban') {
       const criteria: Array<[string, boolean]> = [[W, kg <= 60], [S, mgdl >= 1.5], [ref, age >= 80]];
       mg = criteria.filter(([, met]) => met).length >= 2 ? 2.5 : 5;
       // 2.5 mg on the criteria: the records of the met criteria. 5 mg: those of the criteria not
-      // met. An inhibitor that lowers 5 mg to 2.5 mg decides it alone.
+      // met. An inhibitor that lowers 5 mg to 2.5 mg decides it alone; one met at a criteria dose
+      // of 2.5 mg joins the met criteria's records. A letter naming an inhibitor the patient no
+      // longer takes joins the records of a 5 mg decision: it decides whether one applies.
       decisive = criteria.filter(([, met]) => met === (mg === 2.5)).map(([id]) => id);
       if (inhibitor.length > 0 && mg === 5) {
         mg = 2.5;
         decisive = inhibitor;
+        cls = 'pgp_cyp3a4_inhibitor';
+      } else if (inhibitor.length > 0) {
+        decisive = [...decisive, ...inhibitor];
+        cls = 'inhibitor_at_reduced_dose';
+        tell = (doac as { requester?: { reference?: string } }).requester?.reference;
+      } else if (stopped.length > 0) {
+        decisive = [...decisive, ...stopped];
+        cls = 'inhibitor_stopped';
       }
     } else {
       // Cockcroft-Gault takes the age (and the sex) from the Patient, the weight and the creatinine.
@@ -102,8 +123,7 @@ export function derive(world: WorldView): Json {
       decisive = [W, S, ref];
     }
     const action = mg < mgNow ? 'reduce' : mg > mgNow ? 'increase' : 'unchanged';
-    const cls = drug === 'apixaban' && inhibitor.length > 0 ? 'pgp_cyp3a4_inhibitor'
-      : coded(scrObs, SCR_MOLAR) ? 'outside_scr_umol'
+    cls ??= coded(scrObs, SCR_MOLAR) ? 'outside_scr_umol'
       : action === 'unchanged' ? 'filler'
       : drug === 'rivaroxaban' ? 'cg_crcl_weight_rule'
       : 'apixaban_two_of_three';
@@ -115,6 +135,7 @@ export function derive(world: WorldView): Json {
       action,
       dose: { drug, mg, per_day: drug === 'apixaban' ? 2 : 1 },
       decisive,
+      ...(tell === undefined ? {} : { tell }),
     };
   });
   return { group: `Group/${group.id}`, items };
