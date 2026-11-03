@@ -7,7 +7,7 @@
 // the task's base_pass (trials passing every non-lever item) for S5's b_t. A task without lever
 // items prints exactly what it printed before (no `lever` key), which is the gate on
 // results/pilot-4a and results/pilot-4b.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../scripts/test/helpers.ts';
@@ -186,6 +186,15 @@ describe('pnpm cli classes lever rows (W5-H)', () => {
     writeRun(bare, [{ outcome: 'PASS' }]);
     expect((await run([bare, '--json'], { ...deps, checkoutVersion: async () => 'v2' })).code).toBe(1);
     expect((await run([bare, '--json'], { ...deps, checkoutVersion: async () => 'v2', lever: async () => null })).code).toBe(0);
+  });
+
+  it('the pilot-4a and pilot-4b pins carry lever: null for every task: they predate LEVER, so classes keeps tabulating them once a task declares LEVER_ITEMS', () => {
+    for (const run of ['results/pilot-4a', 'results/pilot-4b']) {
+      const pin = JSON.parse(readFileSync(join(run, 'item-classes.json'), 'utf8')) as { tasks: Record<string, { lever?: unknown }> };
+      const tasks = Object.keys(pin.tasks);
+      expect(tasks.length, run).toBeGreaterThan(0);
+      for (const id of tasks) expect([run, id, 'lever' in pin.tasks[id]!, pin.tasks[id]!.lever]).toEqual([run, id, true, null]);
+    }
   });
 
   it('classesJsonProblems names a malformed lever block', () => {
