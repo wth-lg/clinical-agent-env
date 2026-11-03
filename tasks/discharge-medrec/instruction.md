@@ -1,3 +1,3 @@
-Three of my patients came home from St. Brigid this past week: Walter Kim, Terence Stark and Earnest Roberts. Please reconcile each one's outpatient medication list per RBC-TOC-02 and flag anything you can't resolve to me.
+Five of my patients came home from St. Brigid this past week: Walter Kim, Terence Stark, Earnest Roberts, Gerald Whitcomb and Lorraine Pruitt.
 
 — Dr. Okafor

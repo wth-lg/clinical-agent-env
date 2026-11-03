@@ -9,12 +9,25 @@
 // home order the fill history lists whose fills cover under 80% of the 180 days before admission,
 // or of the days since its first fill when that falls inside them, is flagged). It never
 // imports expected.ts, ids.ts or overlay constants (lint: no-policy-expected-import).
+// W5-E (plan-amendment-w5): a conditional resume whose condition names post-discharge results and
+// whose chart holds no result after discharge is not met (§2's sentence): keep the order held and
+// create a Task due when the line says the result is expected ('defer'); the record that stands
+// for the review of the patient's results after discharge is the stay's last creatinine (R31: a
+// complete search of the window, tests/grader.ts). A dose line for a drug the fill histories list
+// is decided by the line and those histories (R1: §5(b) would block the change), and is a flag
+// when its coverage, counted from the first fill when that falls inside the window, is under 80%.
 import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { clinicDate, dailyDose, drugOf, type MedicationRequest } from '../../packages/grader/normalize.ts';
+import { LEVER } from './lever.ts';
 
-// The worklist, in the instruction's order.
-const NAMES: ReadonlyArray<[given: string, family: string]> = [['Walter', 'Kim'], ['Terence', 'Stark'], ['Earnest', 'Roberts']];
+// The worklist, in the instruction's order: the three base patients, the A host (every state), and
+// the B and reserve hosts while their item is active (lever.ts).
+const NAMES: ReadonlyArray<[given: string, family: string]> = [
+  ['Walter', 'Kim'], ['Terence', 'Stark'], ['Earnest', 'Roberts'], ['Gerald', 'Whitcomb'],
+  ...(LEVER.includes('B') ? [['Lorraine', 'Pruitt'] as [string, string]] : []),
+  ...(LEVER.includes('reserve') ? [['Victor', 'Salazar'] as [string, string]] : []),
+];
 // Brand names a discharge line may use that normalize.ts does not map (§4).
 const BRANDS: Record<string, string> = { coreg: 'carvedilol', 'procardia xl': 'nifedipine', procardia: 'nifedipine', synthroid: 'levothyroxine', protonix: 'pantoprazole', crestor: 'rosuvastatin' };
 
@@ -66,6 +79,8 @@ const doseAtoms = (line: string) => {
 };
 const STOP = /:\s*(stop)\b/i;
 const RESUME = /(resume) home (\d+) mg daily when (SCr < (\d+(?:\.\d+)?))/i;
+// §2: when the line says the result is expected ('BMP 3 days after discharge').
+const EXPECTED_IN = /(\d+) days after discharge/i;
 const perDayOf = (line: string) => (/\btwice daily\b/i.test(line) ? 2 : /\bthree times daily\b|\bwith meals\b/i.test(line) ? 3 : 1);
 const mgOf = (line: string) => Number(/(\d+(?:\.\d+)?) mg\b/.exec(line)?.[1] ?? NaN);
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -187,7 +202,27 @@ export function derive(world: WorldView): Json {
         // A resume rests on the summary's condition, the latest potassium and a creatinine after
         // discharge that meets the condition; a §7 hold rests on the potassium alone, whatever the
         // discharge documents say (R1).
-        if (met && !held) {
+        if (!met && !held) {
+          // §2: the condition, which names post-discharge labs, is not met (no result after discharge,
+          // or one at or above the limit): keep the order held and create a Task due when the line
+          // says the result is expected (the window: a day either side). With no result after
+          // discharge the decision rests on the line and on the review of the patient's results after
+          // discharge (from the discharge day), which the stay's last creatinine stands for
+          // (tests/grader.ts: seen only by a complete search); with one, on the line and that result.
+          const expectedIn = EXPECTED_IN.exec(ruling);
+          if (!expectedIn) throw new Error(`${given} ${family}: ${drug}'s resume condition is not met and its line does not say when the result is expected`);
+          const day = Date.parse(`${clinicDate(stay!.period!.end!)}T00:00:00Z`) + Number(expectedIn[1]) * DAY;
+          const item = { ...base(drug, 'conditional', 'defer', drug, ref(one(drug))), due: { from: isoDay(day - DAY), to: isoDay(day + DAY) } };
+          if (scr !== undefined) {
+            own.push({ ...item, decisive: [on, scr.id], atoms: { [on]: lineAtoms, ...atomsOf(scr) } });
+            continue;
+          }
+          const stayScr = (world.all('Observation') as ReadonlyArray<R & { status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> }; effectiveDateTime?: string }>)
+            .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === SCR) && Date.parse(o.effectiveDateTime ?? '') <= discharged)
+            .sort((a, b) => Date.parse(b.effectiveDateTime ?? '') - Date.parse(a.effectiveDateTime ?? ''))[0];
+          if (!stayScr) throw new Error(`${given} ${family}: no creatinine from the stay to stand for the post-discharge review`);
+          own.push({ ...item, decisive: [on, ref(stayScr)], atoms: { [on]: lineAtoms }, review: { id: ref(stayScr), since: clinicDate(stay!.period!.end!) } });
+        } else if (met && !held) {
           // R14, R21: the creatinine is any result after discharge below the limit and newer than
           // every one at or above it. It is named by the first such record the item does not
           // already name; the others are its other routes. When the potassium's report is the only
@@ -195,9 +230,14 @@ export function derive(world: WorldView): Json {
           // must show both: never looser than one fact per record).
           const high = scrs.findIndex((r) => r.value >= Number(limit));
           const below = high === -1 ? scrs : scrs.slice(0, high);
-          const others = below.filter((r) => r.id !== k!.id);
+          const others = below.filter((r) => k === undefined || r.id !== k.id);
           const item = { ...base(drug, 'potassium', 'resume', drug, ref(one(drug))), daily_mg: Number(dose), per_day: 1 };
-          if (others.length === 0) {
+          if (k === undefined) {
+            // No potassium after discharge: §7 cannot hold, and the resume rests on the line and the
+            // creatinine alone.
+            const [first, ...rest] = others;
+            own.push({ ...item, decisive: [on, first!.id], atoms: { [on]: lineAtoms, ...atomsOf(first!) }, ...(rest.length > 0 ? { also: { [first!.id]: rest.map((r) => ({ id: r.id, ...(r.atoms ? { atoms: r.atoms } : {}) })) } } : {}) });
+          } else if (others.length === 0) {
             const text = textOf(world.get('DocumentReference', k!.id.split('/')[1]!) as Doc).replace(/\s+/g, ' ').toLowerCase();
             const both = [...k!.atoms!, ...scr!.atoms!].sort((a, b) => text.indexOf(a.toLowerCase()) - text.indexOf(b.toLowerCase()));
             own.push({ ...item, decisive: [on, k!.id], atoms: { [on]: lineAtoms, [k!.id]: both } });
@@ -209,9 +249,9 @@ export function derive(world: WorldView): Json {
             });
           }
         } else {
-          const kSource = held ? { decisive: [k!.id], atoms: atomsOf(k!) } : { decisive: [on, ...(scr ? [scr.id] : [])], atoms: { [on]: lineAtoms, ...(scr ? atomsOf(scr) : {}) } };
+          // §7: the most recent potassium after discharge is above 5.0, whatever the condition says.
           const day = Date.parse(`${clinicDate(k!.at)}T00:00:00Z`);
-          own.push({ ...base(drug, 'potassium', 'hold', drug, ref(one(drug))), due: { from: isoDay(day + 2 * DAY), to: isoDay(day + 7 * DAY) }, ...kSource });
+          own.push({ ...base(drug, 'potassium', 'hold', drug, ref(one(drug))), due: { from: isoDay(day + 2 * DAY), to: isoDay(day + 7 * DAY) }, decisive: [k!.id], atoms: atomsOf(k!) });
         }
       } else if (/:\s*continue\b/i.test(ruling)) {
         const m = one(drug);
@@ -221,13 +261,26 @@ export function derive(world: WorldView): Json {
         // histories decide by their coverage, so each counts as seen when exposed (no atoms).
         if (fills.some((f) => f.drug === drug) && coverage(drug) < COVERED) own.push({ ...base(drug, 'fill_gap', 'flag_order', drug, ref(m)), decisive: showing(drug), atoms: {} });
       } else {
-        // A dose for a drug the chart has (§4, §6): the line's dose replaces the order's.
+        // A dose for a drug the chart has (§4, §6): the line's dose replaces the order's. Where the
+        // fill histories list the drug they decide too (R1): §5(b) blocks the change when its fills
+        // cover under 80% (counted from the first fill when that falls inside the window), and the
+        // drug is flagged instead.
         const m = one(drug);
         const perDay = perDayOf(ruling);
         const daily = mgOf(ruling) * perDay;
         if (dailyDose(m)?.value === daily) throw new Error(`${drug}: a line at the chart's dose without 'continue'`);
         const brand = ingredient(name) !== (drugOf(name)?.ingredient ?? '');
-        own.push({ ...base(drug, fix ? 'precedence' : brand ? 'brand' : 'filler', 'dose', drug, ref(m)), daily_mg: daily, per_day: perDay, ...by(doseAtoms(ruling)) });
+        const filled = fills.some((f) => f.drug === drug);
+        if (filled && coverage(drug) < COVERED) {
+          own.push({ ...base(drug, 'fill_gap', 'flag_order', drug, ref(m)), decisive: showing(drug), atoms: {} });
+          continue;
+        }
+        // The coverage-window class (W5-E): a fill history that lists the drug prints a proportion of
+        // days covered of its own, which §5(b)'s window from the first fill overrides.
+        const printed = filled && showing(drug).some((d) => /proportion of days covered/i.test(textOf(world.get('DocumentReference', d.split('/')[1]!) as Doc)));
+        const cls = fix ? 'precedence' : brand ? 'brand' : printed ? 'coverage_window' : 'filler';
+        const ruled = by(doseAtoms(ruling));
+        own.push({ ...base(drug, cls, 'dose', drug, ref(m)), daily_mg: daily, per_day: perDay, decisive: [...ruled.decisive, ...showing(drug)], atoms: ruled.atoms });
       }
     }
     // §5a: a home order no line addresses would be flagged; this worklist plants none.

@@ -4,12 +4,19 @@
 // reach the same end state, so the gates are shown to read the state and not the oracle's form. The
 // event alternatives (tests/event-cases.ts) are those of each active spec; two more re-check the
 // queue another complete way (R27).
+// W5-E (plan-amendment-w5): the lever items' other correct solutions (leverAlternatives), each
+// present while its item is active: A's are its event's (event-cases.ts: the date search route,
+// the R3 extras, the C1 self-correction, the R38(f) re-sign); B's a BMP order dated in the window
+// beside the Task, a message to the PCP beside it, and the Task given to the signed-in user by
+// another name; the reserve's a stop plus a new order (R21) and a modify with a PCP note on the
+// printed figure (R3).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
-import { AMEND, arrivalRead, change, decisions, DOC, FIRST, finish, firstWrites, message, modify, MR, note, notesFor, order, reads, recheck, RX, script, searchNotes, SPECS_READ, task, W } from '../solution/steps.ts';
+import { LEVER } from '../lever.ts';
+import { AMEND, arrivalReads as arrivalReadsOf, bmp, change, decisions, DOC, exceptWho, finish, firstWritesExcept, message, modify, MR, note, notesFor, order, PRUITT_TASK_TEXT, reads, recheck, RX, script, searchNotes, task, W } from '../solution/steps.ts';
 import { eventAlternatives } from './event-cases.ts';
 
-const arrivalReads = SPECS_READ(ACTIVE).map(arrivalRead);
+const arrivalReads = arrivalReadsOf(ACTIVE);
 // An arrival's inbox item, closed by update_inbox_item.
 export const closeItem = (n: number, action: 'complete' | 'cancel') => ({ name: 'update_inbox_item', input: { task_id: `inbox-a${String(n).padStart(4, '0')}`, action, ...(action === 'cancel' ? { reason: 'Reviewed' } : {}) } });
 const page = (count: number, offset: number) => ({ name: 'list_inbox', input: { queue: 'results', status: 'requested', count, offset } });
@@ -114,10 +121,10 @@ export const alternatives: Alternative[] = [
     id: 'roberts_held_on_new_potassium_alone',
     why: "Opens none of Earnest Roberts' records; writes a note on his chart, reads the 10/23 potassium of 5.5 that arrives, and leaves lisinopril held with a recheck Task.",
     script: [
-      ...reads([], [], [], ['kim', 'stark']),
-      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      ...reads([], [], [], exceptWho('roberts')),
+      { calls: [...firstWritesExcept('robertsLisinopril'), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
       { calls: recheck() },
-      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, AMEND.robertsR1[1]!] },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, ...decisions().whitcombLisinoprilFix, AMEND.robertsR1[1]!] },
       { calls: notesFor() },
       { calls: [finish()] },
     ],
@@ -147,10 +154,10 @@ export const alternatives: Alternative[] = [
     id: 'roberts_stopped_on_new_potassium_alone',
     why: "Opens none of Earnest Roberts' records; writes a note on his chart, reads the 10/23 potassium of 5.5 that arrives, stops the held lisinopril and adds the recheck Task.",
     script: [
-      ...reads([], [], [], ['kim', 'stark']),
-      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      ...reads([], [], [], exceptWho('roberts')),
+      { calls: [...firstWritesExcept('robertsLisinopril'), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
       { calls: recheck() },
-      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, change(MR.robertsLisinopril, 'stop', 'Potassium 5.5 on 10/23 is above 5.0 (RBC-TOC-02 §7)'), AMEND.robertsR1[1]!] },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, ...decisions().whitcombLisinoprilFix, change(MR.robertsLisinopril, 'stop', 'Potassium 5.5 on 10/23 is above 5.0 (RBC-TOC-02 §7)'), AMEND.robertsR1[1]!] },
       { calls: notesFor() },
       { calls: [finish()] },
     ],
@@ -168,11 +175,12 @@ export const alternatives: Alternative[] = [
     script: script({ recheck: [page(10, 0), page(10, 10), ...arrivalReads] }),
   },
   // R38(b): RBC-TOC-02 states no inbox rule, so an arrival's inbox status is ungraded. The arrivals'
-  // items, in firing order: inbox-a0001 kim-k1, a0002 kim-d2, a0003 stark-s1, a0004 roberts-r1.
+  // items, in firing order: inbox-a0001 kim-k1, a0002 kim-d2, a0003 stark-s1, a0004 roberts-r1, and
+  // a0005 whitcomb-a1 while it is active.
   {
     id: 'arrival_items_completed',
     why: 'Completes each arrival\'s inbox item after reading it and acting on it.',
-    script: script({ extra: [1, 2, 3, 4].map((n) => closeItem(n, 'complete')) }),
+    script: script({ extra: ACTIVE.map((_s, i) => closeItem(i + 1, 'complete')) }),
   },
   {
     id: 'arrival_item_cancelled_blind_then_read',
@@ -225,5 +233,46 @@ export const alternatives: Alternative[] = [
     why: "Section 7: tries to order a second lisinopril for Earnest Roberts after his 10/23 potassium of 5.5, at a dose the 20 mg tablet cannot make; the tool rejects it, so his lisinopril stays held.",
     script: script({ extra: [order('roberts', RX.lisinopril20, 13, 'QD', 'Discharge summary: resume lisinopril')] }),
   },
+  ...leverAlternatives(),
   ...ACTIVE.flatMap((spec) => eventAlternatives(spec, ACTIVE)),
 ];
+
+// W5-E: the lever items' other correct solutions (see the header), each present while its item is
+// active (the A item's are in eventAlternatives).
+function leverAlternatives(): Alternative[] {
+  const out: Alternative[] = [];
+  if (LEVER.includes('B')) {
+    out.push(
+      {
+        id: 'pruitt_task_plus_bmp_order',
+        why: 'Leaves metformin held, creates the Task for the expected result and also orders the post-discharge BMP for 10/24 herself (R3).',
+        script: script({ over: { pruittTask: [W.pruittTask, bmp('pruitt', '2026-10-24', '2026-10-25', 'Post-discharge BMP 3 days after discharge (St. Brigid discharge summary); metformin resume pending SCr < 1.5')] } }),
+      },
+      {
+        id: 'pruitt_task_plus_pcp_message',
+        why: 'Leaves metformin held with the Task and also messages the PCP that the resume waits on the post-discharge BMP.',
+        script: script({ over: { pruittTask: [W.pruittTask, message('Lorraine Pruitt: metformin resume pending labs', PRUITT_TASK_TEXT, [`MedicationRequest/${MR.pruittMetformin}`])] } }),
+      },
+      {
+        id: 'pruitt_task_day_after',
+        why: 'Creates the Task due 10/25, the day after the BMP is expected, inside the window §2 allows (a day either side).',
+        script: script({ over: { pruittTask: [task('pruitt', '2026-10-25', PRUITT_TASK_TEXT, `MedicationRequest/${MR.pruittMetformin}`)] } }),
+      },
+    );
+  }
+  if (LEVER.includes('reserve')) {
+    out.push(
+      {
+        id: 'salazar_by_new_order',
+        why: 'Stops the amlodipine 5 mg order and orders amlodipine 10 mg daily in its place (R21).',
+        script: script({ over: { salazarAmlodipine: [order('salazar', RX.amlodipine10, 10, 'QD', 'St. Brigid discharge summary 10/20: amlodipine 10 mg daily', MR.salazarAmlodipine)] } }),
+      },
+      {
+        id: 'salazar_modified_plus_pcp_note',
+        why: "Changes amlodipine to 10 mg and also tells the PCP why the fill history's printed 60% is not §5(b)'s coverage (R3).",
+        script: script({ over: { salazarAmlodipine: [W.salazarAmlodipine, message('Victor Salazar: amlodipine fills', "Victor Salazar's outside fill history prints a 180-day proportion of days covered of 60% for amlodipine, but he first filled it on 07/02, inside the window, and has refilled on time since; per RBC-TOC-02 §5(b) the coverage counts from that first fill (100%), so I changed the dose to the summary's 10 mg daily.", [`MedicationRequest/${MR.salazarAmlodipine}`])] } }),
+      },
+    );
+  }
+  return out;
+}

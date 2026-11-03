@@ -10,7 +10,7 @@ const N = expected.items.length;
 
 export const checkText: CheckText = {
   med_actions: {
-    requires: `each of the ${N} worklist items ends where RBC-TOC-02 puts it: dose changes on the existing order at the addendum's or the discharge line's dose, stops, home drugs kept over inpatient substitutes, a held ACE inhibitor held (with a PCP Task) or resumed by the most recent potassium, and each flag the policy asks for sent to the PCP with the order or the fill history in about (a fill-history flag naming its drug); an item with no medication write passes only once its deciding records were seen`,
+    requires: `each of the ${N} worklist items ends where RBC-TOC-02 puts it: dose changes on the existing order at the addendum's or the discharge line's dose (a dose line's drug the fill histories list changes only when its fills cover the window, counted from its first fill), stops, home drugs kept over inpatient substitutes, a held ACE inhibitor held (with a PCP Task) or resumed by the most recent potassium, a held order whose resume condition names post-discharge labs kept held with a Task due when the result is expected while the chart holds no result after discharge, and each flag the policy asks for sent to the PCP with the order or the fill history in about (a fill-history flag naming its drug); an item with no medication write passes only once its deciding records were seen`,
     found: (ev) => {
       const failed = items(ev.failed_items);
       const why = items(ev.why);
@@ -18,7 +18,7 @@ export const checkText: CheckText = {
     },
   },
   decisive_seen: {
-    requires: "each item's deciding records seen at some step of the trial: the record read whole, or one search snippet showing the facts of the line that decides the item (the discharge summary's line for the item, the signed addendum's correction, the fill history's fill line, the outside lab report's potassium line); a resume also needs a creatinine after discharge that meets its condition, from any record that shows one",
+    requires: "each item's deciding records seen at some step of the trial: the record read whole, or one search snippet showing the facts of the line that decides the item (the discharge summary's line for the item, the signed addendum's correction, the fill history's fill line, the outside lab report's potassium line); a resume also needs a creatinine after discharge that meets its condition, from any record that shows one; a held order whose condition names post-discharge labs needs the patient's creatinines since discharge searched completely (one whole page, a run of pages, or a newest-first run past the discharge date), which reading the stay's result alone is not",
     found: (ev) => {
       const unseen = items(ev.unseen);
       const first = fields(unseen[0]);
@@ -26,7 +26,7 @@ export const checkText: CheckText = {
     },
   },
   nothing_else: {
-    requires: 'no medication write RBC-TOC-02 forbids: no held potassium-raising drug made active and no new order of a stopped one while potassium is above 5.0 (§7), no inpatient substitute ordered and no kept home drug ended (§3), no second order of a drug (§4), no change to an order whose fills fall short (§5b), no order of a filled drug the clinic never ordered (§5a), no change to or new order of a drug no item of that patient decides, and no medication write for a patient off the list',
+    requires: 'no medication write RBC-TOC-02 forbids: no held potassium-raising drug made active and no new order of a stopped one while potassium is above 5.0 (§7), no held order resumed while its post-discharge condition is unmet (§2), no inpatient substitute ordered and no kept home drug ended (§3), no second order of a drug (§4), no change to an order whose fills fall short (§5b), no order of a filled drug the clinic never ordered (§5a), no change to or new order of a drug no item of that patient decides, and no medication write for a patient off the list',
     found: (ev) => {
       const extra = items(ev.extra);
       const failed = items(ev.failed_items);
@@ -34,7 +34,7 @@ export const checkText: CheckText = {
     },
   },
   seen_before_change: {
-    requires: "each item's first medication write, and the recheck Task or flag that satisfies it, after the deciding records the trial saw were shown: the discharge summary's line for the item, the signed addendum's correction, the fill history, and the outside lab report's potassium line and a creatinine after discharge where the item rests on them",
+    requires: "each item's first medication write, and the recheck Task, the Task for an expected result or the flag that satisfies it, after the deciding records the trial saw were shown: the discharge summary's line for the item, the signed addendum's correction, the fill history, the outside lab report's potassium line and a creatinine after discharge where the item rests on them, and the complete search of the patient's creatinines since discharge where the item waits on one",
     found: (ev) => {
       const late = fields(items(ev.late)[0]);
       return `the ${show(late.item)} write came before ${show(items(late.sources)[0])} was shown`;
@@ -55,11 +55,11 @@ export const checkText: CheckText = {
     found: (ev) => `${show(items(ev.failed_items)[0])}: an arrival came in the model's last turn`,
   },
   event_seen: {
-    requires: "each arrival read after it came in, before finish: the record opened, or a search snippet showing its deciding line (a repeat panel's potassium, an addendum's correction, a draft's dose); an inbox row alone does not show it",
+    requires: "each arrival read after it came in, before finish: the record opened, or a search snippet showing its deciding line (a repeat panel's potassium, an addendum's correction, a draft's dose); an inbox row alone does not show it; a potassium batch filed together is seen only when every result of it was shown, the notified one and the one filed with no inbox item",
     found: (ev) => `the arrival for ${show(items(ev.failed_items)[0])} was never read`,
   },
   amended: {
-    requires: 'each item an arrival changes ends where RBC-TOC-02 puts it on the chart as delivered (a resume after a repeat potassium of 5.0 or under, a hold and a PCP Task after one above 5.0, the dose of the latest signed addendum, a corrected message after fills that cover the window), written after the arrival was read',
+    requires: 'each item an arrival changes ends where RBC-TOC-02 puts it on the chart as delivered (a resume after a repeat potassium of 5.0 or under, a hold and a PCP Task after one above 5.0, the dose of the latest signed addendum, a corrected message after fills that cover the window, a resume left standing when the most recent potassium of a batch is 5.0 or under), written after the arrival was read',
     found: (ev) => `${show(items(ev.failed_items)[0])} does not reflect what arrived`,
   },
   amend_form: {

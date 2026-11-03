@@ -1,132 +1,6 @@
 [
   {
-    "key": "0a6bbc6526cd930d57866f24a6346efde6d9a91b91a86f422ebba22456cbff90",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "0dc6a615d5db10478b2834e668771e156e72e3cf8baaeb5b73a3cc45cb585cfd",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "0eaa9bee79c8d2bd41fa1e4b94b43ddb78089dac22f57dea62064708379baee8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "0eb79b37d8ef51a132e72ed616056e92fa3a5c889ccaa102268d4fd6c16017db",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "1432cfcb9c97ad11feff41b4605985958b8f7f92dc7d03d1036230be33e68356",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "4a7f52ba5c4bfd42798be7b976b792d58260fd995ee9273d14e18481c4ade804",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "4e5f4314c14d439b29519dd6d8d4d4ceb106f45b00042ba2c8d4709dd988546e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "50cabb2a37e7c554ab6bbd1a4f17ce88835a360c6ea3fabf8ff0eaa871a176d2",
+    "key": "0ec15c513f17a01284ea13d8823c3f737b3bdba919eb97ff60ff9b3cce0ce348",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -140,11 +14,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
+      "at": "2026-11-03T10:30:18.376Z"
     }
   },
   {
-    "key": "69555d3458052d84aaaa8219f814be908b451af440148af4241b45d23c1b2340",
+    "key": "12da0443d9f835f29efd16a752b5a68bcb4a8cf9998264219ace488bcf7b3809",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T10:30:18.376Z"
+    }
+  },
+  {
+    "key": "65b5f7e40459b62965fe9b813f3d9f42465886813e5a3d6599b8163242dee17b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T10:30:18.376Z"
+    }
+  },
+  {
+    "key": "82e8634e823ae30740fcaeecc9ac76538d15014ec36568cd1af58d63b88edc66",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -158,61 +68,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "72a405eeae233f7cd6c26696a20053b8d31a74c7d168273aa17f3d8bb7119c4c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "72cf9ca2dcf70a5c58ad4dcc7ae272e4e12d53e14993e05fcdd7d47af5aadd24",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "803cc9901fc202987933093feedc9303af7a27cf21fb422b846600ac85a135ed",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
+      "at": "2026-11-03T10:30:18.376Z"
     }
   },
   {
@@ -234,7 +90,7 @@
     }
   },
   {
-    "key": "8eee59b3d617489043a90ce30364450d55023a2feeeba97ff4902d19b8811c94",
+    "key": "a6b4d6cfa9d8e6f792169edafd7356dfb183bd83a3c4fb1dd32114a78b44dd16",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -248,25 +104,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
+      "at": "2026-11-03T10:30:18.376Z"
     }
   },
   {
-    "key": "a1122b0e9585edf30a1869562328c77a2779f5f5ec5ef46839cb16302b515609",
+    "key": "ad09198c5becc661a07f8e80bd0a23c510f30fc20e7361a10a0774a3fdeb12d2",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
+      "at": "2026-11-03T10:30:18.376Z"
+    }
+  },
+  {
+    "key": "ba407fc3099bf899a89fbb6ec4a7465d39417b03d9add3a246272e08840f2282",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T10:30:18.376Z"
     }
   },
   {
@@ -288,111 +162,21 @@
     }
   },
   {
-    "key": "d3ec3b666b2b2fd18bf9a8ee3866fa36a854ee2e4ae8a1f133c53b7e4baccace",
+    "key": "ef17f6d2d699329c5468bdcc6942d51994bcd2da15d3cdbe952ca100c4a867f2",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "d8f89f0e342d6b20c5d0aaf995552cb1e1fe97e78366e1745be4335d388e861b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "e5b48382e0380ace1dbe5a8628744cc1d7282959fec19c046ee90b8b357d910c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "eb93fb0a1f7c1f80b91d04446c69a09f8186ff66fea93c0f358ac7788e284224",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "ee9a350346d619904d52c5049f820c4cda1908d90a18374f9b07d1ba296e4049",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
-    }
-  },
-  {
-    "key": "ef4d4576f6f74609e3843459e554087812a5c18ec46a9240e5656931a4f50683",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:06.641Z"
+      "at": "2026-11-03T10:30:18.376Z"
     }
   }
 ]

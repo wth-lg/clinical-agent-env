@@ -5,34 +5,48 @@
 // The route (PW4-E3, with mid-trial events, events.ts): read every patient's documents; make the
 // first writes, which decide items no event bears on and so bring each patient's arrivals
 // (after_write); re-check the results queue (one complete page of list_inbox) and read each
-// arrival; then decide the items the arrivals bear on, on the chart as delivered (C1); then the
-// notes and finish. A script is built for a set of active specs (default events.ts ACTIVE), so the
-// per-spec tests (tests/events.test.ts) run the same route with any one spec active.
+// arrival, and after a potassium batch list the patient's potassiums again (the route RBC-TOC-02
+// §2 and §7 name, W5-E); then decide the items the arrivals bear on, on the chart as delivered
+// (C1); then the notes and finish. A script is built for a set of active specs (default events.ts
+// ACTIVE), so the per-spec tests (tests/events.test.ts) run the same route with any one spec active.
+// W5-E: the lever hosts (lever.ts) are on the route while on the list: the A host always (his
+// first write is the resume that brings the batch), the B host (her first write is the §2 Task) and
+// the reserve host (the amlodipine modify) while their item is in LEVER.
 import type { Script, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE, ARRIVAL, SPECS } from '../events.ts';
-import { id, ref } from '../ids.ts';
+import { id, idOf, ref, refOf } from '../ids.ts';
+import { HOSTS, LEVER } from '../lever.ts';
 
-export const PT = { kim: 'pt-0005', stark: 'pt-0004', roberts: 'pt-0044' } as const;
+export const PT = { kim: 'pt-0005', stark: 'pt-0004', roberts: 'pt-0044', whitcomb: idOf(HOSTS.A), pruitt: idOf(HOSTS.B), salazar: idOf(HOSTS.reserve) } as const;
 export type Who = keyof typeof PT;
-export const WHO: readonly Who[] = ['kim', 'stark', 'roberts'];
-const NAME: Record<Who, string> = { kim: 'walter kim', stark: 'terence stark', roberts: 'earnest roberts' };
+// The patients on the list in this LEVER state, in the instruction's order.
+export const WHO: readonly Who[] = ['kim', 'stark', 'roberts', 'whitcomb', ...(LEVER.includes('B') ? ['pruitt' as const] : []), ...(LEVER.includes('reserve') ? ['salazar' as const] : [])];
+export const exceptWho = (...skip: readonly Who[]): Who[] => WHO.filter((w) => !skip.includes(w));
+const NAME: Record<Who, string> = { kim: 'walter kim', stark: 'terence stark', roberts: 'earnest roberts', whitcomb: 'gerald whitcomb', pruitt: 'lorraine pruitt', salazar: 'victor salazar' };
 const PCP = 'Practitioner/pr-okafor';
 
 export const RX = {
   furosemide20: '310429', furosemide40: '313988', carvedilol12_5: '200032', carvedilol6_25: '200031', lisinopril20: '314077', lisinopril10: '314076',
-  pantoprazole40: '314200', kcl20: '198116', glipizide5: '310490', aspirin81: '243670',
+  pantoprazole40: '314200', kcl20: '198116', glipizide5: '310490', aspirin81: '243670', amlodipine5: '197361', amlodipine10: '308135', metformin1000: '860981',
 } as const;
 export const MR = {
   kimFurosemide: id('mr-t4-kim-furosemide'), kimLisinopril: id('mr-t4-kim-lisinopril'), kimKcl: id('mr-t4-kim-kcl'), kimOmeprazole: id('mr-t4-kim-omeprazole'), kimAspirin: id('mr-t4-kim-aspirin'), kimMetoprolol: id('mr-t4-kim-metoprolol'), kimAtorvastatin: id('mr-t4-kim-atorvastatin'),
   starkCarvedilol: id('mr-t4-stark-carvedilol'), starkAtorvastatin: id('mr-t4-stark-atorvastatin'), starkAspirin: id('mr-t4-stark-aspirin'),
   robertsLisinopril: id('mr-t4-roberts-lisinopril'), robertsRosuvastatin: id('mr-t4-roberts-rosuvastatin'),
+  whitcombLisinopril: idOf('mr-t4-whitcomb-lisinopril'), whitcombAmlodipine: idOf('mr-t4-whitcomb-amlodipine'),
+  pruittMetformin: idOf('mr-t4-pruitt-metformin'), pruittAmlodipine: idOf('mr-t4-pruitt-amlodipine'),
+  salazarAmlodipine: idOf('mr-t4-salazar-amlodipine'), salazarAtorvastatin: idOf('mr-t4-salazar-atorvastatin'),
 } as const;
 export const DOC = {
   kimSummary: id('doc-t4-kim-dc'), kimAddendum: id('doc-t4-kim-add'), kimFills: id('doc-t4-kim-fills'), kimLab: id('doc-t4-kim-lab'),
   starkSummary: id('doc-t4-stark-dc'), starkFills: id('doc-t4-stark-fills'), starkOutFills: id('doc-t4-stark-outfills'),
   robertsSummary: id('doc-t4-roberts-dc'), robertsFills: id('doc-t4-roberts-fills'), robertsOutFills: id('doc-t4-roberts-outfills'), robertsLab: id('doc-t4-roberts-lab'),
+  whitcombSummary: idOf('doc-t4-whitcomb-dc'), whitcombFills: idOf('doc-t4-whitcomb-fills'),
+  pruittSummary: idOf('doc-t4-pruitt-dc'), pruittFills: idOf('doc-t4-pruitt-fills'),
+  salazarSummary: idOf('doc-t4-salazar-dc'), salazarFills: idOf('doc-t4-salazar-fills'), salazarOutFills: idOf('doc-t4-salazar-outfills'),
 } as const;
 export type DocKey = keyof typeof DOC;
+export const OBS = { whitcombK: idOf('obs-t4-whitcomb-k-1021'), whitcombScr: idOf('obs-t4-whitcomb-scr-1021'), pruittStayScr: idOf('obs-t4-pruitt-scr-1021') } as const;
 // The id a write of a trial gives a resource it creates: <prefix>-t<seq>, seq counting committed
 // writes from 1 (packages/env/tools/write/commit.ts). A script that changes an order it created
 // names it this way.
@@ -45,11 +59,19 @@ export const meds = (w: Who): ScriptCall => ({ name: 'fhir_search', input: { res
 // The route RBC-TOC-02 implies: each patient's documents since the admission (§1 the summary and
 // any addendum, §5 the fill history, §2/§7 a filed laboratory report), then each one read whole.
 export const docs = (w: Who): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'DocumentReference', patient: PT[w], date_ge: '2026-10-01', sort: '-date' } });
+// The patient's results since the admission (§2 'a result in the patient's results'): one page,
+// sorted newest first from 10/01, so it is a complete review of the days after discharge (R27).
 export const results = (w: Who): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT[w], date_ge: '2026-10-01', sort: '-date' } });
+// The patient's potassiums, newest first (§7 'the most recent potassium after discharge'): the
+// re-search after a potassium arrival that shows every result of its batch (W5-E).
+export const potassiums = (w: Who): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT[w], code: '2823-3', sort: '-date' } });
 const DOCS_OF: Record<Who, readonly DocKey[]> = {
   kim: ['kimSummary', 'kimAddendum', 'kimFills', 'kimLab'],
   stark: ['starkSummary', 'starkFills', 'starkOutFills'],
   roberts: ['robertsSummary', 'robertsFills', 'robertsOutFills', 'robertsLab'],
+  whitcomb: ['whitcombSummary', 'whitcombFills'],
+  pruitt: ['pruittSummary', 'pruittFills'],
+  salazar: ['salazarSummary', 'salazarFills', 'salazarOutFills'],
 };
 export const readDoc = (d: DocKey): ScriptCall => read('DocumentReference', DOC[d]);
 // A targeted search of one patient's notes; its rows show cut snippets of long notes.
@@ -85,6 +107,7 @@ export const task = (w: Who, due: string, description: string, focus?: string): 
 export const bmp = (w: Who, start: string, end: string, reason: string): ScriptCall => ({ name: 'order_service', input: { patient: PT[w], code: '24321-2', priority: 'routine', occurrence_start: start, occurrence_end: end, reason } });
 
 // ---- the oracle's writes, one per item (the filler included), before any arrival ----
+export const PRUITT_TASK_TEXT = 'Metformin stays on hold: the discharge resume condition names post-discharge labs, and the chart holds no creatinine after her 10/21 discharge (the 1.21 is from the morning of discharge). The BMP is expected 10/24 (RBC-TOC-02 §2); please resume at 1000 mg daily if SCr < 1.5.';
 export const W = {
   kimFurosemide: modify(MR.kimFurosemide, { value: 40, unit: 'mg', frequency: 'BID' }, 'Signed discharge addendum 10/19: furosemide 40 mg twice daily (corrects the summary\'s 40 mg daily)', RX.furosemide40),
   kimKcl: change(MR.kimKcl, 'stop', 'St. Brigid discharge summary 10/19: stop potassium chloride'),
@@ -97,6 +120,11 @@ export const W = {
     "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list and the St. Brigid discharge documents do not address it. A sulfonylurea at 76 with CKD stage 3 is a hypoglycemia risk beside his insulin. Per RBC-TOC-02 §5(a) I did not order or change anything; please review.",
     [`DocumentReference/${DOC.starkOutFills}`]),
   robertsLisinopril: change(MR.robertsLisinopril, 'resume', 'Discharge summary: resume when SCr < 1.3; Northgate 10/22: SCr 1.08 and potassium 4.6, the most recent after discharge (RBC-TOC-02 §2, §7)'),
+  // W5-E: the A host's resume (his first write, which brings the batch), the B host's §2 Task, the
+  // reserve host's dose change.
+  whitcombLisinopril: change(MR.whitcombLisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; Northgate 10/21: SCr 1.12 and potassium 4.4, the most recent after discharge (RBC-TOC-02 §2, §7)'),
+  pruittTask: task('pruitt', '2026-10-24', PRUITT_TASK_TEXT, `MedicationRequest/${MR.pruittMetformin}`),
+  salazarAmlodipine: modify(MR.salazarAmlodipine, { value: 10, unit: 'mg', frequency: 'QD' }, "St. Brigid discharge summary 10/20: amlodipine 10 mg daily, increased from 5 mg. His outside fill history covers every day since the first fill on 07/02 (RBC-TOC-02 §5(b)); the network's 180-day figure is not the policy's window", RX.amlodipine10),
 } as const;
 export type WriteKey = keyof typeof W;
 
@@ -120,16 +148,29 @@ export const AMEND = {
     change(MR.robertsLisinopril, 'hold', 'Clinic potassium 5.5 mmol/L on 10/23, the most recent after discharge, is above 5.0 (RBC-TOC-02 §7)'),
     task('roberts', '2026-10-27', 'Lisinopril back on hold: potassium 5.5 mmol/L on 10/23 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium.', `MedicationRequest/${MR.robertsLisinopril}`),
   ],
+  // whitcomb-a1: the batch's most recent potassium is the silent 4.6 (§7, §8): the resume stands,
+  // nothing to write. The hold a reviewer makes on the notified 5.4 instead (the twin's amend, and
+  // whitcomb-a1's near miss): held, and a Task 2 to 7 days after the 10/22 result.
+  whitcombHold: [
+    change(MR.whitcombLisinopril, 'hold', 'Northgate potassium 5.4 mmol/L on 10/22, the most recent after discharge, is above 5.0 (RBC-TOC-02 §7)'),
+    task('whitcomb', '2026-10-26', 'Lisinopril back on hold: potassium 5.4 mmol/L on 10/22 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium.', `MedicationRequest/${MR.whitcombLisinopril}`),
+  ],
 } as const;
 
-// The arrival each spec brings, as a read; its kind of resource from events.ts.
+// The arrival each spec brings, as a read of its focus; its kind of resource from events.ts.
 export const arrivalRead = (spec: string): ScriptCall => {
   const s = SPECS.find((x) => x.id === spec);
   if (s === undefined) throw new Error(`no T4 event ${spec}`);
   const r = s.resources[0]!;
   return read(r.resourceType, r.id!);
 };
-// The results queue, one complete page (13 standing items and at most 9 arrivals).
+// What the route reads for each arrival: its focus, and after a potassium batch the patient's
+// potassiums listed again, which shows every result of the batch (W5-E; R39(a)).
+const FOLLOW_UP: Readonly<Record<string, readonly ScriptCall[]>> = { 'whitcomb-a1': [potassiums('whitcomb')], 'whitcomb-a1-twin': [potassiums('whitcomb')] };
+export const specReads = (spec: string): ScriptCall[] => [arrivalRead(spec), ...(FOLLOW_UP[spec] ?? [])];
+// The reads of every active arrival but `except`'s, in firing order.
+export const arrivalReads = (active: readonly string[] = ACTIVE, except: readonly string[] = []): ScriptCall[] => SPECS_READ(active).filter((s) => !except.includes(s)).flatMap(specReads);
+// The results queue, one complete page (13 standing items and at most 11 arrivals).
 export const inbox: ScriptCall = { name: 'list_inbox', input: { queue: 'results', status: 'requested', count: 50 } };
 
 // ---- the notes (§6) ----
@@ -147,19 +188,34 @@ export const NOTE: Record<Who, string> = {
     'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/19/2026; Northgate outside lab report 10/22/2026 (potassium 4.6 mmol/L, creatinine 1.08 mg/dL), after the clinic draw of 10/20 (potassium 5.3), and any result since; Riverbend Pharmacy and outside pharmacy fill histories 10/20/2026.\n\n' +
     "Lisinopril 20 mg: resumed by the summary's line (SCr under 1.3), and held whenever the most recent potassium after discharge is above 5.0, with a recheck Task (§2, §7).\n\n" +
     'No change: rosuvastatin 10 mg, insulin glargine 22 units at bedtime and insulin lispro 6 units with meals continued.',
+  whitcomb:
+    'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/19/2026; Northgate results of 10/21/2026 (potassium 4.4 mmol/L, creatinine 1.12 mg/dL) and every potassium filed since, the most recent of them read against §7; Riverbend Pharmacy fill history 10/20/2026.\n\n' +
+    "Lisinopril 20 mg: resumed by the summary's line (SCr under 1.5 after discharge) with the most recent potassium after discharge not above 5.0 (§2, §7); a later potassium changes that only if it is the most recent and above 5.0 (§8).\n\n" +
+    'No change: amlodipine 5 mg and atorvastatin 40 mg continued. Fills cover his prescriptions.',
+  pruitt:
+    'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/21/2026; her results since admission (creatinine 2.0 on 10/18 and 1.21 on 10/21, both from the stay; nothing after discharge); Riverbend Pharmacy fill history 10/22/2026.\n\n' +
+    "Metformin 1000 mg: stays on hold. The summary's resume condition names post-discharge labs, and no result after discharge is in the chart; the 10/21 creatinine is from the morning of discharge and does not satisfy it (§2). Task to Dr. Okafor due 10/24, when the BMP is expected.\n\n" +
+    'No change: amlodipine 5 mg and atorvastatin 40 mg continued. Fills cover her prescriptions.',
+  salazar:
+    'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/20/2026; Riverbend Pharmacy and outside pharmacy fill histories 10/21/2026.\n\n' +
+    "Amlodipine: changed to the summary's 10 mg daily (§4, §6). The outside fill history prints a 180-day coverage of 60%, but he first filled amlodipine on 07/02, inside the window, and has refilled on time since, so §5(b) counts the days from that first fill: 100%, taken as prescribed, and the dose change applies.\n\n" +
+    'No change: atorvastatin 40 mg continued; its fills cover the window.',
 };
 export const CITES: Record<Who, string[]> = {
-  kim: [ref('DocumentReference/doc-t4-kim-dc'), ref('DocumentReference/doc-t4-kim-add'), ref('DocumentReference/doc-t4-kim-lab')],
+  kim: [ref('DocumentReference/doc-t4-kim-dc'), ref('DocumentReference/doc-t4-kim-add'), ref('DocumentReference/doc-t4-kim-lab'), ref('DocumentReference/doc-t4-kim-fills')],
   stark: [ref('DocumentReference/doc-t4-stark-dc'), ref('DocumentReference/doc-t4-stark-fills'), ref('DocumentReference/doc-t4-stark-outfills')],
   roberts: [ref('DocumentReference/doc-t4-roberts-dc'), ref('DocumentReference/doc-t4-roberts-lab'), ref('DocumentReference/doc-t4-roberts-fills'), ref('DocumentReference/doc-t4-roberts-outfills')],
+  whitcomb: [refOf('DocumentReference/doc-t4-whitcomb-dc'), `Observation/${OBS.whitcombK}`, `Observation/${OBS.whitcombScr}`, refOf('DocumentReference/doc-t4-whitcomb-fills')],
+  pruitt: [refOf('DocumentReference/doc-t4-pruitt-dc'), `Observation/${OBS.pruittStayScr}`, refOf('DocumentReference/doc-t4-pruitt-fills')],
+  salazar: [refOf('DocumentReference/doc-t4-salazar-dc'), refOf('DocumentReference/doc-t4-salazar-fills'), refOf('DocumentReference/doc-t4-salazar-outfills')],
 };
 // The arrivals a note also cites, by spec, when that spec fired (§6: the documents relied on).
-const CITES_ARRIVAL: Record<string, Who> = { 'kim-k1': 'kim', 'kim-k2': 'kim', 'stark-s1': 'stark', 'stark-s2': 'stark', 'roberts-r1': 'roberts' };
+const CITES_ARRIVAL: Record<string, Who> = { 'kim-k1': 'kim', 'kim-k2': 'kim', 'stark-s1': 'stark', 'stark-s2': 'stark', 'roberts-r1': 'roberts', 'whitcomb-a1': 'whitcomb', 'whitcomb-a1-twin': 'whitcomb' };
 export const note = (w: Who, text: string = NOTE[w], cites: string[] = CITES[w]): ScriptCall => ({
   name: 'write_note',
   input: { patient: PT[w], type: 'progress_note', title: 'Post-discharge medication reconciliation (RBC-TOC-02)', text, cites, cites_policies: ['RBC-TOC-02'] },
 });
-export const finish = (summary = 'Reconciled the three post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.'): ScriptCall => ({ name: 'finish', input: { summary } });
+export const finish = (summary = `Reconciled the ${['three', 'four', 'five', 'six'][WHO.length - 3]} post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.`): ScriptCall => ({ name: 'finish', input: { summary } });
 
 // ---- the route ----
 export interface RouteOpts {
@@ -169,22 +225,24 @@ export interface RouteOpts {
   skip?: readonly DocKey[];
   also?: readonly ScriptCall[];
   noResults?: readonly Who[];
+  only?: readonly Who[];
   // The first writes, the decisions after the re-check, and extra calls in the decisions turn:
   // `over` maps a named write to its replacement calls ([] drops it).
   over?: Partial<Record<FirstKey | DecideKey, readonly ScriptCall[]>>;
   extra?: readonly ScriptCall[];
-  // The re-check: the inbox listing and the arrival reads (default: list_inbox and a read of each
-  // active spec's arrival); `recheck: null` drops the whole turn.
+  // The re-check: the inbox listing and the arrival reads (default: list_inbox and the reads of
+  // each active spec's arrival, specReads); `recheck: null` drops the whole turn.
   recheck?: readonly ScriptCall[] | null;
   notes?: Partial<Record<Who, ScriptCall>>;
 }
 // The first writes: each decides an item no event bears on, and is its patient's first write.
 // The atorvastatin flag comes before the glipizide flag, so stark-s2's mail-order fills arrive after
-// it (a flag that needs correcting).
-export const FIRST = ['kimKcl', 'starkAtorvastatin', 'starkGlipizide', 'robertsLisinopril'] as const;
-export type FirstKey = (typeof FIRST)[number];
+// it (a flag that needs correcting). The lever hosts' come last, so the base cases' created ids
+// (made) keep their numbers.
+export const FIRST: readonly FirstKey[] = ['kimKcl', 'starkAtorvastatin', 'starkGlipizide', 'robertsLisinopril', 'whitcombLisinopril', ...(LEVER.includes('B') ? ['pruittTask' as const] : []), ...(LEVER.includes('reserve') ? ['salazarAmlodipine' as const] : [])];
+export type FirstKey = 'kimKcl' | 'starkAtorvastatin' | 'starkGlipizide' | 'robertsLisinopril' | 'whitcombLisinopril' | 'pruittTask' | 'salazarAmlodipine';
 // The decisions after the re-check, on the chart as delivered.
-const DECIDE = ['kimFurosemide', 'kimLisinopril', 'starkCarvedilol', 'starkAtorvastatinFix', 'robertsLisinoprilFix'] as const;
+const DECIDE = ['kimFurosemide', 'kimLisinopril', 'starkCarvedilol', 'starkAtorvastatinFix', 'robertsLisinoprilFix', 'whitcombLisinoprilFix'] as const;
 export type DecideKey = (typeof DECIDE)[number];
 
 const fired = (active: readonly string[], spec: string) => active.includes(spec);
@@ -198,14 +256,21 @@ export function decisions(active: readonly string[] = ACTIVE): Record<DecideKey,
     starkCarvedilol: fired(active, 'stark-s1') ? [] : [W.starkCarvedilol],
     starkAtorvastatinFix: fired(active, 'stark-s2') ? [AMEND.starkS2] : [],
     robertsLisinoprilFix: fired(active, 'roberts-r1') ? [...AMEND.robertsR1] : [],
+    // whitcomb-a1 leaves the resume; the twin holds on its notified newest value.
+    whitcombLisinoprilFix: fired(active, 'whitcomb-a1-twin') ? [...AMEND.whitcombHold] : [],
   };
 }
-export const firstWrites = (): Record<FirstKey, readonly ScriptCall[]> => ({ kimKcl: [W.kimKcl], starkAtorvastatin: [W.starkAtorvastatin], starkGlipizide: [W.starkGlipizide], robertsLisinopril: [W.robertsLisinopril] });
+export const firstWrites = (): Record<FirstKey, readonly ScriptCall[]> => ({
+  kimKcl: [W.kimKcl], starkAtorvastatin: [W.starkAtorvastatin], starkGlipizide: [W.starkGlipizide], robertsLisinopril: [W.robertsLisinopril],
+  whitcombLisinopril: [W.whitcombLisinopril], pruittTask: [W.pruittTask], salazarAmlodipine: [W.salazarAmlodipine],
+});
+// The first writes of every listed patient but `skip`'s.
+export const firstWritesExcept = (...skip: readonly FirstKey[]): ScriptCall[] => FIRST.filter((k) => !skip.includes(k)).flatMap((k) => firstWrites()[k]);
 // The active specs, in SPECS order (the order they fire in).
 export const SPECS_READ = (active: readonly string[]): string[] => SPECS.filter((s) => active.includes(s.id)).map((s) => s.id);
-export const recheck = (active: readonly string[] = ACTIVE): ScriptCall[] => [inbox, ...SPECS_READ(active).map(arrivalRead)];
+export const recheck = (active: readonly string[] = ACTIVE): ScriptCall[] => [inbox, ...arrivalReads(active)];
 export const notesFor = (active: readonly string[] = ACTIVE, over: Partial<Record<Who, ScriptCall>> = {}): ScriptCall[] =>
-  WHO.map((w) => over[w] ?? note(w, NOTE[w], [...CITES[w], ...SPECS.filter((s) => active.includes(s.id) && CITES_ARRIVAL[s.id] === w).map((s) => `${s.resources[0]!.resourceType}/${s.resources[0]!.id}`)]));
+  WHO.map((w) => over[w] ?? note(w, NOTE[w], [...CITES[w], ...SPECS.filter((s) => active.includes(s.id) && CITES_ARRIVAL[s.id] === w).flatMap((s) => s.resources.map((r) => `${r.resourceType}/${r.id}`))]));
 
 export function route(opts: RouteOpts = {}): Script {
   const active = opts.active ?? ACTIVE;
@@ -216,7 +281,7 @@ export function route(opts: RouteOpts = {}): Script {
   const decideCalls = [...DECIDE.flatMap((k) => decide[k]), ...(opts.extra ?? [])];
   const check = opts.recheck === undefined ? recheck(active) : opts.recheck;
   return [
-    ...reads(opts.skip, opts.also, opts.noResults),
+    ...reads(opts.skip, opts.also, opts.noResults, opts.only),
     ...(firstCalls.length > 0 ? [turn(firstCalls)] : []),
     ...(check === null ? [] : [turn(check)]),
     ...(decideCalls.length > 0 ? [turn(decideCalls)] : []),

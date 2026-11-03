@@ -33,8 +33,38 @@
 // comes from two places: the clinic's own Riverbend Pharmacy dispensing record, and, where the
 // patient fills elsewhere, a claims-network query for fills at other pharmacies. Each outside drug
 // so has a record of its own, which its flag to the PCP links (R15).
+//
+// W5-E (plan-amendment-w5 "T4 discharge-medrec", record-integrity defects; lever.ts LEVER and
+// HOSTS): three list patients the overlay adds (pt-t4-*, numbered after the cohort's last Patient,
+// so no existing id moves), hand-written charts with no Synthea seed (leverHosts):
+//   lever    key              patient                 the item and where its deciding record is
+//   A        pt-t4-whitcomb   Gerald Whitcomb, 71     lisinopril held for AKI, 'Resume home 20 mg
+//            (in every state)                         daily when SCr < 1.5 on post-discharge labs';
+//                                                     Northgate's 10/21 results (potassium 4.4,
+//                                                     creatinine 1.12, interfaced as Observations;
+//                                                     normal, so no inbox item under abnormal-only
+//                                                     routing): resume. The A event (events.ts
+//                                                     whitcomb-a1) then files the 10/22 potassium
+//                                                     batch: 5.4 at 07:50 notified, 4.6 at 16:30
+//                                                     silent; §7's most recent is 4.6, so the
+//                                                     resume stands
+//   B        pt-t4-pruitt     Lorraine Pruitt, 66     metformin held for AKI, 'Resume home 1000 mg
+//                                                     daily when SCr < 1.5 on post-discharge labs;
+//                                                     BMP 3 days after discharge'; her only
+//                                                     creatinines are from the stay (2.0 on
+//                                                     admission, 1.21 on the morning of discharge,
+//                                                     10/21): §2, keep it held and a Task due
+//                                                     10/24 (window 10/23 to 10/25)
+//   reserve  pt-t4-salazar    Victor Salazar, 63      'Amlodipine 10 mg by mouth daily (increased
+//                                                     from 5 mg)'; the outside fill history prints
+//                                                     a 180-day coverage of 60% for amlodipine, first
+//                                                     filled 07/02 and refilled on time: §5(b) counts
+//                                                     from the first fill (100%), so modify to 10 mg
+// The B and reserve hosts are in the world only while their item is in LEVER (a rebuild); the A
+// host always is, so A toggles with its event alone.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { HOSTS, LEVER } from './lever.ts';
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -530,6 +560,217 @@ No prescription fills found at pharmacies other than Riverbend Pharmacy for the 
   return { put, remove };
 }
 
+// ---- W5-E lever hosts (lever.ts HOSTS) -----------------------------------------------------
+// A Patient with the shape of the generated ones (scripts/test/world-tells.test.ts
+// addedPatientTells): the same fields, extensions and identifier forms as a base Patient of the
+// same sex, which the overlay reads, with this patient's own identity, home and birthplace. No
+// identifier: fixtures:build assigns the rule's MRN (packages/env/mrn.ts). The templates are T4's
+// own slots (a patient id written in a task file pins that patient's visits in the hygiene pass,
+// scripts/fixtures-lib.ts literalDatesByTask, so no other task's patient is named here).
+type Pt = Extract<Resource, { resourceType: 'Patient' }>;
+function patient(world: WorldReader, template: string, id: string, family: string, given: string[], birthDate: string, gender: 'male' | 'female', phone: string, line: string, city: string, postalCode: string, marital: ['M' | 'S' | 'W' | 'D', string], mother: string, born: string, geo: [number, number]): Resource {
+  const t = world.get('Patient', template) as Pt;
+  const { identifier: _mrn, ...rest } = t;
+  const ext = (t.extension ?? []).map((e) => {
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName') return { ...e, valueString: mother };
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace') return { ...e, valueAddress: { ...e.valueAddress, city: born } };
+    return e;
+  });
+  const home = t.address?.[0];
+  return {
+    ...rest,
+    id,
+    extension: ext,
+    name: [{ use: 'official', family, given, prefix: [gender === 'female' ? 'Ms.' : 'Mr.'] }],
+    telecom: [{ system: 'phone', value: phone, use: 'home' }],
+    gender,
+    birthDate,
+    address: [{ ...home, extension: (home?.extension ?? []).map((e) => (e.url === 'http://hl7.org/fhir/StructureDefinition/geolocation' ? { ...e, extension: [{ url: 'latitude', valueDecimal: geo[0] }, { url: 'longitude', valueDecimal: geo[1] }] } : e)), line: [line], city, state: 'MA', postalCode, country: 'US' }],
+    maritalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus', code: marital[0], display: marital[1] }], text: marital[1] },
+    generalPractitioner: [OKAFOR],
+  };
+}
+const MALE_TEMPLATE = 'pt-0004';
+const FEMALE_TEMPLATE = 'pt-0042';
+const CAP: [string, string] = ['385093006', 'Community acquired pneumonia'];
+const HTN: [string, string] = ['59621000', 'Essential hypertension'];
+const HLD: [string, string] = ['55822004', 'Hyperlipidemia'];
+const AKI: [string, string] = ['14669001', 'Acute kidney injury'];
+const HELD_FOR_AKI = { status: 'on-hold' as const, statusReason: { text: 'Held during the St. Brigid Regional admission for acute kidney injury (10/2026)' } };
+
+// ---- Gerald Whitcomb, the A host (in every LEVER state). Pneumonia with prerenal AKI, lisinopril
+// held; Northgate's post-discharge results come in over its interface as Observations, and, under
+// its abnormal-only routing, a normal result makes no inbox item. His 10/21 results are normal
+// (potassium 4.4, creatinine 1.12), so the resume line is met: resume. events.ts whitcomb-a1 then
+// files the 10/22 potassium batch after the resume.
+function gerald(world: WorldReader) {
+  const PT = HOSTS.A;
+  const c = chart(PT);
+  const SUMMARY = `St. Brigid Regional - Discharge Summary
+Patient: Gerald Whitcomb   DOB 1955-03-14
+Admitted 2026-10-15, discharged 2026-10-19. Service: Hospital Medicine.
+
+Principal diagnosis: community-acquired pneumonia, right lower lobe.
+Other diagnoses: acute kidney injury (prerenal, with poor oral intake); essential hypertension; hyperlipidemia.
+
+Hospital course: admitted with fever, productive cough and two days of poor intake. Treated with ceftriaxone and azithromycin; the antibiotic course was completed in hospital. Creatinine 1.9 on admission, improving with intravenous fluids. Lisinopril was held on admission. Afebrile from 10/17, on room air at discharge.
+
+Discharge medications:
+- Lisinopril: held for AKI. Resume home 20 mg daily when SCr < 1.5 on post-discharge labs.
+- Amlodipine 5 mg by mouth daily: continue.
+- Atorvastatin 40 mg by mouth nightly: continue.
+
+Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 2 days after discharge, then a potassium 3 days after discharge (Northgate Outpatient Laboratory, results to Riverbend).
+
+Grace Mensah, MD`;
+  const FILLS = `${FILL_HEADER('Gerald Whitcomb', '1955-03-14', '10/20/2026 11:15')}
+12/19/2025   lisinopril 20 mg tablet                        90    90             Maya Okafor, MD                             Riverbend Pharmacy
+12/19/2025   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+01/06/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+03/18/2026   lisinopril 20 mg tablet                        90    90             Maya Okafor, MD                             Riverbend Pharmacy
+03/18/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+04/04/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+06/16/2026   lisinopril 20 mg tablet                        90    90             Maya Okafor, MD                             Riverbend Pharmacy
+06/16/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+07/02/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/14/2026   lisinopril 20 mg tablet                        90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/14/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/30/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy`;
+  const put: Resource[] = [
+    patient(world, MALE_TEMPLATE, PT, 'Whitcomb', ['Gerald', 'Thomas'], '1955-03-14', 'male', '555-0142', '27 Orchard Hill Road', 'Amherst', '01002', ['M', 'Married'], 'Edith Larkin', 'Worcester', [42.3732, -72.5199]),
+    c.encounter('enc-t4-whitcomb-adm', 'IMP', ADMISSION, '2026-10-15T16:35:00-04:00', '2026-10-19T12:40:00-04:00', HOSPITAL, refTo(MENSAH)),
+    c.condition('cond-t4-whitcomb-htn', HTN, '2012-05-08T10:00:00-04:00'),
+    c.condition('cond-t4-whitcomb-hld', HLD, '2015-09-15T10:00:00-04:00'),
+    c.condition('cond-t4-whitcomb-cap', CAP, '2026-10-15T16:35:00-04:00'),
+    c.condition('cond-t4-whitcomb-aki', AKI, '2026-10-15T18:00:00-04:00'),
+    c.lab('obs-t4-whitcomb-scr-1015', SCR, '2026-10-15T17:05:00-04:00', '2026-10-15T18:40:00-04:00', 1.9, 'mg/dL', [0.74, 1.35], 'enc-t4-whitcomb-adm', HOSPITAL),
+    // Northgate's post-discharge panel, interfaced (no scanned report): both normal.
+    c.lab('obs-t4-whitcomb-k-1021', K, '2026-10-21T08:15:00-04:00', '2026-10-21T12:30:00-04:00', 4.4, 'mmol/L', [3.5, 5.1], null, NORTHGATE),
+    c.lab('obs-t4-whitcomb-scr-1021', SCR, '2026-10-21T08:15:00-04:00', '2026-10-21T12:30:00-04:00', 1.12, 'mg/dL', [0.74, 1.35], null, NORTHGATE),
+    c.medication('mr-t4-whitcomb-lisinopril', ['314077', 'lisinopril 20 MG Oral Tablet'], [20, 'mg'], 'QD', '2019-04-02T10:00:00-04:00', 'Essential hypertension', HELD_FOR_AKI),
+    c.medication('mr-t4-whitcomb-amlodipine', ['197361', 'amlodipine 5 MG Oral Tablet'], [5, 'mg'], 'QD', '2019-04-02T10:00:00-04:00', 'Essential hypertension'),
+    c.medication('mr-t4-whitcomb-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2015-09-15T10:00:00-04:00', 'Hyperlipidemia'),
+    c.summary('doc-t4-whitcomb-dc', '2026-10-19T12:05:00-04:00', 'enc-t4-whitcomb-adm', MENSAH, SUMMARY),
+    c.fills('doc-t4-whitcomb-fills', '2026-10-20T11:15:00-04:00', FILLS),
+  ];
+  return { put, remove: [] as Resource[] };
+}
+
+// ---- Lorraine Pruitt, the B host (while 'B' is in LEVER). Prerenal AKI from gastroenteritis,
+// metformin held; the summary's resume line names post-discharge labs, and her chart holds only the
+// stay's creatinines, the last 1.21 on the morning of discharge: RBC-TOC-02 §2, a Task due when
+// the result is expected (3 days after discharge, 10/24).
+function lorraine(world: WorldReader) {
+  const PT = HOSTS.B;
+  const c = chart(PT);
+  const SUMMARY = `St. Brigid Regional - Discharge Summary
+Patient: Lorraine Pruitt   DOB 1960-07-22
+Admitted 2026-10-18, discharged 2026-10-21. Service: Hospital Medicine.
+
+Principal diagnosis: acute kidney injury, prerenal, from volume depletion (viral gastroenteritis).
+Other diagnoses: type 2 diabetes mellitus; essential hypertension; hyperlipidemia.
+
+Hospital course: admitted with three days of vomiting and diarrhea, orthostatic and oliguric; creatinine 2.0 on admission. Treated with intravenous fluids and antiemetics. Metformin held on admission; glucose managed with correctional insulin. Creatinine 1.21 on the morning of discharge. Tolerating a regular diet.
+
+Discharge medications:
+- Metformin: held for AKI. Resume home 1000 mg daily when SCr < 1.5 on post-discharge labs; BMP 3 days after discharge.
+- Amlodipine 5 mg by mouth daily: continue.
+- Atorvastatin 40 mg by mouth nightly: continue.
+
+Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 3 days after discharge.
+
+Omar Haddad, MD`;
+  const FILLS = `${FILL_HEADER('Lorraine Pruitt', '1960-07-22', '10/22/2026 09:30')}
+12/29/2025   metformin ER 1000 mg tablet                    90    90             Maya Okafor, MD                             Riverbend Pharmacy
+12/29/2025   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+01/16/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+03/29/2026   metformin ER 1000 mg tablet                    90    90             Maya Okafor, MD                             Riverbend Pharmacy
+03/29/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+04/16/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+06/27/2026   metformin ER 1000 mg tablet                    90    90             Maya Okafor, MD                             Riverbend Pharmacy
+06/27/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+07/14/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/26/2026   metformin ER 1000 mg tablet                    90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/26/2026   amlodipine 5 mg tablet                         90    90             Maya Okafor, MD                             Riverbend Pharmacy
+10/12/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy`;
+  const put: Resource[] = [
+    patient(world, FEMALE_TEMPLATE, PT, 'Pruitt', ['Lorraine', 'Esther'], '1960-07-22', 'female', '555-0158', '114 Pine Street Apt 3', 'Hadley', '01035', ['D', 'Divorced'], 'Margaret Coyle', 'Pittsfield', [42.3417, -72.5884]),
+    c.encounter('enc-t4-pruitt-adm', 'IMP', ADMISSION, '2026-10-18T02:15:00-04:00', '2026-10-21T13:20:00-04:00', HOSPITAL, refTo(HADDAD)),
+    c.condition('cond-t4-pruitt-t2d', ['44054006', 'Type 2 diabetes mellitus'], '2014-11-03T10:00:00-05:00'),
+    c.condition('cond-t4-pruitt-htn', HTN, '2016-06-21T10:00:00-04:00'),
+    c.condition('cond-t4-pruitt-hld', HLD, '2018-03-12T10:00:00-04:00'),
+    c.condition('cond-t4-pruitt-gastro', ['25374005', 'Gastroenteritis'], '2026-10-18T02:15:00-04:00'),
+    c.condition('cond-t4-pruitt-aki', AKI, '2026-10-18T03:30:00-04:00'),
+    // The stay's creatinines: on admission, and on the morning of discharge (the lure).
+    c.lab('obs-t4-pruitt-scr-1018', SCR, '2026-10-18T02:50:00-04:00', '2026-10-18T03:40:00-04:00', 2.0, 'mg/dL', [0.57, 1.0], 'enc-t4-pruitt-adm', HOSPITAL),
+    c.lab('obs-t4-pruitt-scr-1021', SCR, '2026-10-21T07:10:00-04:00', '2026-10-21T08:35:00-04:00', 1.21, 'mg/dL', [0.57, 1.0], 'enc-t4-pruitt-adm', HOSPITAL),
+    c.lab('obs-t4-pruitt-k-1021', K, '2026-10-21T07:10:00-04:00', '2026-10-21T08:35:00-04:00', 4.1, 'mmol/L', [3.5, 5.1], 'enc-t4-pruitt-adm', HOSPITAL),
+    c.medication('mr-t4-pruitt-metformin', ['860981', '24 HR metformin hydrochloride 1000 MG Extended Release Oral Tablet'], [1000, 'mg'], 'QD', '2014-11-03T10:00:00-05:00', 'Type 2 diabetes mellitus', HELD_FOR_AKI),
+    c.medication('mr-t4-pruitt-amlodipine', ['197361', 'amlodipine 5 MG Oral Tablet'], [5, 'mg'], 'QD', '2016-06-21T10:00:00-04:00', 'Essential hypertension'),
+    c.medication('mr-t4-pruitt-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2018-03-12T10:00:00-04:00', 'Hyperlipidemia'),
+    c.summary('doc-t4-pruitt-dc', '2026-10-21T12:50:00-04:00', 'enc-t4-pruitt-adm', HADDAD, SUMMARY),
+    c.fills('doc-t4-pruitt-fills', '2026-10-22T09:30:00-04:00', FILLS),
+  ];
+  return { put, remove: [] as Resource[] };
+}
+
+// ---- Victor Salazar, the reserve host (while 'reserve' is in LEVER). Hypertensive urgency; the
+// discharge raises amlodipine to 10 mg. He fills amlodipine at a supermarket pharmacy, so it is in
+// the claims-network query, whose header prints the network's 180-day proportion of days covered
+// (60%, below 80%) for a drug first filled 07/02 and refilled on time ever since: §5(b) counts the
+// days from the first fill (100%), so the dose change applies.
+function victor(world: WorldReader) {
+  const PT = HOSTS.reserve;
+  const c = chart(PT);
+  const SUMMARY = `St. Brigid Regional - Discharge Summary
+Patient: Victor Salazar   DOB 1963-01-30
+Admitted 2026-10-18, discharged 2026-10-20. Service: Hospital Medicine.
+
+Principal diagnosis: hypertensive urgency (blood pressure 196/112 with headache; no end-organ injury on evaluation).
+Other diagnoses: essential hypertension; hyperlipidemia.
+
+Hospital course: admitted from the emergency department with a severe headache and blood pressure 196/112; troponin, creatinine and head CT unremarkable. Blood pressure controlled after the calcium channel blocker dose was raised. Home atorvastatin continued.
+
+Discharge medications:
+- Amlodipine 10 mg by mouth daily (increased from 5 mg).
+- Atorvastatin 40 mg by mouth nightly: continue.
+
+Follow-up: Riverbend Family Medicine within 7 days with a blood pressure check.
+
+Samuel Boateng, MD`;
+  const FILLS = `${FILL_HEADER('Victor Salazar', '1963-01-30', '10/21/2026 10:40')}
+12/10/2025   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+03/10/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+06/08/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy
+09/06/2026   atorvastatin 40 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy`;
+  const OUTSIDE_FILLS = `${FILL_HEADER('Victor Salazar', '1963-01-30', '10/21/2026 10:44', true)}
+07/02/2026   amlodipine 5 mg tablet                         30    30             Maya Okafor, MD                             Valley Market Pharmacy
+08/01/2026   amlodipine 5 mg tablet                         30    30             Maya Okafor, MD                             Valley Market Pharmacy
+08/31/2026   amlodipine 5 mg tablet                         30    30             Maya Okafor, MD                             Valley Market Pharmacy
+09/30/2026   amlodipine 5 mg tablet                         30    30             Maya Okafor, MD                             Valley Market Pharmacy
+
+Adherence summary (claims network): amlodipine, proportion of days covered (180-day window): 60%, below 80%.`;
+  const put: Resource[] = [
+    patient(world, MALE_TEMPLATE, PT, 'Salazar', ['Victor', 'Manuel'], '1963-01-30', 'male', '555-0171', '8 Mill River Lane', 'South Hadley', '01075', ['M', 'Married'], 'Carmen Ortega', 'Holyoke', [42.2584, -72.5745]),
+    c.encounter('enc-t4-salazar-adm', 'IMP', ADMISSION, '2026-10-18T19:10:00-04:00', '2026-10-20T11:30:00-04:00', HOSPITAL, refTo(BOATENG)),
+    c.condition('cond-t4-salazar-htn', HTN, '2024-03-11T10:00:00-04:00'),
+    c.condition('cond-t4-salazar-hld', HLD, '2021-08-09T10:00:00-04:00'),
+    c.condition('cond-t4-salazar-urgency', ['706882009', 'Hypertensive urgency'], '2026-10-18T19:10:00-04:00'),
+    c.medication('mr-t4-salazar-amlodipine', ['197361', 'amlodipine 5 MG Oral Tablet'], [5, 'mg'], 'QD', '2026-06-30T10:00:00-04:00', 'Essential hypertension'),
+    c.medication('mr-t4-salazar-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2021-08-09T10:00:00-04:00', 'Hyperlipidemia'),
+    c.summary('doc-t4-salazar-dc', '2026-10-20T11:05:00-04:00', 'enc-t4-salazar-adm', BOATENG, SUMMARY),
+    c.fills('doc-t4-salazar-fills', '2026-10-21T10:40:00-04:00', FILLS),
+    c.fills('doc-t4-salazar-outfills', '2026-10-21T10:44:00-04:00', OUTSIDE_FILLS, true),
+  ];
+  return { put, remove: [] as Resource[] };
+}
+
+// The hosts a LEVER state puts: the A host always, the B and reserve hosts while their item is
+// active (tests/lever.test.ts runs this for every state on the committed world).
+export function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
+  return [...gerald(world).put, ...(lever.includes('B') ? lorraine(world).put : []), ...(lever.includes('reserve') ? victor(world).put : [])];
+}
+
 // A time written on the minute (':00' seconds) gets a second of its own, a hash of its resource and
 // field, as a chart's clock has (generated times never stand on ':00'; scripts/test/world-tells).
 const fnv = (text: string) => {
@@ -558,9 +799,10 @@ const overlay: Overlay = {
     'pr-t4-haddad': 'pr-haddad',
   },
   build(world: WorldReader) {
+    const lever: readonly string[] = LEVER;
     const parts = [walter(world), terence(world), adelaide(world), earnest(world)];
     return {
-      put: [BOATENG, MENSAH, FITZGERALD, HADDAD, OUTSIDE_LAB, ...parts.flatMap((p) => p.put)].map((r) => seconds(r, `${r.resourceType}/${r.id}`) as Resource),
+      put: [BOATENG, MENSAH, FITZGERALD, HADDAD, OUTSIDE_LAB, ...parts.flatMap((p) => p.put), ...leverHosts(world, lever)].map((r) => seconds(r, `${r.resourceType}/${r.id}`) as Resource),
       remove: parts.flatMap((p) => p.remove).map((r) => ({ resourceType: r.resourceType, id: r.id! })),
       lint: {
         thresholds: [
@@ -569,6 +811,15 @@ const overlay: Overlay = {
           { quantity: 'scr', threshold: 1.3, value: 1.08, label: 'creatinine in the Roberts outside lab report' },
           { quantity: 'potassium', threshold: 5.0, value: 4.6, label: 'potassium in the Roberts outside lab report' },
           { quantity: 'potassium', threshold: 5.0, value: 5.3, label: 'potassium in the Roberts clinic draw of 10/20' },
+          // W5-E: the A host's 10/21 results against the resume line and §7 (the batch's values are
+          // in events.ts; tests/lever.test.ts holds them to the margin), the B host's stay
+          // creatinines against her resume line.
+          { quantity: 'scr', threshold: 1.5, observation: 'obs-t4-whitcomb-scr-1021', label: 'creatinine in the Whitcomb post-discharge results' },
+          { quantity: 'potassium', threshold: 5.0, observation: 'obs-t4-whitcomb-k-1021', label: 'potassium in the Whitcomb post-discharge results' },
+          ...(lever.includes('B') ? [
+            { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t4-pruitt-scr-1021', label: 'creatinine on the morning of the Pruitt discharge (the stay result)' },
+            { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t4-pruitt-scr-1018', label: 'creatinine on the Pruitt admission' },
+          ] : []),
         ],
       },
     };

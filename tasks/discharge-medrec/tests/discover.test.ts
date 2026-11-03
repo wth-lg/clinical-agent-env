@@ -46,7 +46,7 @@ import { cases, trial } from '../../../packages/grader/matrix/matrix.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
 import { SPECS } from '../events.ts';
 import { expected } from '../expected.ts';
-import { ref } from '../ids.ts';
+import { ref, refOf } from '../ids.ts';
 import { firstSeen, firstSeenBy } from './grader.ts';
 
 // Plain input (R6): records an item rests on that are not its trap. Earnest Roberts' creatinine
@@ -56,7 +56,15 @@ import { firstSeen, firstSeenBy } from './grader.ts';
 const PLAIN_INPUT: ReadonlyArray<{ id: string; atoms?: readonly string[]; why: string }> = [
   { id: ref('Observation/obs-t4-roberts-scr-1020'), why: "roberts-lisinopril: the clinic creatinine of 1.24 on 10/20 meets the summary's 'SCr < 1.3'; it is the condition, not the trap" },
   { id: ref('DocumentReference/doc-t4-roberts-lab'), atoms: ['Creatinine 1.08'], why: "roberts-lisinopril: the report's creatinine line meets the same condition" },
+  // W5-E: the A host's 10/21 results are his resume's plain input; its trap is the batch that
+  // arrives after the resume (events.ts whitcomb-a1), not on any page before a write.
+  { id: refOf('Observation/obs-t4-whitcomb-k-1021'), why: "whitcomb-lisinopril: the potassium of 4.4 on 10/21 is the condition's input, not the trap" },
+  { id: refOf('Observation/obs-t4-whitcomb-scr-1021'), why: "whitcomb-lisinopril: the creatinine of 1.12 on 10/21 meets the summary's 'SCr < 1.5'; it is the condition, not the trap" },
 ];
+// A record that stands for a review of the chart (expected.ts Item.review, W5-E): seeing it on a
+// page is not the review, and the page-1 rule does not apply to it (R31: the trap is the absence
+// it stands for, shown only by a complete search). It is listed apart for that reason.
+const REVIEW = new Set(expected.items.flatMap((x) => (x.review ? [x.review.id] : [])));
 const plain = (id: string, atoms?: readonly string[]) => PLAIN_INPUT.some((p) => p.id === id && JSON.stringify(p.atoms ?? null) === JSON.stringify(atoms ?? null));
 // Every way a record of an item is seen, as [record, atoms] pairs (atoms absent: exposure), the
 // trap-deciding ones only: several items share one discharge summary, each with its own line, so a
@@ -65,13 +73,13 @@ const ROUTES: ReadonlyArray<readonly [string, readonly string[] | undefined]> = 
   ...new Map(
     expected.items
       .flatMap((x) => x.decisive.flatMap((d) => [[d, x.atoms[d]] as const, ...(x.also?.[d] ?? []).map((s) => [s.id, s.atoms] as const)]))
-      .filter(([d, atoms]) => !plain(d, atoms))
+      .filter(([d, atoms]) => !plain(d, atoms) && !REVIEW.has(d))
       .map(([d, atoms]) => [`${d}\n${JSON.stringify(atoms ?? null)}`, [d, atoms] as const]),
   ).values(),
 ];
 // The trap-deciding records: page 1 of a broad search may not expose one (an exposed note is shown
 // whole, so it is seen whatever its atoms).
-const DECISIVE = [...new Set(expected.items.flatMap((x) => x.decisive).filter((d) => !plain(d)))];
+const DECISIVE = [...new Set(expected.items.flatMap((x) => x.decisive).filter((d) => !plain(d) && !REVIEW.has(d)))];
 const PATIENT_IDS = expected.patients.map((p) => p.patient.split('/')[1]!);
 
 // Lures (R19): records that tempt the wrong action but cannot decide an item. They may show on page 1
@@ -81,6 +89,10 @@ const LURES: ReadonlyArray<{ id: string; tempts: string }> = [
   { id: ref('Observation/obs-t4-roberts-k-1020'), tempts: "roberts-lisinopril: the clinic potassium of 5.3 on 10/20 tempts a hold; the 10/22 report's 4.6 is the most recent and decides" },
   { id: ref('Observation/obs-t4-kim-scr-1016'), tempts: 'kim-lisinopril: the inpatient creatinine of 1.9 tempts a hold on creatinine; the potassium decides' },
   { id: ref('Observation/obs-t4-roberts-scr-1015'), tempts: 'roberts-lisinopril: the admission creatinine of 2.1 tempts a hold; it is before discharge' },
+  // W5-E: the A host's admission creatinine; the B host's stay creatinines (the 1.21 of the
+  // discharge morning stands for her post-discharge review, REVIEW, and tempts the resume).
+  { id: refOf('Observation/obs-t4-whitcomb-scr-1015'), tempts: 'whitcomb-lisinopril: the admission creatinine of 1.9 tempts a hold; it is before discharge' },
+  { id: refOf('Observation/obs-t4-pruitt-scr-1018'), tempts: 'pruitt-metformin: the admission creatinine of 2.0 is from the stay' },
 ];
 
 // The stand-in first broad searches: what a reviewer opening this worklist runs first, before any
@@ -172,9 +184,10 @@ describe('T4 worklist discoverability', async () => {
     expect(firstSeenBy([step], summary, x.atoms[summary])).not.toBeNull();
   });
 
-  it('no lure is a decisive record, and every plain input is one (R19, R6)', () => {
+  it('no lure is a decisive record, every plain input is one, and every review stand-in is decisive by its review alone (R19, R6, R31)', () => {
     expect(LURES.filter((l) => expected.items.some((x) => x.decisive.includes(l.id) || Object.values(x.also ?? {}).flat().some((s) => s.id === l.id)))).toEqual([]);
     expect(PLAIN_INPUT.filter((p) => !expected.items.some((x) => x.decisive.includes(p.id) || Object.values(x.also ?? {}).flat().some((s) => s.id === p.id)))).toEqual([]);
+    for (const id of REVIEW) expect(expected.items.filter((x) => x.decisive.includes(id) && x.review?.id !== id), id).toEqual([]);
   });
 
   // PW4-E3: the mid-trial arrivals (events.ts) are absent before their trigger (each fires after the
