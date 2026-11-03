@@ -17,7 +17,7 @@ import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
 import { assignMrns, checkMrns } from '../packages/env/mrn.ts';
-import { applyOverlays, patientRefs, type Overlay, type World } from '../packages/env/overlay.ts';
+import { applyOverlays, patientRefs, type Overlay, type OverlayEdits, type TaskId, type World } from '../packages/env/overlay.ts';
 import { plantedClock, profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
 import { Store, type Resource } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
@@ -43,8 +43,9 @@ const OVERLAY_SOURCES = [
 
 const posix = (p: string) => p.split('\\').join('/');
 
-export function taskOverlays(): string[] {
-  const tasks = join(repo, 'tasks');
+// The tasks root (`<root>/tasks/<id>/...`) is the repo's; a test hands the build a temporary one.
+export function taskOverlays(root = repo): string[] {
+  const tasks = join(root, 'tasks');
   if (!existsSync(tasks)) return [];
   return readdirSync(tasks, { withFileTypes: true })
     .filter((e) => e.isDirectory() && existsSync(join(tasks, e.name, 'overlay.ts')))
@@ -52,9 +53,9 @@ export function taskOverlays(): string[] {
     .sort();
 }
 
-export async function loadOverlays(files: readonly string[]): Promise<Overlay[]> {
+export async function loadOverlays(files: readonly string[], root = repo): Promise<Overlay[]> {
   const overlays: Overlay[] = [];
-  for (const f of files) overlays.push((await import(pathToFileURL(join(repo, f)).href)).default as Overlay);
+  for (const f of files) overlays.push((await import(pathToFileURL(join(root, f)).href)).default as Overlay);
   return overlays;
 }
 
@@ -89,13 +90,13 @@ async function prunedDefinitions(types: readonly string[]): Promise<unknown> {
 
 // The task files, each with the task it belongs to (tasks/<id>/** and tasks/<id>.check-text.ts are
 // task <id>), for the hygiene pass's dates (fixtures-lib.ts literalDatesByTask).
-export function taskLiteralDates(): Map<string, Set<string>> {
+export function taskLiteralDates(root = repo): Map<string, Set<string>> {
   const files: Array<{ task: string; text: string }> = [];
   const walk = (dir: string, task: string | null) => {
-    for (const e of readdirSync(join(repo, dir), { withFileTypes: true })) {
+    for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
       const rel = `${dir}/${e.name}`;
       if (e.isDirectory()) walk(rel, task ?? e.name);
-      else if (/\.(ts|md|toml|json|txt)$/.test(e.name)) files.push({ task: task ?? e.name.replace(/\.check-text\.ts$/, ''), text: readFileSync(join(repo, rel), 'utf8') });
+      else if (/\.(ts|md|toml|json|txt)$/.test(e.name)) files.push({ task: task ?? e.name.replace(/\.check-text\.ts$/, ''), text: readFileSync(join(root, rel), 'utf8') });
     }
   };
   walk('tasks', null);
@@ -149,22 +150,28 @@ export function writtenCharts(overlays: readonly Overlay[], base: readonly Resou
 const CLINIC_PCP = 'pr-okafor';
 
 // The world as fixtures:build assembles it: hygiene, the base profile, the overlays, the world
-// profile. fixtures:lint takes its specs from here, so their ids are the committed world's.
-export async function assembleWorld(): Promise<{ world: World; overlays: Overlay[]; overlayFiles: string[]; baseMeta: { ndjson_sha256: string; resources: number }; report: HygieneReport }> {
+// profile. fixtures:lint takes its specs from here, so their ids are the committed world's. The
+// tasks come from `tasksRoot` (the repo; a test hands it a temporary root holding one task).
+// `edits` is what each task's overlay returned from build in this run, as it wrote it (before the
+// time forms), for scripts/test/lever-invariant.test.ts to read the lever lists from.
+export async function assembleWorld(opts: { tasksRoot?: string } = {}): Promise<{ world: World; overlays: Overlay[]; overlayFiles: string[]; edits: Partial<Record<TaskId, OverlayEdits>>; baseMeta: { ndjson_sha256: string; resources: number }; report: HygieneReport }> {
+  const root = opts.tasksRoot ?? repo;
   const baseBytes = readFileSync(join(repo, BASE));
   const baseMeta = JSON.parse(readFileSync(join(repo, BASE_META), 'utf8')) as { ndjson_sha256: string; resources: number };
   const baseSha = sha256(gunzip(baseBytes));
   if (baseSha !== baseMeta.ndjson_sha256) throw new Error(`${BASE} decompresses to ${baseSha}, but ${BASE_META} says ${baseMeta.ndjson_sha256}; rerun fixtures/synthea/generate.sh`);
   // World hygiene (plan P17j JT2) on the base cohort, before the overlays.
-  const literalDates = taskLiteralDates();
+  const literalDates = taskLiteralDates(root);
   const { resources: cleaned, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates });
-  const overlayFiles = taskOverlays();
+  const overlayFiles = taskOverlays(root);
   // Every resource an overlay writes takes Synthea's time forms (packages/env/profile.ts syntheaForms).
-  const overlays = (await loadOverlays(overlayFiles)).map((o): Overlay => ({
+  const edits: Partial<Record<TaskId, OverlayEdits>> = {};
+  const overlays = (await loadOverlays(overlayFiles, root)).map((o): Overlay => ({
     ...o,
     build: (reader) => {
-      const edits = o.build(reader);
-      return edits.put ? { ...edits, put: edits.put.map(syntheaForms) } : edits;
+      const e = o.build(reader);
+      edits[o.task] = e;
+      return e.put ? { ...e, put: e.put.map(syntheaForms) } : e;
     },
   }));
   // One record shape (packages/env/profile.ts): the occasional fields on the charts no overlay
@@ -187,7 +194,7 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
   // One key order for every resource, at every depth: FHIR element order (packages/env/canonical.ts).
   const order = fhirOrder((await prunedDefinitions([...RESOURCE_TYPES])) as Parameters<typeof fhirOrder>[0]);
   world.resources = world.resources.map((r) => order(r));
-  return { world, overlays, overlayFiles, baseMeta, report };
+  return { world, overlays, overlayFiles, edits, baseMeta, report };
 }
 
 export async function build(outDir: string): Promise<{ stateHash: string; resources: number; hygiene: HygieneReport }> {
