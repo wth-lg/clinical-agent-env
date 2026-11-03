@@ -49,6 +49,17 @@ const ms = (d: string | undefined): number => {
   return Number.isNaN(t) ? -Infinity : t;
 };
 
+// Every Patient a resource references, at any depth.
+function patientsIn(v: unknown, out = new Set<string>()): Set<string> {
+  if (Array.isArray(v)) for (const x of v) patientsIn(x, out);
+  else if (v !== null && typeof v === 'object') {
+    const ref = (v as { reference?: unknown }).reference;
+    if (typeof ref === 'string' && ref.startsWith('Patient/')) out.add(ref.slice(8));
+    for (const x of Object.values(v)) patientsIn(x, out);
+  }
+  return out;
+}
+
 // The first Patient a resource references, at any depth.
 function patientOf(v: unknown): string | undefined {
   if (Array.isArray(v)) {
@@ -98,16 +109,24 @@ export function worldIds(resources: readonly Resource[], addedPatients: Readonly
     if (seen !== undefined && seen !== prefix) throw new Error(`renumber: ${r.resourceType}/${r.id} has prefix ${prefix}, other ${r.resourceType} ids ${seen}`);
     prefixes.set(r.resourceType, prefix);
     const json = r as unknown as Json;
-    const patient = patientOf(r) ?? '￿';
+    // A resource that references an added Patient anywhere is that Patient's (its block); one that
+    // references two added Patients has no one block and is refused.
+    const ownAdded = [...patientsIn(r)].filter((p) => addedPatients.has(p)).sort();
+    if (ownAdded.length > 1) throw new Error(`renumber: ${r.resourceType}/${r.id} references two added Patients (${ownAdded.join(', ')}); a resource of an added Patient is numbered in that Patient's block, so it may reference only one`);
+    const patient = ownAdded[0] ?? patientOf(r) ?? '￿';
     const row: Row = { r, patient, date: ms(dateOf(json)), code: codeOf(json) };
-    const into = addedPatients.has(patient) ? blocks : byType;
-    const key = addedPatients.has(patient) ? `${r.resourceType}/${patient}` : r.resourceType;
+    const into = ownAdded.length === 1 ? blocks : byType;
+    const key = ownAdded.length === 1 ? `${r.resourceType}/${patient}` : r.resourceType;
     into.set(key, [...(into.get(key) ?? []), row]);
   }
   const order = (a: Row, b: Row) => cmp(a.patient, b.patient) || a.date - b.date || cmp(a.code, b.code) || cmp(a.r.id!, b.r.id!);
   const out = new Map<string, string>();
+  // The lowest block in use: the cohort's sequence of a type may not reach it.
+  const slots = [...addedPatients].map((p) => Number(/^pt-(\d{4})$/.exec(p)?.[1] ?? NaN)).filter((n) => n >= 1);
+  const lowest = slots.length > 0 ? Math.min(...slots) : null;
   for (const [type, list] of byType) {
     list.sort(order);
+    if (lowest !== null && list.length >= lowest * 1000 + 1) throw new Error(`renumber: ${list.length} ${type} resources of the cohort reach the block of Patient/pt-${String(lowest).padStart(4, '0')} (${prefixes.get(type)}-${String(lowest).padStart(2, '0')}001)`);
     list.forEach(({ r }, i) => out.set(`${type}/${r.id}`, `${prefixes.get(type)}-${String(i + 1).padStart(5, '0')}`));
   }
   for (const [key, list] of blocks) {

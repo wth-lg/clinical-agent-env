@@ -9,7 +9,8 @@
 // Patients than the task's slots, more than 999 resources of one type for one Patient, a slot
 // number past 99, or a task with no slots adding a Patient.
 import { describe, expect, it } from 'vitest';
-import { applyOverlays, TASKS, type Overlay, type TaskId } from '../overlay.ts';
+import { applyOverlays, checkAddedRanges, TASKS, type Overlay, type TaskId } from '../overlay.ts';
+import { worldIds } from '../renumber.ts';
 import type { Resource } from '../store.ts';
 
 const id4 = (n: number) => `pt-${String(n).padStart(4, '0')}`;
@@ -85,5 +86,40 @@ describe('added Patients take fixed slots per task (W5 F3)', () => {
     const many = Array.from({ length: 1000 }, (_, i) => obs(`obs-t6-k-${i}`, 'pt-t6-k', `2026-01-01T00:${String(i % 60).padStart(2, '0')}:00-05:00`, `code-${i}`));
     expect(() => build([overlay('T6', [patient('pt-t6-k', 'K'), ...many])])).toThrow(/Patient\/pt-0070: 1000 Observation resources, at most 999 in its slot/);
     expect(() => build([overlay('T3', [patient('pt-t3-x', 'X')])])).toThrow(/overlay T3: adds Patient\/pt-t3-x, and T3 declares no added-Patient slots/);
+  });
+
+  // The #215 gate (verifier-phase-P17i-SLOTS-215-1): S1, M1, M2, M3, M4.
+  it('S1: a resource a LEVER toggle can add or remove (OverlayEdits.lever) must sit on an added Patient; one on a cohort Patient fails the build by name', () => {
+    const lever = (put: Resource[], keys: string[], added?: Readonly<Record<string, number>>): Overlay => ({ ...overlay('T1', put, added), build: () => ({ put, lever: keys }) });
+    expect(() => build([lever([patient('pt-t1-a', 'A'), obs('obs-t1-a-cr', 'pt-t1-a')], ['pt-t1-a', 'obs-t1-a-cr'])])).not.toThrow();
+    expect(() => build([lever([obs('obs-t1-x', 'pt-0001')], ['obs-t1-x'], {})])).toThrow(/overlay T1: lever resource Observation\/obs-t1-x sits on the cohort's Patient\/pt-0001; a resource a LEVER toggle adds or removes must sit on an added Patient/);
+    expect(() => build([lever([patient('pt-t1-a', 'A')], ['obs-t1-gone'])])).toThrow(/overlay T1: lever names obs-t1-gone, which the overlay does not add/);
+  });
+
+  it('M1: a resource that references an added Patient anywhere numbers in that Patient\'s block; one that references two added Patients is rejected', () => {
+    const mixed = { ...obs('obs-t1-m', 'pt-0001'), performer: [{ reference: 'Patient/pt-t1-a' }] } as Resource;
+    const w = build([overlay('T1', [patient('pt-t1-a', 'A'), mixed])]);
+    expect(w.ids.T1).toEqual({ 'obs-t1-m': 'obs-61001', 'pt-t1-a': 'pt-0061' });
+    expect(w.synthea).toEqual(build([]).synthea);
+    const two = { ...obs('obs-t1-two', 'pt-t1-a'), performer: [{ reference: 'Patient/pt-t1-b' }] } as Resource;
+    expect(() => build([overlay('T1', [patient('pt-t1-a', 'A'), patient('pt-t1-b', 'B'), two])])).toThrow(/renumber: Observation\/obs-t1-two references two added Patients \(pt-0061, pt-0062\)/);
+  });
+
+  it('M3: a range past pt-0099, or one inside the cohort, or two that overlap, is rejected when TASKS is checked', () => {
+    expect(() => checkAddedRanges([['T1', { first: 98, count: 3 }]], 60)).toThrow(/overlay: T1's added-Patient slots reach pt-0100, past pt-0099/);
+    expect(() => checkAddedRanges([['T1', { first: 60, count: 3 }]], 60)).toThrow(/inside the cohort/);
+    expect(() => checkAddedRanges([['T1', { first: 61, count: 3 }], ['T2', { first: 63, count: 3 }]], 60)).toThrow(/overlap/);
+    expect(() => checkAddedRanges([['T1', { first: 61, count: 3 }], ['T2', { first: 64, count: 3 }]], 60)).not.toThrow();
+  });
+
+  it('M4: an Overlay.added key that is not a Patient key of the task is rejected', () => {
+    expect(() => build([overlay('T1', [patient('pt-t1-a', 'A')], { 'pt-t1-a': 0, 'pt-t6-zz': 1 })])).toThrow(/overlay T1: added names pt-t6-zz, which is not a Patient key of T1 \(pt-t1-<rest>\)/);
+    expect(() => build([overlay('T1', [patient('pt-t1-a', 'A')], { 'pt-t1-a': 0, foo: 1 })])).toThrow(/added names foo, which is not a Patient key of T1/);
+  });
+
+  it('M2: a cohort sequence that reaches a block in use fails loudly', () => {
+    const many = Array.from({ length: 61001 }, (_, i) => generated(i + 1, 'pt-0001', `2026-01-01T00:00:${String(i % 60).padStart(2, '0')}-05:00`));
+    expect(() => worldIds([...many, obs('obs-61x', 'pt-0061')], new Set(['pt-0061']))).toThrow(/renumber: 61001 Observation resources of the cohort reach the block of Patient\/pt-0061 \(obs-61001\)/);
+    expect(() => worldIds(many)).not.toThrow();
   });
 });
