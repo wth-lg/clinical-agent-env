@@ -1,9 +1,9 @@
 // Done-when clauses (5) and (6) against the real summary and audit-check (plan phases P12 and
 // P21). scripts/donewhen.ts reads results/runs/final-1, results/tasks-final.json and
 // fixtures/manifest.json under its working directory, so each case is a temp root holding a
-// fixture run of FINAL_TRIALS_PER_TASK trials per task there, a freeze of the two fixture tasks, a
-// world manifest at the records' initial hash, the two tasks as directories under tasks/, and the
-// repo's cli/, packages/ and node_modules linked in; DONEWHEN_CLI is the real `node cli/index.ts`.
+// fixture run of FINAL_TRIALS_PER_TASK trials per task there, a freeze of the two fixture tasks at
+// the records' versions and world, the two tasks as directories under tasks/, and the repo's
+// cli/, packages/ and node_modules linked in; DONEWHEN_CLI is the real `node cli/index.ts`.
 // The clauses must flip PASS/FAIL exactly with the exit codes those commands give on the same
 // fixture (P21 gate: 19 trials, 15/20, a current GRADER_ERROR, replay.json removed, a record on
 // another world hash or task_version; and PASS with one GRADER_ERROR regraded to FAIL).
@@ -18,15 +18,16 @@ import { repoRoot, runScript, tempDir, write } from './helpers.ts';
 const N = FINAL_TRIALS_PER_TASK;
 const RUN = 'results/runs/final-1';
 
+const freeze = (over: Record<string, Record<string, unknown>> = {}) => JSON.stringify({
+  schema_version: 1, trials_per_task: N, band: FINAL_PASS_BAND,
+  tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: 'a'.repeat(40), regrades: [], ...over[id] }])),
+});
+
 function rootWith(fixture: Fixture): string {
   const root = tempDir(`donewhen-cli-${fixture}`);
   for (const link of ['cli', 'packages', 'node_modules', 'apps', 'package.json']) symlinkSync(join(repoRoot, link), join(root, link));
   for (const id of TASKS) write(root, `tasks/${id}/task.toml`, `[task]\nid = "${id}"\n`);
-  write(root, 'fixtures/manifest.json', JSON.stringify({ world: { state_hash: 'h-initial' } }));
-  write(root, 'results/tasks-final.json', JSON.stringify({
-    schema_version: 1, trials_per_task: N, band: FINAL_PASS_BAND,
-    tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: 'a'.repeat(40), regrades: [] }])),
-  }));
+  write(root, 'results/tasks-final.json', freeze());
   writeFixtureRun(join(root, RUN), fixture, { trials: N });
   return root;
 }
@@ -69,7 +70,7 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     expect(exit(root, GRADER_ERROR)).toBe(0);
     const c = clauses(root);
     expect(c.four).toMatch(/^PASS \(4\)/);
-    expect(c.five).toMatch(new RegExp(`^PASS \\(5\\).*frozen 2/2; summary: exit 0; t-alpha ${N / 2}/${N}, t-beta ${N / 2}/${N}; every trial started from the world h-initial`));
+    expect(c.five).toMatch(new RegExp(`^PASS \\(5\\).*frozen 2/2; summary: exit 0; t-alpha ${N / 2}/${N}, t-beta ${N / 2}/${N}; 1 initial state hash\\(es\\), every one a frozen task's world`));
     expect(c.six).toMatch(new RegExp(`^PASS \\(6\\).*audit-check --final: exit 0; labelled ${N}/${N} failures, environment 0, grader 0; summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 0`));
   });
 
@@ -116,11 +117,22 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     const c = clauses(root);
     expect(c.five).toMatch(new RegExp(`^FAIL \\(5\\).*summary: exit 1; t-alpha ${N / 2}/${N - 1}`));
     expect(c.six).toMatch(/^FAIL \(6\).*summary grader_error=0: exit 1, GRADER_ERROR 1 at the current grade, history 0/);
-    // The offline regrade (cli regrade appends regrades[]; the recorded outcome stays).
+    // The offline regrade (cli regrade appends regrades[]; the recorded outcome stays). Its
+    // grader_task_version is the next grader's: clause (5) holds the current grades to the
+    // freeze's grader_task_version until the freeze records the regrade.
     putRecord(root, 't-alpha', N - 1, { ...record(root, 't-alpha', N - 1), regrades: [{ grader_version: 'g-next', grader_task_version: 'g-t-alpha-next', outcome: 'FAIL', score: 0, valid: true, changed: true, checks: [{ id: 'G1', kind: 'gate', met: false }], attribution: r.attribution, at: '2026-10-24T00:00:00.000Z' }] });
     expect(exit(root, SUMMARY)).toBe(0);
     expect(exit(root, GRADER_ERROR)).toBe(0);
     expect(exit(root, AUDIT)).toBe(0);
+    const unrecorded = clauses(root);
+    expect(unrecorded.five).toMatch(/^FAIL \(5\).*t-alpha at grader_task_version g-t-alpha-next, frozen g-t-alpha/);
+    expect(unrecorded.six).toMatch(/^PASS \(6\).*summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 1/);
+    // A full regrade moves every t-alpha record to the next grader; the freeze records it.
+    for (let i = 0; i < N - 1; i++) {
+      const x = record(root, 't-alpha', i);
+      putRecord(root, 't-alpha', i, { ...x, regrades: [{ grader_version: 'g-next', grader_task_version: 'g-t-alpha-next', outcome: x.outcome, score: x.score, valid: true, changed: false, checks: x.checks, attribution: x.attribution, at: '2026-10-24T00:00:00.000Z' }] });
+    }
+    writeFileSync(join(root, 'results/tasks-final.json'), freeze({ 't-alpha': { regrades: [{ grader_version: 'g-next', grader_task_version: 'g-t-alpha-next', task_version: 'v-t-alpha-next', at: 'b'.repeat(40), reason: 'grader bug fix' }] } }));
     const after = clauses(root);
     expect(after.five).toMatch(new RegExp(`^PASS \\(5\\).*t-alpha ${N / 2}/${N}`));
     expect(after.six).toMatch(/^PASS \(6\).*summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 1/);
@@ -133,20 +145,23 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     expect(clauses(root).five).toMatch(/^FAIL \(5\).*summary: exit 1/);
   });
 
-  it('clause (5) FAILs on one record that started from another world hash (R14-37), and clause (4) with it', () => {
+  it('clause (5) FAILs on one record that started from a world no task is frozen at (R14-37), and clause (4) with it', () => {
     const root = rootWith('clean');
     const r = record(root, 't-beta', 0);
     putRecord(root, 't-beta', 0, { ...r, state_hash: { ...(r.state_hash as object), initial: 'h-other' } });
     const c = clauses(root);
-    expect(c.four).toMatch(/^FAIL \(4\).*2 distinct initial state hash/);
-    expect(c.five).toMatch(/^FAIL \(5\).*initial state hash h-other is not the world's h-initial/);
+    expect(c.four).toMatch(/^FAIL \(4\).*initial state hash h-other is not a frozen world \(h-initial\)/);
+    expect(c.five).toMatch(/^FAIL \(5\).*initial state hash h-other is not a frozen world \(h-initial\)/);
   });
 
-  it('clause (5) FAILs on one record at another task_version than the frozen one', () => {
+  it('clause (5) FAILs on one record at another task_version or env_version than the frozen one', () => {
     const root = rootWith('clean');
     putRecord(root, 't-beta', 1, { ...record(root, 't-beta', 1), task_version: 'v-t-beta-tuned' });
+    putRecord(root, 't-alpha', 1, { ...record(root, 't-alpha', 1), env_version: 'e-t-alpha-rebuilt' });
     expect(exit(root, SUMMARY)).toBe(0);
-    expect(clauses(root).five).toMatch(/^FAIL \(5\).*t-beta at task_version v-t-beta-tuned, frozen v-t-beta/);
+    const line = clauses(root).five;
+    expect(line).toMatch(/^FAIL \(5\).*t-beta at task_version v-t-beta-tuned, frozen v-t-beta/);
+    expect(line).toContain('t-alpha at env_version e-t-alpha-rebuilt, frozen e-t-alpha');
   });
 
   // An ENV_LIMIT is never rerun, so the batch leaves it as an unsettled attempt; the final run

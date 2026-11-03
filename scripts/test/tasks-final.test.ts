@@ -2,15 +2,20 @@
 // now, redesign 4"): a task is frozen when its final run is about to start, and the final run
 // directory results/runs/final-1 collects each task's 20 trials as it is frozen. For each frozen
 // task the file pins task_version, grader_task_version, env_version, world_hash and
-// oracle_final_hash (cli/matrix.ts checks the last one on every matrix run), frozen_at (the
-// commit the hashes were read from; the freeze commit is its child) and regrades: the only way
-// the grader side moves after the freeze is a grader bug fix with a full offline regrade, recorded
-// there as {grader_version, grader_task_version, task_version, at, reason}; the env side never
-// moves. trials_per_task and band are written from packages/core/cost.ts FINAL_TRIALS_PER_TASK and
+// oracle_final_hash (cli/matrix.ts checks the last one on every matrix run at the frozen world),
+// frozen_at (the commit the hashes were read from, the freeze commit's parent; the reproduce
+// commit of the task's final-1 records, R37) and regrades: the only way the grader side moves
+// after the freeze is a grader bug fix with a full offline regrade, recorded there as
+// {grader_version, grader_task_version, task_version, at, reason}; the task's own files never
+// move. trials_per_task and band are written from packages/core/cost.ts FINAL_TRIALS_PER_TASK and
 // FINAL_PASS_BAND, so scripts/donewhen.ts and this file cannot drift apart.
-// This test fails when a frozen task's hashes at this checkout differ from the file: the task's
-// files, the world or the tools changed (env_version), or the grader changed without a regrade
-// entry (grader_task_version, task_version).
+// The freeze does not pin the shared world on main (R40): a later world rebuild moves every
+// task's current env_version, frozen ones included, while their final-1 records stay valid at
+// the frozen versions (donewhen clause 5 checks them against this file). So this test recomputes
+// each frozen task's versions at its frozen world_hash: it fails when the task's own files
+// (tasks/<id>/**, env side and grader side) or the tools changed since the freeze (env_version),
+// or the grader changed without a regrade entry (grader_task_version, task_version), and not
+// when the world changed.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -51,7 +56,6 @@ export const currentVersions = (t: FrozenTask): { grader_task_version: string; t
 
 const file = join(repoRoot, TASKS_FINAL);
 const doc = (): TasksFinal => JSON.parse(readFileSync(file, 'utf8')) as TasksFinal;
-const WORLD_HASH = (JSON.parse(readFileSync(join(repoRoot, 'fixtures/manifest.json'), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
 
 describe('results/tasks-final.json', () => {
   it('exists and holds the final run size and band from the constants', () => {
@@ -82,13 +86,12 @@ describe('results/tasks-final.json', () => {
     }
   });
 
-  it("a frozen task's env side has not moved, and its grader side only through a recorded regrade", async () => {
+  it("a frozen task's own files and tools have not moved (its env_version at the frozen world), and its grader side only through a recorded regrade", async () => {
     const d = doc();
     const source = nodeTaskSource({ testMode: false });
     for (const [id, t] of Object.entries(d.tasks)) {
-      expect(t.world_hash, `${id}: the world moved since the freeze`).toBe(WORLD_HASH);
-      const now = await taskVersions(await source.get(id), WORLD_HASH);
-      expect(now.env_version, `${id}: env_version moved since the freeze (task files, world or tools)`).toBe(t.env_version);
+      const now = await taskVersions(await source.get(id), t.world_hash);
+      expect(now.env_version, `${id}: env_version at the frozen world moved since the freeze (the task's env files or TOOLS_VERSION)`).toBe(t.env_version);
       const held = currentVersions(t);
       expect(now.grader_task_version, `${id}: grader_task_version moved without a regrade entry in ${TASKS_FINAL}`).toBe(held.grader_task_version);
       expect(now.task_version, `${id}: task_version moved without a regrade entry in ${TASKS_FINAL}`).toBe(held.task_version);

@@ -19,10 +19,13 @@
 // When results/tasks-final.json exists (P21's per-task freeze writes it, scripts/test/tasks-final.test.ts
 // holds its shape), each task it lists is checked against its pinned oracle_final_hash: the matrix
 // fails, naming the task, when the oracle ends in another state. Its shape is
-// {tasks: {<id>: {oracle_final_hash, ...}}}, the hash 64 lowercase hex digits; a file that does not
-// hold that, lists no task, or pins an id that is not a task (a typo or a renamed task, which would
-// leave a task unchecked) is a usage error (exit 2). Without the file, or for a task it does not
-// list (one not frozen yet), the oracle's final hash is printed, unchecked.
+// {tasks: {<id>: {oracle_final_hash, world_hash?, ...}}}, the hashes 64 lowercase hex digits; a file
+// that does not hold that, lists no task, or pins an id that is not a task (a typo or a renamed
+// task, which would leave a task unchecked) is a usage error (exit 2). Without the file, or for a
+// task it does not list (one not frozen yet), the oracle's final hash is printed, unchecked. A pin
+// made at another world (its world_hash is not fixtures/manifest.json's: the shared world was
+// rebuilt after the freeze, R40) is printed unchecked too, since the oracle's final state follows
+// the world; the pin binds at the frozen world, where the task's final run ran.
 // A case whose second run differs leaves both runs under results/replay-mismatch/<task>/ (or
 // $REPLAY_MISMATCH_DIR): each trajectory, raw and stripped, each record, and the first
 // divergent line.
@@ -82,9 +85,12 @@ const TASKS_FINAL = join(REPO, 'results/tasks-final.json');
 // A file as the matrix names it: relative to the repo when it is inside it.
 const shown = (file: string) => (relative(REPO, file).startsWith('..') ? file : relative(REPO, file));
 
+// A pinned oracle final hash and the world it was taken at (absent: any world).
+export interface Pin { hash: string; world?: string }
+
 // Each task's pinned oracle final hash from a tasks-final.json, by task id: empty when the file
-// does not exist, a problem when it does not hold {tasks: {<id>: {oracle_final_hash}}}.
-export function oracleFinalHashes(file: string): Map<string, string> | { problem: string } {
+// does not exist, a problem when it does not hold {tasks: {<id>: {oracle_final_hash, world_hash?}}}.
+export function oracleFinalHashes(file: string): Map<string, Pin> | { problem: string } {
   if (!existsSync(file)) return new Map();
   const name = shown(file);
   let doc: unknown;
@@ -97,12 +103,13 @@ export function oracleFinalHashes(file: string): Map<string, string> | { problem
   if (tasks === null || typeof tasks !== 'object' || Array.isArray(tasks)) return { problem: `${name}: tasks must be an object keyed by task id` };
   const entries = Object.entries(tasks as Record<string, unknown>);
   if (entries.length === 0) return { problem: `${name}: tasks lists no task` };
-  const hashes = new Map<string, string>();
+  const hashes = new Map<string, Pin>();
   for (const [id, t] of entries) {
-    const { oracle_final_hash: hash } = (t ?? {}) as { oracle_final_hash?: unknown };
+    const { oracle_final_hash: hash, world_hash: world } = (t ?? {}) as { oracle_final_hash?: unknown; world_hash?: unknown };
     if (!TASK_ID.test(id)) return { problem: `${name}: tasks.${JSON.stringify(id)} is not a task id` };
     if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return { problem: `${name}: tasks.${id} oracle_final_hash must be 64 lowercase hex digits` };
-    hashes.set(id, hash);
+    if (world !== undefined && (typeof world !== 'string' || !/^[0-9a-f]{64}$/.test(world))) return { problem: `${name}: tasks.${id} world_hash must be 64 lowercase hex digits` };
+    hashes.set(id, { hash, ...(typeof world === 'string' ? { world } : {}) });
   }
   return hashes;
 }
@@ -199,7 +206,7 @@ function listTasks(deps: Deps): number {
 }
 
 // Every task's matrix in turn, then one summary line per task.
-async function all(deps: Deps, out: string | undefined, pinned: ReadonlyMap<string, string>): Promise<number> {
+async function all(deps: Deps, out: string | undefined, pinned: ReadonlyMap<string, Pin>): Promise<number> {
   const ids = (deps.tasks ?? matrixTaskIds)();
   const results: Array<{ id: string; pass: boolean; usage?: string }> = [];
   for (const id of ids) {
@@ -215,7 +222,7 @@ async function all(deps: Deps, out: string | undefined, pinned: ReadonlyMap<stri
 
 // One task's matrix, its lines written to deps.out; a usage problem (not a task id, cannot be
 // loaded) is returned for the caller to print.
-async function one(id: string, deps: Deps, out: string | undefined, pinned: ReadonlyMap<string, string>): Promise<{ code: number; usage?: string }> {
+async function one(id: string, deps: Deps, out: string | undefined, pinned: ReadonlyMap<string, Pin>): Promise<{ code: number; usage?: string }> {
   if (!TASK_ID.test(id)) return { code: 2, usage: `--task ${JSON.stringify(id)} is not a task id (letters, digits, _ and - only)` };
   // One read of tasks/ for the whole run: the instruction and policies the cases are built from
   // and the task every trial resolves are the same files.
@@ -226,6 +233,10 @@ async function one(id: string, deps: Deps, out: string | undefined, pinned: Read
   } catch (e) {
     return { code: 2, usage: `--task: ${(e as Error).message}` };
   }
+  const env = matrixEnv(TASKS_DIR, tasks);
+  const pin = pinned.get(id);
+  const pinApplies = pin !== undefined && (pin.world === undefined || pin.world === env.worldHash);
+  if (pin !== undefined && !pinApplies) deps.out(`oracle final hash of task ${id}: ${shown(deps.tasksFinal ?? TASKS_FINAL)} pins ${pin.hash} at world ${pin.world}, not this checkout's world ${env.worldHash}; unchecked here (R40)`);
   const options: MatrixOptions = {
     policyImports: () => policyImports(join(TASKS_DIR, id)),
     onReplayMismatch: (c, first, again, diff) => {
@@ -233,10 +244,9 @@ async function one(id: string, deps: Deps, out: string | undefined, pinned: Read
       deps.out(`replay mismatch ${id}/${c.id}: ${diff.summary}; both runs in ${dir}`);
     },
     ...(task.checksModule ? { fresh: freshGrader(task, task.checksModule) } : {}),
-    ...(pinned.has(id) ? { oracleFinalHash: pinned.get(id)! } : {}),
+    ...(pinApplies ? { oracleFinalHash: pin.hash } : {}),
     ...deps.options,
   };
-  const env = matrixEnv(TASKS_DIR, tasks);
   let result;
   try {
     result = await runMatrix(env, task, options);

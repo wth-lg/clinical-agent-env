@@ -7,8 +7,10 @@
 //   cli oracle --task all --json        exit 0 when every task passes; {tasks: [{id, score}]}
 //   cli summary <run> --tasks ... --require ... --json
 //                                       exit 0 when the requirements hold;
-//                                       {tasks: {<id>: {passes, trials, task_versions}}, initial_state_hashes: [...],
-//                                        totals: {grader_error, grader_error_history}}
+//                                       {tasks: {<id>: {passes, trials, task_versions, env_versions, grader_task_versions}},
+//                                        initial_state_hashes: [...], totals: {grader_error, grader_error_history}}
+//   cli task-hash --task ... --json     {tasks: [{id, env_version}]}: whether a frozen task's env side
+//                                       has moved on this checkout (informational, R37)
 //   cli audit-check <run> --final --json
 //                                       exit 0 when every failure is labelled and none is
 //                                       environment or grader; {failures, labelled, labelled_environment, labelled_grader}
@@ -28,12 +30,18 @@
 // Clauses (4) and (5) read one summary of results/runs/final-1 (P21): N and the band come from
 // packages/core/cost.ts FINAL_TRIALS_PER_TASK and FINAL_PASS_BAND, and the tasks from
 // results/tasks-final.json, the per-task freeze (scripts/test/tasks-final.test.ts holds its shape).
-// Clause (5) passes only when every task of the checkout is frozen there, each has N valid trials
-// in the band at its frozen task_version, and every trial started from the world in
-// fixtures/manifest.json (R14-37); it names the tasks not frozen yet, and still summarizes the
-// frozen ones. Clause (6) runs `audit-check --final` (R14-33) and `summary --require
-// grader_error=0`, which reads each record's current grade after any offline regrade and prints
-// grader_error_history for disclosure.
+// Both check the records against each task's freeze entry, never against the current checkout
+// (R40: the shared world may be rebuilt after a task's final run, which moves its env_version on
+// main while its records stay valid at the frozen versions). Clause (4): every trial started
+// from a frozen task's world_hash (R14-37). Clause (5) passes only when every task of the
+// checkout is frozen, each has N valid trials in the band, every record is at its frozen
+// task_version and env_version, and every current grade at its frozen grader_task_version (the
+// last regrades entry, else the freeze's); it names the tasks not frozen yet, still summarizes
+// the frozen ones, and, when a frozen task's env_version has moved on this checkout, says the
+// records are historical and names the reproduce commit (frozen_at, R37). Clause (6) runs
+// `audit-check --final` (R14-33) and `summary --require grader_error=0`, which reads each
+// record's current grade after any offline regrade and prints grader_error_history for
+// disclosure.
 //
 // Test hooks, honored only when NODE_ENV=test: DONEWHEN_CLI replaces `node cli/index.ts`
 // (space-separated command prefix); DONEWHEN_MIN_TASKS replaces the minimum of 5 tasks;
@@ -47,7 +55,6 @@ import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../packages/core/cost.ts
 
 const FINAL_RUN = 'results/runs/final-1';
 const TASKS_FINAL = 'results/tasks-final.json';
-const WORLD_MANIFEST = 'fixtures/manifest.json';
 const MODEL = 'claude-opus-5-5';
 const HOSTED_URL = 'https://wth-lg.github.io/clinical-agent-env/';
 const MIN_TASKS = 5;
@@ -196,7 +203,11 @@ function clause3(): Verdict {
 }
 
 // The per-task freeze, results/tasks-final.json: each frozen task's versions. Read once per run.
-type Frozen = { tasks: Record<string, { task_version: string }> };
+type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: string; regrades?: Array<{ grader_task_version: string }> };
+type Frozen = { tasks: Record<string, FrozenTask> };
+const STRING_FIELDS = ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'frozen_at'] as const;
+// The grader_task_version a frozen task's current grades are held to: its last regrade's, else the freeze's.
+const heldGrader = (t: FrozenTask) => t.regrades?.at(-1)?.grader_task_version ?? t.grader_task_version;
 let frozenRead: { frozen: Frozen | null; problem: string } | undefined;
 function readFrozen(): { frozen: Frozen | null; problem: string } {
   if (frozenRead) return frozenRead;
@@ -205,7 +216,7 @@ function readFrozen(): { frozen: Frozen | null; problem: string } {
   try {
     const doc = JSON.parse(readFileSync(file, 'utf8')) as Frozen;
     if (doc === null || typeof doc !== 'object' || doc.tasks === null || typeof doc.tasks !== 'object' || Array.isArray(doc.tasks)) throw new Error('tasks must be an object keyed by task id');
-    for (const [id, t] of Object.entries(doc.tasks)) if (typeof t?.task_version !== 'string') throw new Error(`tasks.${id}.task_version must be a string`);
+    for (const [id, t] of Object.entries(doc.tasks)) for (const k of STRING_FIELDS) if (typeof t?.[k] !== 'string') throw new Error(`tasks.${id}.${k} must be a string`);
     return (frozenRead = { frozen: doc, problem: '' });
   } catch (e) {
     return (frozenRead = { frozen: null, problem: `${TASKS_FINAL}: ${(e as Error).message}` });
@@ -226,16 +237,28 @@ const summaryArgs = (frozenIds: string[]) => [
 ];
 const frozenIds = () => Object.keys(readFrozen().frozen?.tasks ?? {}).sort();
 
-type SummaryJson = { tasks?: Record<string, { passes: number; trials: number; task_versions?: string[] }>; initial_state_hashes?: unknown; totals?: { grader_error?: number; grader_error_history?: number } };
+type SummaryTaskJson = { passes: number; trials: number; task_versions?: string[]; env_versions?: string[]; grader_task_versions?: string[] };
+type SummaryJson = { tasks?: Record<string, SummaryTaskJson>; initial_state_hashes?: unknown; totals?: { grader_error?: number; grader_error_history?: number } };
+
+// R14-37, per R40: every trial started from a frozen task's world (its world_hash in the freeze),
+// not from whatever world the checkout has now.
+function worldCheck(frozen: Frozen, j: SummaryJson | undefined): { pass: boolean; evidence: string } {
+  const worlds = [...new Set(Object.values(frozen.tasks).map((t) => t.world_hash))];
+  const hashes = Array.isArray(j?.initial_state_hashes) ? (j!.initial_state_hashes as unknown[]).filter((h): h is string => typeof h === 'string') : [];
+  if (hashes.length === 0) return { pass: false, evidence: 'no initial state hash' };
+  const other = hashes.filter((h) => !worlds.includes(h));
+  if (other.length > 0) return { pass: false, evidence: `initial state hash ${other.join(', ')} is not a frozen world (${worlds.map((w) => w.slice(0, 12)).join(', ')})` };
+  return { pass: true, evidence: `${hashes.length} initial state hash(es), every one a frozen task's world` };
+}
 
 function clause4(): Verdict {
+  const { frozen, problem } = readFrozen();
+  if (frozen === null) return { pass: false, evidence: problem };
   const r = cli(summaryArgs(frozenIds()));
-  const hashes = (r.json as SummaryJson | undefined)?.initial_state_hashes;
-  if (!Array.isArray(hashes)) return { pass: false, evidence: `${describeExit('summary', r)}, no initial_state_hashes` };
-  return {
-    pass: hashes.length === 1,
-    evidence: `summary: ${hashes.length} distinct initial state hash(es) across trials`,
-  };
+  const j = r.json as SummaryJson | undefined;
+  if (!Array.isArray(j?.initial_state_hashes)) return { pass: false, evidence: `${describeExit('summary', r)}, no initial_state_hashes` };
+  const w = worldCheck(frozen, j);
+  return { pass: w.pass, evidence: `summary: ${w.evidence}` };
 }
 
 function clause5(): Verdict {
@@ -254,34 +277,32 @@ function clause5(): Verdict {
   const tasks = j?.tasks ?? {};
   const rates = Object.entries(tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials}`).join(', ');
   if (rates) parts.push(rates);
-  // Every record of a frozen task at its frozen task_version (summary lists the versions seen).
+  // Every record of a frozen task at its frozen task_version and env_version, and every current
+  // grade at the grader_task_version the freeze holds it to (summary lists the versions seen).
   for (const id of frozenList) {
-    const want = frozen.tasks[id]!.task_version;
-    const seen = tasks[id]?.task_versions ?? [];
-    const other = seen.filter((v) => v !== want);
-    if (other.length > 0) {
-      pass = false;
-      parts.push(`${id} at task_version ${other.join(', ')}, frozen ${want}`);
+    const f = frozen.tasks[id]!;
+    const t = tasks[id];
+    for (const [field, want, seen] of [['task_version', f.task_version, t?.task_versions], ['env_version', f.env_version, t?.env_versions], ['grader_task_version', heldGrader(f), t?.grader_task_versions]] as const) {
+      const other = (seen ?? []).filter((v) => v !== want);
+      if (other.length > 0) {
+        pass = false;
+        parts.push(`${id} at ${field} ${other.join(', ')}, frozen ${want}`);
+      }
     }
   }
-  // R14-37: every trial started from the world in fixtures/manifest.json.
-  const manifest = read(WORLD_MANIFEST);
-  let world: string | undefined;
-  try {
-    world = (JSON.parse(manifest) as { world?: { state_hash?: unknown } }).world?.state_hash as string | undefined;
-  } catch {
-    world = undefined;
-  }
-  const hashes = Array.isArray(j?.initial_state_hashes) ? (j!.initial_state_hashes as unknown[]).filter((h): h is string => typeof h === 'string') : [];
-  if (typeof world !== 'string') {
-    pass = false;
-    parts.push(`${WORLD_MANIFEST}: no world.state_hash`);
-  } else {
-    const other = hashes.filter((h) => h !== world);
-    if (other.length > 0 || hashes.length === 0) {
-      pass = false;
-      parts.push(hashes.length === 0 ? 'no initial state hash' : `initial state hash ${other.join(', ')} is not the world's ${world}`);
-    } else parts.push(`every trial started from the world ${world.slice(0, 12)}`);
+  const w = worldCheck(frozen, j);
+  if (!w.pass) pass = false;
+  parts.push(w.evidence);
+  // R37, R40: a frozen task whose env_version has moved on this checkout (the world was rebuilt
+  // after its final run) keeps its records; they are reproduced at the freeze commit.
+  if (frozenList.length > 0) {
+    const h = cli(['task-hash', '--task', frozenList.join(','), '--json']);
+    const now = new Map(((h.json as { tasks?: Array<{ id: string; env_version: string }> } | undefined)?.tasks ?? []).map((t) => [t.id, t.env_version]));
+    if (h.exit !== 0 || h.json === undefined) parts.push(describeExit('task-hash', h));
+    else {
+      const moved = frozenList.filter((id) => now.get(id) !== frozen.tasks[id]!.env_version);
+      if (moved.length > 0) parts.push(`historical (env_version moved on this checkout since the freeze, R37): ${moved.map((id) => `${id} reproduce at ${frozen.tasks[id]!.frozen_at}`).join(', ')}`);
+    }
   }
   return { pass, evidence: parts.join('; ') };
 }
@@ -325,8 +346,8 @@ const CLAUSES: Array<[string, () => Verdict]> = [
   ['UI starts from one command (local runner) and the hosted URL', clause1],
   ['CLI, local runner and Worker share run()', clause2],
   ['>= 5 complete tasks, oracle scores 1.0', clause3],
-  ['every trial starts from the same state hash', clause4],
-  [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, from the world`, clause5],
+  ["every trial starts from its task's frozen world", clause4],
+  [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, at its frozen versions`, clause5],
   ['every failure attributed, none to environment or grader, no current GRADER_ERROR', clause6],
   ['README writeup and dated references', clause7],
 ];

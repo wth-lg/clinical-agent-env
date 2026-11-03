@@ -11,7 +11,7 @@ const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
 // README.md alone.
 const PREREQUISITES = `${LOCAL_PREREQUISITES} Install [Node.js](${NODE_INSTALL_URL}) and [pnpm](${PNPM_INSTALL_URL}).\n`;
 const README_PASS = readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace('\n## Findings', `${PREREQUISITES}\n## Findings`);
-const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass' };
+const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass', 'task-hash': 'task-hash-current' };
 const TASKS = ['t1', 't2', 't3', 't4', 't5'];
 const FINAL_RUN = 'results/runs/final-1';
 const WORLD = '9f2c';
@@ -50,7 +50,6 @@ function completeRepo(): string {
   write(root, 'apps/web/src/worker.ts', "import { run } from '../../../packages/core/run.ts';\n");
   for (const id of TASKS) makeTask(root, id);
   makeTask(root, '_template');
-  write(root, 'fixtures/manifest.json', JSON.stringify({ world: { state_hash: WORLD } }));
   write(root, 'results/tasks-final.json', freeze(TASKS));
   return root;
 }
@@ -100,6 +99,7 @@ describe('donewhen', () => {
     expect(r.calls).toContain(SUMMARY_CALL);
     expect(r.calls).toContain(GRADER_ERROR_CALL);
     expect(r.calls).toContain(AUDIT_CALL);
+    expect(r.calls).toContain(`task-hash --task ${TASKS.join(',')} --json`);
     expect(r.calls).not.toContain('trials=10');
     expect(r.calls).toContain('spend --json');
     expect(r.calls).toContain('runner-check --mock --json');
@@ -259,9 +259,18 @@ describe('donewhen', () => {
     expect(prod).toContain('1 task(s), need 5');
   });
 
-  it('clause 4 fails when trials start from more than one state hash', () => {
+  it('clause 4 fails when a trial started from a state hash that is no frozen task\'s world', () => {
     const r = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-fail' });
-    expect(r.clause(4)).toMatch(/^FAIL/);
+    expect(r.clause(4)).toMatch(/^FAIL \(4\).*initial state hash a01b is not a frozen world \(9f2c\)/);
+    expect(donewhen(completeRepo(), ALL_STUBS).clause(4)).toMatch(/^PASS \(4\).*1 initial state hash\(es\), every one a frozen task's world/);
+  });
+
+  // R40: tasks frozen under different worlds (the shared world rebuilt between freezes) each
+  // start from their own frozen world; clause 4 holds every initial hash to one of them.
+  it('clause 4 passes when each trial started from one of the frozen worlds', () => {
+    const root = completeRepo();
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t2: { world_hash: 'a01b' } }));
+    expect(donewhen(root, { ...ALL_STUBS, summary: 'summary-fail' }).clause(4)).toMatch(/^PASS \(4\).*2 initial state hash\(es\)/);
   });
 
   it('clause 4 reads N and the band from the constants, not a stale count', () => {
@@ -302,16 +311,38 @@ describe('donewhen', () => {
     expect(line).toContain('frozen but not a task: t6');
   });
 
-  it('clause 5 fails when a task\'s records are not all at its frozen task_version', () => {
-    const line = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-version' }).clause(5);
-    expect(line).toMatch(/^FAIL \(5\)/);
-    expect(line).toContain('t1 at task_version v-t1-other, frozen v-t1');
+  it('clause 5 checks records against the freeze entry: another task_version, env_version or grader_task_version fails', () => {
+    const version = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-version' }).clause(5);
+    expect(version).toMatch(/^FAIL \(5\)/);
+    expect(version).toContain('t1 at task_version v-t1-other, frozen v-t1');
+    const env = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-env' }).clause(5);
+    expect(env).toMatch(/^FAIL \(5\)/);
+    expect(env).toContain('t2 at env_version e-t2-rebuilt, frozen e-t2');
+    const grader = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-grader' }).clause(5);
+    expect(grader).toMatch(/^FAIL \(5\)/);
+    expect(grader).toContain('t3 at grader_task_version g-t3-next, frozen g-t3');
   });
 
-  it('clause 5 fails when the trials did not start from the world in fixtures/manifest.json (R14-37)', () => {
+  it('clause 5 holds current grades to the last regrade entry of the freeze (a grader bug fix, regraded offline)', () => {
+    const root = completeRepo();
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t3: { regrades: [{ grader_version: '22', grader_task_version: 'g-t3-next', task_version: 'v-t3-next', at: 'b'.repeat(40), reason: 'fix' }] } }));
+    expect(donewhen(root, { ...ALL_STUBS, summary: 'summary-other-grader' }).clause(5)).toMatch(/^PASS \(5\)/);
+    expect(donewhen(root, ALL_STUBS).clause(5)).toMatch(/^FAIL \(5\).*t3 at grader_task_version g-t3, frozen g-t3-next/);
+  });
+
+  it('clause 5 fails when a trial did not start from a frozen world (R14-37, per R40)', () => {
     const line = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-world' }).clause(5);
     expect(line).toMatch(/^FAIL \(5\)/);
-    expect(line).toContain('initial state hash a01b is not the world\'s 9f2c');
+    expect(line).toContain('initial state hash a01b is not a frozen world (9f2c)');
+  });
+
+  // R40, R37: after the world is rebuilt, a frozen task's env_version moves on main; its records
+  // stay valid at the frozen versions and are reproduced at the freeze commit.
+  it('clause 5 still passes when the checkout\'s env_version has moved since the freeze, and names the reproduce commit', () => {
+    const line = donewhen(completeRepo(), { ...ALL_STUBS, 'task-hash': 'task-hash-moved' }).clause(5);
+    expect(line).toMatch(/^PASS \(5\)/);
+    expect(line).toContain(`historical (env_version moved on this checkout since the freeze, R37): t1 reproduce at ${'a'.repeat(40)}, t2 reproduce at`);
+    expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).not.toContain('historical');
   });
 
   it('clause 6 fails on audit-check exit 1, and on a record whose current grade is GRADER_ERROR; a regraded one passes with its history printed', () => {

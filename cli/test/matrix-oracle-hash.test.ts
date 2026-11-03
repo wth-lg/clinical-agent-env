@@ -17,6 +17,7 @@ const TOY = await loadMatrixTask('_toy');
 const ONE: MatrixOptions = { trials: 1, regrades: 1, isolation: false, cases: ['oracle'] };
 const HASH = (await trial(matrixEnv(), TOY, { kind: 'oracle', id: 'oracle', script: TOY.oracle! })).record.state_hash.final!;
 const WRONG = '0'.repeat(64);
+const WORLD = matrixEnv().worldHash;
 
 // {tasks: {<id>: {oracle_final_hash}}}, the freeze file's shape (scripts/test/tasks-final.test.ts).
 const pins = (tasks: Array<{ id: string; oracle_final_hash: string }>) => ({ tasks: Object.fromEntries(tasks.map(({ id, ...rest }) => [id, rest])) });
@@ -65,6 +66,19 @@ describe('matrix oracle final hash', () => {
     const { code, text } = await matrix(['--task', 'b'], tasksFinal(pins([{ id: 'a', oracle_final_hash: WRONG }])));
     expect(code).toBe(0);
     expect(text).toContain(`oracle final hash: ${HASH} (no expected hash)`);
+  });
+
+  it('a pin made at this world is checked; one made at another world (the shared world rebuilt since the freeze, R40) is printed unchecked', async () => {
+    const here = await matrix(['--task', 'a'], tasksFinal({ tasks: { a: { oracle_final_hash: WRONG, world_hash: WORLD } } }));
+    expect(here.code).toBe(1);
+    expect(here.text).toContain(`results/tasks-final.json pins ${WRONG}`);
+    const elsewhere = await matrix(['--task', 'a'], tasksFinal({ tasks: { a: { oracle_final_hash: WRONG, world_hash: '1'.repeat(64) } } }));
+    expect(elsewhere.code).toBe(0);
+    expect(elsewhere.text).toMatch(new RegExp(`^oracle final hash of task a: .*tasks-final\\.json pins ${WRONG} at world 1{64}, not this checkout's world ${WORLD}; unchecked here \\(R40\\)$`, 'm'));
+    expect(elsewhere.text).toContain(`oracle final hash: ${HASH} (no expected hash)`);
+    const bad = await matrix(['--task', 'a'], tasksFinal({ tasks: { a: { oracle_final_hash: HASH, world_hash: 'abc' } } }));
+    expect(bad.code).toBe(2);
+    expect(bad.text).toMatch(/^matrix: .*tasks-final\.json: tasks\.a world_hash must be 64 lowercase hex digits$/m);
   });
 
   it('exits 2 on a tasks-final.json it cannot read', async () => {
