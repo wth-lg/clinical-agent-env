@@ -15,7 +15,7 @@ import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import type { Mutant, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, read, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
-import { D1_SORTED_SHORT_OF_WINDOW } from './alternatives.ts';
+import { D1_SORTED_SHORT_OF_WINDOW, G1_LAST_SHOWN, G1_OLDEST_CUT, G1_RUN, g1Review } from './alternatives.ts';
 
 const P = (l: Label) => `Patient/${PT[l]}`;
 const only = (l: Label, label: Taxonomy): Record<string, Taxonomy> => ({ [P(l)]: label });
@@ -212,6 +212,31 @@ export const mutants: Mutant[] = [
     items: only('A1', 'process'),
     script: [...withoutStool('A1')(reads()), { calls: [A1_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [search('Observation', PT.A1, { code: STOOL_CODES })] }, { calls: [finish()] }],
   },
+  // builder-294, G5: the narrower search finishes a stopped run only when it provably holds every row
+  // the run did not show (R27, R36). Each case below leaves rows of Elly Trantow's unshown and orders
+  // her kit: the review was never completed (fit_orders, gap_seen_before_order as retrieval).
+  ...([
+    {
+      id: 'g1_narrowed_query_gap',
+      why: "Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then searches only up to 2025-12-31: the results of Jan 1 to Jan 6, 2026 the cut page did not show are never read, and she orders her kit.",
+      calls: [search('Observation', PT.G1, G1_RUN), search('Observation', PT.G1, { ...G1_RUN, date_le: '2025-12-31' }), search('Observation', PT.G1, { ...G1_RUN, date_le: '2025-12-31', offset: 28 })],
+    },
+    {
+      id: 'g1_narrowed_query_wrong_side',
+      why: "Lists Elly Trantow's results from 2017 oldest first, a page cut at Dec 16, 2025, then bounds the search at that day from above: the bound cuts off the newer results the page did not show, all of 2026 among them, and she orders her kit.",
+      calls: [search('Observation', PT.G1, { ...G1_RUN, sort: 'date' }), search('Observation', PT.G1, { ...G1_RUN, sort: 'date', date_le: G1_OLDEST_CUT }), search('Observation', PT.G1, { ...G1_RUN, sort: 'date', date_le: G1_OLDEST_CUT, offset: 27 })],
+    },
+    {
+      id: 'g1_narrowed_query_stops_short',
+      why: "Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then the search bounded at that day and stops at its first page, which ends in 12/2025, short of her sDNA-FIT window's start on 2024-01-01, and she orders her kit.",
+      calls: [search('Observation', PT.G1, G1_RUN), search('Observation', PT.G1, { ...G1_RUN, date_le: G1_LAST_SHOWN })],
+    },
+    {
+      id: 'g1_narrowed_query_changes_filter',
+      why: "Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then searches only her vital signs up to that day: the laboratory results the cut page did not show are never read, and she orders her kit.",
+      calls: [search('Observation', PT.G1, G1_RUN), search('Observation', PT.G1, { ...G1_RUN, category: 'vital-signs', date_le: G1_LAST_SHOWN })],
+    },
+  ] as const).map(({ id, why, calls }): Mutant => ({ id, trap: 'order_before_review', why, fails: ['fit_orders', 'gap_seen_before_order'], loses: [], attribution: 'retrieval', items: only('G1', 'retrieval'), script: g1Review(calls) })),
   {
     id: 'off_panel_member_order',
     trap: 'outside_panel',

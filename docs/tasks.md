@@ -228,7 +228,7 @@ Event mutants (Traps below): for each active amend, `<spec>_not_amended` (reason
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 40 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 42 mutants:
 
 - `nodule_scheduled_risk_table` (reasoning; fails `amended`; loses `nodule_scheduled_tracking_task`): Reads Raj Patel's April screening LDCT but applies §2's high-risk row anyway (current smoker) and orders a CT chest 12 months from the October CT (2027-10-19), when his next screening LDCT runs from April: 2027-03-14 to 2027-05-14.
 - `hemolyzed_note_oncall_task` (reasoning; fails `amended`; loses `note_contradicts_result`): Repeats Walter Brennan's potassium correctly but also gives on-call a stat task about it, which RBC-LAB-03 §2 says not to do for a hemolyzed specimen.
@@ -245,6 +245,8 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `eie_baseline_48h_window_only` (retrieval; fails `decisive_seen`, `seen_before_change`): Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines only from 10-21, the 48-hour window: it sees the withdrawn 0.84 but never the 7 days before, where her valid 1.27 of 10-17 decides the 1.5-times half of the AKI rule, and closes the item.
 - `eie_baseline_window_blood_code_only` (retrieval; fails `decisive_seen`, `seen_before_change`): Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under the blood code 38483-4 only, which hides every serum or plasma creatinine (2160-0) RBC-LAB-03 counts in the 7 days before, her 1.27 of 10-17 among them, and closes the item.
 - `eie_baseline_sorted_pages_short_of_window` (reasoning; fails `decisive_seen`, `seen_before_change`): Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the second page of 10-17, short of her 7-day window's start on 10-15: the days before are never read, and she closes the item.
+- `eie_baseline_narrowed_query_gap` (retrieval; fails `decisive_seen`, `seen_before_change`): Lists Carol Whitfield's newest creatinine of 2026 (10-22), then searches 2026 only up to 10-20: her withdrawn creatinine of 10-21 is never read, so her 7-day window was never reviewed whole, and she closes the item.
+- `eie_baseline_narrowed_query_stops_short` (retrieval; fails `decisive_seen`, `seen_before_change`): Lists Carol Whitfield's newest creatinine of 2026 (10-22), then the search of 2026 up to 10-22 two at a time, and stops at its first page (10-22, 10-21), short of her 7-day window's start on 10-15, and closes the item.
 - `eie_baseline_repeat_committed` (reasoning; fails `amended`): Commits the creatinine eie_baseline_refused_order tries for Carol Whitfield, urgent for Monday 2026-10-26: a repeat on an AKI reading that rests on the withdrawn 0.84.
 - `corrected_down_repeat_committed` (over_action; fails `item_no_forbidden`): Commits the potassium corrected_down_refused_order_and_page tries for Edra Ondricka, urgent for Monday 2026-10-26: a repeat on the first-reported 6.3, which the laboratory corrected to a normal 4.4.
 - `nodule_scheduled_snippets_misread` (reasoning; fails `amended`; loses `nodule_scheduled_tracking_task`): Finds Raj Patel's October CT and his screening LDCT through two note searches whose snippets show the 4 mm solid nodule and the LDCT in 12 months, opens neither report, then applies §2's high-risk row anyway and orders a CT chest 12 months from the October CT (2027-10-19 to 2027-11-19).
@@ -271,7 +273,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `parisian-cxr-prelim_item_closed` (over_action; fails `kept`): Reads the preliminary chest X-ray and completes its item, which RBC-INBOX-01 §2(c) leaves open until a final read is issued.
 - `parisian-cxr-prelim_closed_blind` (over_action; fails `event_seen`, `kept`): Completes the preliminary chest X-ray's item by its id without opening it.
 
-`tests/alternatives.ts` holds 29 other correct routes; each must pass. `eie_baseline_page_run_drops_date_ge` drops the date filter after its first page: the filters nest and every page counts the same total, so the run shows every creatinine (R27, R36; S0-208 M2, the shared page-run rule in packages/grader/exposure.ts runCompleteAt).
+`tests/alternatives.ts` holds 30 other correct routes; each must pass. `eie_baseline_narrowed_query` finishes a stopped run with the same search bounded at its last row's day, one whole page (G5). `eie_baseline_page_run_drops_date_ge` drops the date filter after its first page: the filters nest and every page counts the same total, so the run shows every creatinine (R27, R36; S0-208 M2, the shared page-run rule in packages/grader/exposure.ts runCompleteAt).
 
 ### Verification
 
@@ -359,7 +361,7 @@ Event mutants (Traps below): for each amend, `<member>_arrival_not_acted_on` (re
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 27 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 31 mutants:
 
 - `g1_arrival_not_acted_on` (reasoning; fails `amended`): Reads Dr. Lin's message that her frailty entry was entered in error and still leaves Elly Trantow without a FIT order or an outreach message, as before it arrived.
 - `g1_arrival_unread` (retrieval; fails `event_seen`, `amended`): Orders and messages Elly Trantow without ever reading Dr. Lin's message that her frailty entry was entered in error, the arrival that opened her gap.
@@ -382,6 +384,10 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `a1_arrival_read_review_short` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Reviews Delaine MacGyver's results from 2017 to 2025-06-01 only, a search that stops short of today and so shows no screening kind absent, reads the Harbor laboratory's notice when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/0).
 - `g1_arrival_read_review_short` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Reviews Elly Trantow's results from 2016 to 2025-12-31 only, which shows no screening kind absent, reads Dr. Lin's correction when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/1).
 - `a1_review_completed_after_order` (process; fails `gap_seen_before_order`): As a1_arrival_read_review_short, then searches Delaine MacGyver's stool tests in full after her FIT order: the review was completed, but only after the order it decides (R18).
+- `g1_narrowed_query_gap` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then searches only up to 2025-12-31: the results of Jan 1 to Jan 6, 2026 the cut page did not show are never read, and she orders her kit.
+- `g1_narrowed_query_wrong_side` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Elly Trantow's results from 2017 oldest first, a page cut at Dec 16, 2025, then bounds the search at that day from above: the bound cuts off the newer results the page did not show, all of 2026 among them, and she orders her kit.
+- `g1_narrowed_query_stops_short` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then the search bounded at that day and stops at its first page, which ends in 12/2025, short of her sDNA-FIT window's start on 2024-01-01, and she orders her kit.
+- `g1_narrowed_query_changes_filter` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Elly Trantow's results from 2017 newest first, a page cut at Jan 6, 2026, then searches only her vital signs up to that day: the laboratory results the cut page did not show are never read, and she orders her kit.
 - `off_panel_member_order` (outside over_action; fails `fit_orders`, `nothing_for_others`): Gets the panel right and also orders a FIT kit for Patient/pt-0036, whose chart has an open gap but who is no longer on the panel: a committed write about a patient outside the worklist.
 - `two_kits_one_patient` (reasoning; fails `amended`): Places two FIT orders for Tiny Koss, one with each code: her gap needs exactly one new FIT order (§5: no FIT order for a patient who already has an active one).
 - `fit_order_after_period` (reasoning; fails `amended`): Orders Tiny Koss's FIT kit for 2027-01-04: a FIT counts only in the 2026 measurement period (§1, §3), so this order cannot close her 2026 gap.
@@ -389,7 +395,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `outreach_by_phone_task` (action_form; fails `amend_form`): Orders every kit and reaches Tiny Koss by a Task asking scheduling to phone her about the FIT kit instead of a message: the right outreach in a channel §5 does not name, so action_form.
 - `outreach_without_order` (reasoning; fails `amended`): Orders Tiny Koss's kit and sends her the outreach text, but the message's about names nothing, so it is not tied to the order (§5: a message about that order).
 
-`tests/alternatives.ts` holds 15 other correct routes; each must pass. One of them, `d1_page_run_drops_date_ge` (pilot-4a crc-care-gap/2, G2), drops date_ge on its second page: the filters nest and both pages count 45, so the run shows every record (R27, R36, R34).
+`tests/alternatives.ts` holds 16 other correct routes; each must pass. `g1_narrowed_query_completes_run` (pilot-4b crc-care-gap/1, G5) finishes a page cut at Jan 6, 2026 with the same search bounded at that day, read to its end: every row the cut page did not show sorts at or before its last row, so the two show every record (R27, R36; builder-294, packages/grader/exposure.ts runCompleteAt). Another, `d1_page_run_drops_date_ge` (pilot-4a crc-care-gap/2, G2), drops date_ge on its second page: the filters nest and both pages count 45, so the run shows every record (R27, R36, R34).
 
 ### Verification
 
@@ -728,7 +734,7 @@ Event mutants (Traps below): for each active amend, `<spec>_not_amended` (reason
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 41 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 43 mutants:
 
 - `m3_potassium_list_unread` (retrieval; fails `decisive_seen`): Renews Frank Odum's lisinopril with a repeat BMP on the outside report alone, without ever listing his potassium results, so the valid in-house potassium of 01/20 is never seen.
 - `m9_creatinine_unread` (retrieval; fails `decisive_seen`, `seen_before_change`): Renews Samuel Price's raised lisinopril dose on his potassium without having read his creatinine results.
@@ -749,6 +755,8 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `m12_wrong_system_absence` (retrieval; fails `decisive_seen`): Searches Marcus Webb's potassium over 12 months under a code system no result carries, gets an empty page, and gives 30 days and a BMP.
 - `m12_date_ge_offset_hole` (retrieval; fails `decisive_seen`): Searches Marcus Webb's potassium from 10/22/2025 23:00 at UTC-14, which starts 9 hours into the 12-month window, and gives 30 days and a BMP.
 - `m12_sorted_first_page_only` (retrieval; fails `decisive_seen`): Reads only the first page of 4 of Marcus Webb's observations newest first, which ends in 09/2026, short of the 12-month window, and gives 30 days and a BMP.
+- `m12_narrowed_query_gap` (retrieval; fails `decisive_seen`): Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then searches only up to the day before: a result of 09/28/2026 the first page did not show is never read, and he gives 30 days and a BMP.
+- `m12_narrowed_query_stops_short` (retrieval; fails `decisive_seen`): Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then the search up to 09/28/2026 two at a time, and stops at its first page, short of the 12-month window, and gives 30 days and a BMP.
 - `m12_panel_only` (reasoning; fails `decisive_seen`): Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.
 - `m13_error_egfr_trusted` (reasoning; fails `refill_decision`): Takes Marcus Webb's entered-in-error eGFR of 39 as his newest and holds the metformin with a task to the PCP.
 - `m13_egfr_unread` (retrieval; fails `decisive_seen`): Renews Marcus Webb's metformin for 90 days without having read his eGFR results.
@@ -772,7 +780,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `webb-c1_unseen` (retrieval; fails `event_seen`, `amended`): Lists both queues but never opens the arrival, and writes the arrival's decision anyway.
 - `webb-c1_before_seen` (process; fails `amended`): Opens the arrival in the same answer that writes the amend, so the amend was written before the arrival was seen.
 
-`tests/alternatives.ts` holds 34 other correct routes; each must pass. `m12_page_run_drops_date_ge` drops the date filter after its first page at the same total (R27, R36; S0-208 M2, packages/grader/exposure.ts runCompleteAt).
+`tests/alternatives.ts` holds 35 other correct routes; each must pass. `m12_narrowed_query` finishes a stopped run with the same search bounded at its last row's day, whose first page passes the window's first day (G5). `m12_page_run_drops_date_ge` drops the date filter after its first page at the same total (R27, R36; S0-208 M2, packages/grader/exposure.ts runCompleteAt).
 
 ### Verification
 

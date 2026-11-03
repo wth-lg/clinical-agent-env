@@ -193,8 +193,9 @@ export const covers = (x: Item, s: StepSearch | undefined): boolean => s !== und
 // the last page of a run that starts at offset 0, each page at the previous page's next_offset, the
 // last with no next_offset, whose pages keep the first page's type, patient, filters and sort, or
 // nest with it at the same total (exposure.ts runCompleteAt, continuesRun: builder-292 G2,
-// verifier-phase-P17i-S0-208-1 M2). Other calls may come between the pages. Null when no complete
-// covering search ran.
+// verifier-phase-P17i-S0-208-1 M2), or a sorted run that stops and is finished by the same search
+// bounded at its last row shown, complete itself (builder-294 G5). Other calls may come between the
+// pages. Null when no complete covering search ran.
 // A sorted run is also complete at the first page that passes the window's edge (builder-273,
 // probe-1 message-queue/4; R36, passesWindow): newest first (-date), a page whose earliest row sorts
 // before the window opens, so every later page sorts before it too; oldest first (date), a page whose

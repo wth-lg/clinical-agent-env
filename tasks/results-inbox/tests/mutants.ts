@@ -232,6 +232,29 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     items: { eie_baseline: 'reasoning' },
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 1, 2, 3].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 1, ...(offset ? { offset } : {}) } }))) }),
   },
+  // builder-294, G5: a narrower search finishes a stopped run only when it holds every creatinine the
+  // run did not show and is complete itself (R27, R36). A bound short of the last one shown leaves
+  // the withdrawn 0.84 of 10-21 unread; a bounded search stopped at its first page never reaches the
+  // window's start on 10-15 or the 1.27 of 10-17. Either way a source of the item is never exposed,
+  // so attribution labels it retrieval.
+  {
+    id: 'eie_baseline_narrowed_query_gap',
+    trap: 'decision_without_deciding_fact',
+    why: "Lists Carol Whitfield's newest creatinine of 2026 (10-22), then searches 2026 only up to 10-20: her withdrawn creatinine of 10-21 is never read, so her 7-day window was never reviewed whole, and she closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', count: 1 } }, { name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', date_le: '2026-10-20' } }]) }),
+  },
+  {
+    id: 'eie_baseline_narrowed_query_stops_short',
+    trap: 'decision_without_deciding_fact',
+    why: "Lists Carol Whitfield's newest creatinine of 2026 (10-22), then the search of 2026 up to 10-22 two at a time, and stops at its first page (10-22, 10-21), short of her 7-day window's start on 10-15, and closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', count: 1 } }, { name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', date_le: '2026-10-22', count: 2 } }]) }),
+  },
   // verifier-W1-probe-T2-2 F1: the orders eie_baseline_refused_order and
   // corrected_down_refused_order_and_page try, committed: a repeat at urgent for Monday on the
   // withdrawn comparison and on the first-reported potassium, which grader.ts asRepeat forbids.

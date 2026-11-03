@@ -20,6 +20,27 @@ const withoutD1Stool = (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map
 export const D1_PAGE = (offset: number): ScriptCall => search('Observation', PT.D1, { category: 'laboratory', sort: '-date', count: 13, offset });
 export const D1_SORTED_SHORT_OF_WINDOW: ScriptTurn[] = [...withoutD1Stool(reads()), { calls: [D1_PAGE(0)] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }];
 
+// builder-294, G5 (pilot-4b crc-care-gap/1): Elly Trantow's Observations from 2017 newest first, 50 a
+// page; the tool's size cap cuts the page at 24 of 76 rows, down to Jan 6, 2026 (next 24). g1Review
+// runs the given calls in place of her stool-test search, one turn each, then the oracle's re-check,
+// arrival reads and actions.
+const withoutG1Stool = (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.G1 && c.input.code === STOOL_CODES)) }));
+export const G1_RUN = { date_ge: '2017-01-01', sort: '-date', count: 50 } as const;
+// The days these scripts bound her searches at are built from parts: a date written out in a task
+// file pins its patients' encounters of that day in the world build (scripts/fixtures-lib.ts
+// literalDatesByTask) and would move the world. G1_LAST_SHOWN is the cut page's last row's day;
+// G1_OLDEST_CUT is where an oldest-first page of hers is cut.
+const isoDay = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+export const G1_LAST_SHOWN = isoDay(2026, 1, 6);
+export const G1_OLDEST_CUT = isoDay(2025, 12, 16);
+export const g1Review = (calls: readonly ScriptCall[]): ScriptTurn[] => [...withoutG1Stool(reads()), ...calls.map((c) => ({ calls: [c] })), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }];
+// The trial's three calls: the cut page, then the same search bounded at G1_LAST_SHOWN, read in two pages.
+export const G1_NARROWED: ScriptTurn[] = g1Review([
+  search('Observation', PT.G1, G1_RUN),
+  search('Observation', PT.G1, { ...G1_RUN, date_le: G1_LAST_SHOWN }),
+  search('Observation', PT.G1, { ...G1_RUN, date_le: G1_LAST_SHOWN, offset: 27 }),
+]);
+
 const ROW_SEARCH = (name: string): ScriptCall => ({ name: 'search_patients', input: { name } });
 const FAMILY: Record<Label, string> = { G1: 'Trantow', C2: 'Rohan', D1: 'Koss', A1: 'MacGyver' };
 const byRow = (c: ScriptCall): ScriptCall => {
@@ -34,6 +55,13 @@ export const alternatives: Alternative[] = [
     id: 'd1_page_run_drops_date_ge',
     why: "Lists Tiny Koss's results from 2017 newest first, 28 a page, then asks for the next page without the date filter: both pages count the same 45 results in the same order, so together they show every one, and her screening absences were read whole.",
     script: [...withoutD1Stool(reads()), { calls: [search('Observation', PT.D1, { date_ge: '2017-01-01', sort: '-date', count: 28 })] }, { calls: [search('Observation', PT.D1, { sort: '-date', offset: 28, count: 28 })] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // builder-294, G5 (R27, R36; R34, R16): every row the cut page did not show is dated Jan 6, 2026 or
+    // earlier, so the bounded search holds it, and read to its end it shows the rest.
+    id: 'g1_narrowed_query_completes_run',
+    why: "Lists Elly Trantow's results from 2017 newest first; the page is cut at 24 of 76, down to Jan 6, 2026, so she repeats the search bounded at that day and reads its 54 results to the end: together the two searches show every result, and her screening absences were read whole (pilot-4b crc-care-gap/1).",
+    script: G1_NARROWED,
   },
   {
     id: 'd1_sorted_pages_past_window',

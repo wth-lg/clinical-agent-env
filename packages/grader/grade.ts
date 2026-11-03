@@ -92,7 +92,12 @@ import type { Progress } from './progress.ts';
 // and a delivered gap's base review is fit_orders' and gap_seen_before_order's (G1); a page run whose
 // later page drops or adds a filter continues when the totals agree (G2). T2 and T6:
 // reply_names_other_patient names each patient's own values on the chart as delivered (G3, G4).
-export const GRADER_VERSION = '19';
+// 20: the pilot-4b fix (builder-294, G5). A page run sorted by date that stops is finished by a
+// later query with the same filters bounded at the last row shown and complete itself (T2, T3, T6
+// through exposure.ts runCompleteAt); a same-filter run is refused too when a same-patient arrival
+// of the searched type lands between its pages (N1), and a failed call's reference never makes an
+// arrival's key a known record (N4).
+export const GRADER_VERSION = '20';
 
 export interface CheckResult {
   id: string;
