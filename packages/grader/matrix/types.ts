@@ -6,10 +6,13 @@
 //   tests/mutants.ts       `mutants`: near misses, one trap each, each expected to FAIL on
 //                          exactly the gate checks it declares and to lose exactly the rubric
 //                          items it declares
-//   tests/agents.ts        `spray`, `output_gap` and, where the task declares it, `status_only`
+//   tests/agents.ts        `spray`, `output_gap` and, where the task declares it, `status_only`;
+//                          `lever`, the focus_only and read_all_newest agents of each active A
+//                          lever item (plan-amendment-w5 G3)
 //   tests/grader.ts        `checks` (its path is `checksModule`, which the matrix's isolation
 //                          check imports again in a fresh process)
-//   expected.ts            `expected`: the expected end state, written by hand
+//   expected.ts            `expected`: the expected end state, written by hand; `LEVER_ITEMS`
+//                          and `LEVER`, the task's lever items and the active ones (W5-H)
 //   policy.ts              `derive(world)`: the same, computed from the initial world
 //   tests/judge-cache.json the canned judge and extractor answers the matrix grades with
 //   task.toml [matrix]     traps = [...] (each needs a mutant); status_only = true|false
@@ -88,6 +91,18 @@ export const REQUIRED_EVENT_MUTANTS: Readonly<Record<'amend' | 'lure', readonly 
   lure: ['lure_acted_on'],
 };
 
+// The two offline agents of one active A lever item (plan-amendment-w5 G3): focus_only reads each
+// arrival's focus and acts on it, and must fail the item as retrieval; read_all_newest searches
+// again by the route the policy names and acts on the newest result, and must pass. Together they
+// show the item tests the sibling review and not a form trap.
+export interface LeverAgents {
+  focus_only: Script;
+  read_all_newest: Script;
+  // The rubric items read_all_newest must lose, and no other, as an alternative declares them;
+  // absent or [] when it loses none.
+  loses?: readonly string[];
+}
+
 export interface Agents {
   spray?: Script;
   output_gap?: Script;
@@ -95,6 +110,32 @@ export interface Agents {
   // The attribution label each agent's FAIL must get, as a mutant declares it; not checked for an
   // agent it leaves out.
   attribution?: Partial<Record<'spray' | 'output_gap' | 'status_only', Taxonomy>>;
+  // The lever agents, by lever item id: required for every active A item, allowed for no other.
+  lever?: Readonly<Record<string, LeverAgents>>;
+}
+
+// One lever item (plan-amendment-w5 "Chosen design", G1), as tasks/<id>/expected.ts LEVER_ITEMS
+// declares it. A: a routing defect that arrives as one of the task's events (`spec` names the event
+// spec; the item is observed in a trial when that arrival fired). B: a static chart defect (observed
+// in every trial while active). `item` is the list item it bears on and `patient` its Patient;
+// `sibling` the deciding sibling records ('Type/id') cli classes flags as exposed or not (none
+// declared: no flag); `gates`, when given, the gates whose failure on the item is the lever item's
+// (default: any gate of the item). The id is the item's name in LEVER ('A', 'B', 'reserve').
+export interface LeverItem {
+  id: string;
+  kind: 'A' | 'B';
+  item: string;
+  patient?: string;
+  spec?: string;
+  sibling?: readonly string[];
+  gates?: readonly string[];
+}
+
+// A task's lever items and the active ones (expected.ts LEVER, which packages/core/tasks.ts also
+// reads into env_version).
+export interface Lever {
+  active: readonly string[];
+  items: readonly LeverItem[];
 }
 
 // What task.toml's [matrix] table declares.
@@ -129,4 +170,6 @@ export interface MatrixTask {
   cache: readonly JudgeCacheEntry[];
   // task.toml [judge] effort, which the judge answers at and its cache keys include.
   judgeEffort: JudgeEffort;
+  // The task's lever items and active ids (expected.ts LEVER_ITEMS, LEVER); absent when it has none.
+  lever?: Lever;
 }

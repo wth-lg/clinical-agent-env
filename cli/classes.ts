@@ -22,7 +22,18 @@
 // - q: of every valid trial (rule S: q = trials that saw every arrival, over trials), those that
 //   saw every arrival, that is had no event_seen or event_delivered failure; a trial no event
 //   fired in saw every arrival there was; null when no event fired in any valid trial;
-// - guard fires: finish answers CONFLICT for a same-turn arrival, counted over every settled trial.
+// - guard fires: finish answers CONFLICT for a same-turn arrival, counted over every settled trial;
+// - per lever item (tasks/<id>/expected.ts LEVER_ITEMS and LEVER, plan-amendment-w5 W5-H, stop rule
+//   S5): the trials it was observed in (an A item: its arrival fired; a B item: every valid trial
+//   while it is active), the passes among them (no failed gate of its list item, or of the gates it
+//   declares) and catch = passed / observed with Wilson 95%, each failure's gates and label and the
+//   retrieval / reasoning / process / other split, and how many observed trials exposed every sibling
+//   record it declares (the trajectory's exposed ids, exposure.ts sameId; null without siblings);
+//   with the task's base_pass, the valid trials that passed every item no active lever item claims,
+//   for S5's b_t. A task without lever items prints exactly what it printed before (no `lever` key).
+//   The item table is the matrix's (packages/grader/matrix/types.ts LeverItem: id, kind, item,
+//   patient, spec, sibling, gates), read through matrixLever so the module's LEVER is the list the
+//   task loader hashed.
 // An event gate failure is the event's when the check item names it ({event: <spec id>}), or else
 // when its check (the gate) names it. Without a name, among the specs that fired on the item in
 // that trial: event_seen and event_delivered are the event's only when exactly one fired there (an
@@ -47,6 +58,9 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABEL, FAULT, type Outcome } from '../packages/core/outcomes.ts';
+import { sameId } from '../packages/grader/exposure.ts';
+import { matrixLever } from '../packages/grader/matrix/matrix.ts';
+import type { Lever, LeverItem } from '../packages/grader/matrix/types.ts';
 import { currentGrade, type GradeAttribution, type RegradeGrade, type SummaryCheck, wilson } from '../packages/core/summary.ts';
 import { taskVersions } from '../packages/core/tasks.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
@@ -84,6 +98,26 @@ export interface EventRow {
   seen: number;
   amend_fails_seen: number;
 }
+// One failure of a lever item: the failed gates that count (the item's declared gates, or all of
+// its), the item's label among them ('?' without one), and whether every declared sibling record was
+// exposed in the trial (null when the item declares none).
+export interface LeverFail { trial: number; run: string; gates: string[]; label: string; sibling_exposed: boolean | null }
+export interface LeverRow {
+  id: string;
+  kind: 'A' | 'B';
+  item: string;
+  // An A item's event spec id; null for a B item.
+  spec: string | null;
+  active: boolean;
+  observed: number;
+  passed: number;
+  catch_rate: number | null;
+  wilson: Interval | null;
+  split: { retrieval: number; reasoning: number; process: number; other: number };
+  // Observed trials that exposed every declared sibling; null when the item declares none.
+  sibling_exposed: number | null;
+  fails: LeverFail[];
+}
 export interface TaskClasses {
   trials_valid: number;
   pass: number;
@@ -100,6 +134,8 @@ export interface TaskClasses {
   unattributed_event_failures?: Array<{ trial: number; run: string; item: string; gate: string }>;
   // R37: present when the records ran at task versions other than the checkout's.
   historical?: { task_versions: string[]; checkout: string };
+  // W5-H: present when the task declares lever items (LEVER_ITEMS), in declaration order.
+  lever?: { base_pass: number; items: LeverRow[] };
 }
 export interface ClassesJson {
   schema_version: 1;
@@ -145,6 +181,11 @@ export function classesJsonProblems(v: unknown): string[] {
     if ('historical' in t && !(obj(t.historical) && arr((x) => typeof x === 'string')(t.historical.task_versions) && typeof t.historical.checkout === 'string')) {
       out.push(`${p}.historical: wrong type`);
     }
+      const leverRow = (r: unknown) => obj(r) && typeof r.id === 'string' && (r.kind === 'A' || r.kind === 'B') && typeof r.item === 'string' && (r.spec === null || typeof r.spec === 'string')
+      && typeof r.active === 'boolean' && num(r.observed) && num(r.passed) && (r.catch_rate === null || num(r.catch_rate)) && interval(r.wilson)
+      && obj(r.split) && ['retrieval', 'reasoning', 'process', 'other'].every((k) => num((r.split as Record<string, unknown>)[k])) && (r.sibling_exposed === null || num(r.sibling_exposed))
+      && arr((f) => obj(f) && num(f.trial) && arr((g) => typeof g === 'string')(f.gates) && typeof f.label === 'string' && (f.sibling_exposed === null || typeof f.sibling_exposed === 'boolean'))(r.fails);
+    if ('lever' in t && !(obj(t.lever) && num(t.lever.base_pass) && arr(leverRow)(t.lever.items))) out.push(`${p}.lever: wrong type`);
   }
   return out;
 }
@@ -155,6 +196,8 @@ export interface ItemClass { key: string; class: string; label: string }
 export interface EventSpecLike { id: string; item: string; class: EventClass }
 export interface TaskEvents { SPECS: readonly EventSpecLike[]; ACTIVE: readonly string[] }
 
+export type TaskLever = Lever;
+
 export interface Deps {
   out: (line: string) => void;
   err: (line: string) => void;
@@ -162,6 +205,9 @@ export interface Deps {
   itemClasses?: (task: string) => Promise<ItemClass[]>;
   // A task's event specs and ACTIVE list, null when it has no tasks/<id>/events.ts.
   events?: (task: string) => Promise<TaskEvents | null>;
+  // A task's lever items and active ids, null when its expected.ts declares no LEVER_ITEMS (W5-H);
+  // default from the checkout (taskLeverOf).
+  lever?: (task: string) => Promise<TaskLever | null>;
   // The checkout's task_version of a task, null when it cannot be computed (R37).
   checkoutVersion?: (task: string) => Promise<string | null>;
   // The item table pinned in a run directory for a task, null when it has none (R37).
@@ -170,12 +216,12 @@ export interface Deps {
 
 // <run>/item-classes.json (R37): per task, the items with classes and labels, and the event specs,
 // as the commit the run's README.md names had them.
-export interface PinnedItems { items: ItemClass[]; events: TaskEvents | null }
+export interface PinnedItems { items: ItemClass[]; events: TaskEvents | null; lever?: TaskLever | null }
 export function pinnedItemsOf(run: string, task: string): PinnedItems | null {
   const file = join(run, 'item-classes.json');
   if (!existsSync(file)) return null;
   const t = (JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, PinnedItems> }).tasks?.[task];
-  return t === undefined ? null : { items: t.items, events: t.events ?? null };
+  return t === undefined ? null : { items: t.items, events: t.events ?? null, lever: t.lever ?? null };
 }
 
 const versionCache = new Map<string, Promise<string | null>>();
@@ -232,6 +278,16 @@ export async function itemClassesOf(task: string, root: string = TASKS_DIR): Pro
   return rows.map((r) => ({ key: r.key, class: r.class, label: r.label }));
 }
 
+// The checkout's lever items of a task (expected.ts LEVER_ITEMS and LEVER, through the matrix's
+// reader, which checks the module's LEVER against the list the task loader hashed), null without.
+export async function taskLeverOf(task: string, root: string = TASKS_DIR): Promise<TaskLever | null> {
+  const file = join(root, task, 'expected.ts');
+  if (!existsSync(file)) return null;
+  const m = (await import(pathToFileURL(file).href)) as Record<string, unknown>;
+  const loaded = (await nodeTaskSource({ root, testMode: true }).get(task)).lever;
+  return matrixLever(m, loaded, `tasks/${task}`) ?? null;
+}
+
 export async function taskEventsOf(task: string, root: string = TASKS_DIR): Promise<TaskEvents | null> {
   const file = join(root, task, 'events.ts');
   if (!existsSync(file)) return null;
@@ -255,6 +311,8 @@ interface Trial {
   fired: string[];
   guard: number;
   taskVersion: string | null;
+  // The ids the trajectory's successful tool results exposed, read on first use (lever siblings).
+  exposed: () => ReadonlySet<string>;
 }
 
 interface CheckItem { item?: unknown; met?: unknown; event?: unknown }
@@ -270,6 +328,19 @@ export function uniqueRuns(runs: readonly string[], warn: (line: string) => void
     else warn(`warning: ${dir} repeats ${seen}; read once`);
   }
   return [...first.values()];
+}
+
+// The ids every successful tool result of a trajectory exposed (exposure.ts Step.exposed_ids).
+function exposedIds(file: string): ReadonlySet<string> {
+  const out = new Set<string>();
+  if (!existsSync(file)) return out;
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    if (!line.includes('"tool_result"')) continue;
+    const e = JSON.parse(line) as { type?: unknown; is_error?: unknown; exposed_ids?: unknown };
+    if (e.type !== 'tool_result' || e.is_error === true || !Array.isArray(e.exposed_ids)) continue;
+    for (const id of e.exposed_ids) if (typeof id === 'string') out.add(id);
+  }
+  return out;
 }
 
 function readTrajectory(file: string): { fired: string[]; guard: number } {
@@ -327,8 +398,10 @@ function readTrial(dir: string, r: RawRecord): Trial {
     if (typeof a.item !== 'string') continue;
     labels.set(a.item, [...(labels.get(a.item) ?? []), { gate: String(a.gate ?? '?'), label: String(a.auto ?? '?') }]);
   }
-  const { fired, guard } = readTrajectory(trajectoryOf(dir, r as never));
-  return { run: dir, index: Number(r.index), outcome: grade.outcome, valid: grade.valid, failed, named, labels, items, fired, guard, taskVersion: typeof r.task_version === 'string' ? r.task_version : null };
+  const file = trajectoryOf(dir, r as never);
+  const { fired, guard } = readTrajectory(file);
+  let exposed: ReadonlySet<string> | undefined;
+  return { run: dir, index: Number(r.index), outcome: grade.outcome, valid: grade.valid, failed, named, labels, items, fired, guard, taskVersion: typeof r.task_version === 'string' ? r.task_version : null, exposed: () => (exposed ??= exposedIds(file)) };
 }
 
 function labelsOf(t: Trial, item: string, gates?: readonly string[]): Label[] {
@@ -340,7 +413,35 @@ function labelsOf(t: Trial, item: string, gates?: readonly string[]): Label[] {
 
 const product = (xs: number[]): number => xs.reduce((p, x) => p * x, 1);
 
-export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], events: TaskEvents | null): TaskClasses {
+const SPLIT_LABELS = ['retrieval', 'reasoning', 'process'] as const;
+
+// The lever rows of a task (the header's lever block) over its valid trials.
+function leverRows(valid: readonly Trial[], lever: Lever): NonNullable<TaskClasses['lever']> {
+  const active = (i: LeverItem) => lever.active.includes(i.id);
+  const claimed = new Set(lever.items.filter(active).map((i) => i.item));
+  const base_pass = valid.filter((t) => ![...t.failed.keys()].some((k) => !claimed.has(k))).length;
+  const items = lever.items.map((i): LeverRow => {
+    const observed = i.kind === 'A' ? valid.filter((t) => i.spec !== undefined && t.fired.includes(i.spec)) : active(i) ? [...valid] : [];
+    const counts = (g: string) => i.gates === undefined || i.gates.includes(g);
+    const gatesOf = (t: Trial) => (t.failed.get(i.item) ?? []).filter(counts);
+    const sibling = i.sibling ?? [];
+    const exposedAll = (t: Trial): boolean | null => (sibling.length === 0 ? null : sibling.every((id) => [...t.exposed()].some((k) => sameId(k, id))));
+    const fails = observed.filter((t) => gatesOf(t).length > 0).map((t): LeverFail => ({
+      trial: t.index, run: t.run, gates: gatesOf(t), label: (t.labels.get(i.item) ?? []).find((l) => counts(l.gate))?.label ?? '?', sibling_exposed: exposedAll(t),
+    }));
+    const split = { retrieval: 0, reasoning: 0, process: 0, other: 0 };
+    for (const f of fails) split[(SPLIT_LABELS as readonly string[]).includes(f.label) ? (f.label as (typeof SPLIT_LABELS)[number]) : 'other']++;
+    const passed = observed.length - fails.length;
+    return {
+      id: i.id, kind: i.kind, item: i.item, spec: i.spec ?? null, active: active(i), observed: observed.length, passed,
+      catch_rate: observed.length > 0 ? passed / observed.length : null, wilson: wilson(passed, observed.length), split,
+      sibling_exposed: sibling.length === 0 ? null : observed.filter((t) => exposedAll(t) === true).length, fails,
+    };
+  });
+  return { base_pass, items };
+}
+
+export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], events: TaskEvents | null, lever: Lever | null = null): TaskClasses {
   const valid = trials.filter((t) => t.valid);
   const n = valid.length;
   const split = { model: 0, environment: 0, grader: 0, infra: 0 };
@@ -415,6 +516,7 @@ export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], 
     outcomes: trials.map((t) => ({ trial: t.index, run: t.run, outcome: t.outcome })),
     // Left out when empty, so a run without such failures prints what it printed before.
     ...(unattributed.length > 0 ? { unattributed_event_failures: unattributed } : {}),
+    ...(lever === null ? {} : { lever: leverRows(valid, lever) }),
   };
 }
 
@@ -463,6 +565,15 @@ export function markdown(json: ClassesJson): string {
     }
     const un = t.unattributed_event_failures ?? [];
     if (un.length > 0) L.push(`Unattributed event failures: ${un.map((u) => `${trialRef(u, many)}: ${u.item} ${u.gate}`).join(', ')}.`, '');
+    if (t.lever) {
+      L.push('| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |', '|---|---|---|---|---|---|---|---|---|---|');
+      for (const r of t.lever.items) {
+        const exposed = (x: boolean | null) => (x === null ? '' : x ? ', yes' : ', no');
+        const fails = r.fails.map((f) => `${trialRef(f, many)}: ${f.gates.join(', ')} -> ${f.label}${exposed(f.sibling_exposed)}`).join('<br>');
+        L.push(`| ${r.id} | ${r.kind} | ${r.item} | ${r.spec ?? ''} | ${r.active ? 'yes' : 'no'} | ${[f2(r.catch_rate), `(${r.passed} / ${r.observed})`].filter(Boolean).join(' ')} | ${iv(r.wilson)} | ${r.split.retrieval} / ${r.split.reasoning} / ${r.split.process} / ${r.split.other} | ${r.sibling_exposed === null ? '' : `${r.sibling_exposed} / ${r.observed}`} | ${fails} |`);
+      }
+      L.push('', `base_pass ${t.lever.base_pass} / ${t.trials_valid} valid trials passed every non-lever item (S5 b_t).`, '');
+    }
   }
   L.push('## Independence (descriptive, gates nothing)', '', '| task | trials | PASS | all items pass | expected, per-item product | expected, per-class product |', '|---|---|---|---|---|---|');
   for (const [id, t] of Object.entries(json.tasks)) {
@@ -486,7 +597,7 @@ export function sortGraderVersions(vs: Iterable<string>): string[] {
   return [...vs].sort((a, b) => Number(a) - Number(b) || (a < b ? -1 : a > b ? 1 : 0));
 }
 
-export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemClasses' | 'events' | 'checkoutVersion' | 'pinnedItems'> = {}): Promise<ClassesJson> {
+export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemClasses' | 'events' | 'checkoutVersion' | 'pinnedItems' | 'lever'> = {}): Promise<ClassesJson> {
   const byTask = new Map<string, Trial[]>();
   const graders = new Set<string>();
   for (const dir of runs) {
@@ -511,7 +622,7 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
       const recorded = new Set(trials.filter((t) => t.valid).flatMap((t) => [...t.items]).filter((k) => k !== OUTSIDE));
       const known = (pinned?.items ?? []).filter((i) => recorded.has(i.key));
       const rest = [...recorded].filter((k) => !known.some((i) => i.key === k)).sort().map((key) => ({ key, class: 'unclassified', label: key }));
-      tasks[id] = { ...tabulate(trials, [...known, ...rest], pinned?.events ?? null), historical: { task_versions: versions, checkout } };
+      tasks[id] = { ...tabulate(trials, [...known, ...rest], pinned?.events ?? null, pinned?.lever ?? null), historical: { task_versions: versions, checkout } };
       continue;
     }
     const items = await (deps.itemClasses ?? itemClassesOf)(id);
@@ -525,7 +636,12 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
           + `${missing.length > 0 ? `; not graded: ${missing.join(', ')}` : ''}${extra.length > 0 ? `; not in the checkout's list: ${extra.join(', ')}` : ''}`);
       }
     }
-    tasks[id] = tabulate(trials, items, await (deps.events ?? taskEventsOf)(id));
+    const lever = await (deps.lever ?? taskLeverOf)(id);
+    for (const i of lever?.items ?? []) {
+      if (lever!.active.includes(i.id) && !keys.has(i.item)) throw new Error(`${id}: lever item ${i.id} names item ${i.item}, which is not in the checkout's list (tasks/${id}/expected.ts)`);
+      if (i.kind === 'A' && i.spec === undefined) throw new Error(`${id}: lever item ${i.id} is an A item and names no event spec`);
+    }
+    tasks[id] = tabulate(trials, items, await (deps.events ?? taskEventsOf)(id), lever);
   }
   return { schema_version: 1, run_dirs: [...runs], grader_versions: sortGraderVersions(graders), tasks };
 }

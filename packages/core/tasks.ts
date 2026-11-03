@@ -38,11 +38,25 @@
 //                        (packages/grader/grade.ts GRADER_VERSION);
 // task.toml counts by its parsed tables (keys sorted), so a comment or layout change moves
 // neither version; filesHash still covers every byte.
+//                        expected.ts is grader-side, but its LEVER list (below) is also hashed
+//                        into env_version: a toggle changes what the agent meets.
 //   task_version         sha256 of the two: any change to the task is a new task_version.
 // replay compares env_version only (the trajectory must reach the record's state); regrade
 // records the grader_task_version it graded at; a batch resumes by env_version, so a grader fix
 // regrades a run instead of discarding it; cost projections read env_version
 // (packages/core/cost.ts) and the freeze reads task_version.
+//
+// Lever items (plan-amendment-w5 G1, W5-H): a task's record-integrity defects are toggles.
+// tasks/<id>/expected.ts exports `LEVER`, the ids of the active lever items, as one literal list
+// (`export const LEVER = ['A', 'B'];`, a type annotation, comments, double quotes, a trailing comma
+// and `as const` allowed), or re-exports it from tasks/<id>/lever.ts (`export { LEVER } from
+// './lever.ts';`, a file with no imports that overlay.ts and events.ts can read too), which then
+// holds the literal. parseTask reads it from the files' text (leverOf), so Node and the browser hash
+// the same value with no module import, and taskVersions folds it into env_version only when the
+// task declares it: a task without LEVER keeps the env_version it had. A LEVER that is not one
+// literal list of distinct non-empty string ids is an error naming the file: the loader never
+// guesses at a computed list. The items themselves (LEVER_ITEMS) are grader-side data the matrix and
+// cli classes import as a module.
 import { parse } from 'smol-toml';
 import { activeSpecs, type EventSpec } from '../env/events.ts';
 import { CATALOG_KINDS, type CatalogEntry, type Policy } from '../env/tools/read/context.ts';
@@ -88,6 +102,8 @@ export interface Task {
   graderFilesHash: string;
   // The active mid-trial event specs (events.ts ACTIVE, in SPECS order); [] without events.ts.
   events: readonly EventSpec[];
+  // The active lever item ids (expected.ts LEVER, in its order); null when the task declares none.
+  lever: readonly string[] | null;
 }
 
 // The task.toml tables only grading reads: the judge's effort and the matrix's declarations
@@ -143,6 +159,53 @@ function field(where: string, table: Record<string, unknown>, key: string, kind:
   return v;
 }
 
+const LEVER_DECL = /^export const LEVER(?:\s*:\s*[^=\n]+?)?\s*=\s*\[([^\]]*)\]/gm;
+const LEVER_REEXPORT = /^export \{ LEVER \} from ['"]\.\/lever\.ts['"];?/gm;
+
+// The LEVER list of a task's files (the header's "Lever items"): from expected.ts, or from lever.ts
+// when expected.ts re-exports it; null when neither declares one; throws, naming the file, when the
+// declaration is not one literal list of distinct non-empty string ids, or lever.ts declares a
+// LEVER that expected.ts does not re-export.
+export function leverOf(files: Readonly<Record<string, string | undefined>>, where: string): readonly string[] | null {
+  const expected = files['expected.ts'];
+  const sibling = files['lever.ts'];
+  const reexports = expected === undefined ? 0 : (expected.match(LEVER_REEXPORT) ?? []).length;
+  const declared = expected === undefined ? 0 : (expected.match(/^export const LEVER\b/gm) ?? []).length;
+  if (reexports + declared > 1) throw new Error(`${where}/expected.ts: LEVER is declared twice`);
+  if (reexports === 1) {
+    if (sibling === undefined) throw new Error(`${where}/expected.ts re-exports LEVER from ./lever.ts, which does not exist`);
+    return leverLiteral(sibling, `${where}/lever.ts`);
+  }
+  if (sibling !== undefined && /^export const LEVER\b/m.test(sibling) && declared === 0) throw new Error(`${where}/lever.ts declares LEVER, and expected.ts does not re-export it (export { LEVER } from './lever.ts';)`);
+  return expected === undefined ? null : leverLiteral(expected, `${where}/expected.ts`);
+}
+
+// One file's `export const LEVER = [...]` as its ids; null without the declaration.
+function leverLiteral(text: string, where: string): readonly string[] | null {
+  const decls = [...text.matchAll(LEVER_DECL)];
+  const named = (text.match(/^export const LEVER\b/gm) ?? []).length;
+  if (named === 0) return null;
+  if (named > 1) throw new Error(`${where}: LEVER is declared twice`);
+  const bad = new Error(`${where}: LEVER must be a literal list of string ids (export const LEVER = ['A', 'B'];)`);
+  if (decls.length !== 1) throw bad;
+  const body = (decls[0] as RegExpMatchArray)[1]!.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const ids: string[] = [];
+  const token = /\s*(?:'([^'\\]*)'|"([^"\\]*)")\s*(,|$)/y;
+  let at = 0;
+  while (at < body.length) {
+    if (/^\s*$/.test(body.slice(at))) break;
+    token.lastIndex = at;
+    const m = token.exec(body);
+    if (m === null) throw bad;
+    const id = m[1] ?? m[2] ?? '';
+    if (id === '') throw bad;
+    if (ids.includes(id)) throw new Error(`${where}: LEVER names ${id} twice`);
+    ids.push(id);
+    at = token.lastIndex;
+  }
+  return ids;
+}
+
 // Parses and checks one task directory. Throws naming the directory and the field.
 export async function parseTask({ id, files, events: module }: TaskFiles): Promise<Task> {
   const where = `tasks/${id}`;
@@ -163,6 +226,7 @@ export async function parseTask({ id, files, events: module }: TaskFiles): Promi
   if (raw === undefined) throw new Error(`${where}: no task.toml`);
   const instruction = files['instruction.md'];
   if (instruction === undefined || instruction.trim() === '') throw new Error(`${where}: no instruction.md, or it is empty`);
+  const lever = leverOf(files, where);
   let doc: Record<string, unknown>;
   try {
     doc = parse(raw) as Record<string, unknown>;
@@ -226,12 +290,14 @@ export async function parseTask({ id, files, events: module }: TaskFiles): Promi
     envFilesHash,
     graderFilesHash,
     events,
+    lever,
   };
 }
 
 // A task's env_version, grader_task_version and task_version (the header says what each covers).
 export async function taskVersions(task: Task, worldHash: string): Promise<TaskVersions> {
-  const env_version = await sha256Hex(`env\n${task.envFilesHash}\n${worldHash}\ntools ${TOOLS_VERSION}`);
+  // LEVER is folded in only when the task declares it, so a task without one keeps its env_version.
+  const env_version = await sha256Hex(`env\n${task.envFilesHash}\n${worldHash}\ntools ${TOOLS_VERSION}${task.lever === null ? '' : `\nlever ${JSON.stringify(task.lever)}`}`);
   const grader_task_version = await sha256Hex(`grader\n${task.graderFilesHash}\ngrader ${GRADER_VERSION}`);
   return { env_version, grader_task_version, task_version: await sha256Hex(`${env_version}\n${grader_task_version}`) };
 }
