@@ -12,28 +12,27 @@
         "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee"
       ],
       "grader_task_versions": [
-        "1cf41ce2ca1d0ad8afcfdd3116f32bd2ff449ed9f916669cd087c9cbed105afd"
+        "ab38fbcd413fd3dd0ab137b27b58a893ea5032e9db20e374f42769e8e51058a9"
       ],
       "records": 4,
       "trials": 4,
-      "passes": 3,
-      "pass_rate": 0.75,
+      "passes": 4,
+      "pass_rate": 1,
       "wilson95": {
-        "lo": 0.30064184258240184,
-        "hi": 0.9544127391902995
+        "lo": 0.5101091635454027,
+        "hi": 1
       },
       "band_verdict": "Above band",
       "refusals": 0,
-      "refusal_excluded_rate": 0.75,
+      "refusal_excluded_rate": 1,
       "outcomes": {
-        "PASS": 3,
-        "FAIL": 1
+        "PASS": 4
       },
       "recorded_outcomes": {
         "PASS": 3,
         "FAIL": 1
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -42,9 +41,9 @@
       "mean_score": 1,
       "mean_cost_usd": 2.3518694,
       "raw_mean_score": 1,
-      "gate_fraction": 0.9545454545454546,
-      "pass_no_harm": 3,
-      "pass_no_harm_rate": 0.75,
+      "gate_fraction": 1,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -54,34 +53,28 @@
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 4,
-      "infra_counted_rate": 0.75,
+      "infra_counted_rate": 1,
       "metric_trials": {
         "mean_score": 4,
         "raw_mean_score": 4,
         "gate_fraction": 4
       },
       "pass_k": {
-        "1": 0.75,
-        "3": 0.25,
+        "1": 1,
+        "3": 1,
         "5": null
       },
       "consistency": {
         "valid": 4,
-        "passes": 3,
-        "failures": 1,
-        "shared": {
-          "check": "fit_orders",
-          "count": 1,
-          "found": "{\"extra\":[],\"late\":[],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0024\":[\"ServiceRequest/sr-t0002\"]},\"period_end\":\"2026-12-31\",\"unreviewed\":[\"Patient/pt-0009\"],\"want\":[\"Patient/pt-0009\",\"Patient/pt-0022\",\"Patient/pt-0024\"]}",
-          "found_count": 1,
-          "found_values": 1
-        },
+        "passes": 4,
+        "failures": 0,
+        "shared": null,
         "flags": []
       },
       "fault_counts": {
-        "failures": 1,
+        "failures": 0,
         "taxonomy": {
-          "retrieval": 1,
+          "retrieval": 0,
           "reasoning": 0,
           "output_gap": 0,
           "over_action": 0,
@@ -91,26 +84,26 @@
           "refusal": 0,
           "unattributed": 0
         },
-        "label": null,
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
         "infra_reruns": 0
       },
-      "top_failed_checks": [
-        {
-          "check": "fit_orders",
-          "count": 1
-        }
-      ]
+      "top_failed_checks": []
     }
   },
   "totals": {
     "records": 4,
     "trials": 4,
-    "passes": 3,
+    "passes": 4,
     "env_error_raw": 0,
     "env_limit": 0,
     "grader_error": 0,
     "grader_error_history": 0,
-    "regraded": 0,
+    "regraded": 4,
     "requeued": 0,
     "internal_errors": 0,
     "cost_usd": 9.407477599999998

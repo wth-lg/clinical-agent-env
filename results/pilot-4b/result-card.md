@@ -8,17 +8,18 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 
 | task | k/n | Wilson 95% | verdict | pass@1 | pass^3 | pass^5 | ENV_ERROR raw | ENV_LIMIT | GRADER_ERROR (earlier) |
 |---|---|---|---|---|---|---|---|---|---|
-| crc-care-gap | 3/4 | [0.30, 0.95] | Above band | 0.75 | 0.25 | n/a | 0 | 0 | 0 (0) |
+| crc-care-gap | 4/4 | [0.51, 1.00] | Above band | 1.00 | 1.00 | n/a | 0 | 0 | 0 (0) |
 
 ## Failures by fault
 
 | task | failures | model | environment | grader | infra (cli classes) | re-queued infra attempts (summary infra_reruns) | source |
 |---|---|---|---|---|---|---|---|
-| crc-care-gap | 1 | 1 | 0 | 0 | 0 | 0 | cli classes |
+| crc-care-gap | 0 | 0 | 0 | 0 | 0 | 0 | audit.jsonl |
 
 ## Grader faults found and fixed
 
-GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: none.
+GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: 1.
+- crc-care-gap/1: FAIL at grader 19, PASS at grader 20
 
 ## Per class and per event
 
@@ -28,7 +29,7 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 | class | instance (item) | fails | class fails / observations | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| frailty_advanced_illness | 1 (Elly Shyla Trantow) | 1/4 | 1/4 | 0.75 | [0.30, 0.95] | #1: fit_orders -> retrieval |
+| frailty_advanced_illness | 1 (Elly Shyla Trantow) | 0/4 | 0/4 | 1.00 | [0.51, 1.00] |  |
 | hospice_revoked | 1 (Kelsie Wanetta Rohan) | 0/4 | 0/4 | 1.00 | [0.51, 1.00] |  |
 | collection_vs_report_date | 1 (Tiny Darline Koss) | 0/4 | 0/4 | 1.00 | [0.51, 1.00] |  |
 | colonoscopy_never_done | 1 (Delaine Evelyn MacGyver) | 0/4 | 0/4 | 1.00 | [0.51, 1.00] |  |
@@ -45,7 +46,7 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 | task | pilot-4a | pilot-4b |
 |---|---|---|
 | contrast-ct-prep | 1/4 In band | none |
-| crc-care-gap | 2/4 In band | 3/4 Above band |
+| crc-care-gap | 2/4 In band | 4/4 Above band |
 | discharge-medrec | 4/4 Above band | none |
 | message-queue | 4/4 Above band | none |
 | renal-dose-review | 4/4 Above band | none |
@@ -53,5 +54,5 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 ## No failures
 
-No task with valid trials passed every trial.
+- crc-care-gap: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version ab38fbcd413fd3dd0ab137b27b58a893ea5032e9db20e374f42769e8e51058a9: the oracle passes, 31 of 31 mutants fail as declared, 16 of 16 alternatives pass, the null agent fails.
 

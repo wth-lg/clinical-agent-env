@@ -4,18 +4,18 @@
   "results/pilot-4b"
  ],
  "grader_versions": [
-  "19"
+  "20"
  ],
  "tasks": {
   "crc-care-gap": {
    "trials_valid": 4,
-   "pass": 3,
+   "pass": 4,
    "wilson": {
-    "lo": 0.30064184258240184,
-    "hi": 0.9544127391902995
+    "lo": 0.5101091635454027,
+    "hi": 1
    },
    "split": {
-    "model": 1,
+    "model": 0,
     "environment": 0,
     "grader": 0,
     "infra": 0
@@ -29,29 +29,21 @@
    "classes": [
     {
      "class": "frailty_advanced_illness",
-     "fails": 1,
-     "base_fails": 1,
+     "fails": 0,
+     "base_fails": 0,
      "observations": 4,
-     "pass_rate": 0.75,
+     "pass_rate": 1,
      "wilson": {
-      "lo": 0.30064184258240184,
-      "hi": 0.9544127391902995
+      "lo": 0.5101091635454027,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 1,
-       "run": "results/pilot-4b",
-       "item": "Patient/pt-0009",
-       "gate": "fit_orders",
-       "label": "retrieval"
-      }
-     ],
+     "labels": [],
      "instances": [
       {
        "instance": 1,
        "item": "Patient/pt-0009",
        "label": "Elly Shyla Trantow",
-       "fails": 1,
+       "fails": 0,
        "observations": 4
       }
      ]
@@ -188,9 +180,9 @@
    ],
    "outside_failures": [],
    "independence": {
-    "all_items_pass": 3,
-    "expected_per_item": 3,
-    "expected_per_class": 3
+    "all_items_pass": 4,
+    "expected_per_item": 4,
+    "expected_per_class": 4
    },
    "outcomes": [
     {
@@ -201,7 +193,7 @@
     {
      "trial": 1,
      "run": "results/pilot-4b",
-     "outcome": "FAIL"
+     "outcome": "PASS"
     },
     {
      "trial": 2,
@@ -213,7 +205,13 @@
      "run": "results/pilot-4b",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "2b6dd996375d39528cbfc39c0676ddc6116615828e471f1a535e44933a59b181"
+    ],
+    "checkout": "bf07043444a04944279a1f5088e5c4ea3e56e075488a370f350a232cd2775d79"
+   }
   }
  }
 }
