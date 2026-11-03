@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:3",
   "task_id": "crc-care-gap",
-  "task_version": "bf07043444a04944279a1f5088e5c4ea3e56e075488a370f350a232cd2775d79",
-  "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "ab38fbcd413fd3dd0ab137b27b58a893ea5032e9db20e374f42769e8e51058a9",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "23deb4924f08fdb5865ae6d3e3b071fb58131be1b48a4d5bf6e93f74d7e98d26",
+  "env_version": "6ebfb4a9189d526f0ebe7521abb1dd5f4ced2ffca750e2a4c19929e2566f229a",
+  "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
+  "fixture_hash": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "8cea7ad0760cce6993507e1d7d5fafd2d286d716a3a0a56e100f1742e95e96b4",
-    "replay_final": "8cea7ad0760cce6993507e1d7d5fafd2d286d716a3a0a56e100f1742e95e96b4"
+    "initial": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
+    "final": "7272ad402e436590c5dae18fc708d6ab8ac6569f816f525922dc3f0f0c24b905",
+    "replay_final": "7272ad402e436590c5dae18fc708d6ab8ac6569f816f525922dc3f0f0c24b905"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T12:46:42.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

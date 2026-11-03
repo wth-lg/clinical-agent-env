@@ -1,10 +1,12 @@
-# T1 (plan-amendment-worklist W1, builder-211; PW4-E3, builder-281): the pharmacy's DOAC dose review
-# list (Group 'DOAC dose review - week of 10/19/2026', overlay.ts) holds five patients on T1's slots,
-# each on apixaban or rivaroxaban for non-valvular atrial fibrillation: one instance of each kept
-# item class (Cockcroft-Gault CrCl on actual weight; apixaban's two-of-three criteria with the
-# latest measured weight; an outside creatinine in umol/L; a combined P-gp and strong CYP3A4
-# inhibitor) and one filler already on the right dose. Mid-trial events (events.ts) arrive in the
-# queues; RBC-PHARM-07 §5 asks for their review. Cut, as the plan says: collection
+# T1 (plan-amendment-worklist W1, builder-211; PW4-E3, builder-281; W5-E, builder-299): the
+# pharmacy's DOAC dose review list (Group 'DOAC dose review - week of 10/19/2026', overlay.ts) holds
+# five patients on T1's slots, each on apixaban or rivaroxaban for non-valvular atrial fibrillation:
+# one instance of each kept item class (Cockcroft-Gault CrCl on actual weight; apixaban's
+# two-of-three criteria with the latest measured weight; an outside creatinine in umol/L; a
+# combined P-gp and strong CYP3A4 inhibitor) and one filler already on the right dose, plus the W5
+# lever patients the overlay adds (lever.ts LEVER; expected.ts LEVER_ITEMS: a silent newer
+# creatinine in an outside batch, a copied-forward letter, and an inactive reserve). Mid-trial
+# events (events.ts) arrive in the queues; RBC-PHARM-07 §5 asks for their review. Cut, as the plan says: collection
 # versus report date, VTE versus AF. The gates check each patient on its own (packages/grader/items.ts).
 # What each gate check requires, in the words the UI and audit-check use: ../renal-dose-review.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).

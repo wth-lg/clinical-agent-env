@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "059b340061974c1d33ddd3a50eb3635b4006c0a0a32a03e73867324f96150ebc"
+        "e4dcb8b2936564aa7eff918c71adef19b9b8f0b23167eb5e66eca1cafe46b914"
       ],
       "env_versions": [
-        "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
+        "bbbc102523f5943cbdd25bde1e14b5c740d918a3dfeb59087c98851a98df7b70"
       ],
       "grader_task_versions": [
-        "00cf5639cc954efe0ba988afb7f55d70109554cac49e532cbc0d32b7f7da8674"
+        "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
       ],
       "records": 20,
       "trials": 20,
@@ -105,13 +105,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "47bc0b973bf2c5d47b0e60c516a2b4a79cec4dd0d6b6891802d1905a282c4ea5"
+        "4182fee3bbdb53bf8e012b50107990cc6b123b1d5d6f5e77c51ce8c7236cbd97"
       ],
       "env_versions": [
-        "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751"
+        "cfd56c29e42339d24f661a0d2ee534ab4b11b65873231e4a76d7ba157280d983"
       ],
       "grader_task_versions": [
-        "bdd77f8812edfae2df691ea136bcbe38a38807161c42ad3b8821328edf9dc124"
+        "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371"
       ],
       "records": 20,
       "trials": 20,
@@ -202,13 +202,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "6ca0fa99bd65cd41b3eb974d67d1220689f6b56a9c3dc230c755b33f69776066"
+        "9033f2f74489cc98337afa38398bd10ef89512965faaec09879ad627de183dbe"
       ],
       "env_versions": [
-        "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84"
+        "e9c11607487eae098ff10bb8d9cfe840743efd58b4b5b3cc01e0dc3e36e1c058"
       ],
       "grader_task_versions": [
-        "6fa4f6552e5abb2da56973b9ae150536904ffdf060992a6eeb29d2c7c0cb47b1"
+        "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd"
       ],
       "records": 20,
       "trials": 20,
@@ -311,7 +311,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86"
+    "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e"
   ],
   "replay": {
     "ran": false,

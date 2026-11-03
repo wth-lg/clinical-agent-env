@@ -19,7 +19,7 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 ## Grader faults found and fixed
 
 GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: 1.
-- crc-care-gap/1: FAIL at grader 19, PASS at grader 20
+- crc-care-gap/1: FAIL at grader 19, PASS at grader 22
 
 ## Per class and per event
 
@@ -54,5 +54,5 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 ## No failures
 
-- crc-care-gap: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version ab38fbcd413fd3dd0ab137b27b58a893ea5032e9db20e374f42769e8e51058a9: the oracle passes, 31 of 31 mutants fail as declared, 16 of 16 alternatives pass, the null agent fails.
+- crc-care-gap: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740: the oracle passes, 33 of 33 mutants fail as declared, 20 of 20 alternatives pass, the null agent fails.
 

@@ -1,5 +1,5 @@
 // Run directories for the summary, audit-check and donewhen tests: a live run of two tasks of 10
-// trials, 5 PASS and 5 FAIL each, with trajectories, replay.json, audit.jsonl (a task-validity review per task among its
+// trials (opts.trials for another count, half of them PASS), 5 PASS and 5 FAIL each, with trajectories, replay.json, audit.jsonl (a task-validity review per task among its
 // labels), matrix.json and a manifest that expects both tasks, and one variant per violation the gate names. Records carry the fields summary and audit-check read, as cli run writes them,
 // the env/grader version split included: env_version e-<task>, grader_task_version g-<task>, and g-<task>-next on a regrade.
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -54,19 +54,22 @@ const regrade = (task: string, outcome: 'PASS' | 'FAIL') => ({
   checks: [{ id: 'G1', kind: 'gate', met: outcome === 'PASS' }], at: '2026-10-24T00:00:00.000Z',
 });
 
-export function writeFixtureRun(dir: string, fixture: Fixture): void {
+export function writeFixtureRun(dir: string, fixture: Fixture, opts: { trials?: number } = {}): void {
   const labels: Array<Record<string, unknown>> = [];
   const replay: Record<string, { match: boolean }> = {};
   const mode = fixture === 'mock-mode' ? 'mock-fixture' : 'live';
+  const n = opts.trials ?? 10;
+  // The variants' trial indices, written for 10 trials, moved to the same place in a longer run.
+  const at = (k: number) => `${n - 10 + k}`;
   for (const task of TASKS) {
     if (fixture === 'missing-task' && task === 't-beta') continue;
-    const count = fixture === 'nine-trials' && task === 't-alpha' ? 9 : 10;
-    const passes = fixture === 'eight-of-ten' && task === 't-alpha' ? 8 : 5;
+    const count = fixture === 'nine-trials' && task === 't-alpha' ? n - 1 : n;
+    const passes = fixture === 'eight-of-ten' && task === 't-alpha' ? 8 : n / 2;
     for (let i = 0; i < count; i++) {
       const outcome = i < passes ? 'PASS' : 'FAIL';
       const over: Record<string, unknown> = {};
       if (fixture === 'model-mismatch' && task === 't-beta' && i === 7) over.models_returned = [MODEL, 'claude-other-model'];
-      if (fixture === 'never-exposable' && task === 't-beta' && i === 9) {
+      if (fixture === 'never-exposable' && task === 't-beta' && i === n - 1) {
         over.attribution = { auto: 'retrieval', first_failed: 'G1', decisive_step: 2, exposure: [{ id: 'Observation/never-in-world', first_exposed_step: null }] };
       }
       // fail-regraded-pass: a later grader passes t-alpha's 5 FAIL records (their labels still say FAIL).
@@ -80,11 +83,11 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
       replay[`${task}/${i}`] = { match: !(fixture === 'replay-mismatch' && task === 't-alpha' && i === 2) };
       const key = `${task}/${i}`;
       if (outcome === 'FAIL') {
-        if (fixture === 'missing-label' && key === 't-alpha/6') continue;
+        if (fixture === 'missing-label' && key === `t-alpha/${at(6)}`) continue;
         labels.push({
-          trial: key, outcome, taxonomy: fixture === 'environment-label' && key === 't-beta/8' ? 'environment' : 'reasoning',
-          model_fault: fixture === 'model-fault-no' && key === 't-alpha/7' ? 'no' : 'yes', decisive_step: 2, evidence_ids: [fixture === 'evidence-absent' && key === 't-alpha/5' ? 'Observation/not-in-trajectory' : EXPOSED],
-          llm_auditor_agrees: !(fixture === 'unadjudicated' && key === 't-beta/5'), note: 'chose the wrong value with the evidence in view',
+          trial: key, outcome, taxonomy: fixture === 'environment-label' && key === `t-beta/${at(8)}` ? 'environment' : 'reasoning',
+          model_fault: fixture === 'model-fault-no' && key === `t-alpha/${at(7)}` ? 'no' : 'yes', decisive_step: 2, evidence_ids: [fixture === 'evidence-absent' && key === `t-alpha/${at(5)}` ? 'Observation/not-in-trajectory' : EXPOSED],
+          llm_auditor_agrees: !(fixture === 'unadjudicated' && key === `t-beta/${at(5)}`), note: 'chose the wrong value with the evidence in view',
         });
       } else if (i < (fixture === 'one-audited-pass' && task === 't-beta' ? 1 : 2)) {
         labels.push({ trial: key, outcome, taxonomy: null, model_fault: null, decisive_step: null, evidence_ids: [EXPOSED], llm_auditor_agrees: true, note: 'passed for the right reasons' });
@@ -105,7 +108,7 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
   }
   put(dir, 'replay.json', `${JSON.stringify({ trials: replay }, null, 2)}\n`);
   put(dir, 'audit.jsonl', labels.map((l) => JSON.stringify(l)).join('\n') + '\n');
-  put(dir, 'manifest.json', `${JSON.stringify({ run_id: 'final-1', model: MODEL, effort: 'high', mode, trials: 10, world_hash: 'h-initial', task_versions: Object.fromEntries(TASKS.map((t) => [t, `v-${t}`])), batches: [] }, null, 2)}\n`);
+  put(dir, 'manifest.json', `${JSON.stringify({ run_id: 'final-1', model: MODEL, effort: 'high', mode, trials: n, world_hash: 'h-initial', task_versions: Object.fromEntries(TASKS.map((t) => [t, `v-${t}`])), batches: [] }, null, 2)}\n`);
   // The grader validation matrix of each grader_task_version, the run's and a regrade's (audit-check
   // reads it for criterion M4, and for M1 the ids the oracle was shown on the run's world), as
   // `pnpm cli matrix --out` writes it.

@@ -37,11 +37,11 @@ const store = await loadStore(matrixEnv().world);
 // it renames keep their ids, which is all the overlay reads (the hosts are hand-written).
 const reader: WorldReader = { get: store.get.bind(store), search: store.search.bind(store), resources: store.resources.bind(store), size: store.size };
 const task = await nodeTaskSource({ testMode: false }).get('results-inbox');
-// The task's files as text (expected.ts for the LEVER literal, task.toml for the traps).
+// The task's files as text (lever.ts for the LEVER literal, task.toml for the traps).
 const FILES = nodeTaskDirs().find((d) => d.id === 'results-inbox')!.files;
 const T2_SLOTS: readonly string[] = TASKS.T2.slots;
 
-// The overlay's edits for a LEVER state: the module reads expected.ts LEVER, so a state is built by
+// The overlay's edits for a LEVER state: the module reads lever.ts LEVER, so a state is built by
 // the host functions it exposes through LEVER_HOSTS and the committed world's reader.
 const LEVER_DECL = /^export const LEVER(?:\s*:\s*[^=\n]+?)?\s*=\s*\[([^\]]*)\]/m;
 const leverOfText = (text: string) => (LEVER_DECL.exec(text)![1]!.match(/'([^']*)'|"([^"]*)"/g) ?? []).map((q) => q.slice(1, -1));
@@ -59,10 +59,13 @@ describe('results-inbox lever toggles (W5-E)', () => {
     expect(new Set(LEVER).size).toBe(LEVER.length);
   });
 
-  it("the loader's literal LEVER (packages/core/tasks.ts leverOf's rule) is the export", () => {
-    const text = FILES['expected.ts']!;
+  it("the loader's literal LEVER (packages/core/tasks.ts leverOf's rule) is the export: lever.ts declares it once, expected.ts re-exports it", () => {
+    const text = FILES['lever.ts']!;
     expect(leverOfText(text)).toEqual([...LEVER]);
     expect((text.match(/^export const LEVER\b/gm) ?? []).length).toBe(1);
+    expect(text).not.toMatch(/^import\b/m);
+    expect(FILES['expected.ts']!).toMatch(/^export \{ LEVER \} from '\.\/lever\.ts';$/m);
+    expect((FILES['expected.ts']!.match(/^export const LEVER\b/gm) ?? []).length).toBe(0);
   });
 
   it.each(STATES.map((s) => [s.join('+'), s] as const))('state %s: leverItems and LEVER_SPECS hold exactly the active items', (_k, state) => {

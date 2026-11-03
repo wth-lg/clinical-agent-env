@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "trials_per_task": 20,
+  "band": [
+    0.2,
+    0.7
+  ],
+  "tasks": {
+    "contrast-ct-prep": {
+      "task_version": "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc",
+      "grader_task_version": "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca",
+      "env_version": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1",
+      "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+      "oracle_final_hash": "94dd33348743590b6da40a42d34b9675f09e0214ae11e4d5d2f14d67531c6921",
+      "frozen_at": {
+        "tag": "freeze-t3t5"
+      },
+      "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528",
+          "task_version": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7",
+          "at": "regrade-r41",
+          "reason": "R41 grader bug fix (builder-304 to builder-307, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the target set being the one owed at the decision's turn (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+        }
+      ]
+    },
+    "crc-care-gap": {
+      "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
+      "grader_task_version": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
+      "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
+      "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+      "oracle_final_hash": "d4d1744f7d832500789b8b256720b68cc62d50d5999025fdf023bfe4f9dec80b",
+      "frozen_at": {
+        "tag": "freeze-t3t5"
+      },
+      "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
+          "task_version": "edae9b9f4eefface2b44d8029cd1b582b2e875f11197181e83eec73c2a391993",
+          "at": "regrade-r41",
+          "reason": "R41 grader bug fix (builder-304 to builder-307, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the target set being the one owed at the decision's turn (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+        }
+      ]
+    }
+  }
+}

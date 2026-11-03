@@ -46,7 +46,7 @@
 //                     (instruction.md:<n>) or a policy (<policy id>, optionally ' §<section>'
 //                     found in its text)
 //   oracle final hash the oracle's final state hash equals MatrixOptions.oracleFinalHash when
-//                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
+//                     one is given (cli/matrix.ts reads it from results/tasks-final.json, which
 //                     P21's freeze writes), and a pinned hash fails when the oracle case does not
 //                     run; without one the hash is printed, not checked
 //   events            (a task with active mid-trial event specs, MatrixTask.events) checked
@@ -60,6 +60,20 @@
 //                     the written_ids of the call that fired it or of an earlier call, and the diff
 //                     of the replayed states lists each arrival in arrived, never in created, and in
 //                     updated only when a later call wrote it (diff.ts, C3)
+//   lever             (a task with lever items, MatrixTask.lever: expected.ts LEVER_ITEMS and
+//                     LEVER, plan-amendment-w5 G1/G3) checked before any case runs, like loses:
+//                     each id once, LEVER naming only declared items, every A item naming its
+//                     deciding sibling records and an event that is an active spec exactly when
+//                     the item is active, and every
+//                     active A item having both agents in tests/agents.ts `lever[<id>]`, which no
+//                     other item may have. Then, per active A item, two cases: focus-only must be
+//                     a model FAIL whose failed items are exactly that item, labelled retrieval,
+//                     failing a gate that is the lever item's (one of its `gates`, or an event
+//                     gate whose failure names its `spec`) with none of its `sibling` ids among
+//                     the ids its tool results exposed (it read the arrival's focus and never the
+//                     deciding sibling; verifier-phase-P17i-W5H-212-1 F2), and read-all-newest
+//                     must PASS with no judge item unknown and exactly its declared `loses` lost,
+//                     like an alternative
 //   decisive reachability  every gate check's decisive ids were exposed or referenced to a
 //                     passing oracle or alternative (unreachedDecisive), checked when the oracle and
 //                     every alternative ran and passed: an id no correct solution reaches is not one
@@ -86,7 +100,7 @@ import { sameId, stepsOf } from '../exposure.ts';
 import type { Check, Json, RubricCheck, RubricCtx } from '../check.ts';
 import type { Grade } from '../grade.ts';
 import { JudgeCacheMiss, type Judge } from '../judge.ts';
-import { EVENT_MUTANTS, REQUIRED_EVENT_MUTANTS, type Alternative, type Declares, type MatrixTask, type Mutant, type Script, type WorldView } from './types.ts';
+import { EVENT_MUTANTS, REQUIRED_EVENT_MUTANTS, type Alternative, type Declares, type Lever, type LeverItem, type MatrixTask, type Mutant, type Script, type WorldView } from './types.ts';
 
 export const MIN_ALTERNATIVES = 3;
 export const MIN_MUTANTS = 4;
@@ -102,7 +116,8 @@ export interface MatrixEnv {
   now: () => number;
 }
 
-export type CaseKind = 'oracle' | 'alternative' | 'mutant' | 'null' | 'spray' | 'output-gap' | 'status-only';
+export type CaseKind = 'oracle' | 'alternative' | 'mutant' | 'null' | 'spray' | 'output-gap' | 'status-only' | 'focus-only' | 'read-all-newest';
+export const LEVER_CASE_KINDS = ['focus-only', 'read-all-newest'] as const;
 
 export interface Case {
   kind: CaseKind;
@@ -115,6 +130,8 @@ export interface Case {
   // The attribution label its FAIL must get: a mutant's, or a spray, output-gap or status-only
   // agent's (tests/agents.ts attribution); absent when none is declared, and then not checked.
   attribution?: Taxonomy;
+  // A lever case's item (focus-only, read-all-newest); its id is `<kind>:<lever item id>`.
+  lever?: LeverItem;
 }
 
 // What task.toml's [matrix] table declares, from the parsed task.toml; absent, nothing is.
@@ -155,11 +172,90 @@ export function cases(task: MatrixTask): Case[] {
     ...(task.agents.spray ? [{ kind: 'spray' as const, id: 'spray', script: task.agents.spray, ...declaredLabel(task.agents.attribution?.spray) }] : []),
     ...(task.agents.output_gap ? [{ kind: 'output-gap' as const, id: 'output-gap', script: task.agents.output_gap, ...declaredLabel(task.agents.attribution?.output_gap) }] : []),
     ...(task.agents.status_only ? [{ kind: 'status-only' as const, id: 'status-only', script: task.agents.status_only, ...declaredLabel(task.agents.attribution?.status_only) }] : []),
+    ...activeA(task.lever).flatMap((lever): Case[] => {
+      const agents = task.agents.lever?.[lever.id];
+      if (agents === undefined) return [];
+      return [
+        { kind: 'focus-only', id: `focus-only:${lever.id}`, script: agents.focus_only, lever },
+        { kind: 'read-all-newest', id: `read-all-newest:${lever.id}`, script: agents.read_all_newest, loses: agents.loses ?? [], lever },
+      ];
+    }),
   ];
+}
+
+// The active A lever items of a task, in declaration order.
+export const activeA = (lever: Lever | undefined): LeverItem[] => (lever?.items ?? []).filter((i) => i.kind === 'A' && lever!.active.includes(i.id));
+
+const LEVER_KINDS = ['A', 'B'] as const;
+const isIdList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+
+// A task's lever from its expected.ts module exports (LEVER_ITEMS and LEVER) and the LEVER list the
+// task loader read from the file's text (packages/core/tasks.ts leverOf, Task.lever), which both
+// loaders (cli/matrix.ts, the browser's matrix-task.ts) hand over; undefined for a task without
+// LEVER_ITEMS. Throws, naming the file, when the module's LEVER is not the loader's list (the
+// value env_version hashed is not the value the matrix runs), or an item is malformed.
+export function matrixLever(mod: { LEVER_ITEMS?: unknown; LEVER?: unknown; [k: string]: unknown }, loaded: readonly string[] | null, where: string): Lever | undefined {
+  const at = `${where}/expected.ts`;
+  if (mod.LEVER_ITEMS === undefined) {
+    if (mod.LEVER !== undefined || loaded !== null) throw new Error(`${at}: LEVER without LEVER_ITEMS (declare the items the ids name)`);
+    return undefined;
+  }
+  if (!Array.isArray(mod.LEVER_ITEMS)) throw new Error(`${at}: LEVER_ITEMS must be a list`);
+  if (mod.LEVER === undefined) throw new Error(`${at}: LEVER_ITEMS without LEVER (the active ids; [] for none)`);
+  if (!isIdList(mod.LEVER)) throw new Error(`${at}: LEVER must be a list of ids`);
+  const show = (ids: readonly string[]) => `[${ids.join(', ')}]`;
+  if (loaded === null || loaded.join('\0') !== mod.LEVER.join('\0')) throw new Error(`${at}: LEVER as exported ${show(mod.LEVER)} differs from the list the task loader read ${loaded === null ? '(none)' : show(loaded)}`);
+  const items = mod.LEVER_ITEMS.map((raw, i): LeverItem => {
+    const w = `${at}: LEVER_ITEMS[${i}]`;
+    const r = (raw ?? {}) as Record<string, unknown>;
+    if (typeof r.id !== 'string' || r.id === '') throw new Error(`${w}: id must be a non-empty string`);
+    if (!(LEVER_KINDS as readonly unknown[]).includes(r.kind)) throw new Error(`${w}: kind must be A or B`);
+    if (typeof r.item !== 'string' || r.item === '') throw new Error(`${w}: item must be the list item's key`);
+    if (r.patient !== undefined && (typeof r.patient !== 'string' || r.patient === '')) throw new Error(`${w}: patient must be a Patient reference`);
+    if (r.spec !== undefined && (typeof r.spec !== 'string' || r.spec === '')) throw new Error(`${w}: spec must be an event spec id`);
+    if (r.sibling !== undefined && !isIdList(r.sibling)) throw new Error(`${w}: sibling must be a list of ids`);
+    if (r.gates !== undefined && !isIdList(r.gates)) throw new Error(`${w}: gates must be a list of gate ids`);
+    return {
+      id: r.id, kind: r.kind as LeverItem['kind'], item: r.item,
+      ...(r.patient === undefined ? {} : { patient: r.patient }), ...(r.spec === undefined ? {} : { spec: r.spec }),
+      ...(r.sibling === undefined ? {} : { sibling: r.sibling }), ...(r.gates === undefined ? {} : { gates: r.gates }),
+    };
+  });
+  return { active: mod.LEVER, items };
+}
+
+// Each problem with a task's lever declarations (the header's `lever` rule), which runMatrix checks
+// before any case runs. A task without lever items has none.
+export function leverDeclarations(task: Pick<MatrixTask, 'lever' | 'events' | 'agents'>): string[] {
+  const lever = task.lever;
+  if (lever === undefined) return Object.keys(task.agents.lever ?? {}).map((id) => `tests/agents.ts lever.${id}: ${id} is not an active A lever item (the task declares no lever items)`);
+  const problems: string[] = [];
+  const ids = lever.items.map((i) => i.id);
+  for (const id of new Set(ids.filter((id, i) => ids.indexOf(id) !== i))) problems.push(`lever item ${id} is declared twice`);
+  for (const id of lever.active) if (!ids.includes(id)) problems.push(`LEVER names ${id}, which no lever item has`);
+  const specs = new Set((task.events ?? []).map((s) => s.id));
+  for (const i of lever.items) {
+    const active = lever.active.includes(i.id);
+    if (i.kind !== 'A') continue;
+    if ((i.sibling ?? []).length === 0) problems.push(`lever item ${i.id} is an A item and declares no sibling (the deciding sibling record ids, R39(b))`);
+    if (i.spec === undefined) {
+      problems.push(`lever item ${i.id} is an A item and names no event spec`);
+      continue;
+    }
+    if (active && !specs.has(i.spec)) problems.push(`active A lever item ${i.id} names event ${i.spec}, which is not an active spec`);
+    if (!active && specs.has(i.spec)) problems.push(`inactive lever item ${i.id} names event ${i.spec}, which is active (an inactive item's event is absent, G1)`);
+  }
+  const a = activeA(lever).map((i) => i.id);
+  for (const id of a) {
+    const agents = task.agents.lever?.[id];
+    for (const kind of ['focus_only', 'read_all_newest'] as const) if (agents?.[kind] === undefined) problems.push(`active A lever item ${id} has no ${kind} agent (tests/agents.ts lever.${id})`);
+  }
+  for (const id of Object.keys(task.agents.lever ?? {})) if (!a.includes(id)) problems.push(`tests/agents.ts lever.${id}: ${id} is not an active A lever item`);
+  return problems;
 }
 const declaredLabel = (attribution: Taxonomy | undefined) => (attribution === undefined ? {} : { attribution });
 
-const labelOf = (c: Case) => `${c.kind}-${c.id}`.replace(/[^A-Za-z0-9_-]/g, '_');
+const labelOf = (c: Case) => `${c.kind}-${c.lever ? c.lever.id : c.id}`.replace(/[^A-Za-z0-9_-]/g, '_');
 
 // One scripted trial. With `judge`, run() grades it with the task's checks, judge items through
 // that client (oracle --live-judge); without, it is not graded here.
@@ -301,8 +397,8 @@ export interface CaseResult {
   problems: string[];
 }
 
-const expectFail = (c: Case) => c.kind !== 'oracle' && c.kind !== 'alternative';
-const nameOf = (c: Case) => (c.id === c.kind ? c.kind : `${c.kind} ${c.id}`);
+const expectFail = (c: Case) => c.kind !== 'oracle' && c.kind !== 'alternative' && c.kind !== 'read-all-newest';
+const nameOf = (c: Case) => (c.id === c.kind ? c.kind : `${c.kind} ${c.lever ? c.lever.id : c.id}`);
 // A grade as JSON carries it (the fresh process sends its grade as JSON), so the two compare.
 const asJson = (g: Grade) => canonicalJson(JSON.parse(JSON.stringify(g)) as Json);
 
@@ -324,7 +420,23 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   else if (!expectFail(c) && grade.outcome !== 'PASS') problems.push(`outcome ${grade.outcome}, want PASS (failed: ${failed_gates.join(', ') || 'none'})`);
   if (c.kind === 'oracle' && grade.valid && grade.score !== 1) problems.push(`oracle score ${grade.score ?? 'n/a'}, want 1.0`);
   if (c.kind === 'oracle' && unknown > 0) problems.push(`oracle judge.unknown ${unknown}, want 0`);
-  if (c.kind === 'alternative' && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
+  if ((c.kind === 'alternative' || c.kind === 'read-all-newest') && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
+  if (c.kind === 'focus-only' && c.lever && grade.valid && grade.outcome === 'FAIL') {
+    const lever = c.lever;
+    const got = itemLabels(grade);
+    const label = got[lever.item];
+    if (label === undefined) problems.push(`item ${lever.item} does not fail, want retrieval`);
+    else if (label !== 'retrieval') problems.push(`item ${lever.item} fails as ${label}, want retrieval`);
+    const others = Object.keys(got).filter((k) => k !== lever.item);
+    if (others.length > 0) problems.push(`fails ${others.join(', ')} beside ${lever.item}; a focus-only agent fails only its item`);
+    // The failed gate is the lever's: one it declares, or an event gate whose failure names its spec.
+    const owned = grade.checks.some((r) => r.kind === 'gate' && r.met === false && (r.items ?? []).some((it) => it.item === lever.item && !it.met
+      && ((lever.gates ?? []).includes(r.id) || (lever.spec !== undefined && (it.event === lever.spec || (Array.isArray(it.evidence?.failed) && (it.evidence.failed as unknown[]).includes(lever.spec)))))));
+    if (label !== undefined && !owned) problems.push(`item ${lever.item} fails no gate of lever item ${lever.id} (its gates, or an event gate failing ${lever.spec ?? 'its spec'})`);
+    const exposed = stepsOf(run.events).flatMap((s) => s.exposed_ids);
+    const seen = (lever.sibling ?? []).filter((id) => exposed.some((k) => sameId(k, id)));
+    if (seen.length > 0) problems.push(`exposed the sibling ${seen.join(', ')}; a focus-only agent never reads the deciding sibling`);
+  }
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
   if (c.attribution !== undefined && grade.attribution?.auto !== c.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.attribution}`);
   if (c.mutant?.items !== undefined && !sameItems(grade, c.mutant.items)) problems.push(`items ${itemsText(itemLabels(grade))}, declared ${itemsText(c.mutant.items)}`);
@@ -375,11 +487,12 @@ function kept(grade: Grade, id: string, misses: readonly Miss[]): string {
 // Each problem with what the task's alternatives and mutants declare they lose, which runMatrix
 // checks before any case runs: a mutant without `loses`, a list that is not one, an id that is no
 // rubric item of the task, a 0-point item (it can never be lost), an id named twice.
-export function lossDeclarations(task: Pick<MatrixTask, 'checks' | 'alternatives' | 'mutants'>): string[] {
+export function lossDeclarations(task: Pick<MatrixTask, 'checks' | 'alternatives' | 'mutants'> & Partial<Pick<MatrixTask, 'agents'>>): string[] {
   const points = new Map(task.checks.flatMap((c) => (c.kind === 'rubric' ? [[c.id, c.points] as const] : [])));
   const declared = [
     ...task.alternatives.map((a) => ({ who: `alternative ${a.id}`, loses: (a.loses ?? []) as unknown, required: false })),
     ...task.mutants.map((m) => ({ who: `mutant ${m.id}`, loses: m.loses as unknown, required: true })),
+    ...Object.entries(task.agents?.lever ?? {}).map(([id, a]) => ({ who: `lever.${id} read_all_newest`, loses: (a.loses ?? []) as unknown, required: false })),
   ];
   return declared.flatMap(({ who, loses, required }) => {
     if (loses === undefined && required) return [`${who} declares no loses (the rubric items it loses; [] for none)`];
@@ -586,9 +699,9 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const selected = selectCases(task, opts.cases);
   const declared = task.mutants.filter((m) => Array.isArray(m.loses)).length;
   const losses = `rubric losses: ${declared}/${task.mutants.length} mutants declare loses`;
-  const declarations = [...lossDeclarations(task), ...agentDeclarations(task), ...eventDeclarations(task)];
+  const declarations = [...lossDeclarations(task), ...agentDeclarations(task), ...eventDeclarations(task), ...leverDeclarations(task)];
   if (declarations.length > 0) {
-    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses, attribution and event declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
+    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses, attribution, event and lever declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
     return { pass: false, lines, results: [], world_hash: env.worldHash };
   }
   const results = await runCases(env, task, selected, opts);
@@ -612,10 +725,10 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     const hash = oracle.record.state_hash.final;
     const want = opts.oracleFinalHash;
     if (want === undefined) lines.push(`oracle final hash: ${hash ?? 'none'} (no expected hash)`);
-    else if (hash === want) lines.push(`oracle final hash: ${hash} matches results/tasks-v1.json`);
+    else if (hash === want) lines.push(`oracle final hash: ${hash} matches results/tasks-final.json`);
     else {
-      lines.push(`oracle final hash: ${hash ?? 'none'} DIFFERS from results/tasks-v1.json ${want}`);
-      fail(`oracle final hash of task ${task.id} is ${hash ?? 'none'}, results/tasks-v1.json pins ${want}`);
+      lines.push(`oracle final hash: ${hash ?? 'none'} DIFFERS from results/tasks-final.json ${want}`);
+      fail(`oracle final hash of task ${task.id} is ${hash ?? 'none'}, results/tasks-final.json pins ${want}`);
     }
   }
 
@@ -660,6 +773,29 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     const attribution = r.grade.attribution || want !== undefined ? ` attribution ${r.grade.attribution?.auto ?? 'none'}${want === undefined ? '' : ` declared ${want}`}` : '';
     lines.push(`${kind}: ${r.grade.outcome} (want FAIL) failed [${r.failed_gates.join(', ')}]${attribution}${kind === 'status-only' && !task.declares.status_only ? ' (not declared)' : ''}`);
     noteProblems(r);
+  }
+
+  if (task.lever !== undefined) {
+    const active = task.lever.items.filter((i) => task.lever!.active.includes(i.id));
+    const a = activeA(task.lever);
+    const n = (k: number, what: string) => `${k} ${what}${k === 1 ? '' : 's'}`;
+    lines.push(`lever: ${n(active.length, 'active item')} (${active.map((i) => `${i.id}: ${i.kind}`).join(', ') || 'none'}), ${n(a.length, 'active A item')} with focus-only and read-all-newest agents`);
+    for (const item of a) {
+      for (const kind of LEVER_CASE_KINDS) {
+        const r = results.find((x) => x.case.kind === kind && x.case.lever?.id === item.id);
+        if (r === undefined) {
+          lines.push(`  ${kind} ${item.id}: not run`);
+          continue;
+        }
+        if (kind === 'focus-only') {
+          const ok = r.problems.length === 0 ? 'ok' : 'MISMATCH';
+          lines.push(`  focus-only ${item.id}: ${r.grade.outcome} failed [${r.failed_gates.join(', ')}] items ${itemsText(itemLabels(r.grade))} ${ok}`);
+        } else {
+          lines.push(`  read-all-newest ${item.id}: ${r.grade.outcome} score ${score(r.grade)} judge.unknown ${r.unknown}, ${lostLine(r)}${r.problems.length ? ` (${r.problems.join('; ')})` : ''}`);
+        }
+        noteProblems(r);
+      }
+    }
   }
 
   const derivation = await doubleDerivation(env, task);

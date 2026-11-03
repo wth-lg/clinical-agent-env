@@ -23,7 +23,7 @@ import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/grader/matrix/matrix.ts';
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
 import { EVENTS, expected, LEVER } from '../expected.ts';
-import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
+import { ACTIVE, EXCLUSIVE, LEVER_SPECS, SPECS } from '../events.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
 import { mutantsFor } from './mutants.ts';
@@ -34,6 +34,13 @@ const world = await loadStore(base.world);
 const baseTask = await loadMatrixTask('results-inbox');
 const ITEMS = expected.items.map((x) => x.key);
 const itemOf = (key: string) => expected.items.find((x) => x.key === key)!;
+// A lever item's specs while the item is off (W5-E): its host's inbox item is filed off the list, so
+// its event and the event's lure have no list item to bear on and no route reads its patient; they
+// are never in ACTIVE (lever.test.ts) and the per-spec runs below skip them. The set is derived
+// from LEVER so that every state runs this file: each inactive lever id's specs and their
+// EXCLUSIVE partners, and nothing else may be off the list.
+const INERT = new Set(Object.entries(LEVER_SPECS).filter(([l]) => !LEVER.includes(l)).flatMap(([, ids]) => ids.flatMap((id) => [id, ...EXCLUSIVE.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []))])));
+const LIVE = SPECS.filter((s) => !INERT.has(s.id));
 
 // The task with exactly `ids` active: the run and replay read the specs from the source, the grade
 // from the checks built for them.
@@ -73,7 +80,8 @@ describe('T2 event specs', () => {
   });
 
   it('each spec bears on a list item; at most one amend event per item (a lure may be a second event)', () => {
-    for (const s of SPECS) expect(ITEMS, s.id).toContain(s.item);
+    expect(SPECS.filter((s) => !ITEMS.includes(s.item)).map((s) => s.id).sort()).toEqual([...INERT].sort());
+    for (const s of LIVE) expect(ITEMS, s.id).toContain(s.item);
     const amends = SPECS.filter((s) => AMEND_CLASSES.has(s.class)).map((s) => s.item);
     expect(new Set(amends).size).toBe(amends.length);
     const lures = SPECS.filter((s) => s.class === 'D').map((s) => s.item);
@@ -107,7 +115,7 @@ describe('T2 event specs', () => {
   it("Addendum 2: every trigger is after_write on the item's own patient, whose inbox items every passing route completes", () => {
     for (const s of SPECS) {
       expect(s.trigger.kind, s.id).toBe('after_write');
-      if (s.trigger.kind === 'after_write') expect(`Patient/${s.trigger.patient}`, s.id).toBe(itemOf(s.item).patient);
+      if (s.trigger.kind === 'after_write' && !INERT.has(s.id)) expect(`Patient/${s.trigger.patient}`, s.id).toBe(itemOf(s.item).patient);
     }
   });
 
@@ -148,7 +156,7 @@ describe('T2 event specs', () => {
   });
 });
 
-describe.each(SPECS.map((s) => [s.id, s] as const))('event %s, active alone', (id, spec: EventSpec) => {
+describe.each(LIVE.map((s) => [s.id, s] as const))('event %s, active alone', (id, spec: EventSpec) => {
   const at = withActive([id]);
   const item = spec.item;
 

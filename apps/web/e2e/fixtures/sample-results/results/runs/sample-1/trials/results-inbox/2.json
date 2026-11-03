@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:2",
   "task_id": "results-inbox",
-  "task_version": "668c38967bb98f51d2f0d962b8bc83727a25076c7bdc82b1014310144b5be295",
-  "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
-  "grader_task_version": "d6803083454c75a433843d55426b4d2e0e341b033fe69e6aea5adb81283bd7fb",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "0532d8062e9571172cd9922f5156f371e433784c24822918515ba6eb25b34d53",
+  "env_version": "1e04ad4c07b861e8140ca2a587bba7c9fbb9d0d4a971f8c061b1341ba4acfa4c",
+  "grader_task_version": "217ad32f18f5efb44cbddaef2db080d7f476694f2535f6a54f5102339a358198",
+  "fixture_hash": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "bc067c9c7a56bc6712062f77f142a6e7a6d34b8d06df1b9f16a51578f1c424e1",
-    "replay_final": "bc067c9c7a56bc6712062f77f142a6e7a6d34b8d06df1b9f16a51578f1c424e1"
+    "initial": "88b2c1c93b8866809b1d711dff8024c5043d02f87b63fb2b04879ec3d11bee6e",
+    "final": "e4ad31f8be55f395b020a3a5dd644e4ff1259c4bdcbc3e38c2ab8ca4ef6ef95e",
+    "replay_final": "e4ad31f8be55f395b020a3a5dd644e4ff1259c4bdcbc3e38c2ab8ca4ef6ef95e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:15:40.000Z",
-  "turns": 21,
-  "tool_calls": 58,
+  "started": "2026-10-23T15:29:42.000Z",
+  "turns": 25,
+  "tool_calls": 71,
   "tool_errors": {
     "INVALID_INPUT": 1,
     "NOT_FOUND": 0,
@@ -40,12 +40,12 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
+  "summary": "Results inbox cleared: every item completed with its follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:19:39.000Z",
+  "ended": "2026-10-23T15:34:30.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -121,6 +121,23 @@
             "Observation/obs-01401"
           ],
           "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -193,6 +210,23 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01401"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
           ],
           "evidence": {}
         },
@@ -275,6 +309,23 @@
             "Observation/obs-01401"
           ],
           "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -343,6 +394,22 @@
           "met": true,
           "decisive_ids": [
             "Task/task-00010"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-64001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-65001"
           ],
           "evidence": {}
         }
@@ -419,6 +486,23 @@
             "Observation/obs-01401"
           ],
           "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -491,6 +575,23 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01401"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
           ],
           "evidence": {}
         }
@@ -567,6 +668,23 @@
             "Observation/obs-01401"
           ],
           "evidence": {}
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-64013"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nowicki_fax",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-65002",
+            "Patient/pt-0065"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -630,6 +748,20 @@
           "evidence": {
             "fired": [
               "parisian-cxr-prelim"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-06209",
+            "Observation/obs-06210"
+          ],
+          "evidence": {
+            "fired": [
+              "marchetti-cr-batch"
             ],
             "not_fired": []
           }
@@ -699,6 +831,20 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-06209",
+            "Observation/obs-06210"
+          ],
+          "evidence": {
+            "fired": [
+              "marchetti-cr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -765,6 +911,20 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-06209",
+            "Observation/obs-06210"
+          ],
+          "evidence": {
+            "fired": [
+              "marchetti-cr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -818,6 +978,20 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "marchetti_cr_ed",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-06209",
+            "Observation/obs-06210"
+          ],
+          "evidence": {
+            "fired": [
+              "marchetti-cr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -866,7 +1040,7 @@
             "due": "2027-05-14"
           },
           {
-            "id": "Task/task-t0019",
+            "id": "Task/task-t0021",
             "due": "2026-11-14"
           }
         ],
@@ -884,11 +1058,11 @@
       "evidence": {
         "notes": [
           "DocumentReference/doc-t0004",
-          "DocumentReference/doc-t0025"
+          "DocumentReference/doc-t0029"
         ],
         "citing": [
           "DocumentReference/doc-t0004",
-          "DocumentReference/doc-t0025"
+          "DocumentReference/doc-t0029"
         ]
       }
     },
@@ -902,11 +1076,11 @@
       "evidence": {
         "notes": [
           "DocumentReference/doc-t0008",
-          "DocumentReference/doc-t0027"
+          "DocumentReference/doc-t0031"
         ],
         "citing": [
           "DocumentReference/doc-t0008",
-          "DocumentReference/doc-t0027"
+          "DocumentReference/doc-t0031"
         ]
       }
     },
@@ -948,11 +1122,12 @@
         "recipient": "Patient/pt-0006",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
+        "cache_key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
         "recipients": [
           "Patient/pt-0006 false",
           "Patient/pt-0007 false",
-          "Patient/pt-0033 false"
+          "Patient/pt-0033 false",
+          "Patient/pt-0064 false"
         ]
       }
     },
@@ -978,23 +1153,24 @@
   ],
   "score": 1,
   "judge": {
-    "calls": 6,
+    "calls": 7,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
-      "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
-      "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
+      "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
+      "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
+      "e1ac9399e0353d39d190b04d98dac5492fa850fdfde3cc7062bd5667c7db6018",
+      "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
       "2835328eb4bc85ee75f9e68198df34033c7b2db07e16a66114192f896436dadf",
       "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
       "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa"
     ],
     "cache": [
       {
-        "key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
+        "key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1008,11 +1184,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:08.318Z"
+          "at": "2026-11-03T08:24:34.516Z"
         }
       },
       {
-        "key": "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
+        "key": "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1026,11 +1202,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:08.318Z"
+          "at": "2026-11-03T08:24:34.516Z"
         }
       },
       {
-        "key": "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
+        "key": "e1ac9399e0353d39d190b04d98dac5492fa850fdfde3cc7062bd5667c7db6018",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1044,7 +1220,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:08.318Z"
+          "at": "2026-11-03T08:24:34.516Z"
+        }
+      },
+      {
+        "key": "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Your kidney blood test from urgent care on Thursday evening was much higher than the one from Wednesday morning. Please drink fluids, do not take naproxen"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-03T08:24:34.516Z"
         }
       },
       {

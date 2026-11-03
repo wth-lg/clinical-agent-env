@@ -34,7 +34,7 @@
 // W5-E (plan-amendment-w5, record-integrity defects; expected.ts LEVER): three list patients the
 // overlay adds (pt-t2-*, numbered after the cohort's last Patient, so no existing id moves), each
 // in the world in every LEVER state with its chart and inbox item; the item is the signed-in
-// user's while its lever item is in expected.ts LEVER (imported) and Jordan Reyes's otherwise, so a
+// user's while its lever item is in lever.ts LEVER (imported) and Jordan Reyes's otherwise, so a
 // toggle moves no id (F3). Toggling B or the reserve is still a world rebuild (the owner field);
 // fixtures:verify, which rebuilds, catches a stale world.
 //
@@ -72,7 +72,7 @@
 import type { Resource } from '../../packages/env/store.ts';
 import { mrnOf } from '../../packages/env/mrn.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { LEVER } from './expected.ts';
+import { LEVER } from './lever.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
@@ -736,13 +736,13 @@ function nowicki(world: WorldReader, active: boolean): Resource[] {
 }
 
 // ---- Item 16: Raymond Castellano (reserve host, inactive). Heart failure on spironolactone, CKD 4
-// (eGFR 24 on 10-02); his clinic potassium of 10-22 is 6.3 on a hemolyzed specimen.
+// (eGFR 24 on 09-29); his clinic potassium of 10-22 is 6.3 on a hemolyzed specimen.
 // With the reserve's RBC-LAB-03 §2 sentence (expected.ts RESERVE_SENTENCE) the hemolysis rule does
 // not apply: §1, a stat on-call notice, a stat BMP today and the spironolactone held.
 const RC = 'pt-t2-castellano';
 const NOTE_CASTELLANO = `Riverbend Family Medicine - Progress Note
 Patient: Raymond Castellano   DOB 1954-07-19
-Date: 2026-10-02
+Date: 2026-09-29
 Follow-up of heart failure with reduced ejection fraction and chronic kidney disease stage 4. Breathing stable on current diuretic; weight steady at home. No chest pain.
 Medications reviewed: carvedilol 12.5 mg twice daily, furosemide 40 mg daily, spironolactone 25 mg daily, atorvastatin 40 mg daily.
 Examination: BP 118/72, HR 64, no edema. Lungs clear.
@@ -759,12 +759,12 @@ function castellano(world: WorldReader, active: boolean): Resource[] {
     medication('mr-t2-rc-furosemide', RC, ['313988', 'furosemide 40 MG Oral Tablet'], '2021-04-07T10:30:00-04:00', 'Chronic congestive heart failure', [40, 'mg', 'daily']),
     medication('mr-t2-rc-carvedilol', RC, ['200033', 'carvedilol 12.5 MG Oral Tablet'], '2021-04-07T10:30:00-04:00', 'Chronic congestive heart failure', [12.5, 'mg', 'twice daily']),
     medication('mr-t2-rc-atorvastatin', RC, ['617311', 'atorvastatin 40 MG Oral Tablet'], '2021-04-07T10:30:00-04:00', 'Secondary prevention', [40, 'mg', 'daily']),
-    encounter('enc-t2-rc-1002', RC, ['AMB', 'ambulatory'], CHECKUP, '2026-10-02T09:00:00-04:00', '2026-10-02T09:35:00-04:00', CLINIC, OKAFOR),
-    note('doc-t2-rc-pn-1002', RC, '2026-10-02T09:35:00-04:00', PROGRESS, 'enc-t2-rc-1002', OKAFOR, CLINIC, NOTE_CASTELLANO),
+    encounter('enc-t2-rc-0929', RC, ['AMB', 'ambulatory'], CHECKUP, '2026-09-29T09:00:00-04:00', '2026-09-29T09:35:00-04:00', CLINIC, OKAFOR),
+    note('doc-t2-rc-pn-0929', RC, '2026-09-29T09:35:00-04:00', PROGRESS, 'enc-t2-rc-0929', OKAFOR, CLINIC, NOTE_CASTELLANO),
     // His visit labs (single results, as a renal panel is filed here) and the CKD-EPI eGFR of 24.
-    lab('obs-t2-rc-cr-1002', RC, 'enc-t2-rc-1002', CR_CODE, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 2.6, 'mg/dL', [0.74, 1.35], 'H', { performer: [CLINIC] }),
-    lab('obs-t2-rc-k-1002', RC, 'enc-t2-rc-1002', K, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 5.0, 'mmol/L', [3.5, 5.1], 'N', { performer: [CLINIC] }),
-    lab('obs-t2-rc-egfr', RC, 'enc-t2-rc-1002', CKD_EPI, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 24, 'mL/min/{1.73_m2}', [60, 200], 'L', { performer: [CLINIC] }),
+    lab('obs-t2-rc-cr-0929', RC, 'enc-t2-rc-0929', CR_CODE, '2026-09-29T09:05:00-04:00', '2026-09-29T14:10:00-04:00', 2.6, 'mg/dL', [0.74, 1.35], 'H', { performer: [CLINIC] }),
+    lab('obs-t2-rc-k-0929', RC, 'enc-t2-rc-0929', K, '2026-09-29T09:05:00-04:00', '2026-09-29T14:10:00-04:00', 5.0, 'mmol/L', [3.5, 5.1], 'N', { performer: [CLINIC] }),
+    lab('obs-t2-rc-egfr', RC, 'enc-t2-rc-0929', CKD_EPI, '2026-09-29T09:05:00-04:00', '2026-09-29T14:10:00-04:00', 24, 'mL/min/{1.73_m2}', [60, 200], 'L', { performer: [CLINIC] }),
     // The potassium of 10-22, flagged hemolyzed on the result, with its creatinine; the item files
     // the potassium itself (as items 7 and 8 file single results).
     encounter('enc-t2-rc-lab-1022', RC, ['AMB', 'ambulatory'], CHECKUP, '2026-10-22T13:30:00-04:00', '2026-10-22T13:40:00-04:00', CLINIC),
@@ -790,6 +790,9 @@ function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
 // committed state's.
 export const overlayFor = (lever: readonly string[]): Overlay => ({
   task: 'T2',
+  // The fixed slot of each lever host in T2's added-Patient range (packages/env/overlay.ts TASKS
+  // added: pt-0064 Marchetti, pt-0065 Nowicki, pt-0066 Castellano), the same in every LEVER state.
+  added: { [LEVER_HOSTS.A]: 0, [LEVER_HOSTS.B]: 1, [LEVER_HOSTS.reserve]: 2 },
   names: {
     'org-t2-lakeshore': 'org-lakeshore',
     'pr-t2-brandt': 'pr-brandt',
@@ -800,6 +803,7 @@ export const overlayFor = (lever: readonly string[]): Overlay => ({
   },
   build(world: WorldReader) {
     const mrn = (id: string) => mrnOf(world.get('Patient', id) as R<'Patient'>)!;
+    const hosts = leverHosts(world, lever);
     const renamed = RENAME.map(([id, given, family, birthDate, gender]): Resource => {
       const p = world.get('Patient', id) as R<'Patient'>;
       return {
@@ -1025,12 +1029,17 @@ export const overlayFor = (lever: readonly string[]): Overlay => ({
       panelOf('lp', 'pt-0007', 'enc-t2-lab-lp-1022', '2026-10-22T08:30:00-04:00', '2026-10-22T12:45:00-04:00', CLINIC),
       item(12, 'pt-0007', 'DiagnosticReport/dr-t2-bmp-lp', '2026-10-22T12:45:00-04:00', CLINIC, 'Basic metabolic panel (2026-10-22): final'),
 
-      // Items 14 to 16: the W5-E lever hosts, each present while its item is in expected.ts LEVER.
-      ...leverHosts(world, lever),
+      // Items 14 to 16: the W5-E lever hosts, in the world in every LEVER state (F3); a toggle
+      // moves only the host's inbox item between the signed-in user and Jordan Reyes.
+      ...hosts,
     ];
     return {
       put,
       remove: [...REMOVE, ...synthNotes, ...mdrd],
+      // Every key a LEVER toggle bears on: each lever host and every record of its chart (the
+      // same keys in every state here, since no toggle adds or removes one; the central
+      // lever-invariant test checks that no state adds a key this list lacks).
+      lever: hosts.map((r) => r.id!),
       lint: {
         thresholds: [
           { quantity: 'potassium', threshold: 6.0, observation: 'obs-t2-c-k' },

@@ -177,6 +177,19 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
     why: "Lists Carol Whitfield's creatinines of 2026 newest first, two to a page, down to 10-21, then repeats the search up to 10-21 and reads it whole: together the two show every one, and she closes the item as the oracle does.",
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', count: 2 } }, { name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, date_ge: '2026-01-01', date_le: '2026-10-21' } }]) }),
   },
+  // builder-304, R41: every valid laboratory result of the 7 days shown, by two whole searches of
+  // her laboratory results that split the window between them (10-15 to 10-19, then 10-20 on) and
+  // no creatinine code; neither covers the window alone and no run joins them, yet together they show
+  // every result in it, the 1.27 of 10-17 among them.
+  {
+    id: 'eie_baseline_partitioned_window',
+    why: "Lists Carol Whitfield's laboratory results from 10-15 to 10-19 in two pages, then from 10-20 on in one: every result of the 7 days before her 1.31 is shown, the valid 1.27 of 10-17 among them, and she closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [
+      { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, category: 'laboratory', date_ge: '2026-10-15', date_le: '2026-10-19', count: 20 } },
+      { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, category: 'laboratory', date_ge: '2026-10-15', date_le: '2026-10-19', count: 20, offset: 20 } },
+      { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, category: 'laboratory', date_ge: '2026-10-20', count: 20 } },
+    ]) }),
+  },
   {
     id: 'eie_baseline_sorted_pages_past_window',
     why: "Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the page of 10-09, before her 7-day window, without the last page: the window was read whole, and she closes the item as the oracle does.",

@@ -207,7 +207,7 @@ const FINDINGS: Record<string, Finding> = {
   },
   // W5-E reserve (in the list only while 'reserve' is in LEVER).
   castellano_k_exception: {
-    result: 'basic metabolic panel of 2026-10-22, with his eGFR of 24 on 2026-10-02 and his spironolactone',
+    result: 'basic metabolic panel of 2026-10-22, with his eGFR of 24 on 2026-09-29 and his spironolactone',
     finding: 'a potassium of 6.3 mmol/L on a hemolyzed specimen, on a patient with an eGFR below 30 who takes spironolactone, so it is handled as a true critical potassium: a stat repeat, on-call notified and the spironolactone held',
     contrary: 'a normal potassium, a potassium that needs only a routine repeat because the specimen was hemolyzed, or a normal kidney function',
   },

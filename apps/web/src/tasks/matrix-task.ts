@@ -3,6 +3,7 @@
 // import.meta.glob, the judge cache and task.toml as text. Used by the validation Worker and by
 // the Tasks view, which lists each task's checks.
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
+import { matrixLever } from '../../../../packages/grader/matrix/matrix.ts';
 import type { Check, Json } from '../../../../packages/grader/check.ts';
 import type { JudgeCacheEntry } from '../../../../packages/grader/judge.ts';
 import type { Agents, Alternative, MatrixTask, Mutant, Script, WorldView } from '../../../../packages/grader/matrix/types.ts';
@@ -39,6 +40,9 @@ export async function loadMatrixTask(id: string): Promise<MatrixTask> {
   const toml = TEXT[path(id, 'task.toml')] ?? '';
   const cache = TEXT[path(id, 'tests/judge-cache.json')];
   const agentsLoad = MODULES[path(id, 'tests/agents.ts')];
+  const expectedLoad = MODULES[path(id, 'expected.ts')];
+  // The lever items and active ids (W5-H), checked against the LEVER the task loader hashed.
+  const lever = matrixLever(expectedLoad ? await expectedLoad() : {}, task.lever, `tasks/${id}`);
   return {
     id,
     events: task.events,
@@ -54,5 +58,6 @@ export async function loadMatrixTask(id: string): Promise<MatrixTask> {
     derive: await exported<((w: WorldView) => Json) | undefined>(id, 'policy.ts', 'derive', undefined),
     cache: cache === undefined ? [] : (JSON.parse(cache) as JudgeCacheEntry[]),
     judgeEffort: task.judgeEffort,
+    ...(lever === undefined ? {} : { lever }),
   };
 }

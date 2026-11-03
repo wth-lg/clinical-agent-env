@@ -28,6 +28,8 @@ import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
+import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../tasks/renal-dose-review/expected.ts';
+import { expected as T2_EXPECTED, LEVER_ITEMS as T2_LEVER_ITEMS } from '../../tasks/results-inbox/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -75,20 +77,23 @@ const byType = new Map<string, R[]>();
 for (const r of world) if (NUMBERED.test(r.id)) byType.set(r.resourceType, [...(byType.get(r.resourceType) ?? []), r]);
 for (const rs of byType.values()) rs.sort((a, b) => num(a) - num(b));
 
+// A Patient an overlay adds (ADDED_PATIENTS, below) takes a slot after the cohort and its chart is
+// numbered in a block of that slot (packages/env/renumber.ts, W5): those ids sit apart from the
+// cohort's 1..N sequence by design, the residual the added-Patient tests name, not a tell of their
+// own, so both rules below read the cohort's sequence without them.
+const inAddedChart = (r: R) => ADDED_PATIENTS.has(patientOf(r) ?? '');
 describe('planted ids are numbered as the generated ones are', () => {
-  it('every type is numbered 1..N with no gap', () => {
-    const gaps = [...byType].filter(([, rs]) => rs.some((r, i) => num(r) !== i + 1)).map(([t, rs]) => `${t}: ${rs.length} ids, last ${rs.at(-1)!.id}`);
+  it('every type is numbered 1..N with no gap, the added Patients\' blocks apart', () => {
+    const gaps = [...byType].map(([t, rs]) => [t, rs.filter((r) => !inAddedChart(r))] as const).filter(([, rs]) => rs.some((r, i) => num(r) !== i + 1)).map(([t, rs]) => `${t}: ${rs.length} ids, last ${rs.at(-1)!.id}`);
     expect(gaps).toEqual([]);
   });
 
-  // A Patient an overlay adds is numbered after the cohort's last, and so is every record of its
-  // chart (the named residual, ADDED_PATIENT_RESIDUALS below): those sit above the range by design.
-  it('no planted id sorts above its type\'s generated range, the added Patients\' charts aside', () => {
+  it('no planted id sorts above its type\'s generated range, apart from an added Patient\'s chart', () => {
     const above = [...byType].flatMap(([, rs]) => {
       const base = rs.filter((r) => !isPlanted(r.id));
       if (!base.length) return [];
       const max = Math.max(...base.map(num));
-      return rs.filter((r) => isPlanted(r.id) && num(r) > max && !ADDED_PATIENTS.has(patientOf(r) ?? '')).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
+      return rs.filter((r) => isPlanted(r.id) && num(r) > max && !inAddedChart(r)).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
     });
     expect(above).toEqual([]);
   });
@@ -398,22 +403,22 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // (verifier-phase-P17i-W1-1-1 M3). Each one is named here, with its class and the planted types of
 // its chart (plantedOnlyTypes, in the order of the within-chart tests' types); the within-chart list
 // of such charts (EMPTY_CELLS) leaves added Patients to this table.
-// By registry key, resolved through the world's registry (fixtures/ids.ts), so the table holds in
-// every LEVER state and whatever the added Patients' numbers are after a train (F2, F3 of the T1
-// gate). W5-E (builder-300): T2's three lever hosts, in the world in every state; a toggle moves
-// only the host's inbox item between the signed-in user and Jordan Reyes.
-const ADDED_PATIENT_RESIDUALS_BY_KEY: Readonly<Record<string, Readonly<Record<string, { class: string; planted_only: readonly string[] }>>>> = {
-  T2: {
-    'pt-t2-castellano': { class: 'hemolyzed_exception', planted_only: ['Condition', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-    'pt-t2-marchetti': { class: 'creatinine_no_aki', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-    'pt-t2-nowicki': { class: 'misfiled', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-  },
-};
+// W5-E (builder-299; verifier 214 F2): the rows come from the world and the tasks' LEVER_ITEMS, not
+// by hand, so every LEVER state passes: each added Patient (TASK_IDS pt- keys) with its lever item's
+// class from the task's expected list (an inactive item's patient is off the list: 'off the list'),
+// and its chart's planted-only types computed, every record of the chart being planted (the test
+// below asserts that). T1's lever patients: pt-0061 Castellano (B), pt-0062 Fairweather (A),
+// pt-0063 Whitcombe (the reserve); T2's: pt-0064 Marchetti (A), pt-0065 Nowicki (B), pt-0066 Castellano (the reserve).
+// T2's (builder-300): its three hosts are in the world in every state (a toggle moves only the
+// host's inbox item's owner), so an inactive item's host reads 'off the list' here.
+const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }, { items: T2_LEVER_ITEMS, list: T2_EXPECTED.items }];
 const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
-  Object.entries(ADDED_PATIENT_RESIDUALS_BY_KEY).flatMap(([task, byKey]) => Object.entries(byKey).flatMap(([key, v]) => { const id = (TASK_IDS as Record<string, Record<string, string>>)[task]?.[key]; return id === undefined ? [] : [[id, v] as const]; })),
+  [...ADDED_PATIENTS].sort().map((p) => {
+    const table = LEVER_TABLES.find((t) => t.items.some((i) => i.patient === p));
+    const cls = table?.list.find((x) => x.patient === `Patient/${p}`)?.class ?? (table ? 'off the list (inactive lever item)' : 'unknown');
+    return [p, { class: cls, planted_only: plantedOnlyTypes(world, isPlanted, p, comparable) }];
+  }),
 );
-// A Patient id no world holds, for the self-tests below (the added range starts at pt-0061).
-const PROBE_PATIENT = 'pt-0099';
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {
   const pts = world.filter((r) => r.resourceType === 'Patient');
 
@@ -425,26 +430,30 @@ describe('a Patient an overlay adds reads like a generated one, apart from its n
     expect([...ADDED_PATIENTS].sort()).toEqual(Object.keys(ADDED_PATIENT_RESIDUALS).sort());
   });
 
-  it('its planted-only chart is named beside its id', () => {
-    for (const p of ADDED_PATIENTS) expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+  it('its planted-only chart is named beside its id, and every record of that chart is planted', () => {
+    for (const p of ADDED_PATIENTS) {
+      expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+      expect(world.filter((r) => r.resourceType !== 'Patient' && patientOf(r) === p && !isPlanted(r.id)).map((r) => `${r.resourceType}/${r.id}`), p).toEqual([]);
+      expect(ADDED_PATIENT_RESIDUALS[p]!.class, p).not.toBe('unknown');
+    }
   });
 
   it('the check finds an added Patient\'s chart that holds only planted records', () => {
     const base = world.find((r) => r.resourceType === 'Observation' && !isPlanted(r.id) && patientOf(r) === 'pt-0051')!;
-    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: `Patient/${PROBE_PATIENT}` } } as R];
+    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: 'Patient/pt-0070' } } as R];
     const planted = (id: string) => isPlanted(id) || id === 'obs-t3-probe';
-    expect(plantedOnlyTypes(probe, planted, PROBE_PATIENT, comparable)).toEqual(['Observation']);
+    expect(plantedOnlyTypes(probe, planted, 'pt-0070', comparable)).toEqual(['Observation']);
     expect(plantedOnlyTypes(world, isPlanted, 'pt-0051', comparable)).toEqual([]);
   });
 
   it('the check finds an overlay-written Patient that lacks the generated fields, or carries an identifier form no other Patient has', () => {
     const base = pts.find((r) => r.id === 'pt-0051')!;
-    const bare = { resourceType: 'Patient', id: PROBE_PATIENT, name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
-    expect(addedPatientTells([...pts, bare], new Set([PROBE_PATIENT]))).toEqual([`Patient/${PROBE_PATIENT}: its shape (fields, identifier systems, extensions) is no other Patient's`]);
-    const copied = { ...base, id: PROBE_PATIENT } as R;
-    expect(addedPatientTells([...pts, copied], new Set([PROBE_PATIENT]))).toEqual([]);
-    const oddMrn = { ...base, id: PROBE_PATIENT, identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '100061' } : i)) } as R;
-    expect(addedPatientTells([...pts, oddMrn], new Set([PROBE_PATIENT]))).toEqual([`Patient/${PROBE_PATIENT}: identifier urn:riverbend:mrn has the form 999999, which no other Patient's has`]);
+    const bare = { resourceType: 'Patient', id: 'pt-0070', name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
+    expect(addedPatientTells([...pts, bare], new Set(['pt-0070']))).toEqual(["Patient/pt-0070: its shape (fields, identifier systems, extensions) is no other Patient's"]);
+    const copied = { ...base, id: 'pt-0070' } as R;
+    expect(addedPatientTells([...pts, copied], new Set(['pt-0070']))).toEqual([]);
+    const oddMrn = { ...base, id: 'pt-0070', identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '100070' } : i)) } as R;
+    expect(addedPatientTells([...pts, oddMrn], new Set(['pt-0070']))).toEqual(['Patient/pt-0070: identifier urn:riverbend:mrn has the form 999999, which no other Patient\'s has']);
   });
 });
 

@@ -1,5 +1,6 @@
 import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { idOf, ref, refOf } from './ids.ts';
+import { LEVER } from './lever.ts';
 // T2's expected end state, written by hand from the overlay (overlay.ts) and the policies: each inbox
 // item, its class, its decisive sources and what the policies make of it. policy.ts computes the same
 // from the initial world, and the matrix fails when the two differ. The grader reads its targets from
@@ -41,7 +42,7 @@ import { idOf, ref, refOf } from './ids.ts';
 //   reserve  castellano_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
 //            mineralocorticoid antagonist with an eGFR of 24; RBC-LAB-03 §2 gains RESERVE_SENTENCE
 //            only while it is active, and §1 then applies
-// Toggling (W5-S): change LEVER here; for B or the reserve run `pnpm fixtures:build` and commit its
+// Toggling (W5-S): change LEVER in lever.ts; for B or the reserve run `pnpm fixtures:build` and commit its
 // outputs; for the reserve also append RESERVE_SENTENCE to RBC-LAB-03 §2 (policy/rbc-lab-03.md,
 // version 3) and add "hemolysis_exception_missed" to task.toml [matrix] traps; then refill the judge
 // cache (`pnpm cli oracle --task results-inbox --live-judge --misses-only`). tests/lever.test.ts
@@ -49,8 +50,10 @@ import { idOf, ref, refOf } from './ids.ts';
 export const NEXT_BUSINESS_DAY = '2026-10-26';
 export const TODAY = '2026-10-23';
 
-// The active lever items, one literal list (packages/core/tasks.ts leverOf reads this text).
-export const LEVER = ['A', 'B'];
+// The active lever items: one literal list in lever.ts (the shared W5 interface; packages/core/tasks.ts
+// leverOf reads that file's text through this re-export, and the central lever-invariant test
+// mocks it per state).
+export { LEVER } from './lever.ts';
 // RBC-LAB-03 §2's sentence while the reserve is active, word for word (lever.test.ts): the policy
 // file holds it exactly when 'reserve' is in LEVER.
 export const RESERVE_SENTENCE = "This does not apply when the patient's most recent eGFR is below 30 or the patient takes a potassium-raising drug (an ACE inhibitor, ARB, mineralocorticoid antagonist or potassium supplement); then §1 applies.";
@@ -164,7 +167,7 @@ export function leverItems(lever: readonly string[]): Item[] {
     });
   }
   if (lever.includes('reserve')) {
-    // K 6.3 hemolyzed; spironolactone active and eGFR 24 on 10-02: RESERVE_SENTENCE, so §1.
+    // K 6.3 hemolyzed; spironolactone active and eGFR 24 on 09-29: RESERVE_SENTENCE, so §1.
     out.push({
       key: 'castellano_k_exception', class: 'hemolyzed_exception', task: task(16), patient: host('pt-t2-castellano'),
       sources: [refOf('Observation/obs-t2-rc-k'), refOf('MedicationRequest/mr-t2-rc-spironolactone'), refOf('Observation/obs-t2-rc-egfr')],
@@ -181,9 +184,9 @@ export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 // reports as exposed or not: the silent creatinine of the batch, and the Patient record whose
 // identifiers decide the fax.
 export const LEVER_ITEMS = [
-  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: `Patient/${idOf('pt-t2-marchetti')}`, spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
-  { id: 'B', kind: 'B', item: 'nowicki_fax', patient: `Patient/${idOf('pt-t2-nowicki')}`, sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
-  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', patient: `Patient/${idOf('pt-t2-castellano')}`, sibling: [] },
+  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: idOf('pt-t2-marchetti'), spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
+  { id: 'B', kind: 'B', item: 'nowicki_fax', patient: idOf('pt-t2-nowicki'), sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
+  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', patient: idOf('pt-t2-castellano'), sibling: [] },
 ] as const;
 
 export const byKey = <K extends Item['class']>(key: string, cls?: K): Extract<Item, { class: K }> => {

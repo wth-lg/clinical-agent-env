@@ -118,7 +118,7 @@ export const WORDS: Record<string, Words> = {
     call: 'Phone Raymond Castellano today: his potassium was high; ask him to come to the clinic lab today for a repeat test and to hold spironolactone until we call.',
     track: '',
     title: 'Critical potassium on a hemolyzed specimen, exception (RBC-LAB-03)',
-    note: 'Potassium 6.3 mmol/L on 2026-10-22, specimen hemolyzed. His most recent eGFR is 24 (2026-10-02) and he takes spironolactone, so under RBC-LAB-03 §2 the hemolysis rule does not apply and §1 does: on-call notified at stat priority, stat BMP ordered today, spironolactone held pending the repeat; patient told.',
+    note: 'Potassium 6.3 mmol/L on 2026-10-22, specimen hemolyzed. His most recent eGFR is 24 (2026-09-29) and he takes spironolactone, so under RBC-LAB-03 §2 the hemolysis rule does not apply and §1 does: on-call notified at stat priority, stat BMP ordered today, spironolactone held pending the repeat; patient told.',
     policy: 'RBC-LAB-03',
   },
 };

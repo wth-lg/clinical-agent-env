@@ -1,6 +1,6 @@
 // pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>]
-//                         [--project --items <n | id=n,...> [--events <id=e,...> --req-per-event <r>]]
-//                         [--cost-from <run,...>] [--json]
+//                         [--project --items <n | id=n,...> [--events <id=e,...> --req-per-event <r>]
+//                         [--lever <id=item+item,...>]] [--cost-from <run,...>] [--json]
 // The context and cost meter (plan-amendment-worklist.md, W0-B). Each request re-reads the whole
 // context, so a trial's cost grows with the square of its request count T. Per trial with first-
 // request context C0, growth g tokens per request and o output tokens per request:
@@ -33,6 +33,11 @@
 // other. Without either, a --project run on such a source exits 2 with the reason; a run without
 // --project prints the reason and its k includes the event requests. A source with no arrivals is
 // read as before.
+// --lever <id=item+item,...> (plan-amendment-w5 W5-H) projects a task at a lever set: each A item of
+// the set adds one event (r requests, so a set with an A item needs r like --events) and each B item
+// one list item (k requests: a B adds one patient or document the model reviews), on top of --items
+// and --events. The ids name the task's lever items (tasks/<id>/expected.ts LEVER_ITEMS); an
+// inactive item is projected as if active, with a line. The projection records the set (`lever`).
 // A run directory given twice (by its resolved path) is read once, with a warning on stderr.
 // It checks the budget lines: p90 at most PER_TRIAL_BUDGET_USD, peak under 0.6 x
 // CONTEXT_WINDOW_TOKENS, T under 0.5 x the task's max_turns, working time under 0.5 x MAX_WALL_MS,
@@ -56,7 +61,7 @@ import type { TaskSource } from '../packages/core/tasks.ts';
 import { loadFinalTrials, loadTrialObservations } from './adapters/ledger-node.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
-import { uniqueRuns } from './classes.ts';
+import { type TaskLever, taskLeverOf, uniqueRuns } from './classes.ts';
 import { checkoutVersions } from './replay.ts';
 
 // The plan sizes on p90 ~ 1.25 x median: pilot-2's max/median trial cost was 1.12-1.46 per task.
@@ -80,10 +85,12 @@ export interface Deps {
   // The number of items in the checkout's tasks/<id>/expected.ts expected.items, null when it has
   // no items list; default expectedItems. A throw or rejection is reported as the reason.
   taskItems?: (id: string) => Promise<number | null>;
+  // A task's lever items (W5-H --lever), null when its expected.ts declares none; default taskLeverOf.
+  lever?: (id: string) => Promise<TaskLever | null>;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>] [--project --items <n|id=n,...> [--events <id=e,...> --req-per-event <r>]] [--cost-from <run,...>] [--json]';
+const USAGE = 'usage: pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>] [--project --items <n|id=n,...> [--events <id=e,...> --req-per-event <r>] [--lever <id=item+item,...>]] [--cost-from <run,...>] [--json]';
 
 // The entries of tasks/<id>/expected.ts expected.items in this checkout: a list's length, an object's
 // keys; null when the file or the list is missing.
@@ -137,6 +144,8 @@ export interface Projection {
   // Set when --events is given: the events projected and the requests each adds.
   events?: number;
   req_per_event?: number;
+  // Set when --lever names the task: the set projected, and how many A (events) and B (items) it adds.
+  lever?: { set: string[]; a: number; b: number };
 }
 
 // The model's cost of a trial with T requests.
@@ -338,7 +347,19 @@ function parseEvents(spec: string): Record<string, number> | null {
   return out;
 }
 
-const WITH_VALUE = new Set(['--task', '--items', '--observed-items', '--cost-from', '--events', '--req-per-event']);
+// "id=A+B,id=A": each task's lever set; null when malformed (an empty set or a repeated id included).
+function parseLever(spec: string): Record<string, string[]> | null {
+  const out: Record<string, string[]> = {};
+  for (const part of spec.split(',')) {
+    const [id, value] = part.split('=');
+    const set = (value ?? '').split('+');
+    if (!id || set.some((s) => s === '') || new Set(set).size !== set.length || id in out) return null;
+    out[id] = set;
+  }
+  return out;
+}
+
+const WITH_VALUE = new Set(['--task', '--items', '--observed-items', '--cost-from', '--events', '--req-per-event', '--lever']);
 const FLAGS = new Set(['--project', '--json']);
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
@@ -359,8 +380,9 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const project_ = opts.has('--project');
   if (project_ !== opts.has('--items')) return usage('--project and --items go together');
   if (opts.has('--cost-from') && !project_) return usage('--cost-from goes with --project');
-  if (opts.has('--req-per-event') && !opts.has('--events')) return usage('--req-per-event goes with --events');
+  if (opts.has('--req-per-event') && !opts.has('--events') && !opts.has('--lever')) return usage('--req-per-event goes with --events or --lever');
   if (opts.has('--events') && !project_) return usage('--events goes with --project');
+  if (opts.has('--lever') && !project_) return usage('--lever goes with --project');
   const reqPerEvent = opts.has('--req-per-event') ? Number(opts.get('--req-per-event')) : undefined;
   if (reqPerEvent !== undefined && !(/^[0-9]+(\.[0-9]+)?$/.test(opts.get('--req-per-event') as string) && Number.isFinite(reqPerEvent))) return usage('--req-per-event takes a number >= 0');
   const json = opts.has('--json');
@@ -411,11 +433,35 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   if (eventCounts === null) return usage('--events takes id=e,... (e a whole number, 0 allowed)');
   const strayEvents = Object.keys(eventCounts).filter((id) => !ids.includes(id));
   if (strayEvents.length > 0) return usage(`--events names ${strayEvents.join(', ')}, not among the tasks measured`);
+  const leverSets = opts.has('--lever') ? parseLever(opts.get('--lever') as string) : {};
+  if (leverSets === null) return usage('--lever takes id=item+item,... (each item once)');
+  const strayLever = Object.keys(leverSets).filter((id) => !ids.includes(id));
+  if (strayLever.length > 0) return usage(`--lever names ${strayLever.join(', ')}, not among the tasks measured`);
+  // Each --lever task's A and B counts, from the checkout's lever items.
+  const leverAdds: Record<string, { set: string[]; a: number; b: number; inactive: string[] }> = {};
+  for (const [id, set] of Object.entries(leverSets)) {
+    let lever: TaskLever | null;
+    try {
+      lever = await (deps.lever ?? taskLeverOf)(id);
+    } catch (e) {
+      return usage(`--lever ${id}: cannot read tasks/${id}/expected.ts (${(e as Error).message})`);
+    }
+    if (lever === null) return usage(`--lever ${id}: tasks/${id}/expected.ts declares no LEVER_ITEMS`);
+    const unknown = set.filter((x) => !lever.items.some((i) => i.id === x));
+    if (unknown.length > 0) return usage(`--lever ${id} names ${unknown.join(', ')}, which ${unknown.length === 1 ? 'is not a lever item' : 'are not lever items'} of the task (${lever.items.map((i) => i.id).join(', ')})`);
+    const kinds = set.map((x) => lever.items.find((i) => i.id === x)!.kind);
+    leverAdds[id] = { set, a: kinds.filter((k) => k === 'A').length, b: kinds.filter((k) => k === 'B').length, inactive: set.filter((x) => !lever.active.includes(x)) };
+  }
+  const leverEvents = Object.values(leverAdds).some((l) => l.a > 0);
   // r: given, or refit when the trials hold event arrivals (they then carry r x arrivals in T).
   const rate = resolveReqPerEvent(ids.map((id) => byTask.get(id) as TrialUsage[]), reqPerEvent);
   if ('error' in rate && project_) return usage(rate.error);
   const r = 'error' in rate ? undefined : rate.r;
   if (opts.has('--events') && r === undefined) return usage('--events needs --req-per-event <r>: the cost source has no event arrivals to fit r from');
+  if (leverEvents && r === undefined) {
+    const [id, l] = Object.entries(leverAdds).find(([, x]) => x.a > 0)!;
+    return usage(`--lever ${id}=${l.set.join('+')} adds an event, which needs --req-per-event <r>: the cost source has no event arrivals to fit r from`);
+  }
   for (const l of 'error' in rate ? [`${rate.error.replace(/; give --req-per-event <r>$/, '')}: k below includes the event requests`] : rate.lines) say(l);
 
   const tasks = deps.tasks ?? nodeTaskSource();
@@ -465,11 +511,16 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     } catch {
       say(`  ${id} is not a task in this checkout: the max_turns line is not checked`);
     }
-    const ev = opts.has('--events') && r !== undefined ? { events: eventCounts[id] ?? 0, req_per_event: r } : undefined;
-    const p = project(id, trials, items, n, maxTurns, ev, r ?? 0);
+    const lever = leverAdds[id];
+    for (const x of lever?.inactive ?? []) say(`  ${id}: lever item ${x} is inactive in the checkout (LEVER); projected as if active`);
+    const withEvents = (opts.has('--events') || (lever?.a ?? 0) > 0) && r !== undefined;
+    const ev = withEvents ? { events: (eventCounts[id] ?? 0) + (lever?.a ?? 0), req_per_event: r as number } : undefined;
+    const at = n + (lever?.b ?? 0);
+    const p: Projection = { ...project(id, trials, items, at, maxTurns, ev, r ?? 0), ...(lever === undefined ? {} : { lever: { set: lever.set, a: lever.a, b: lever.b } }) };
     result[id].projection = p;
     projections.push(p);
-    say(`  at ${n} items${ev === undefined ? '' : ` and ${ev.events} events (r ${reqPerEvent === undefined ? ev.req_per_event.toFixed(2) : ev.req_per_event})`}: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
+    const leverText = lever === undefined ? '' : ` with lever {${lever.set.join(',')}} (${lever.a} A, ${lever.b} B)`;
+    say(`  ${lever === undefined ? 'at' : `${id} at`} ${at} items${ev === undefined ? '' : ` and ${ev.events} events (r ${reqPerEvent === undefined ? ev.req_per_event.toFixed(2) : ev.req_per_event})`}${leverText}: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
   }
   breaks.push(...budgetBreaks(projections));
   if (project_ && projections.length < PLANNED_TASKS) {

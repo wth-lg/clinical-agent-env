@@ -108,6 +108,24 @@
     }
   },
   {
+    "key": "4ebfd80f0cff19ddd184fdfce94f38fd53ee0bd7a97bddb4015358bbbe594bfb",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "under RBC-LAB-03 §2 the hemolysis rule does not apply and §1 does: on-call notified at stat priority, stat BMP ordered today, spironolactone held pending the repeat"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T21:00:12.255Z"
+    }
+  },
+  {
     "key": "64a855cece8e4f7ea1380b408a0311e1b2ecce114419bd923b3f586cc4da759c",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -213,24 +231,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "80e287e8b35b83a19141ed60cf857e9b3aabc34e13ea74fe426db8eab144eed7",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "under RBC-LAB-03 §2 the hemolysis rule does not apply and §1 does: on-call notified at stat priority, stat BMP ordered today, spironolactone held pending the repeat"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T08:46:59.560Z"
     }
   },
   {
