@@ -421,7 +421,7 @@ function leverMutants(active: readonly string[]): Mutant[] {
         fails: ['decisive_seen', 'seen_before_change'],
         loses: [],
         items: { castellano_k_exception: 'retrieval' },
-        script: solve({ reads: readsWithout(ITEM_READS.castellano_k_exception!.slice(2)) }),
+        script: solve({ reads: readsWithout(ITEM_READS.castellano_k_exception!.slice(1)) }),
       },
     );
   }

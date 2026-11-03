@@ -33,8 +33,10 @@
 //
 // W5-E (plan-amendment-w5, record-integrity defects; expected.ts LEVER): three list patients the
 // overlay adds (pt-t2-*, numbered after the cohort's last Patient, so no existing id moves), each
-// present only while its lever item is in expected.ts LEVER (imported). Toggling B or the reserve
-// is a world rebuild; fixtures:verify, which rebuilds, catches a stale world.
+// in the world in every LEVER state with its chart and inbox item; the item is the signed-in
+// user's while its lever item is in expected.ts LEVER (imported) and Jordan Reyes's otherwise, so a
+// toggle moves no id (F3). Toggling B or the reserve is still a world rebuild (the owner field);
+// fixtures:verify, which rebuilds, catches a stale world.
 //
 //   item  key                      patient                  lever  the decisive fact and where it is
 //   14    pt-t2-marchetti          Helen Marchetti, 1959    A      an ED creatinine of 1.36 (09-26), re-routed
@@ -236,7 +238,9 @@ const OFF_LIST = new Set([1, 3, 5, 6, 9, 13]);
 // number for the first time, so the import is safe before the first build in a new state.
 export const LEVER_HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' } as const;
 const REYES = { reference: 'Practitioner/pr-reyes' };
-const item = (n: number, pt: string, focus: string, received: string, from: { reference: string }, summary: string, notes: Array<{ time: string; text: string }> = []): Resource => ({
+// `owner`: a lever host's item is the signed-in user's while its item is active and Jordan Reyes's
+// otherwise (W5-E, F3): the item stays in the world in every LEVER state, so no id moves.
+const item = (n: number, pt: string, focus: string, received: string, from: { reference: string }, summary: string, notes: Array<{ time: string; text: string }> = [], owner?: { reference: string }): Resource => ({
   resourceType: 'Task',
   id: `task-t2-inbox-${n}`,
   status: 'requested',
@@ -249,7 +253,7 @@ const item = (n: number, pt: string, focus: string, received: string, from: { re
   authoredOn: received,
   lastModified: received,
   requester: from,
-  owner: OFF_LIST.has(n) ? REYES : OKAFOR,
+  owner: owner ?? (OFF_LIST.has(n) ? REYES : OKAFOR),
   ...(notes.length ? { note: notes } : {}),
 });
 const REROUTED = (at: string) => ({ time: at, text: 'Re-routed to Dr. Okafor (primary care). Originally filed to the ordering provider at St. Brigid.' });
@@ -631,7 +635,7 @@ Assessment: viral gastroenteritis with dehydration; creatinine rise resolving wi
 Disposition: discharged home at 19:50, tolerating fluids. Hold naproxen for a week. Return precautions given. Follow up with primary care in 1 to 2 weeks with a repeat basic metabolic panel.
 
 Elena Brandt, MD, Emergency Medicine`;
-function marchetti(world: WorldReader): Resource[] {
+function marchetti(world: WorldReader, active: boolean): Resource[] {
   return [
     patient(world, 'pt-0033', HM, 'Marchetti', ['Helen', 'Rose'], '1959-05-30', 'female', '555-0163', '42 Crescent Street', 'Northampton', '01060', ['W', 'Widowed'], 'Teresa Lombardi', 'Springfield', [42.3255, -72.6412]),
     condition('cond-t2-hm-htn', HM, '59621000', 'Essential hypertension (disorder)', '2019-06-03T10:20:00-04:00'),
@@ -652,7 +656,7 @@ function marchetti(world: WorldReader): Resource[] {
     panelOf('hmed', HM, 'enc-t2-hm-ed-1008', '2026-09-26T14:05:00-04:00', '2026-09-26T15:10:00-04:00', HOSPITAL),
     lab('obs-t2-hm-cr-recheck', HM, 'enc-t2-hm-ed-1008', CR_CODE, '2026-09-26T19:30:00-04:00', '2026-09-26T19:45:00-04:00', 1.02, 'mg/dL', [0.57, 1.0], 'H', { performer: [HOSPITAL] }),
     note('doc-t2-hm-ed-1008', HM, '2026-09-26T19:50:00-04:00', ED_NOTE_TYPE, 'enc-t2-hm-ed-1008', { reference: 'Practitioner/pr-t2-brandt' }, HOSPITAL, ED_NOTE_MARCHETTI),
-    item(14, HM, 'DiagnosticReport/dr-t2-bmp-hmed', '2026-10-22T07:20:00-04:00', HOSPITAL, 'Basic metabolic panel (St. Brigid ED, 2026-09-26): creatinine 1.36 mg/dL, high', [REROUTED('2026-10-22T07:20:00-04:00')]),
+    item(14, HM, 'DiagnosticReport/dr-t2-bmp-hmed', '2026-10-22T07:20:00-04:00', HOSPITAL, 'Basic metabolic panel (St. Brigid ED, 2026-09-26): creatinine 1.36 mg/dL, high', [REROUTED('2026-10-22T07:20:00-04:00')], active ? OKAFOR : REYES),
   ];
 }
 
@@ -696,7 +700,7 @@ Revised recommendation: LDCT in 3 months.
 
 Electronically signed: Priya Iyer, MD, Radiology, 2026-10-21 15:30
 Faxed to Riverbend Family Medicine, primary care.`;
-function nowicki(world: WorldReader): Resource[] {
+function nowicki(world: WorldReader, active: boolean): Resource[] {
   return [
     patient(world, 'pt-0033', JK, 'Nowicki', ['Judith', 'Marie'], '1960-03-22', 'female', '555-0177', '18 Elm Court', 'Florence', '01062', ['M', 'Married'], 'Irene Baran', 'Holyoke', [42.3202, -72.6749]),
     condition('cond-t2-jk-htn', JK, '59621000', 'Essential hypertension (disorder)', '2018-01-01T10:00:00-05:00'),
@@ -724,27 +728,28 @@ function nowicki(world: WorldReader): Resource[] {
       custodian: LAKESHORE,
       description: 'Outside record received by fax',
       content: [{ attachment: text(FAX_NOWICKI)[0]! }],
+      // The service the record is about, as the clinic files an outside report (the exam date).
+      context: { period: { start: '2026-09-25T09:20:00-04:00', end: '2026-09-25T09:45:00-04:00' } },
     },
-    item(15, JK, 'DocumentReference/doc-t2-jk-fax-1021', '2026-10-21T16:10:00-04:00', LAKESHORE, 'Lakeshore Imaging: addendum to a lung screening CT (fax)'),
+    item(15, JK, 'DocumentReference/doc-t2-jk-fax-1021', '2026-10-21T16:10:00-04:00', LAKESHORE, 'Lakeshore Imaging: addendum to a lung screening CT (fax)', [], active ? OKAFOR : REYES),
   ];
 }
 
 // ---- Item 16: Raymond Castellano (reserve host, inactive). Heart failure on spironolactone, CKD 4
-// (eGFR 24 on 10-02); his clinic panel of 10-22 reports a potassium of 6.3 on a hemolyzed specimen.
+// (eGFR 24 on 10-02); his clinic potassium of 10-22 is 6.3 on a hemolyzed specimen.
 // With the reserve's RBC-LAB-03 §2 sentence (expected.ts RESERVE_SENTENCE) the hemolysis rule does
 // not apply: §1, a stat on-call notice, a stat BMP today and the spironolactone held.
 const RC = 'pt-t2-castellano';
 const NOTE_CASTELLANO = `Riverbend Family Medicine - Progress Note
 Patient: Raymond Castellano   DOB 1954-07-19
 Date: 2026-10-02
-
 Follow-up of heart failure with reduced ejection fraction and chronic kidney disease stage 4. Breathing stable on current diuretic; weight steady at home. No chest pain.
 Medications reviewed: carvedilol 12.5 mg twice daily, furosemide 40 mg daily, spironolactone 25 mg daily, atorvastatin 40 mg daily.
-Labs today: creatinine 2.6, eGFR 24, potassium 5.0. Kidney function and potassium stable at his baseline; continue current doses with a repeat panel in 3 weeks.
+Examination: BP 118/72, HR 64, no edema. Lungs clear.
+Labs today: creatinine 2.6, eGFR 24, potassium 5.0. Kidney function and potassium stable at his baseline; continue current doses with a repeat potassium and creatinine in 3 weeks.
 Return in 3 months; nephrology follow-up in December.
-
 Maya Okafor, MD`;
-function castellano(world: WorldReader): Resource[] {
+function castellano(world: WorldReader, active: boolean): Resource[] {
   return [
     patient(world, 'pt-0001', RC, 'Castellano', ['Raymond', 'Paul'], '1954-07-19', 'male', '555-0189', '7 Bridge Road', 'Easthampton', '01027', ['M', 'Married'], 'Angela Ferraro', 'Chicopee', [42.2668, -72.6687]),
     condition('cond-t2-rc-hf', RC, '88805009', 'Chronic congestive heart failure (disorder)', '2021-03-15T11:00:00-04:00'),
@@ -756,23 +761,34 @@ function castellano(world: WorldReader): Resource[] {
     medication('mr-t2-rc-atorvastatin', RC, ['617311', 'atorvastatin 40 MG Oral Tablet'], '2021-04-07T10:30:00-04:00', 'Secondary prevention', [40, 'mg', 'daily']),
     encounter('enc-t2-rc-1002', RC, ['AMB', 'ambulatory'], CHECKUP, '2026-10-02T09:00:00-04:00', '2026-10-02T09:35:00-04:00', CLINIC, OKAFOR),
     note('doc-t2-rc-pn-1002', RC, '2026-10-02T09:35:00-04:00', PROGRESS, 'enc-t2-rc-1002', OKAFOR, CLINIC, NOTE_CASTELLANO),
-    ...bmp('rc02', RC, 'enc-t2-rc-1002', '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', { na: 138, k: 5.0, cl: 102, co2: 22, bun: 38, cr: 2.6, glu: 101, ca: 9.1 }, false),
-    panelOf('rc02', RC, 'enc-t2-rc-1002', '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', CLINIC),
+    // His visit labs (single results, as a renal panel is filed here) and the CKD-EPI eGFR of 24.
+    lab('obs-t2-rc-cr-1002', RC, 'enc-t2-rc-1002', CR_CODE, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 2.6, 'mg/dL', [0.74, 1.35], 'H', { performer: [CLINIC] }),
+    lab('obs-t2-rc-k-1002', RC, 'enc-t2-rc-1002', K, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 5.0, 'mmol/L', [3.5, 5.1], 'N', { performer: [CLINIC] }),
     lab('obs-t2-rc-egfr', RC, 'enc-t2-rc-1002', CKD_EPI, '2026-10-02T09:05:00-04:00', '2026-10-02T14:10:00-04:00', 24, 'mL/min/{1.73_m2}', [60, 200], 'L', { performer: [CLINIC] }),
+    // The potassium of 10-22, flagged hemolyzed on the result, with its creatinine; the item files
+    // the potassium itself (as items 7 and 8 file single results).
     encounter('enc-t2-rc-lab-1022', RC, ['AMB', 'ambulatory'], CHECKUP, '2026-10-22T13:30:00-04:00', '2026-10-22T13:40:00-04:00', CLINIC),
-    ...bmp('rc', RC, 'enc-t2-rc-lab-1022', '2026-10-22T13:35:00-04:00', '2026-10-22T18:30:00-04:00', { na: 137, k: 6.3, cl: 100, co2: 21, bun: 41, cr: 2.7, glu: 102, ca: 9.0 }, false, {
-      k: { interp: 'HH', note: [{ time: '2026-10-22T18:30:00-04:00', text: 'Specimen hemolyzed; may be falsely elevated.' }] },
-    }),
-    panelOf('rc', RC, 'enc-t2-rc-lab-1022', '2026-10-22T13:35:00-04:00', '2026-10-22T18:30:00-04:00', CLINIC),
-    item(16, RC, 'DiagnosticReport/dr-t2-bmp-rc', '2026-10-22T18:30:00-04:00', CLINIC, 'Basic metabolic panel (2026-10-22): potassium 6.3 mmol/L, critical high', [CALLED('2026-10-22T18:40:00-04:00')]),
+    lab('obs-t2-rc-k', RC, 'enc-t2-rc-lab-1022', K, '2026-10-22T13:35:00-04:00', '2026-10-22T18:30:00-04:00', 6.3, 'mmol/L', [3.5, 5.1], 'HH', { performer: [CLINIC], note: [{ time: '2026-10-22T18:30:00-04:00', text: 'Specimen hemolyzed; may be falsely elevated.' }] }),
+    lab('obs-t2-rc-cr', RC, 'enc-t2-rc-lab-1022', CR_CODE, '2026-10-22T13:35:00-04:00', '2026-10-22T18:30:00-04:00', 2.7, 'mg/dL', [0.74, 1.35], 'H', { performer: [CLINIC] }),
+    item(16, RC, 'Observation/obs-t2-rc-k', '2026-10-22T18:30:00-04:00', CLINIC, 'Potassium (2026-10-22): 6.3 mmol/L, critical high', [CALLED('2026-10-22T18:40:00-04:00')], active ? OKAFOR : REYES),
   ];
 }
-// The hosts of the active lever items (overlay isolation: a Patient the overlay adds is its own).
+// Every host, in every LEVER state (F3 of the T1 gate: a toggle may move no world id, and added
+// Patients and their records are numbered across every overlay); only the inbox item's owner
+// follows the toggle. An inactive host is then a chart like the cut items' (OFF_LIST): its item
+// is filed to Jordan Reyes and the list never shows it.
+// A hand-written chart on one clock, as a generated chart is: every timestamp of a host's records
+// (visits, draws, issue times, notes, the inbox item) carries the host's own minute and second, the
+// way Synthea stamps a patient's records, so a note's date sits on its chart's modal minute
+// (scripts/test/tells.ts CMODE; the planted clock pass has no generated record to draw from here).
+const onClock = (rs: Resource[], mmss: string): Resource[] => rs.map((r) => JSON.parse(JSON.stringify(r).replace(/T(\d{2}):\d{2}:\d{2}(?=(?:\.\d+)?[+-]\d{2}:\d{2}")/g, `T$1:${mmss}`)) as Resource);
 function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
-  return [...(lever.includes('A') ? marchetti(world) : []), ...(lever.includes('B') ? nowicki(world) : []), ...(lever.includes('reserve') ? castellano(world) : [])];
+  return [...onClock(marchetti(world, lever.includes('A')), '26:14'), ...onClock(nowicki(world, lever.includes('B')), '41:07'), ...onClock(castellano(world, lever.includes('reserve')), '13:52')];
 }
 
-const overlay: Overlay = {
+// The overlay for a LEVER state (tests build other states in memory); the default export is the
+// committed state's.
+export const overlayFor = (lever: readonly string[]): Overlay => ({
   task: 'T2',
   names: {
     'org-t2-lakeshore': 'org-lakeshore',
@@ -783,7 +799,6 @@ const overlay: Overlay = {
     'pr-t2-shah': 'pr-shah',
   },
   build(world: WorldReader) {
-    const lever: readonly string[] = LEVER;
     const mrn = (id: string) => mrnOf(world.get('Patient', id) as R<'Patient'>)!;
     const renamed = RENAME.map(([id, given, family, birthDate, gender]): Resource => {
       const p = world.get('Patient', id) as R<'Patient'>;
@@ -1032,15 +1047,17 @@ const overlay: Overlay = {
           // its recheck after fluids is a fall. The reserve's potassium and eGFR against RBC-LAB-03
           // §1's 6.0 and the exception sentence's 30 (the A arrival's lines are in events.ts, the
           // margins in expected.ts EVENTS, events.test.ts).
-          ...(lever.includes('reserve') ? [{ quantity: 'potassium' as const, threshold: 6.0, observation: 'obs-t2-rc-k' }, { quantity: 'egfr' as const, threshold: 30, observation: 'obs-t2-rc-egfr', label: 'reserve: eGFR below 30' }] : []),
+          { quantity: 'potassium', threshold: 6.0, observation: 'obs-t2-rc-k' },
+          { quantity: 'egfr', threshold: 30, observation: 'obs-t2-rc-egfr', label: 'reserve: eGFR below 30' },
         ],
         leakage: {
           answers: ['2026-11-06', '2027-03-14', '2027-05-14', '2026-11-05', '2026-10-26'],
-          distractors: ['dr-t2-ldct-0915', 'dr-t2-ldct-rp-0414', 'dr-t2-xr-1022', 'dr-t2-cta-1021', 'obs-t2-lped-cr', 'obs-t2-lmuc-cr', 'obs-t2-cw-cr-1021', ...(lever.includes('A') ? ['obs-t2-hm-cr-recheck'] : []), ...(lever.includes('B') ? ['doc-t2-jk-fax-1021'] : []), ...(lever.includes('reserve') ? ['obs-t2-rc-egfr', 'mr-t2-rc-spironolactone'] : [])],
+          distractors: ['dr-t2-ldct-0915', 'dr-t2-ldct-rp-0414', 'dr-t2-xr-1022', 'dr-t2-cta-1021', 'obs-t2-lped-cr', 'obs-t2-lmuc-cr', 'obs-t2-cw-cr-1021', 'obs-t2-hm-cr-recheck', 'doc-t2-jk-fax-1021', 'obs-t2-rc-egfr', 'mr-t2-rc-spironolactone'],
         },
       },
     };
   },
-};
+});
+const overlay: Overlay = overlayFor(LEVER);
 
 export default overlay;

@@ -398,12 +398,20 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // (verifier-phase-P17i-W1-1-1 M3). Each one is named here, with its class and the planted types of
 // its chart (plantedOnlyTypes, in the order of the within-chart tests' types); the within-chart list
 // of such charts (EMPTY_CELLS) leaves added Patients to this table.
-// W5-E (builder-300): T2's lever hosts, pt-t2-marchetti (class creatinine_no_aki, the A event's
-// host) and pt-t2-nowicki (class misfiled); the reserve host is absent while inactive.
-const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = {
-  'pt-0061': { class: 'creatinine_no_aki', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-  'pt-0062': { class: 'misfiled', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
+// By registry key, resolved through the world's registry (fixtures/ids.ts), so the table holds in
+// every LEVER state and whatever the added Patients' numbers are after a train (F2, F3 of the T1
+// gate). W5-E (builder-300): T2's three lever hosts, in the world in every state; a toggle moves
+// only the host's inbox item between the signed-in user and Jordan Reyes.
+const ADDED_PATIENT_RESIDUALS_BY_KEY: Readonly<Record<string, Readonly<Record<string, { class: string; planted_only: readonly string[] }>>>> = {
+  T2: {
+    'pt-t2-castellano': { class: 'hemolyzed_exception', planted_only: ['Condition', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
+    'pt-t2-marchetti': { class: 'creatinine_no_aki', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
+    'pt-t2-nowicki': { class: 'misfiled', planted_only: ['Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
+  },
 };
+const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
+  Object.entries(ADDED_PATIENT_RESIDUALS_BY_KEY).flatMap(([task, byKey]) => Object.entries(byKey).flatMap(([key, v]) => { const id = (TASK_IDS as Record<string, Record<string, string>>)[task]?.[key]; return id === undefined ? [] : [[id, v] as const]; })),
+);
 // A Patient id no world holds, for the self-tests below (the added range starts at pt-0061).
 const PROBE_PATIENT = 'pt-0099';
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {

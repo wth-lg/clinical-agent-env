@@ -269,14 +269,14 @@ export const RECHECK: Record<string, Recheck> = {
       close: (w, arrival, made) => w.completeTask(arrival, made, 'Creatinine 1.48, up 0.60 from 0.88 the morning before: AKI. Urgent repeat BMP by Monday, patient told.'),
     },
   },
-  // The A-twin (G4): the same route; the batch's 1.42 is 0.12 over the silent 1.30 and 1.09 times
+  // The A-twin (G4): the same route; the batch's 1.42 is 0.14 over the silent 1.28 and 1.11 times
   // it, so §3 is not met; the item is closed with the reason, no repeat.
   'marchetti-cr-batch-twin': {
     more: [creatininesOf(PT.marchetti)],
     lure: {
       act: (w) => [w.order(PT.marchetti, BMP, 'urgent', '2026-10-26', 'Repeat BMP: creatinine 1.42 at urgent care, up from 1.02 on 2026-09-26', { supporting: [OBS(ARRIVAL.marchettiTwinHigh)] })],
       repeat: (w) => [w.order(PT.marchetti, BMP, 'routine', '2026-11-06', 'Routine BMP in two weeks after the emergency visit', { supporting: [OBS(ARRIVAL.marchettiTwinHigh)] })],
-      close: (w, arrival) => w.completeTask(arrival, [], 'Creatinine 1.42 at urgent care on 2026-10-22, 0.12 over the 1.30 of 2026-10-21: the AKI rule is not met (RBC-LAB-03 §3). No action.'),
+      close: (w, arrival) => w.completeTask(arrival, [], 'Creatinine 1.42 at urgent care on 2026-10-22, 0.14 over the 1.28 of 2026-10-21: the AKI rule is not met (RBC-LAB-03 §3). No action.'),
     },
   },
 };

@@ -28,11 +28,12 @@ describe('results-inbox worklist', () => {
     expect(new Set(I.map((x) => x.task)).size).toBe(n);
   });
 
-  it('puts every base item on a T2 slot patient, and each lever item on the Patient the overlay adds for it (overlay.ts LEVER_HOSTS)', () => {
+  it('puts every base item on a T2 slot patient, and each active lever item on the Patient the overlay adds for it (overlay.ts LEVER_HOSTS; every host is in the registry, F3)', () => {
     const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0016', 'pt-0033'];
-    const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[{ A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' }[l]]!);
+    const HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' } as const;
+    const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[HOSTS[l]]!);
     expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual([...slots, ...hosts].sort());
-    expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).length).toBe(hosts.length);
+    expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).sort()).toEqual(Object.values(HOSTS).sort());
     // Each host is numbered after the cohort's last Patient (packages/env/overlay.ts), so no base
     // id moved. (The bound is computed: a literal base patient id in a task file pins that
     // patient's visits in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask.)

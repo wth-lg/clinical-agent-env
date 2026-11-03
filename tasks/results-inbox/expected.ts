@@ -252,11 +252,12 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
     ],
   },
   // The A-twin (G4, matrix only, never active with A): the same batch shape with the notified
-  // value deciding. Its silent sibling is 1.30 at 10-21 07:30 (within St. Brigid's range) and the
-  // notified value 1.42: a rise of 0.12 and 1.09 times, neither half of §3 met against the sibling
-  // or the held values. No repeat; the sibling cannot change the answer, so it is not decisive (R1).
+  // value deciding. Its silent sibling is 1.28 at 10-21 07:30 (inside St. Brigid's range, 0.6 to
+  // 1.3, so unflagged and unrouted) and the notified value 1.42: a rise of 0.14 and 1.11 times,
+  // neither half of §3 met against the sibling or the held values. No repeat; the sibling cannot
+  // change the answer, so it is not decisive (R1).
   'marchetti-cr-batch-twin': {
     action: 'unchanged', policy: 'RBC-LAB-03 §3', takes: [], forbids: 'creatinine_repeat',
-    margins: [{ what: 'rise over the silent 1.30, 0.3 line', value: 1.42, line: 1.3 + 0.3, margin: 0.15 }, { what: '1.5 times the silent 1.30', value: 1.42, line: 1.5 * 1.3, margin: 0.15 }],
+    margins: [{ what: 'rise over the silent 1.28, 0.3 line', value: 1.42, line: 1.28 + 0.3, margin: 0.15 }, { what: '1.5 times the silent 1.28', value: 1.42, line: 1.5 * 1.28, margin: 0.15 }],
   },
 };

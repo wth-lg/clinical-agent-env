@@ -27,7 +27,7 @@ import { noteText } from '../../../packages/env/tools/read/notes.ts';
 import { EVENTS, LEVER, LEVER_ITEMS, RESERVE_SENTENCE, expected, leverItems, type Item } from '../expected.ts';
 import { ARRIVAL, LEVER_SPECS, SPECS } from '../events.ts';
 import { IDS, idOf } from '../ids.ts';
-import overlay, { LEVER_HOSTS } from '../overlay.ts';
+import overlay, { LEVER_HOSTS, overlayFor } from '../overlay.ts';
 
 const STATES: ReadonlyArray<readonly string[]> = [['A', 'B'], ['A'], ['B'], ['A', 'B', 'reserve']];
 const LEVER_TRAPS: Readonly<Record<string, string>> = { A: 'batch_sibling_unread', B: 'misfiled_record_acted_on', reserve: 'hemolysis_exception_missed' };
@@ -70,19 +70,37 @@ describe('results-inbox lever toggles (W5-E)', () => {
     expect(keys).toEqual([...(state.includes('A') ? ['marchetti_cr_ed'] : []), ...(state.includes('B') ? ['nowicki_fax'] : []), ...(state.includes('reserve') ? ['castellano_k_exception'] : [])].sort());
     const specs = state.flatMap((l) => LEVER_SPECS[l] ?? []);
     expect(specs).toEqual(state.includes('A') ? ['marchetti-cr-batch'] : []);
-    // Each item's patient is its host (its world id while the host is in the registry, else its key).
+    // Each item's patient is its host (every host is in the registry in every state, F3).
     for (const x of leverItems(state)) expect(x.patient, x.key).toBe(`Patient/${idOf(LEVER_HOSTS[LEVER_ITEMS.find((i) => i.item === x.key)!.id])}`);
   });
 
-  it('the committed overlay adds exactly the active hosts, each with its inbox item, and names no other patient (isolation, R40)', () => {
+  // F3 (the T1 gate, verifier-phase-P17i-W5E-T1-214-1): no LEVER toggle may move a world id. Added
+  // Patients are numbered in key order across every overlay and every record by (patient, date,
+  // code), so a host, its chart and its inbox item are in the world in every state; a toggle changes
+  // only the item's owner (on the list: the signed-in user; off it: Jordan Reyes, as PW4-E3 cut
+  // items). The overlay's edits for every state therefore name the same resources.
+  it('every host is in the world in every LEVER state; a toggle changes only its inbox item\'s owner (F3)', () => {
+    const keys = (lever: readonly string[]) => (overlayFor(lever).build(reader).put ?? []).map((r) => `${r.resourceType}/${r.id}`).sort();
+    const owners = (lever: readonly string[]) => Object.fromEntries((overlayFor(lever).build(reader).put ?? []).filter((r) => r.resourceType === 'Task').map((r) => [r.id, (r as { owner?: { reference?: string } }).owner?.reference]));
+    const committed = keys(LEVER);
+    for (const state of STATES) {
+      expect(keys(state), state.join('+')).toEqual(committed);
+      const o = owners(state);
+      for (const [id, host] of Object.entries(LEVER_HOSTS)) {
+        const item = Object.keys(o).find((t) => (overlayFor(state).build(reader).put ?? []).some((r) => r.resourceType === 'Task' && r.id === t && (r as { for?: { reference?: string } }).for?.reference === `Patient/${host}`))!;
+        expect(o[item], `${state.join('+')} ${id}`).toBe(state.includes(id) ? 'Practitioner/pr-okafor' : 'Practitioner/pr-reyes');
+      }
+    }
+  });
+
+  it('the committed overlay adds every host with its inbox item, and names no other patient (isolation, R40)', () => {
     const edits = overlay.build(reader);
     const put = edits.put ?? [];
     const added = put.filter((r) => r.resourceType === 'Patient' && !T2_SLOTS.includes(r.id!)).map((r) => r.id!).sort();
-    expect(added).toEqual(LEVER_IDS.filter((l) => LEVER.includes(l)).map((l) => LEVER_HOSTS[l]).sort());
+    expect(added).toEqual(Object.values(LEVER_HOSTS).sort());
     for (const host of added) {
       const items = put.filter((r) => r.resourceType === 'Task' && (r as { for?: { reference?: string } }).for?.reference === `Patient/${host}`);
       expect(items.length, host).toBe(1);
-      expect((items[0] as { owner?: { reference?: string } }).owner?.reference).toBe('Practitioner/pr-okafor');
     }
     const allowed = new Set([...T2_SLOTS, ...added]);
     for (const r of put) for (const p of patientRefs(r)) expect(allowed.has(p), `${r.resourceType}/${r.id} names Patient/${p}`).toBe(true);

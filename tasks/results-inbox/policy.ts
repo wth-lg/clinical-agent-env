@@ -159,6 +159,11 @@ export function derive(world: WorldView): Json {
         put('eie_result', { class: 'entered_in_error', ...base, sources: [key(o)], withdrawn: key(o), forbid: 'gi', action: 'close' });
       } else if (hasCode(o.code, K) && CORRECTED.includes(o.status ?? '')) {
         corrected(o, base);
+      } else if (hasCode(o.code, K) && (o.valueQuantity?.value ?? 0) >= 6 && /hemoly/i.test(notes(o))) {
+        // A potassium filed on its own, flagged hemolyzed on the result (W5-E's reserve host).
+        const exception = hemolysisException(world, patient, o.effectiveDateTime!);
+        if (!exception) throw new Error(`${key(o)}: a hemolyzed potassium filed on its own without the exception is not in this probe`);
+        put('castellano_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(o), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: o.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
       } else if (hasCode(o.code, TSH) && normal(o)) {
         put('normal_tsh', { class: 'filler', ...base, sources: [key(o)], action: 'close' });
       } else throw new Error(`${key(t)}: result not classified`);
