@@ -100,8 +100,15 @@ display = "Hemoglobin A1c/Hemoglobin.total in Blood"
 # closure, the scope, a patient skipped (no write, so no event fires), a blind write that fires an amend
 # (R38), and the four event kinds
 # (tests/event-cases.ts). T6 has inbox items, so a status-only agent must fail.
+# W5-E (plan-amendment-w5; lever.ts LEVER): the lever items' traps, each declared while its item is
+# in LEVER (tests/lever.test.ts): panel_member_unread (A: the arrived potassium read, the panel that
+# shows it is a BMP member never, 30/0 kept), same_day_baseline (B: the evening creatinine of the
+# day the dose was raised taken as the value before the change). The reserve's,
+# corrected_egfr_unread (the corrected creatinine read, the recalculated eGFR never, metformin left
+# renewed), is declared here only while 'reserve' is in LEVER: a declared trap needs a mutant, and
+# the reserve's mutants exist only with its patient.
 [matrix]
-traps = ["hemolyzed_potassium", "amended_or_error", "collection_date", "metformin_two_series", "same_patient", "creatinine_rise", "closure", "scope", "patient_skipped", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend"]
+traps = ["hemolyzed_potassium", "amended_or_error", "collection_date", "metformin_two_series", "same_patient", "creatinine_rise", "closure", "scope", "patient_skipped", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend", "panel_member_unread", "same_day_baseline"]
 status_only = true
 
 # The one judged item (reply_names_other_patient) reads the replies to one patient; medium as in T1.

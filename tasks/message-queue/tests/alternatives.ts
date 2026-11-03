@@ -11,8 +11,9 @@ import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { BMP_CODES } from '../expected.ts';
 import { ref } from '../ids.ts';
+import { LEVER } from '../lever.ts';
 import {
-  bmpOrder, call, cancel, close, HOLD_TASK, inbox, lab, ODUM_REPORT, odumBmp, odumRenew, order, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read, readDoc, recheck, resultsInbox, route, type RouteOpts, RX, search, voided, WEBB_READS, webbBmp,
+  bmpOrder, call, cancel, change, close, HOLD_TASK, inbox, KAPLAN_LOOK, kaplanHold, lab, MR, ODUM_REPORT, odumBmp, odumRenew, order, PCP, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read, readDoc, recheck, resultsInbox, route, type RouteOpts, RX, search, task, voided, WEBB_READS, webbBmp,
   webbBridge, webbMetformin,
 } from '../solution/steps.ts';
 import { eventAlternatives } from './event-cases.ts';
@@ -148,4 +149,26 @@ export const alternatives: Alternative[] = [
     script: r({ recheck: [call('list_inbox', { queue: 'results' }), call('list_inbox', { queue: 'messages' }), ...recheck(ACTIVE).filter((c) => c !== resultsInbox && c !== inbox)] }),
   },
   ...ACTIVE.flatMap((spec) => eventAlternatives(spec, ACTIVE)),
+  ...leverAlternatives(),
 ];
+
+// W5-E B (plan-amendment-w5 "T6 message-queue" alternatives), present while 'B' is in LEVER: the
+// current order held or stopped as well as the Task (§2 allows both); the Task's priority is
+// ungraded; the creatinines seen in a list from 09/28 on, or in his whole result list, instead of
+// the creatinine list; the morning value read on its own. The A and reserve alternatives are the
+// event's (tests/event-cases.ts).
+function leverAlternatives(): Alternative[] {
+  if (!LEVER.includes('B')) return [];
+  const CR = KAPLAN_LOOK.calls[0]!;
+  const holdWhy = 'Creatinine 1.46 on 10/19/2026, 46% above 1.00 before the dose increase of 09/28, pending prescriber review (RBC-RX-05 §2)';
+  return [
+    { id: 'm14_order_held', why: "Also holds Leonard Kaplan's current lisinopril order, which RBC-RX-05 §2 allows, with the Task to the PCP.", script: r({ first: { kaplan: [kaplanHold, change(MR.kaplanLis, 'hold', holdWhy), close(14)] } }) },
+    { id: 'm14_order_stopped', why: "Stops Leonard Kaplan's current lisinopril order (§2 allows it) with the Task to the PCP.", script: r({ first: { kaplan: [kaplanHold, change(MR.kaplanLis, 'stop', holdWhy), close(14)] } }) },
+    { id: 'm14_routine_task', why: 'Writes the Task to the PCP at routine priority, due in a week: the priority is not graded.', script: r({ first: { kaplan: [task(PT.kaplan, holdWhy, MR.kaplanLis, PCP, 'routine', '2026-10-30'), close(14)] } }) },
+    // His 27 laboratory results from 09/28 on fill three pages of 10 (the tool's size cap cuts a
+    // longer page), read in one run.
+    { id: 'm14_baseline_by_date_list', why: "Lists Leonard Kaplan's results from 09/28 on with no code filter, 10 a page to the last page: the three creatinines with their times, and holds as the oracle does.", script: r({ reads: [[CR, [0, 10, 20].map((offset) => search('Observation', PT.kaplan, { date_ge: '2026-09-28', sort: '-date', count: 10, ...(offset ? { offset } : {}) }))]] }) },
+    { id: 'm14_whole_list', why: "Lists every result of Leonard Kaplan's, newest first, 10 a page to the last page, in place of the creatinine list, and holds as the oracle does.", script: r({ reads: [[CR, [0, 10, 20].map((offset) => search('Observation', PT.kaplan, { sort: '-date', count: 10, ...(offset ? { offset } : {}) }))]] }) },
+    { id: 'm14_morning_value_read', why: "Lists Leonard Kaplan's creatinine from 10/01 on (the 1.46 alone), then reads the 09/28 08:40 result by id after the progress note names it, and holds.", script: r({ reads: [[CR, [search('Observation', PT.kaplan, { code: '2160-0', date_ge: '2026-10-01', sort: '-date' }), search('DocumentReference', PT.kaplan, { sort: '-date' }), read('DocumentReference', ref('DocumentReference/doc-t6-kaplan-0928' as never)), read('Observation', ref('Observation/obs-t6-kaplan-0928-cr' as never))]]] }) },
+  ];
+}

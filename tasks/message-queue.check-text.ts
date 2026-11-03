@@ -21,11 +21,11 @@ const first = (ev: Record<string, unknown>) => {
 
 export const checkText: CheckText = {
   refill_decision: {
-    requires: `each of the ${ITEMS.length} refill requests decided by RBC-RX-05 on the chart's valid results: a renewal for 90 days with 1 refill or a 30-day supply, each with the lab the protocol orders with it, or a hold with a task to the PCP whose focus is the drug's order; a request a mid-trial arrival changed is graded by amended instead`,
+    requires: `each of the ${ITEMS.length} refill requests decided by RBC-RX-05 on the chart's valid results: a renewal for 90 days with 1 refill or a 30-day supply, each with the lab the protocol orders with it, or a hold with a task to the PCP whose focus is the drug's order (for a creatinine rise after a dose increase, against the last creatinine drawn before the order was written, not a later one of the same day); a request a mid-trial arrival changed is graded by amended instead, and a second request the same correction holds (the other drug of the same patient) is graded here on the chart as delivered: the renewal sent before voided, the task written after the corrected result was read`,
     found: first,
   },
   decisive_seen: {
-    requires: 'every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), for a result the window must lack (no BMP in 12 months, no HbA1c in 6) a complete search of the window that could not hide one, and for a repeated request the first message',
+    requires: 'every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), for a creatinine rise both the result and the creatinine before the dose change, for a result the window must lack (no BMP in 12 months, no HbA1c in 6) a complete search of the window that could not hide one, and for a repeated request the first message',
     found: first,
   },
   seen_before_change: {
@@ -51,11 +51,11 @@ export const checkText: CheckText = {
     found: (ev) => `${which(items(ev.failed_items)[0])}: an arrival came in the model's last turn`,
   },
   event_seen: {
-    requires: "each arrival read after it came in, before finish: the result opened or shown in a result list, the outside report opened or a search snippet showing its deciding line (its potassium, its entered-in-error notice), the message opened; an inbox row alone does not show it, and closing the item by its id does not either",
+    requires: "each arrival read after it came in, before finish: the result opened or shown in a result list, the outside report opened or a search snippet showing its deciding line (its potassium, its entered-in-error notice), the message opened; a panel whose potassium alone is in the inbox is seen only when the potassium and its panel membership are (the panel report opened or listed, or every analyte of the panel listed); a correction that recalculates an eGFR in a separate result is seen only when that result is too; an inbox row alone does not show it, and closing the item by its id does not either",
     found: (ev) => `the arrival for ${which(items(ev.failed_items)[0])} was never read`,
   },
   amended: {
-    requires: 'each request an arrival changes ends where RBC-RX-05 puts it on the chart as delivered (a hold and a task to the PCP after a valid potassium of 5.5 or higher or a corrected creatinine more than 30% up, with the order sent before voided; a 30-day supply and an HbA1c once the only HbA1c in 6 months is entered in error), written after the arrival was read',
+    requires: 'each request an arrival changes ends where RBC-RX-05 puts it on the chart as delivered (a hold and a task to the PCP after a valid potassium of 5.5 or higher, a corrected creatinine more than 30% up or an eGFR recalculated below 45, with the order sent before voided; a 30-day supply and an HbA1c once the only HbA1c in 6 months is entered in error; a 90-day renewal with 1 refill once a valid panel within 12 months with the potassium below 5.5 arrives, with the 30-day supply sent before voided), written after the arrival was read',
     found: (ev) => `${which(items(ev.failed_items)[0])} does not reflect what arrived`,
   },
   kept: {

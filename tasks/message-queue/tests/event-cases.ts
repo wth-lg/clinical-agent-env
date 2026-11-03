@@ -17,14 +17,42 @@
 // is not graded: the gate is no wider than the policy's forbid, R3).
 import type { Alternative, Mutant, Script } from '../../../packages/grader/matrix/types.ts';
 import { ARRIVAL, SPECS } from '../events.ts';
+import { BMP_CODES, byName } from '../expected.ts';
 import {
-  AMEND, arrivalRead, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin,
+  AMEND, arrivalRead, arrivalReads, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, mercerLisinopril, mercerMetformin, message, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, read, recheck, route, type RouteOpts, RX, search, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin, webbRenew,
 } from '../solution/steps.ts';
 
 const itemOf = (spec: string) => SPECS.find((s) => s.id === spec)!.item;
 
 export function eventMutants(spec: string, active: readonly string[]): Mutant[] {
   const item = itemOf(spec);
+  if (spec === 'mercer-b1') {
+    // W5-E reserve: the correction bears on two items (tests/grader.ts BEARS). m16, the spec's item,
+    // fails the event gates; m15 fails refill_decision on the chart as delivered: a hold left unmade
+    // is reasoning, one written before the corrected creatinine was read (or ever) is process.
+    const m15 = byName('m15').item;
+    const own = (o: Omit<RouteOpts, 'active'>): Script => route({ ...o, active });
+    return [
+      {
+        id: `${spec}_not_amended`, event: { spec, kind: 'not_amended' }, trap: 'arrival_not_acted_on',
+        why: 'Reads the corrected creatinine and the recalculated eGFR and still leaves both renewals as they were.',
+        fails: ['refill_decision', 'amended'], loses: [], attribution: 'reasoning', items: { [item]: 'reasoning', [m15]: 'reasoning' },
+        script: own({ amend: { [spec]: () => [] } }),
+      },
+      {
+        id: `${spec}_unseen`, event: { spec, kind: 'unseen' }, trap: 'missed_arrival',
+        why: "Lists both queues but never opens the correction, and writes both holds anyway.",
+        fails: ['refill_decision', 'event_seen', 'amended'], loses: [], attribution: 'process', items: { [item]: 'retrieval', [m15]: 'process' },
+        script: own({ recheck: recheck(active, [spec]) }),
+      },
+      {
+        id: `${spec}_before_seen`, event: { spec, kind: 'before_seen' }, trap: 'amend_before_seen',
+        why: 'Opens the correction in the same answer that writes both holds, so the holds were written before it was seen.',
+        fails: ['refill_decision', 'amended'], loses: [], attribution: 'process', items: { [item]: 'process', [m15]: 'process' },
+        script: own({ recheck: recheck(active, [spec]), amend: { [spec]: () => [] }, before: (m) => [...arrivalReads(spec), ...AMEND[spec]!(m)] }),
+      },
+    ];
+  }
   if (spec === 'price-d1') {
     return [{
       id: `${spec}_lure_acted_on`, event: { spec, kind: 'lure_acted_on' }, trap: 'lure_acted_on',
@@ -51,7 +79,7 @@ export function eventMutants(spec: string, active: readonly string[]): Mutant[] 
       id: `${spec}_before_seen`, event: { spec, kind: 'before_seen' }, trap: 'amend_before_seen',
       why: 'Opens the arrival in the same answer that writes the amend, so the amend was written before the arrival was seen.',
       fails: ['amended'], loses: [], attribution: 'process', items: { [item]: 'process' },
-      script: route({ active, recheck: recheck(active, [spec]), amend: { [spec]: () => [] }, before: (m) => [arrivalRead(spec), ...amend(m)] }),
+      script: route({ active, recheck: recheck(active, [spec]), amend: { [spec]: () => [] }, before: (m) => [...arrivalReads(spec), ...amend(m)] }),
     },
   ];
 }
@@ -99,6 +127,29 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
           script: own({ closeResent: false, extra: [call('update_inbox_item', { task_id: inboxOf('price-d1', active), action: 'cancel', reason: 'Repeat of the metformin request of 10/20, answered there' })] }),
         },
       ];
+    // W5-E A (plan-amendment-w5 "T6 message-queue" alternatives): the 30-day supply stopped, or
+    // superseded by an order that replaces it (R21, R38(f)); the panel membership shown by a
+    // DiagnosticReport search row or by the day's Observation list instead of the report read
+    // (R39(c)); the potassium seen in a list; a corrected reply to the patient.
+    case 'webb-a1': {
+      const panelSearch = search('DiagnosticReport', PT.webb, { code: BMP_CODES.join(','), sort: '-date' });
+      const dayList = search('Observation', PT.webb, { date_ge: '2026-10-22', sort: '-date' });
+      const replaces = call('order_medication', { patient: PT.webb, rxnorm_code: RX.lis10, dose_value: 10, dose_unit: 'mg', route: 'oral', frequency: 'QD', supply_days: 90, refills: 1, reason: 'RBC-RX-05 §2, §7: the panel collected 10/22/2026 is a valid BMP within 12 months', replaces: '' });
+      return [
+        { id: 'webb-a1_stopped', why: 'Voids the 30-day supply sent before the panel resulted by stopping it (R21), and sends the 90-day renewal.', script: own({ amend: { [spec]: (m) => [voided(m, webbBridge, 'stop'), webbRenew] } }) },
+        { id: 'webb-a1_replaces', why: 'Sends the 90-day renewal as an order that replaces the 30-day supply, which stops it and links it as the prior prescription (R38(f)).', script: own({ amend: { [spec]: (m) => [{ ...replaces, input: { ...replaces.input, replaces: `MedicationRequest/${m(webbBridge)}` } }] } }) },
+        { id: 'webb-a1_panel_by_report_search', why: "Opens the new potassium, then lists Marcus Webb's BMP panel reports under every BMP code: the row of the 10/22 panel shows the BMP code and date (R39(c)), and he renews as the oracle does.", script: own({ recheck: [...recheck(active, [spec]), arrivalRead(spec), panelSearch] }) },
+        { id: 'webb-a1_panel_by_day_list', why: "Opens the new potassium, then lists every result of Marcus Webb's from 10/22 on: the eight analytes drawn at 16:40 show the potassium was part of a panel (R39(c)), and he renews as the oracle does.", script: own({ recheck: [...recheck(active, [spec]), arrivalRead(spec), dayList] }) },
+        { id: 'webb-a1_by_potassium_list', why: "Sees the new potassium in a list of Marcus Webb's potassium results instead of opening the result (R2), reads the panel report, and renews.", script: own({ recheck: [...recheck(active, [spec]), labs(PT.webb, '2823-3'), read('DiagnosticReport', ARRIVAL.webbA1.panel)] }) },
+        { id: 'webb-a1_corrected_reply', why: 'Also sends Marcus Webb a correction of the earlier reply once the renewal is in (§7: send a corrected message).', script: own({ extra: [message(PT.webb, 'Correction: your lisinopril refill', 'Correction to my earlier message: the blood test you had yesterday afternoon came back this morning and is in order, so I replaced the 30-day supply of lisinopril 10 mg with a 90-day supply and 1 refill.')] }) },
+      ];
+    }
+    // W5-E reserve: the eGFR seen by reading it rather than in the list; both renewals stopped.
+    case 'mercer-b1':
+      return [
+        { id: 'mercer-b1_egfr_by_read', why: 'Opens the corrected creatinine, then the recalculated eGFR itself instead of listing her eGFR results, and holds both refills.', script: own({ recheck: [...recheck(active, [spec]), arrivalRead(spec), read('Observation', ARRIVAL.mercerB1.egfr)] }) },
+        { id: 'mercer-b1_stopped', why: 'Voids both renewals sent before the correction by stopping them (R21), with the two hold Tasks.', script: own({ amend: { [spec]: (m) => [voided(m, mercerLisinopril, 'stop'), HOLD_TASK.mercerLis, voided(m, mercerMetformin, 'stop'), HOLD_TASK.mercerMet] } }) },
+      ];
   }
   return [];
 }
@@ -130,14 +181,17 @@ export function resentLeftOpenMutant(active: readonly string[]): Mutant {
 // carry a panel report with their deciding Observation (the corrected creatinine, the new potassium,
 // each the inbox Task's focus); the report lists its results by reference only. A trial that opens
 // the panel but never the deciding result has not seen the arrival (retrieval).
-const PANEL: Record<string, string> = { 'price-b1': ARRIVAL.priceB1.panel, 'webb-c1': ARRIVAL.webbC1.panel };
+const PANEL: Record<string, string> = { 'price-b1': ARRIVAL.priceB1.panel, 'webb-c1': ARRIVAL.webbC1.panel, 'webb-a1': ARRIVAL.webbA1.panel, 'mercer-b1': ARRIVAL.mercerB1.panel };
 export function panelOnlyMutant(spec: string, active: readonly string[]): Mutant | null {
   const panel = PANEL[spec];
   if (panel === undefined || !active.includes(spec)) return null;
+  // mercer-b1's second item (m15) fails its delivered decision too: its hold rests on the corrected
+  // creatinine, never shown (tests/grader.ts deliveredDecision, process).
+  const second = spec === 'mercer-b1' ? { fails: ['refill_decision'], items: { [byName('m15').item]: 'process' as const } } : { fails: [], items: {} };
   return {
     id: `${spec}_panel_only`, event: { spec, kind: 'unseen' }, trap: 'missed_arrival',
     why: 'Opens the arrived panel report, whose results are references, but never the result that decides it, and writes the decision anyway.',
-    fails: ['event_seen', 'amended'], loses: [], attribution: 'retrieval', items: { [itemOf(spec)]: 'retrieval' },
+    fails: [...second.fails, 'event_seen', 'amended'], loses: [], attribution: spec === 'mercer-b1' ? 'process' : 'retrieval', items: { ...second.items, [itemOf(spec)]: 'retrieval' },
     script: route({ active, recheck: [...recheck(active, [spec]), call('fhir_read', { resource_type: 'DiagnosticReport', id: panel })] }),
   };
 }

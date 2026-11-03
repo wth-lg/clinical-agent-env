@@ -37,8 +37,8 @@ import { loadStore } from '../../packages/env/fixture-source.ts';
 import { MARGINS } from '../../packages/env/lint/index.ts';
 import { trial } from '../../packages/grader/matrix/matrix.ts';
 import { SPECS } from './events.ts';
-import { ITEMS } from './expected.ts';
-import { id, ref } from './ids.ts';
+import { ITEMS, LEVER } from './expected.ts';
+import { id, ref, refOf } from './ids.ts';
 import overlay from './overlay.ts';
 import { stepsOf } from '../../packages/grader/exposure.ts';
 import { checkText } from '../message-queue.check-text.ts';
@@ -61,11 +61,15 @@ const DECISIVE: Record<string, string[]> = {
   m11: ['Communication/comm-t6-m10'], // his own message for the same metformin (§5)
   m12: ['DiagnosticReport/dr-t6-webb-1020', 'Encounter/enc-t6-webb-0928'], // the newest BMP, collected outside 12 months (R31: seen only by a window search); the visit
   m13: ['Observation/obs-t6-webb-egfr-0928', 'Observation/obs-t6-webb-a1c-0928'], // the valid eGFR; the HbA1c (the eGFR in error is a lure, R1 and R19)
+  // W5-E: m14's 10-19 creatinine and the morning one it is compared with (the evening one cannot
+  // decide: it is after the order and 18% below the 1.46, R1, R19); the reserve's base inputs.
+  ...(LEVER.includes('B') ? { m14: ['Observation/obs-t6-kaplan-1019-cr', 'Observation/obs-t6-kaplan-0928-cr'] } : {}),
+  ...(LEVER.includes('reserve') ? { m15: ['Observation/obs-t6-mercer-1015-cr', 'Observation/obs-t6-mercer-0930-cr', 'Observation/obs-t6-mercer-1015-k'], m16: ['Observation/obs-t6-mercer-1015-egfr', 'Observation/obs-t6-mercer-a1c-0608'] } : {}),
 };
 
 describe('T6 probe rulings', () => {
   it('R1, R15: each item names exactly the records that decide it, and no record decides two items', () => {
-    for (const x of ITEMS) expect(x.decisive, x.name).toEqual(DECISIVE[x.name]!.map((k) => ref(k as never)));
+    for (const x of ITEMS) expect(x.decisive, x.name).toEqual(DECISIVE[x.name]!.map((k) => refOf(k as `${string}/${string}`)));
     const all = ITEMS.flatMap((x) => x.decisive);
     expect(all.filter((k, i) => all.indexOf(k) !== i)).toEqual([]);
   });
@@ -345,7 +349,8 @@ describe('T6 probe rulings', () => {
   });
 
   it('R7: every value an item turns on clears its threshold by the lint margin, the trap values included', () => {
-    const spec = overlay.build({ resources: () => [][Symbol.iterator](), get: () => undefined } as never).lint!;
+    // The committed world stands in for the base cohort (the W5-E hosts take their shape from a base Patient).
+    const spec = overlay.build({ resources: () => [][Symbol.iterator](), get: (t: string, i: string) => store.get(t, i) } as never).lint!;
     const declared = new Set((spec.thresholds ?? []).map((t) => t.observation));
     for (const trap of ['obs-t6-hayes-1005-k', 'obs-t6-webb-egfr-1014']) expect(declared.has(trap), trap).toBe(true);
     expect(Math.abs(obs('obs-t6-webb-egfr-1014').valueQuantity!.value! - 45)).toBeGreaterThanOrEqual(MARGINS.egfr);

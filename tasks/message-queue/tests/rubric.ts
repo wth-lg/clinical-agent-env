@@ -3,7 +3,8 @@
 import { AMEND_CLASSES, type EventSpec } from '../../../packages/env/events.ts';
 import { rubric as item, type Check, type RubricCtx, type Step } from '../../../packages/grader/check.ts';
 import { arrivalOf } from '../../../packages/grader/events.ts';
-import { ITEMS } from '../expected.ts';
+import { HOST_KEYS, ITEMS } from '../expected.ts';
+import { idOf } from '../ids.ts';
 
 type Comm = { resourceType: string; id?: string; subject?: { reference?: string }; topic?: { text?: string }; recipient?: Array<{ reference?: string }>; sender?: { reference?: string }; payload?: Array<{ contentString?: string }> };
 // A message's text as its reader sees it: the subject line, then the body.
@@ -31,6 +32,11 @@ const ALL_MATTERS: Matters = {
   'Patient/pt-0027': ['Frank Odum', 'his lisinopril and amlodipine refills and his blood tests (BMP): on January 20, 2026: potassium 4.5, creatinine 1.02; an outside pre-operative panel from St. Brigid collected August 27, 2026: potassium 5.9 on a hemolyzed (damaged) sample'],
   'Patient/pt-0030': ['Samuel Price', 'his lisinopril dose increase to 20 mg and its refill, his metformin refill and his blood tests: on September 18, 2026: creatinine 1.10, potassium 4.9, eGFR 83; on October 6, 2026: creatinine 1.36, potassium 5.2, eGFR 65; HbA1c 7.6 on March 30, 2026 and an outside HbA1c of 7.1 from Harbor collected August 19, 2026'],
   'Patient/pt-0031': ['Marcus Webb', 'his lisinopril and metformin refills and his blood tests: on October 20, 2025: potassium 4.3, creatinine 1.0; on September 28, 2026: HbA1c 6.9, creatinine 1.02, eGFR 92; a creatinine of 2.1 and eGFR 39 of October 14, 2026, withdrawn as entered in error'],
+  // W5-E's lever hosts (overlay.ts LEVER_HOSTS), by their world ids while they are in the world and
+  // their keys otherwise; listed whatever LEVER holds, so the criterion reads the same in every
+  // lever state (a patient not on the queue is simply never messaged).
+  [`Patient/${idOf(HOST_KEYS.kaplan)}`]: ['Leonard Kaplan', 'his lisinopril dose increase to 20 mg on September 28, 2026 and its refill, and his blood tests: on the morning of September 28, 2026: creatinine 1.00, potassium 4.5; at urgent care that evening: creatinine 1.24, potassium 4.3; on October 19, 2026: creatinine 1.46, potassium 4.8'],
+  [`Patient/${idOf(HOST_KEYS.mercer)}`]: ['Rosalind Mercer', 'her lisinopril dose increase to 20 mg on October 1, 2026 and its refill, her metformin refill and her blood tests: HbA1c 7.3 on June 8, 2026; on September 30, 2026: creatinine 1.00, potassium 4.6, eGFR 60; on October 15, 2026: creatinine 1.12, potassium 4.9, eGFR 52'],
 };
 // What each amend event adds to its patient's matters once it has arrived (events.ts): the chart as
 // delivered.
@@ -40,9 +46,12 @@ const MATTERS_AFTER: Record<string, [patient: string, adds: string]> = {
   'price-b2': ['Patient/pt-0030', 'the outside August 19 HbA1c of 7.1 marked entered in error (filed to the wrong patient)'],
   'webb-c1': ['Patient/pt-0031', 'a panel drawn October 22, 2026: potassium 5.8 (high), creatinine 1.04, eGFR 90'],
   'webb-b2': ['Patient/pt-0031', 'the September 28 HbA1c of 6.9 marked entered in error (not his specimen)'],
+  'webb-a1': ['Patient/pt-0031', 'a panel drawn October 22, 2026: potassium 4.6, creatinine 1.04, eGFR 90, and his lisinopril renewed for 90 days on it'],
+  'mercer-b1': [`Patient/${idOf(HOST_KEYS.mercer)}`, 'the October 15 creatinine corrected by the laboratory to 1.46 and the eGFR to 38'],
 };
-// The queue's patients only (expected.ts ITEMS).
-const PATIENT_MATTERS: Matters = Object.fromEntries(Object.entries(ALL_MATTERS).filter(([p]) => ITEMS.some((x) => x.patient === p)));
+// The queue's patients (expected.ts ITEMS) and the lever hosts.
+const HOSTS = new Set(Object.values(HOST_KEYS).map((k) => `Patient/${idOf(k)}`));
+const PATIENT_MATTERS: Matters = Object.fromEntries(Object.entries(ALL_MATTERS).filter(([p]) => ITEMS.some((x) => x.patient === p) || HOSTS.has(p)));
 // Each patient's matters on the chart the trial's steps delivered: with what every amend event among
 // `specs` that fired adds, in spec order.
 export function mattersAt(steps: readonly Step[], specs: readonly EventSpec[]): Matters {
