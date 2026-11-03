@@ -368,7 +368,14 @@ export interface FailedCheckCount {
 
 export interface Requirements {
   valid?: number;
+  // The pass band as counts (P12: band=2-7, or pass-min/pass-max) ...
   band?: [number, number];
+  // ... or as a proportion of each task's valid trials, k/N inclusive (P21: band=0.2-0.7, the
+  // final run's cost.ts FINAL_PASS_BAND). A decimal point in the value names this form.
+  band_rate?: [number, number];
+  // The tasks the per-task requirements (valid, band) hold for, each of which must have records
+  // (P21: --tasks). Without it, every task in the run. The run-wide requirements stay run-wide.
+  tasks?: string[];
   env_error_raw?: number;
   env_limit?: number;
   grader_error?: number;
@@ -623,8 +630,9 @@ export function summarize(input: SummaryInput): Summary {
 const ALIASES: Record<string, string> = { trials: 'valid' };
 
 // --require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=M. donewhen's
-// form is accepted too: trials=N for valid=N, pass-min=a and pass-max=b for band=a-b. Throws on
-// anything else.
+// form is accepted too: trials=N for valid=N, pass-min=a and pass-max=b for band=a-b. band=a-b
+// takes counts (2-7) or, with a decimal point in both, a proportion of each task's valid trials
+// (0.2-0.7, k/N inclusive, in [0, 1]). Throws on anything else.
 export function parseRequire(spec: string): Requirements {
   const req: Requirements = {};
   let min: number | undefined;
@@ -650,9 +658,16 @@ export function parseRequire(spec: string): Requirements {
     else if (k === 'pass-min') min = count(raw, v);
     else if (k === 'pass-max') max = count(raw, v);
     else if (k === 'band') {
-      const m = /^(\d+)-(\d+)$/.exec(v);
-      if (!m || Number(m[1]) > Number(m[2])) throw new Error(`--require band=${v}: expected a-b with a <= b`);
-      req.band = [Number(m[1]), Number(m[2])];
+      const counts = /^(\d+)-(\d+)$/.exec(v);
+      const rates = /^(\d*\.\d+|\d+)-(\d*\.\d+|\d+)$/.exec(v);
+      if (counts) {
+        if (Number(counts[1]) > Number(counts[2])) throw new Error(`--require band=${v}: expected a-b with a <= b`);
+        req.band = [Number(counts[1]), Number(counts[2])];
+      } else if (rates && (rates[1]!.includes('.') || rates[2]!.includes('.'))) {
+        const [lo, hi] = [Number(rates[1]), Number(rates[2])];
+        if (lo > hi || hi > 1) throw new Error(`--require band=${v}: a proportion band is a-b with 0 <= a <= b <= 1 (counts have no decimal point)`);
+        req.band_rate = [lo, hi];
+      } else throw new Error(`--require band=${v}: expected a-b as counts (2-7) or proportions (0.2-0.7)`);
     } else if (k === 'model') {
       if (v === '') throw new Error('--require model= needs a model id');
       req.model = v;
@@ -662,10 +677,19 @@ export function parseRequire(spec: string): Requirements {
     } else throw new Error(`--require ${raw}: unknown requirement; known: valid (trials), band (pass-min, pass-max), env_error_raw, env_limit, grader_error, model, replay, mode`);
   }
   if (min !== undefined || max !== undefined) {
-    if (req.band) throw new Error('--require: give band or pass-min/pass-max, not both');
+    if (req.band || req.band_rate) throw new Error('--require: give band or pass-min/pass-max, not both');
     req.band = [min ?? 0, max ?? Number.MAX_SAFE_INTEGER];
   }
   return req;
+}
+
+// Whether k of n is within the proportion band, k/n inclusive. The bounds are compared as k
+// against lo x n and hi x n with a small tolerance, so 14 of 20 holds at 0.7 and 3 of 15 at 0.2
+// (0.7 x 20 and 0.2 x 15 are not exact in floating point).
+export function withinRateBand(k: number, n: number, [lo, hi]: readonly [number, number]): boolean {
+  if (n === 0) return false;
+  const eps = 1e-9;
+  return k >= lo * n - eps && k <= hi * n + eps;
 }
 
 // One line per violated requirement; empty when the run meets them all.
@@ -674,14 +698,22 @@ export function checkRequirements(s: Summary, req: Requirements): string[] {
   const tasks = Object.entries(s.tasks);
   if (tasks.length === 0) out.push('no trials in the run');
   const any = Object.keys(req).some((k) => k !== 'allow_mock');
-  if (any && s.expected_tasks !== null) {
-    for (const id of s.expected_tasks.tasks) if ((s.tasks[id]?.records ?? 0) === 0) out.push(`${id}: expected by ${s.expected_tasks.from}, no records`);
+  // The tasks the per-task requirements hold for: --tasks, else the run's; each named by --tasks
+  // is expected too, with an empty TaskSummary when the run has no records of it.
+  const expected = req.tasks ? { tasks: req.tasks, from: '--tasks' } : s.expected_tasks;
+  if (any && expected !== null) {
+    for (const id of expected.tasks) if ((s.tasks[id]?.records ?? 0) === 0) out.push(`${id}: expected by ${expected.from}, no records`);
   }
   if (req.mode !== undefined && s.mode !== req.mode) out.push(`mode ${s.mode ?? '(no manifest)'}, required ${req.mode}`);
   else if (any && s.mode !== 'live' && !req.allow_mock) out.push(`mode ${s.mode ?? '(no manifest)'}: not a live run; pass --allow-mock to check a mock run`);
-  for (const [id, t] of tasks) {
-    if (req.valid !== undefined && t.trials !== req.valid) out.push(`${id}: ${t.trials} valid trials, required ${req.valid}`);
+  // A --tasks task without records gets the valid line (0 valid trials) beside its no-records
+  // line; the band lines need a task with records.
+  const held: Array<[string, TaskSummary | undefined]> = req.tasks ? req.tasks.map((id) => [id, s.tasks[id]]) : tasks;
+  for (const [id, t] of held) {
+    if (req.valid !== undefined && (t?.trials ?? 0) !== req.valid) out.push(`${id}: ${t?.trials ?? 0} valid trials, required ${req.valid}`);
+    if (t === undefined) continue;
     if (req.band && (t.passes < req.band[0] || t.passes > req.band[1])) out.push(`${id}: ${t.passes}/${t.trials} passes, outside the band ${req.band[0]}-${req.band[1]}`);
+    if (req.band_rate && !withinRateBand(t.passes, t.trials, req.band_rate)) out.push(`${id}: ${t.passes}/${t.trials} passes, outside the band ${req.band_rate[0]}-${req.band_rate[1]} of its valid trials`);
   }
   if (req.env_error_raw !== undefined && s.totals.env_error_raw > req.env_error_raw) {
     out.push(`ENV_ERROR raw count ${s.totals.env_error_raw} (re-queued attempts included), required at most ${req.env_error_raw}`);

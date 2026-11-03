@@ -96,8 +96,10 @@ import type { Progress } from './progress.ts';
 // later query with the same filters bounded at the last row shown and complete itself (T2, T3, T6
 // through exposure.ts runCompleteAt); a same-filter run is refused too when a same-patient arrival
 // of the searched type lands between its pages (N1), and a failed call's reference never makes an
-// arrival's key a known record (N4).
-export const GRADER_VERSION = '20';
+// arrival's key a known record (N4). 21: the P21 freeze fix (builder-297, verifier-phase-P17i-G5-210-1
+// M1). boundHolds refuses a stopped page whose last row sorts at a non-finite instant (a date
+// Period with no start) instead of throwing; no grade on today's data moves.
+export const GRADER_VERSION = '21';
 
 export interface CheckResult {
   id: string;

@@ -2,6 +2,8 @@
 // per-task summary is printed, and the exit code is 1 when any task fails. The tasks here are
 // the toy task listed under other ids, each narrowed to its oracle, so the test stays offline
 // and fast.
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { installEgressGuard } from '../../packages/core/egress.ts';
 import { gate } from '../../packages/grader/check.ts';
@@ -13,6 +15,7 @@ installEgressGuard(globalThis);
 
 const TOY = await loadMatrixTask('_toy');
 const ONE: MatrixOptions = { trials: 1, regrades: 1, isolation: false, cases: ['oracle'] };
+const NO_PINS = join(tmpdir(), 'no-such-dir', 'tasks-final.json');
 const boom = gate({ id: 'boom', category: 'process', traces_to: 'instruction.md:1', decisive_ids: [], fn: () => { throw new Error('planted'); } });
 
 async function all(tasks: Record<string, Partial<MatrixTask>>) {
@@ -23,6 +26,8 @@ async function all(tasks: Record<string, Partial<MatrixTask>>) {
     tasks: () => Object.keys(tasks),
     load: async (id) => ({ ...TOY, ...tasks[id] }),
     options: ONE,
+    // The stubbed task list would not hold the ids results/tasks-final.json pins (a usage error).
+    tasksFinal: NO_PINS,
   });
   return { code, text: lines.join('\n') };
 }
@@ -58,6 +63,7 @@ describe('matrix --task all', () => {
       env: process.env,
       out: (l) => lines.push(l),
       tasks: () => ['broken'],
+      tasksFinal: NO_PINS,
       load: async () => { throw new Error('no task.toml'); },
       options: ONE,
     });

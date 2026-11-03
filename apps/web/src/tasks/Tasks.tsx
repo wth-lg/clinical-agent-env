@@ -388,9 +388,9 @@ const VALIDATION_HELP = {
   matrix: 'Tries planted wrong answers and other right answers; each must grade as expected.',
   replay: 'Grades saved trials again; grades must match.',
 } as const;
-// The matrix's right answers (the oracle and its alternatives) must pass; every other probe is a
-// wrong answer and must fail.
-const RIGHT_ANSWERS: readonly string[] = ['oracle', 'alternative'];
+// The matrix's right answers (the oracle, its alternatives and a lever item's read-all-newest agent)
+// must pass; every other probe is a wrong answer and must fail.
+const RIGHT_ANSWERS: readonly string[] = ['oracle', 'alternative', 'read-all-newest'];
 
 // The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
 // and carries Run trial; in the Grader validation panel the tab names it and each button has its
