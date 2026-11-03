@@ -3,14 +3,14 @@
   "model": "claude-opus-5-5",
   "effort": "high",
   "mode": "mock-sample",
-  "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "world_hash": "21b0a1b1ac19170f04fd94d52298b306024da45be134f4cbec531a8dd35db647",
   "api_version": "2026-10-21",
   "trials": 1,
   "task_versions": {
-    "_toy": "667b3d973f93040be39bf4fb10ce9fb74552e85988d54e943060260db0180b25"
+    "_toy": "545b5ff8dd0f58e157d79da4e57526a5d72297da89e0ab18a007456749d10c12"
   },
   "env_versions": {
-    "_toy": "a1b780da48c6d200ccbf9fb59b881b8a62d7c066808accb73f3c261977523a42"
+    "_toy": "f0313d016a12af2a2e2b901e2913f6472e23cdeb8c5e214e1daeceab37337fd8"
   },
   "grader_task_versions": {
     "_toy": "b6c29cadab868eb74254eb6ec60693825fa96ee1813c3381f499b863ac49842e"
