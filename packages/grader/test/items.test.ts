@@ -38,8 +38,8 @@ const ctxOf = (steps: Step[]): GateCtx => {
 };
 
 describe('GRADER_VERSION', () => {
-  it('is 21: gates record item-level results (15), the judge allowance counts the questions items declare (16), T6 sorted page runs and the T2 criterion change grades (17), mid-trial events with sorted runs in T2 and T3 (18), the pilot-4a fixes (19), the pilot-4b fix (20) and the non-finite bound refusal (21)', () => {
-    expect(GRADER_VERSION).toBe('21');
+  it('is 22: gates record item-level results (15), the judge allowance counts the questions items declare (16), T6 sorted page runs and the T2 criterion change grades (17), mid-trial events with sorted runs in T2 and T3 (18), the pilot-4a fixes (19), the pilot-4b fix (20), the non-finite bound refusal (21) and window completeness by exposure (22, R41)', () => {
+    expect(GRADER_VERSION).toBe('22');
   });
 });
 

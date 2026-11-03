@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:4",
   "task_id": "crc-care-gap",
-  "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
+  "task_version": "edae9b9f4eefface2b44d8029cd1b582b2e875f11197181e83eec73c2a391993",
   "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
+  "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -17,8 +17,8 @@
   "effort": "high",
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:46:44.000Z",
-  "turns": 15,
-  "tool_calls": 52,
+  "turns": 18,
+  "tool_calls": 54,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,9 +43,9 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 3 FIT kits ordered and 3 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:49:43.000Z",
+  "ended": "2026-10-23T12:49:59.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -253,33 +253,33 @@
         "seen": [
           {
             "patient": "Patient/pt-0009",
-            "first_order": 46,
+            "first_order": 48,
             "exposed": [
               {
                 "id": "Patient/pt-0009",
-                "step": 12
+                "step": 41
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 48,
+            "first_order": 50,
             "exposed": [
               {
                 "id": "Patient/pt-0022",
-                "step": 14
+                "step": 13
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 50,
+            "first_order": 52,
             "exposed": [
               {
                 "id": "Patient/pt-0024",
-                "step": 15
+                "step": 14
               }
             ],
             "missing_kinds": []

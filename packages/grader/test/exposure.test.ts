@@ -13,8 +13,8 @@ import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type ReadContext } from '../../env/tool
 import { callTool } from '../../env/tools/registry.ts';
 import { attribute } from '../attribution.ts';
 import { gate } from '../check.ts';
-import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow, runCompleteAt } from '../exposure.ts';
-import type { CheckResult } from '../grade.ts';
+import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow, runCompleteAt, windowExposed, windowTargets, type WindowKind } from '../exposure.ts';
+import { gateView, type CheckResult } from '../grade.ts';
 import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 
 const inboxItem: Resource = {
@@ -443,5 +443,224 @@ describe('runCompleteAt: N1 (same-filter runs) and N4 (failed calls)', () => {
     expect(runCompleteAt([failed, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(null);
     // The same reference from a call that ran keeps it (the in-place case).
     expect(runCompleteAt([{ ...failed, is_error: false }, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(4);
+  });
+});
+
+// builder-304, ruling R41: window completeness by exposure. The target set is the patient's initial
+// records of the kind inside the window; the review is complete at the first step by which every
+// target then owed had been exposed.
+describe('windowTargets and windowExposed (R41)', () => {
+  const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
+  const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
+  const obs = (id: string, date: string | undefined, more: Record<string, unknown> = {}): Resource =>
+    ({ resourceType: 'Observation', id, status: 'final', category: cat('laboratory'), code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: 'Patient/pt-1' }, ...(date === undefined ? {} : { effectiveDateTime: date }), ...more }) as Resource;
+  const episode = (id: string, start: string | undefined, end: string | undefined): Resource =>
+    ({ resourceType: 'EpisodeOfCare', id, status: 'finished', patient: { reference: 'Patient/pt-1' }, period: { ...(start ? { start } : {}), ...(end ? { end } : {}) } }) as Resource;
+  const st = (n: number, exposed: string[] = [], more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...more });
+  const opens = Date.parse('2024-01-01T05:00:00Z');
+  const closes = Date.parse('2026-10-23T12:00:00Z');
+  const kind: WindowKind = { type: 'Observation', patient: 'Patient/pt-1', categories: [LAB], statuses: ['final', 'amended', 'corrected'], opens, closes };
+  const initial = [
+    obs('in-1', '2025-06-01T10:00:00-04:00'),
+    obs('in-2', '2026-02-01T10:00:00-04:00', { status: 'corrected' }),
+    obs('vital', '2026-03-01T10:00:00-04:00', { category: cat('vital-signs') }),
+    obs('before', '2023-12-31T23:00:00-05:00'),
+    obs('edge', '2024-01-01T00:00:00-05:00'),
+    obs('withdrawn', '2026-04-01T10:00:00-04:00', { status: 'entered-in-error' }),
+    obs('prelim', '2026-05-01T10:00:00-04:00', { status: 'preliminary' }),
+    obs('undated', undefined),
+    obs('future', '2026-12-01T10:00:00-04:00'),
+    obs('other', '2026-06-01T10:00:00-04:00', { subject: { reference: 'Patient/pt-2' } }),
+    obs('nocat', '2026-07-01T10:00:00-04:00', { category: undefined }),
+  ];
+  const arrived = obs('arrived', '2026-06-01T10:00:00-04:00');
+  const world = { initial: gateView(initial), final: gateView([...initial, arrived]) };
+  const arrival = st(3, [], { arrivals: [{ spec: 'e', keys: ['Observation/arrived', 'Task/inbox-x'] }] });
+
+  it('targets the initial world\'s records of the kind inside the window; a record that arrives during the trial is not one (R41 addendum)', () => {
+    const always = { replaced: null, before: true, after: true };
+    expect(windowTargets(world, [st(1), st(2), arrival, st(4)], kind)).toEqual([
+      { id: 'Observation/in-1', ...always },
+      { id: 'Observation/in-2', ...always },
+      { id: 'Observation/edge', ...always },
+    ]);
+    // A record the chart holds and the initial world lacks is not a target, whether or not an arrival put it.
+    expect(windowTargets(world, [st(1)], kind).map((t) => t.id)).toEqual(['Observation/in-1', 'Observation/in-2', 'Observation/edge']);
+    // No category or status named: every category and status but entered in error; no window start: every date, undated too.
+    const any: WindowKind = { ...kind, categories: [], statuses: [], opens: null };
+    expect(windowTargets(world, [], any).map((t) => t.id)).toEqual(['Observation/in-1', 'Observation/in-2', 'Observation/vital', 'Observation/before', 'Observation/edge', 'Observation/prelim', 'Observation/undated', 'Observation/future', 'Observation/nocat']);
+  });
+
+  it('dates a period by overlap with the window, as a hospice episode counts', () => {
+    const episodes = [episode('spans', '2025-06-01', '2026-03-01'), episode('ended', '2025-01-01', '2025-12-31'), episode('open', '2025-11-01', undefined), episode('nostart', undefined, '2024-06-01')];
+    const w = { initial: gateView(episodes), final: gateView(episodes) };
+    const year: WindowKind = { type: 'EpisodeOfCare', patient: 'Patient/pt-1', categories: [], statuses: ['planned', 'active', 'onhold', 'finished'], opens: Date.parse('2026-01-01T05:00:00Z'), closes };
+    expect(windowTargets(w, [], year).map((t) => t.id)).toEqual(['EpisodeOfCare/spans', 'EpisodeOfCare/open']);
+  });
+
+  it('is complete at the first step by which every target was exposed; a record arriving later is not owed and does not reopen it', () => {
+    const targets = windowTargets(world, [st(1), st(2), arrival, st(4)], kind);
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/edge']), st(2, ['Observation/in-2']), arrival, st(4)], targets)).toBe(2);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2']), st(5, ['Observation/arrived'])], targets)).toBe(4);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4)], targets)).toBe(null);
+    // Exposure in any form counts: a read, an earlier step; a later arrival does not reopen it.
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { tool: 'fhir_read' }), st(2), arrival], targets)).toBe(1);
+    // Nothing to show is not a review (R31): an empty target set completes nothing.
+    expect(windowExposed([st(1, ['Observation/in-1'])], [])).toBe(null);
+    // A failed call exposes nothing.
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { is_error: true })], targets)).toBe(null);
+  });
+});
+
+// builder-305, R41 addendum (verifier-phase-P17i-R41-216-1 F1, F2), restated by builder-306 for
+// addendum 2: the target set is the set owed at the decision step d. A record a class B arrival
+// replaced at a step before d is owed in its final status and date, one replaced at d or later in
+// its initial ones. A record that first arrives before the decision is not a window target; its
+// event gates (R38) grade it.
+describe('windowTargets as of the decision step (R41 addendum)', () => {
+  const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
+  const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
+  const obs = (id: string, date: string, more: Record<string, unknown> = {}): Resource =>
+    ({ resourceType: 'Observation', id, status: 'final', category: cat('laboratory'), code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: 'Patient/pt-1' }, effectiveDateTime: date, ...more }) as Resource;
+  const st = (n: number, exposed: string[] = [], more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...more });
+  const kind: WindowKind = { type: 'Observation', patient: 'Patient/pt-1', categories: [LAB], statuses: ['final', 'amended', 'corrected'], opens: Date.parse('2024-01-01T05:00:00Z'), closes: Date.parse('2026-10-23T12:00:00Z') };
+  const initial = [obs('a', '2025-06-01T10:00:00-04:00'), obs('b', '2026-02-01T10:00:00-04:00'), obs('c', '2026-09-28T09:00:00-04:00'), obs('prelim', '2026-05-01T10:00:00-04:00', { status: 'preliminary' })];
+  const replace = (id: string, more: Record<string, unknown>) => ({ initial: gateView(initial), final: gateView(initial.map((r) => (r.id === id ? ({ ...r, ...more }) as Resource : r))) });
+  const decision = (n: number, arrivals?: Step['arrivals']) => st(n, [], { tool: 'order_medication', written_ids: ['MedicationRequest/x'], ...(arrivals ? { arrivals } : {}) });
+  const ALWAYS = { replaced: null, before: true, after: true };
+
+  it('P-a: a record withdrawn by a class B arrival fired on the decision write is owed through that step', () => {
+    // webb-b2's shape (probe P-a): c is valid and unshown at the decision (step 3); the withdrawal lands after it.
+    const world = replace('c', { status: 'entered-in-error' });
+    const b2 = decision(3, [{ spec: 'webb-b2', keys: ['Observation/c'] }]);
+    const steps = [st(1, ['Observation/a']), st(2, ['Observation/b']), b2];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets).toEqual([{ id: 'Observation/a', ...ALWAYS }, { id: 'Observation/b', ...ALWAYS }, { id: 'Observation/c', replaced: 3, before: true, after: false }]);
+    expect(windowExposed(steps, targets, 3)).toBe(null);
+    // Judged at a later decision (step 5), the withdrawal has landed and c is not owed: complete at step 2, where a and b had been shown.
+    const later = [...steps, st(4), decision(5)];
+    expect(windowExposed(later, windowTargets(world, later, kind), 5)).toBe(2);
+    // Judged at the trial's end (no decision step), the same.
+    expect(windowExposed(steps, targets)).toBe(2);
+    // Control: without the withdrawal, c is owed at every decision.
+    const same = { initial: gateView(initial), final: gateView(initial) };
+    expect(windowExposed(steps, windowTargets(same, [st(1, ['Observation/a']), st(2, ['Observation/b']), decision(3)], kind), 3)).toBe(null);
+    // Withdrawn before the decision: not owed at it, so the review is complete at the step that showed the others.
+    const early = [st(1, ['Observation/a'], { arrivals: [{ spec: 'webb-b2', keys: ['Observation/c'] }] }), st(2, ['Observation/b']), decision(3)];
+    expect(windowExposed(early, windowTargets(world, early, kind), 3)).toBe(2);
+  });
+
+  it('a correction that brings a record into the kind before the decision owes it at the decision', () => {
+    const world = replace('prelim', { status: 'final' });
+    const steps = [st(1, ['Observation/a', 'Observation/b']), st(2, [], { arrivals: [{ spec: 'x-b1', keys: ['Observation/prelim'] }] }), st(3, ['Observation/c']), st(4, ['Observation/prelim']), decision(5)];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets).toContainEqual({ id: 'Observation/prelim', replaced: 2, before: false, after: true });
+    expect(windowExposed(steps, targets, 5)).toBe(4);
+    // A review complete before the correction landed owes the corrected record at the decision all the same (addendum 2, P-d).
+    const done = [st(1, ['Observation/a', 'Observation/b', 'Observation/c']), st(2, [], { arrivals: [{ spec: 'x-b1', keys: ['Observation/prelim'] }] }), decision(3)];
+    expect(windowExposed(done, windowTargets(world, done, kind), 3)).toBe(null);
+    // Fired by the decision write itself, the correction has not landed at the decision: not owed there.
+    const fired = [st(1, ['Observation/a', 'Observation/b', 'Observation/c']), decision(2, [{ spec: 'x-b1', keys: ['Observation/prelim'] }])];
+    expect(windowExposed(fired, windowTargets(world, fired, kind), 2)).toBe(1);
+  });
+
+  it('P-b: a record that first arrives before the decision is not a window target; its event gates grade it', () => {
+    const fresh = obs('new', '2026-10-22T16:40:00-04:00');
+    const world = { initial: gateView(initial), final: gateView([...initial, fresh]) };
+    const steps = [st(1, ['Observation/a', 'Observation/b']), st(2), st(3, [], { arrivals: [{ spec: 'x-a1', keys: ['Observation/new'] }] }), st(4, ['Observation/c']), decision(5)];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets.map((t) => t.id)).toEqual(['Observation/a', 'Observation/b', 'Observation/c']);
+    expect(windowExposed(steps, targets, 5)).toBe(4);
+  });
+});
+
+// builder-306, R41 addendum 2 (verifier-phase-P17i-R41-216-2-1 F1, F2): the target set is the set
+// owed at the decision step d, passed to windowExposed. A record a class B arrival replaced at step
+// r < d is owed in its replaced state, at r >= d in its initial one. A record of that set counts as
+// exposed if any version of it was exposed by id; the review completes at the latest first exposure
+// among the owed records, and the caller compares that step with d by turn. The probes are the gate's
+// (arrival2.ts): webb-b2's shape with the withdrawal fired before the decision (P-c2, P-c2b) and a
+// correction that moves a never-shown record into the window before it (P-d, P-d2).
+describe('windowExposed judged at the decision step (R41 addenda 2 and 3)', () => {
+  const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
+  const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
+  const obs = (id: string, date: string, more: Record<string, unknown> = {}): Resource =>
+    ({ resourceType: 'Observation', id, status: 'final', category: cat('laboratory'), code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: 'Patient/pt-1' }, effectiveDateTime: date, ...more }) as Resource;
+  const st = (n: number, exposed: string[] = [], more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_read', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...more });
+  const write = (n: number, arrivals?: Step['arrivals'], turn = n) => st(n, [], { tool: 'order_medication', turn, written_ids: [`MedicationRequest/x${n}`], ...(arrivals ? { arrivals } : {}) });
+  const kind: WindowKind = { type: 'Observation', patient: 'Patient/pt-1', categories: [LAB], statuses: ['final', 'amended', 'corrected'], opens: Date.parse('2024-01-01T05:00:00Z'), closes: Date.parse('2026-10-23T12:00:00Z') };
+  // a, b and c are in the window; old is dated before it (P-d moves it in).
+  const initial = [obs('a', '2025-06-01T10:00:00-04:00'), obs('b', '2026-02-01T10:00:00-04:00'), obs('c', '2026-09-28T09:00:00-04:00'), obs('old', '2023-10-20T08:01:27-04:00')];
+  const replace = (id: string, more: Record<string, unknown>) => ({ initial: gateView(initial), final: gateView(initial.map((r) => (r.id === id ? ({ ...r, ...more }) as Resource : r))) });
+  const withdrawn = replace('c', { status: 'entered-in-error' });
+  const B2: Step['arrivals'] = [{ spec: 'webb-b2', keys: ['Observation/c'] }];
+  const A = 'Observation/a';
+  const B = 'Observation/b';
+  const complete = (steps: Step[], world: ReturnType<typeof replace>, decision: number) => windowExposed(steps, windowTargets(world, steps, kind), decision);
+
+  it('P-c2, P-c2b: a withdrawal fired before the decision leaves the review complete at the targets shown earlier', () => {
+    // P-c2: the arrival fires at step 2 (a write in its own turn); the decision is the next step, in the next turn.
+    const c2 = [st(1, [A, B]), write(2, B2), write(3)];
+    expect(complete(c2, withdrawn, 3)).toBe(1);
+    expect(seenBefore(c2, complete(c2, withdrawn, 3), 3)).toBe(true);
+    // P-c2b: the arrival is the last call of turn 2; turn 3 holds a read and then the decision.
+    const c2b = [st(1, [A, B]), write(2, B2), st(3, ['Patient/pt-1'], { turn: 3 }), write(4, undefined, 3)];
+    expect(complete(c2b, withdrawn, 4)).toBe(1);
+    expect(seenBefore(c2b, complete(c2b, withdrawn, 4), 4)).toBe(true);
+    // P-c: a read in its own turn between the arrival and the decision: the same.
+    const c = [st(1, [A, B]), write(2, B2), st(3, ['Patient/pt-1']), write(4)];
+    expect(complete(c, withdrawn, 4)).toBe(1);
+    // P-c3, not lenient: another target unshown is never complete.
+    expect(complete([st(1, [A]), write(2, B2), st(3, ['Patient/pt-1']), write(4)], withdrawn, 4)).toBe(null);
+    // P-c4: the last target shown in the firing turn completes it there (step 3, turn 2), seen before the decision of turn 4.
+    const c4 = [st(1, [A]), write(2, B2), st(3, [B], { turn: 2 }), write(4)];
+    expect(complete(c4, withdrawn, 4)).toBe(3);
+    expect(seenBefore(c4, 3, 4)).toBe(true);
+    // P-c5, control: without the withdrawal c is owed and unshown.
+    const same = { initial: gateView(initial), final: gateView(initial) };
+    expect(complete([st(1, [A, B]), write(2), st(3, ['Patient/pt-1']), write(4)], same, 4)).toBe(null);
+    // P-a: the withdrawal fired on the decision write (r = d) leaves c owed in its initial state: never complete.
+    const pa = [st(1, [A]), st(2, [B]), write(3, B2)];
+    expect(complete(pa, withdrawn, 3)).toBe(null);
+    // P-e: c shown then withdrawn counts as exposed; P-f: an arrival that names the key but leaves the record as it was keeps it owed.
+    expect(complete([st(1, [A, B, 'Observation/c']), write(2, B2), write(3)], withdrawn, 3)).toBe(1);
+    expect(complete([st(1, [A, B]), write(2, B2), st(3), write(4)], same, 4)).toBe(null);
+  });
+
+  it('P-d, P-d2: a correction that moves a never-shown record into the window before the decision makes it a target', () => {
+    const moved = replace('old', { effectiveDateTime: '2026-10-01T09:00:00-04:00', status: 'corrected' });
+    const D: Step['arrivals'] = [{ spec: 'x-b', keys: ['Observation/old'] }];
+    // P-d: the review was complete at step 1; the correction lands at step 2; old is never shown; the decision is step 4.
+    const steps = [st(1, [A, B, 'Observation/c']), write(2, D), st(3, ['Patient/pt-1']), write(4)];
+    expect(windowTargets(moved, steps, kind)).toContainEqual({ id: 'Observation/old', replaced: 2, before: false, after: true });
+    expect(complete(steps, moved, 4)).toBe(null);
+    // P-d2: the review was not complete before the correction either.
+    expect(complete([st(1, [A, B]), write(2, D), st(3, ['Observation/c']), write(4)], moved, 4)).toBe(null);
+    // Shown after the correction: complete at that step, however early the others were.
+    expect(complete([st(1, [A, B, 'Observation/c']), write(2, D), st(3, ['Observation/old']), write(4)], moved, 4)).toBe(3);
+    // A correction fired on the decision write itself (r = d) is not owed at it: its event gates grade it.
+    expect(complete([st(1, [A, B, 'Observation/c']), write(2, D)], moved, 2)).toBe(1);
+  });
+
+  it('Q2, Q4: an arrival fired by a sibling call of the decision\'s turn counts as after the decision (addendum 3)', () => {
+    // Q4: the withdrawal of c is fired by an earlier call of the decision's turn (a parallel batch); c
+    // was never shown. The owed set is the chart at the start of that turn, so c is owed in its
+    // initial state: never complete, as P-a.
+    const q4 = [st(1, [A, B]), write(2, B2, 2), write(3, undefined, 2)];
+    expect(complete(q4, withdrawn, 3)).toBe(null);
+    // Judged at the trial's end (no decision step) the withdrawal has landed: complete at step 1.
+    expect(complete(q4, withdrawn, Infinity)).toBe(1);
+    // Q2: a sibling call of the decision's turn fires the correction that moves old into the window;
+    // the agent had no turn to see it. Not owed at the decision: the review of a, b and c completes it.
+    const moved = replace('old', { effectiveDateTime: '2026-10-01T09:00:00-04:00', status: 'corrected' });
+    const D: Step['arrivals'] = [{ spec: 'x-b', keys: ['Observation/old'] }];
+    const q2 = [st(1, [A, B, 'Observation/c']), write(2, D, 2), write(3, undefined, 2)];
+    expect(complete(q2, moved, 3)).toBe(1);
+    expect(seenBefore(q2, complete(q2, moved, 3), 3)).toBe(true);
+    // Q2b: old read by id in turn 1, while still outside the window: the same.
+    expect(complete([st(1, [A, B, 'Observation/c', 'Observation/old']), write(2, D, 2), write(3, undefined, 2)], moved, 3)).toBe(1);
+    // Fired in an earlier turn, the correction is owed (P-d) and the withdrawal is not (P-c2), whatever the step gap.
+    expect(complete([st(1, [A, B, 'Observation/c']), write(2, D), write(3)], moved, 3)).toBe(null);
+    expect(complete([st(1, [A, B]), write(2, B2), write(3)], withdrawn, 3)).toBe(1);
   });
 });

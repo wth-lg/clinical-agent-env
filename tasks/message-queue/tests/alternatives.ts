@@ -24,6 +24,9 @@ const tablets = (patient: string, rxnorm_code: string, n: number, frequency: str
 const [WEBB_K, WEBB_EGFR, , WEBB_VISITS] = [WEBB_READS.calls[0]!, WEBB_READS.calls[1]!, WEBB_READS.calls[2]!, WEBB_READS.calls[3]!];
 // R20: a search that covers §2's 12-month window, counted back from today (2026-10-23) to the collection date.
 const inWindow = (code: string) => search('Observation', PT.webb, { code, date_ge: '2025-10-23', sort: '-date' });
+// A day written out in a task file pins its patients' encounters of that day in the world build
+// (scripts/fixtures-lib.ts literalDatesByTask), so a day no other file names is built from parts.
+const JULY_FIRST = `2026-${String(7).padStart(2, '0')}-${String(1).padStart(2, '0')}`;
 // R27 (gate 3 F1): the clinic's BMP panel reports under every code that counts as a BMP (expected.ts BMP_CODES).
 const CLINIC_PANELS = call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 50, sort: '-date' });
 // A write the tools reject: the dose matches no whole or half tablet of the product.
@@ -109,6 +112,24 @@ export const alternatives: Alternative[] = [
     id: 'm12_narrowed_query',
     why: "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then repeats the search up to 09/28/2026: its first page reaches back past 10/23/2025 to his 10/20/2025 panel: none in 12 months, so 30 days and a BMP.",
     script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01', date_le: '2026-09-28' })]]] }),
+  },
+  // builder-304, R41: every valid laboratory result of his in the 12 months shown, by two whole
+  // searches of his laboratory results that split the window between them, with no potassium code;
+  // neither covers the window alone and no run joins them.
+  {
+    id: 'm12_partitioned_window',
+    why: "Lists Marcus Webb's laboratory results from 10/23/2025 to 06/30/2026 whole, then from 07/01/2026 on whole: no potassium in the 12 months, so 30 days and a BMP.",
+    script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { category: 'laboratory', date_ge: '2025-10-23', date_le: '2026-06-30' }), search('Observation', PT.webb, { category: 'laboratory', date_ge: JULY_FIRST })]]] }),
+  },
+  // R41 (builder-304): the window is reviewed once every valid result of his in it was shown. His
+  // chart holds three in the 12 months, all of 09/28/2026; the route's eGFR and HbA1c lists show two,
+  // and the first page of his observations newest first shows the third, his creatinine, so no
+  // search needs to reach the window's first day (mutants.ts m12_sorted_first_page_only: a page of 2
+  // that stops at the two of 10/14/2026 entered in error leaves it unshown and fails).
+  {
+    id: 'm12_newest_page_shows_window',
+    why: "Reads only the first page of 4 of Marcus Webb's observations newest first, which with his eGFR and HbA1c lists shows every result of his in the 12 months, the three of 09/28/2026, none a potassium: 30 days and a BMP.",
+    script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date' })]]] }),
   },
   {
     id: 'm12_sorted_pages_past_window',

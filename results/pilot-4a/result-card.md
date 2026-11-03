@@ -29,7 +29,7 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 ## Grader faults found and fixed
 
 GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: 1.
-- crc-care-gap/2: FAIL at grader 18, PASS at grader 21
+- crc-care-gap/2: FAIL at grader 18, PASS at grader 22
 
 ## Per class and per event
 
@@ -178,8 +178,8 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 ## No failures
 
-- discharge-medrec: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version e89d35456f1d017ac428ece0b1086e170a55579352197b8edfb8b473ad7a0d72: the oracle passes, 33 of 33 mutants fail as declared, 39 of 39 alternatives pass, the null agent fails.
-- message-queue: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version 48cea45e1ff60d6112f90ba203e7b6712d5d2bf5b7f94a462c862d41a0da37f7: the oracle passes, 43 of 43 mutants fail as declared, 35 of 35 alternatives pass, the null agent fails.
-- renal-dose-review: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version 1bf50fd62251c0283b6664819e6b2997aca7093a52de599ac346e4f9a00bbb30: the oracle passes, 33 of 33 mutants fail as declared, 19 of 19 alternatives pass, the null agent fails.
-- results-inbox: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version 8e0236b3edaa1ee750d4009db0030b2e2326739c18f2342ba6e474b2c7699b15: the oracle passes, 42 of 42 mutants fail as declared, 30 of 30 alternatives pass, the null agent fails.
+- discharge-medrec: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371: the oracle passes, 33 of 33 mutants fail as declared, 39 of 39 alternatives pass, the null agent fails.
+- message-queue: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd: the oracle passes, 43 of 43 mutants fail as declared, 37 of 37 alternatives pass, the null agent fails.
+- renal-dose-review: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version 1dc14fb20da324769f29fe2ddf9cf7c37513f85e639897c9092218bf77fa6bae: the oracle passes, 33 of 33 mutants fail as declared, 19 of 19 alternatives pass, the null agent fails.
+- results-inbox: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version 718da033bc983069109d3469f6bf9818a4fe63ad7216e072eecf5d03a0684929: the oracle passes, 42 of 42 mutants fail as declared, 31 of 31 alternatives pass, the null agent fails.
 
