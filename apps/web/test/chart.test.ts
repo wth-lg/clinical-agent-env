@@ -18,7 +18,8 @@ const REPO = join(import.meta.dirname, '../../..');
 describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {
-    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
+    // T1: its nine slots and the Patients its overlay adds (W5-E: the lever patients pt-0061 and pt-0062).
+    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045', 'Patient/pt-0061', 'Patient/pt-0062']);
     expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
     expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
   });

@@ -16,6 +16,12 @@ import { main as classes, type ClassesJson } from '../classes.ts';
 import { main as regrade } from '../regrade.ts';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures/pilot-4a-crc0');
+// The fixture is a historical run (ruling R37): it regrades only on the world it ran on. On a
+// checkout whose world differs (a later overlay moved it, R40; W5-E builder-299), regrade refuses it
+// with the named world-mismatch error and writes nothing, and classes still reads the stored
+// attribution; the regrade's own assertions run where the world is the record's.
+const CHECKOUT_WORLD = (JSON.parse(readFileSync(join(import.meta.dirname, '../../fixtures/manifest.json'), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
+const FIXTURE_WORLD = (JSON.parse(readFileSync(join(FIXTURE, 'trials/crc-care-gap/0.json'), 'utf8')) as { state_hash: { initial: string } }).state_hash.initial;
 const MACGYVER = 'Patient/pt-0024';
 
 async function cli(main: (args: string[], deps: { out: (l: string) => void; err: (l: string) => void }) => Promise<number>, args: string[]) {
@@ -35,6 +41,15 @@ describe('regrade stores the new grade\'s attribution; classes reads it', () => 
     expect(labelsOf(JSON.parse(before.out))).toEqual(['event_seen -> retrieval']);
 
     const r = await cli(regrade, [dir, '--grader-version', GRADER_VERSION]);
+    if (CHECKOUT_WORLD !== FIXTURE_WORLD) {
+      // R37/R38(c): a historical run on another world is refused by name, never regraded.
+      expect(r.code).toBe(1);
+      expect(`${r.out}\n${r.err}`).toMatch(/crc-care-gap\/0: environment changed: .*world mismatch: run at [0-9a-f]+, checkout at [0-9a-f]+; reproduce at the commit in results\/pilot-4a\/README\.md/);
+      const after = await cli(classes, [dir, '--json']);
+      expect(after.code).toBe(0);
+      expect(labelsOf(JSON.parse(after.out))).toEqual(['event_seen -> retrieval']);
+      return;
+    }
     expect([r.code, r.err]).toEqual([0, '']);
     const rec = JSON.parse(readFileSync(join(dir, 'trials/crc-care-gap/0.json'), 'utf8')) as { outcome: string; regrades: Array<{ outcome: string; changed: boolean; attribution?: { auto: string; first_failed: string; items?: Array<{ item: string; gate: string; auto: string }> } | null }> };
     const last = rec.regrades.at(-1)!;
