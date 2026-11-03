@@ -177,12 +177,13 @@ export function leverItems(lever: readonly string[]): Item[] {
 export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 
 // W5-H's declaration of the lever items (packages/grader/matrix/types.ts LeverItem): the list item
-// each bears on, an A item's event, and the sibling records cli classes reports as exposed or not:
-// the silent creatinine of the batch, and the Patient record whose identifiers decide the fax.
+// each bears on and its patient, an A item's event spec, and the sibling records cli classes
+// reports as exposed or not: the silent creatinine of the batch, and the Patient record whose
+// identifiers decide the fax.
 export const LEVER_ITEMS = [
-  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', event: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
-  { id: 'B', kind: 'B', item: 'nowicki_fax', sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
-  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', sibling: [] },
+  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: `Patient/${idOf('pt-t2-marchetti')}`, spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
+  { id: 'B', kind: 'B', item: 'nowicki_fax', patient: `Patient/${idOf('pt-t2-nowicki')}`, sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
+  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', patient: `Patient/${idOf('pt-t2-castellano')}`, sibling: [] },
 ] as const;
 
 export const byKey = <K extends Item['class']>(key: string, cls?: K): Extract<Item, { class: K }> => {

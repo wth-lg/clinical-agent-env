@@ -51,7 +51,7 @@ describe('results-inbox lever toggles (W5-E)', () => {
     expect([...LEVER_ITEMS].map((i) => i.id).sort()).toEqual([...LEVER_IDS].sort());
     for (const i of LEVER_ITEMS) {
       if (i.kind === 'A') {
-        expect('event' in i && typeof i.event === 'string').toBe(true);
+        expect('spec' in i && typeof i.spec === 'string').toBe(true);
         expect(i.sibling.length).toBeGreaterThan(0);
       }
     }
