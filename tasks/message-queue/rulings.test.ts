@@ -43,7 +43,9 @@ import overlay from './overlay.ts';
 import { stepsOf } from '../../packages/grader/exposure.ts';
 import { checkText } from '../message-queue.check-text.ts';
 import type { Step } from '../../packages/grader/check.ts';
-import { coveredAt, covers, LAB_CODES, seenStep } from './tests/grader.ts';
+import { windowTargets } from '../../packages/grader/exposure.ts';
+import { gateView } from '../../packages/grader/grade.ts';
+import { coveredAt, covers, LAB_CODES, seenStep, WINDOW_KINDS } from './tests/grader.ts';
 
 const store = await loadStore(matrixEnv().world);
 const task = await nodeTaskSource({ testMode: false }).get('message-queue');
@@ -360,6 +362,26 @@ describe('T6 probe rulings', () => {
   // verifier-phase-P17i-S0-208-1 M2 (R36 consistency with T3's G2, builder-292): m12's run may drop a
   // filter on a later page when the filters nest and the totals agree; a different total, a gap and a
   // changed sort still fail.
+  it("R41 (builder-304): m12's window is also reviewed once every valid laboratory result of Webb's in it was exposed, by any searches", () => {
+    const m12 = ITEMS.find((i) => i.name === 'm12')!;
+    const all = [...store.resources()];
+    const chart = { initial: gateView(all), final: gateView(all) };
+    const step = (n: number, exposed: string[] = [], search?: Step['search']) => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...(search ? { search } : {}) }) as Step;
+    const [labs, reports] = WINDOW_KINDS(m12).map((k) => windowTargets(chart, [], k).map((t) => t.id));
+    // His three results of 09/28/2026; the two of 10/14 are entered in error and not owed.
+    expect(labs!.sort()).toEqual([ref('Observation/obs-t6-webb-cr-0928'), ref('Observation/obs-t6-webb-egfr-0928'), ref('Observation/obs-t6-webb-a1c-0928')].sort());
+    expect(labs).not.toContain(ref('Observation/obs-t6-webb-egfr-1014'));
+    // Two whole searches of his laboratory results that split the window: no shape rule joins them.
+    const split = (ids: string[]) => [step(1, ids.slice(0, 1), { type: 'Observation', patient: m12.patient, category: 'laboratory', date_ge: '2025-10-23', date_le: '2026-06-30', whole: true }), step(2), step(3, ids.slice(1), { type: 'Observation', patient: m12.patient, category: 'laboratory', date_ge: '2026-07-01', whole: true })];
+    expect(coveredAt(m12, split(labs!))).toBe(null);
+    expect(coveredAt(m12, split(labs!), chart)).toBe(3);
+    expect(seenStep(m12, m12.absence!.id)(split(labs!), chart)).toBe(3);
+    expect(coveredAt(m12, split(labs!.slice(0, 2)), chart)).toBe(null);
+    // The panel-report route: his BMP reports in the window (none), so nothing shown is no review by exposure (R31).
+    expect(reports).toEqual([]);
+    expect(coveredAt(m12, [step(1, [], { type: 'DiagnosticReport', patient: m12.patient, date_ge: '2025-10-23', whole: true })], chart)).toBe(1);
+  });
+
   it('S0-208 M2: m12 continues a run across nested filters with the same total', () => {
     const m12 = ITEMS.find((i) => i.name === 'm12')!;
     const at = (iso: string) => Date.parse(iso);

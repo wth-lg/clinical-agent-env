@@ -31,6 +31,10 @@ export interface ItemVerdict {
   // turned into another kind of item: verifier-phase-P17i-S0-208-1 M1); by default the spec's
   // decisive(item). Each must be in the gate's decisive_ids (spec decisive or also_decisive).
   decisive?: readonly string[];
+  // For a failed item: the decision step the gate judged its seen rules at (check.ts SeenRule
+  // `at`), so attribution judges them at the same step and the item's label agrees with the gate
+  // (R41 addendum 3). Absent when the gate judged at the trial's end.
+  at?: number;
 }
 
 export interface ItemResult {
@@ -45,6 +49,8 @@ export interface ItemResult {
   action_form?: true;
   process?: true;
   event?: string;
+  // The decision step the gate judged the item's seen rules at (ItemVerdict.at).
+  at?: number;
 }
 
 type Common = Omit<GateCheck, 'kind' | 'method' | 'fn' | 'decisive_ids'>;
@@ -75,6 +81,7 @@ const result = (item: string, decisive: readonly string[], v: ItemVerdict): Item
   ...(!v.met && v.action_form === true ? { action_form: true as const } : {}),
   ...(!v.met && v.process === true ? { process: true as const } : {}),
   ...(!v.met && v.event !== undefined ? { event: v.event } : {}),
+  ...(!v.met && v.at !== undefined ? { at: v.at } : {}),
 });
 
 export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck {

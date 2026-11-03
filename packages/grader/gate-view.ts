@@ -36,6 +36,7 @@ export interface GateEncounter {
   resourceType: 'Encounter'; id: string; status?: string; class?: GateCoding; type?: GateConcept[]; subject?: GateRef;
   participant?: Array<{ individual?: GateRef; type?: GateConcept[] }>; period?: GatePeriod; serviceProvider?: GateRef; reasonCode?: GateConcept[]; reasonReference?: GateRef[];
 }
+export interface GateEpisodeOfCare { resourceType: 'EpisodeOfCare'; id: string; status?: string; type?: GateConcept[]; patient?: GateRef; period?: GatePeriod; managingOrganization?: GateRef }
 export interface GateCondition {
   resourceType: 'Condition'; id: string; clinicalStatus?: GateConcept; verificationStatus?: GateConcept; category?: GateConcept[]; code?: GateConcept;
   subject?: GateRef; encounter?: GateRef; onsetDateTime?: string; abatementDateTime?: string; recordedDate?: string;
@@ -105,7 +106,7 @@ export interface GateOther { resourceType: string; id: string }
 
 export interface GateMap {
   Patient: GatePatient; Practitioner: GatePractitioner; Organization: GateOrganization; Group: GateGroup; Encounter: GateEncounter;
-  Condition: GateCondition; Observation: GateObservation; DiagnosticReport: GateDiagnosticReport; Procedure: GateProcedure;
+  EpisodeOfCare: GateEpisodeOfCare; Condition: GateCondition; Observation: GateObservation; DiagnosticReport: GateDiagnosticReport; Procedure: GateProcedure;
   AllergyIntolerance: GateAllergyIntolerance; MedicationRequest: GateMedicationRequest; ServiceRequest: GateServiceRequest; Task: GateTask;
   Communication: GateCommunication; DocumentReference: GateDocumentReference; Provenance: GateProvenance; Appointment: GateAppointment;
 }
@@ -164,6 +165,7 @@ const PROJECT: { [T in GateType]: P } = {
     ...base, status: str, class: coding, type: concepts, subject: ref, period, serviceProvider: ref, reasonCode: concepts, reasonReference: refs,
     participant: list(obj<NonNullable<GateEncounter['participant']>[number]>({ individual: ref, type: concepts })),
   }),
+  EpisodeOfCare: obj<GateEpisodeOfCare>({ ...base, status: str, type: concepts, patient: ref, period, managingOrganization: ref }),
   Condition: obj<GateCondition>({
     ...base, clinicalStatus: concept, verificationStatus: concept, category: concepts, code: concept, subject: ref, encounter: ref,
     onsetDateTime: str, abatementDateTime: str, recordedDate: str,

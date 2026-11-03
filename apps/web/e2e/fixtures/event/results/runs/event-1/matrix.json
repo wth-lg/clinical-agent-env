@@ -1,9 +1,9 @@
 {
   "grader_task_versions": {
-    "b6c29cadab868eb74254eb6ec60693825fa96ee1813c3381f499b863ac49842e": {
+    "cc0a3275f8e9306302e245bbee916dad3a271ee0ff40495dc511b62d4c36d630": {
       "task_id": "_toy",
       "env_version": "a1b780da48c6d200ccbf9fb59b881b8a62d7c066808accb73f3c261977523a42",
-      "task_version": "667b3d973f93040be39bf4fb10ce9fb74552e85988d54e943060260db0180b25",
+      "task_version": "5775e81e6d3c4a568d97964a2c491bfd6d1d4b3ed4856fff83e4a92657a801be",
       "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
       "pass": true,
       "oracle_pass": true,
