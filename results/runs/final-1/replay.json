@@ -122,15 +122,15 @@
     },
     "crc-care-gap/0": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/1": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/10": {
       "match": true,
@@ -146,9 +146,9 @@
     },
     "crc-care-gap/12": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/13": {
       "match": true,
@@ -158,9 +158,9 @@
     },
     "crc-care-gap/14": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/15": {
       "match": true,
@@ -176,27 +176,27 @@
     },
     "crc-care-gap/17": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/18": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/19": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/2": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/3": {
       "match": true,
@@ -212,27 +212,27 @@
     },
     "crc-care-gap/5": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/6": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/7": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/8": {
       "match": true,
-      "outcome": "FAIL",
+      "outcome": "PASS",
       "recorded_outcome": "FAIL",
-      "current_outcome": "FAIL"
+      "current_outcome": "PASS"
     },
     "crc-care-gap/9": {
       "match": true,
