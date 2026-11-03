@@ -1,7 +1,8 @@
 // Fixed id slots for the Patients an overlay adds (W5, the T1 gate's F3; builder-302-slots).
 // Each task that may add Patients declares a range of Patient numbers (TASKS[task].added: the
-// first number and how many), after the cohort's last; its added Patients take those numbers in
-// key order, whatever the other tasks add. A resource of an added Patient is numbered in a block
+// first number and how many), after the cohort's last; its added Patients take the slots the
+// overlay declares for their keys (Overlay.added), whatever the other tasks add and whether or not
+// the overlay's other keys are added. A resource of an added Patient is numbered in a block
 // of its Patient's slot, per type (<prefix>-<slot><3 digits>: pt-0070's Observations are
 // obs-70001 on), never in the cohort's own sequence. So toggling an item in one task (its Patient
 // present or absent) moves no id in another task, none of the first task's other ids, and none of
@@ -93,7 +94,8 @@ describe('added Patients take fixed slots per task (W5 F3)', () => {
     const lever = (put: Resource[], keys: string[], added?: Readonly<Record<string, number>>): Overlay => ({ ...overlay('T1', put, added), build: () => ({ put, lever: keys }) });
     expect(() => build([lever([patient('pt-t1-a', 'A'), obs('obs-t1-a-cr', 'pt-t1-a')], ['pt-t1-a', 'obs-t1-a-cr'])])).not.toThrow();
     expect(() => build([lever([obs('obs-t1-x', 'pt-0001')], ['obs-t1-x'], {})])).toThrow(/overlay T1: lever resource Observation\/obs-t1-x sits on the cohort's Patient\/pt-0001; a resource a LEVER toggle adds or removes must sit on an added Patient/);
-    expect(() => build([lever([patient('pt-t1-a', 'A')], ['obs-t1-gone'])])).toThrow(/overlay T1: lever names obs-t1-gone, which the overlay does not add/);
+    // A declared key this build does not put is an inactive item's: allowed.
+    expect(() => build([lever([patient('pt-t1-a', 'A')], ['pt-t1-a', 'obs-t1-off'])])).not.toThrow();
   });
 
   it('M1: a resource that references an added Patient anywhere numbers in that Patient\'s block; one that references two added Patients is rejected', () => {
@@ -121,5 +123,17 @@ describe('added Patients take fixed slots per task (W5 F3)', () => {
     const many = Array.from({ length: 61001 }, (_, i) => generated(i + 1, 'pt-0001', `2026-01-01T00:00:${String(i % 60).padStart(2, '0')}-05:00`));
     expect(() => worldIds([...many, obs('obs-61x', 'pt-0061')], new Set(['pt-0061']))).toThrow(/renumber: 61001 Observation resources of the cohort reach the block of Patient\/pt-0061 \(obs-61001\)/);
     expect(() => worldIds(many)).not.toThrow();
+  });
+
+  // The #215 round-2 gate (verifier-phase-P17i-SLOTS-215-2-1): N3, F4.
+  it('N3: a LEVER-driven remove is refused: a lever key that names a removal fails the build by name', () => {
+    const lever: Overlay = { task: 'T1', added: { 'pt-t1-a': 0 }, build: () => ({ put: [patient('pt-t1-a', 'A')], remove: [{ resourceType: 'Observation', id: 'obs-00001' }], lever: ['pt-t1-a', 'obs-00001'] }) };
+    expect(() => build([lever])).toThrow(/overlay T1: lever names obs-00001, a removal; a LEVER toggle may not remove a resource \(a removal is of a base resource, on a cohort Patient\)/);
+  });
+
+  it('F4: a lever resource that references no Patient is refused', () => {
+    const org = { resourceType: 'Organization', id: 'org-t1-x', name: 'X' } as Resource;
+    const lever: Overlay = { task: 'T1', names: { 'org-t1-x': 'org-x' }, added: { 'pt-t1-a': 0 }, build: () => ({ put: [patient('pt-t1-a', 'A'), org], lever: ['pt-t1-a', 'org-t1-x'] }) };
+    expect(() => build([lever])).toThrow(/overlay T1: lever resource Organization\/org-t1-x references no Patient; a resource a LEVER toggle adds or removes must sit on an added Patient/);
   });
 });
