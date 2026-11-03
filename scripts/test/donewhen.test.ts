@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
+import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
 import { repoRoot, runScript, tempDir, write } from './helpers.ts';
 
 const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
@@ -11,6 +12,20 @@ const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
 const PREREQUISITES = `${LOCAL_PREREQUISITES} Install [Node.js](${NODE_INSTALL_URL}) and [pnpm](${PNPM_INSTALL_URL}).\n`;
 const README_PASS = readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace('\n## Findings', `${PREREQUISITES}\n## Findings`);
 const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass' };
+const TASKS = ['t1', 't2', 't3', 't4', 't5'];
+const FINAL_RUN = 'results/runs/final-1';
+const WORLD = '9f2c';
+// Clause (5)'s summary call: the frozen tasks, N and the band from the constants (P21).
+const SUMMARY_CALL = `summary ${FINAL_RUN} --tasks ${TASKS.join(',')} --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`;
+const GRADER_ERROR_CALL = `summary ${FINAL_RUN} --require grader_error=0 --json`;
+const AUDIT_CALL = `audit-check ${FINAL_RUN} --final --json`;
+
+// results/tasks-final.json as P21's freeze writes it, for the given tasks.
+const freeze = (ids: string[], over: Record<string, Record<string, unknown>> = {}) =>
+  JSON.stringify({
+    schema_version: 1, trials_per_task: FINAL_TRIALS_PER_TASK, band: FINAL_PASS_BAND,
+    tasks: Object.fromEntries(ids.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: WORLD, oracle_final_hash: '0'.repeat(64), frozen_at: 'a'.repeat(40), regrades: [], ...over[id] }])),
+  });
 
 function makeTask(root: string, id: string, omit: string[] = []) {
   const files: Record<string, string> = {
@@ -33,8 +48,10 @@ function completeRepo(): string {
   write(root, 'apps/runner/main.ts', "import { startRunner } from './server.ts';\n");
   write(root, 'apps/runner/server.ts', "import {\n  runBatch,\n} from '../../packages/core/batch.ts';\nexport const startRunner = runBatch;\n");
   write(root, 'apps/web/src/worker.ts', "import { run } from '../../../packages/core/run.ts';\n");
-  for (const id of ['t1', 't2', 't3', 't4', 't5']) makeTask(root, id);
+  for (const id of TASKS) makeTask(root, id);
   makeTask(root, '_template');
+  write(root, 'fixtures/manifest.json', JSON.stringify({ world: { state_hash: WORLD } }));
+  write(root, 'results/tasks-final.json', freeze(TASKS));
   return root;
 }
 
@@ -80,8 +97,10 @@ describe('donewhen', () => {
   it('shells out to the CLI commands the plan names', () => {
     const r = donewhen(completeRepo(), ALL_STUBS);
     expect(r.calls).toContain('oracle --task all --json');
-    expect(r.calls).toContain('summary results/runs/final-1 --require trials=10,pass-min=2,pass-max=7,model=claude-opus-5-5,env_limit=0 --json');
-    expect(r.calls).toContain('audit-check results/runs/final-1 --json');
+    expect(r.calls).toContain(SUMMARY_CALL);
+    expect(r.calls).toContain(GRADER_ERROR_CALL);
+    expect(r.calls).toContain(AUDIT_CALL);
+    expect(r.calls).not.toContain('trials=10');
     expect(r.calls).toContain('spend --json');
     expect(r.calls).toContain('runner-check --mock --json');
   });
@@ -245,13 +264,64 @@ describe('donewhen', () => {
     expect(r.clause(4)).toMatch(/^FAIL/);
   });
 
-  it('clause 5 passes on summary exit 0 and fails on summary exit 1', () => {
-    expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).toMatch(/^PASS/);
-    expect(donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-fail' }).clause(5)).toMatch(/^FAIL/);
+  it('clause 4 reads N and the band from the constants, not a stale count', () => {
+    const r = donewhen(completeRepo(), ALL_STUBS);
+    expect(r.clause(4)).toMatch(/^PASS/);
+    expect(r.calls.split('\n').filter((l) => l.startsWith('summary ') && /valid=|trials=/.test(l))).toEqual([SUMMARY_CALL]);
   });
 
-  it('clause 6 fails on audit-check exit 1', () => {
-    expect(donewhen(completeRepo(), { ...ALL_STUBS, 'audit-check': 'audit-fail' }).clause(6)).toMatch(/^FAIL/);
+  it('clause 5 passes on summary exit 0 with every task frozen, and fails on summary exit 1 naming the shortfall', () => {
+    const pass = donewhen(completeRepo(), ALL_STUBS).clause(5);
+    expect(pass).toMatch(/^PASS \(5\)/);
+    expect(pass).toContain('frozen 5/5');
+    expect(pass).toContain('t1 4/20');
+    const fail = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-fail' }).clause(5);
+    expect(fail).toMatch(/^FAIL \(5\)/);
+    expect(fail).toContain('summary: exit 1');
+    expect(fail).toContain('t5 3/19');
+  });
+
+  it('clause 5 fails until every task is frozen, and names the tasks results/tasks-final.json lacks', () => {
+    const root = completeRepo();
+    write(root, 'results/tasks-final.json', freeze(['t1', 't2', 't3']));
+    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t3 --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`]: 'summary-pass' }).clause(5);
+    expect(line).toMatch(/^FAIL \(5\)/);
+    expect(line).toContain('frozen 3/5, not frozen: t4, t5');
+    // The frozen tasks are still summarized, so progress shows while the rest are redesigned.
+    expect(line).toContain('t1 4/20');
+  });
+
+  it('clause 5 fails without results/tasks-final.json, and when it freezes a task the checkout does not have', () => {
+    const root = completeRepo();
+    rmSync(join(root, 'results/tasks-final.json'));
+    expect(donewhen(root, ALL_STUBS).clause(5)).toMatch(/^FAIL \(5\).*results\/tasks-final\.json: missing/);
+    const stale = completeRepo();
+    write(stale, 'results/tasks-final.json', freeze([...TASKS, 't6']));
+    const line = donewhen(stale, ALL_STUBS).clause(5);
+    expect(line).toMatch(/^FAIL \(5\)/);
+    expect(line).toContain('frozen but not a task: t6');
+  });
+
+  it('clause 5 fails when a task\'s records are not all at its frozen task_version', () => {
+    const line = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-version' }).clause(5);
+    expect(line).toMatch(/^FAIL \(5\)/);
+    expect(line).toContain('t1 at task_version v-t1-other, frozen v-t1');
+  });
+
+  it('clause 5 fails when the trials did not start from the world in fixtures/manifest.json (R14-37)', () => {
+    const line = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-other-world' }).clause(5);
+    expect(line).toMatch(/^FAIL \(5\)/);
+    expect(line).toContain('initial state hash a01b is not the world\'s 9f2c');
+  });
+
+  it('clause 6 fails on audit-check exit 1, and on a record whose current grade is GRADER_ERROR; a regraded one passes with its history printed', () => {
+    expect(donewhen(completeRepo(), { ...ALL_STUBS, 'audit-check': 'audit-fail' }).clause(6)).toMatch(/^FAIL \(6\).*audit-check --final: exit 1/);
+    const graderError = donewhen(completeRepo(), { ...ALL_STUBS, [GRADER_ERROR_CALL]: 'summary-grader-error' }).clause(6);
+    expect(graderError).toMatch(/^FAIL \(6\)/);
+    expect(graderError).toContain('summary grader_error=0: exit 1, GRADER_ERROR 1 at the current grade, history 1');
+    const regraded = donewhen(completeRepo(), { ...ALL_STUBS, [GRADER_ERROR_CALL]: 'summary-regraded' }).clause(6);
+    expect(regraded).toMatch(/^PASS \(6\)/);
+    expect(regraded).toContain('summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 1');
   });
 
   it('clause 7 fails on a README without a dated reference', () => {

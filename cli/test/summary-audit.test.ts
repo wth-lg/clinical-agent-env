@@ -97,6 +97,35 @@ describe('summary --require', () => {
     expect(r.out).toMatch(/t-gamma: expected by --task, no records/);
   });
 
+  // P21: --tasks <list> holds the per-task requirements (valid, band) to a subset; the final run
+  // directory collects each task's trials as it is frozen, so a check of the frozen ones must not
+  // read the rest. The run-wide requirements stay run-wide.
+  it('--tasks restricts valid and band to the named tasks: 8/10 on t-alpha fails with it named and passes with t-beta alone', async () => {
+    const dir = run('eight-of-ten');
+    expect((await cli(summary, [dir, '--require', REQUIRE, '--tasks', 't-beta'])).code).toBe(0);
+    const r = await cli(summary, [dir, '--require', REQUIRE, '--tasks', 't-alpha,t-beta', '--json']);
+    expect(r.code).toBe(1);
+    expect(r.err).toMatch(/violation: t-alpha: 8\/10 passes, outside the band 2-7/);
+    const j = JSON.parse(r.out);
+    expect(j.requirements.tasks).toEqual(['t-alpha', 't-beta']);
+    expect(j.expected_tasks).toEqual({ tasks: ['t-alpha', 't-beta'], from: '--tasks' });
+    const missing = await cli(summary, [dir, '--require', REQUIRE, '--tasks', 't-beta,t-gamma']);
+    expect(missing.code).toBe(1);
+    expect(missing.out).toMatch(/t-gamma: expected by --tasks, no records/);
+    expect((await cli(summary, [dir, '--tasks', 't-beta', '--task', 'all'])).code).toBe(2);
+    expect((await cli(summary, [dir, '--tasks', ''])).code).toBe(2);
+  });
+
+  it('band=0.2-0.7 is the proportion form, k/N inclusive: 5/10 holds and 8/10 does not, and the written requirements carry band_rate', async () => {
+    const r = await cli(summary, [run('clean'), '--require', `valid=10,band=0.2-0.7,model=${MODEL}`, '--json']);
+    expect(r.code, r.err).toBe(0);
+    expect(JSON.parse(r.out).requirements).toEqual({ valid: 10, band_rate: [0.2, 0.7], model: MODEL });
+    const high = await cli(summary, [run('eight-of-ten'), '--require', 'band=0.2-0.7']);
+    expect(high.code).toBe(1);
+    expect(high.out).toMatch(/violation: t-alpha: 8\/10 passes, outside the band 0.2-0.7 of its valid trials/);
+    expect(high.out).not.toMatch(/t-beta: 5\/10 passes, outside/);
+  });
+
   it('grader_error checks the current grade: a current GRADER_ERROR fails, one a regrade passed meets it with its history printed', async () => {
     const failing = await cli(summary, [run('grader-error'), '--require', 'grader_error=0', '--json']);
     expect(failing.code).toBe(1);

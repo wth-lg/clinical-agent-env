@@ -5,10 +5,12 @@
 // and JSON; it computes nothing itself. A command that is not built yet (the dispatcher exits
 // 127) is a FAIL with reason 'command not built'. The CLI contracts it relies on:
 //   cli oracle --task all --json        exit 0 when every task passes; {tasks: [{id, score}]}
-//   cli summary <run> --require ... --json
+//   cli summary <run> --tasks ... --require ... --json
 //                                       exit 0 when the requirements hold;
-//                                       {tasks: {<id>: {passes, trials}}, initial_state_hashes: [...]}
-//   cli audit-check <run> --json        exit 0 when every failure is labelled and none is
+//                                       {tasks: {<id>: {passes, trials, task_versions}}, initial_state_hashes: [...],
+//                                        totals: {grader_error, grader_error_history}}
+//   cli audit-check <run> --final --json
+//                                       exit 0 when every failure is labelled and none is
 //                                       environment or grader; {failures, labelled, labelled_environment, labelled_grader}
 //   cli spend --json                    {total_usd}, printed as an INFO line
 //   cli runner-check --mock --json      exit 0 when the local runner passes every check;
@@ -23,6 +25,16 @@
 // reports events_equal: the runner streams the trajectory run-one writes. runner-check --mock
 // runs once; both clauses read its result.
 //
+// Clauses (4) and (5) read one summary of results/runs/final-1 (P21): N and the band come from
+// packages/core/cost.ts FINAL_TRIALS_PER_TASK and FINAL_PASS_BAND, and the tasks from
+// results/tasks-final.json, the per-task freeze (scripts/test/tasks-final.test.ts holds its shape).
+// Clause (5) passes only when every task of the checkout is frozen there, each has N valid trials
+// in the band at its frozen task_version, and every trial started from the world in
+// fixtures/manifest.json (R14-37); it names the tasks not frozen yet, and still summarizes the
+// frozen ones. Clause (6) runs `audit-check --final` (R14-33) and `summary --require
+// grader_error=0`, which reads each record's current grade after any offline regrade and prints
+// grader_error_history for disclosure.
+//
 // Test hooks, honored only when NODE_ENV=test: DONEWHEN_CLI replaces `node cli/index.ts`
 // (space-separated command prefix); DONEWHEN_MIN_TASKS replaces the minimum of 5 tasks;
 // DONEWHEN_INCLUDE_UNDERSCORE=1 makes clause (3) count _-prefixed task directories (tasks/_toy),
@@ -31,8 +43,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
+import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../packages/core/cost.ts';
 
 const FINAL_RUN = 'results/runs/final-1';
+const TASKS_FINAL = 'results/tasks-final.json';
+const WORLD_MANIFEST = 'fixtures/manifest.json';
 const MODEL = 'claude-opus-5-5';
 const HOSTED_URL = 'https://wth-lg.github.io/clinical-agent-env/';
 const MIN_TASKS = 5;
@@ -142,16 +157,23 @@ function hasRubric(taskDir: string): boolean {
   return walk(taskDir).some((f) => /(^|\/)rubric\.[^/]+$/.test(f));
 }
 
-function clause3(): Verdict {
-  const min = isTest && process.env.DONEWHEN_MIN_TASKS ? Number(process.env.DONEWHEN_MIN_TASKS) : MIN_TASKS;
+// The checkout's task ids: each directory under tasks/, _-prefixed ones only when the test hook
+// says so.
+function taskIds(): string[] {
   const underscore = isTest && process.env.DONEWHEN_INCLUDE_UNDERSCORE === '1';
   const tasksDir = join(root, 'tasks');
-  const ids = existsSync(tasksDir)
+  return existsSync(tasksDir)
     ? readdirSync(tasksDir, { withFileTypes: true })
         .filter((e) => e.isDirectory() && (underscore || !e.name.startsWith('_')) && !e.name.startsWith('.'))
         .map((e) => e.name)
         .sort()
     : [];
+}
+
+function clause3(): Verdict {
+  const min = isTest && process.env.DONEWHEN_MIN_TASKS ? Number(process.env.DONEWHEN_MIN_TASKS) : MIN_TASKS;
+  const tasksDir = join(root, 'tasks');
+  const ids = taskIds();
   if (ids.length < min) return { pass: false, evidence: `${ids.length} task(s), need ${min}` };
   const gaps: string[] = [];
   for (const id of ids) {
@@ -173,19 +195,42 @@ function clause3(): Verdict {
   };
 }
 
+// The per-task freeze, results/tasks-final.json: each frozen task's versions. Read once per run.
+type Frozen = { tasks: Record<string, { task_version: string }> };
+let frozenRead: { frozen: Frozen | null; problem: string } | undefined;
+function readFrozen(): { frozen: Frozen | null; problem: string } {
+  if (frozenRead) return frozenRead;
+  const file = join(root, TASKS_FINAL);
+  if (!existsSync(file)) return (frozenRead = { frozen: null, problem: `${TASKS_FINAL}: missing` });
+  try {
+    const doc = JSON.parse(readFileSync(file, 'utf8')) as Frozen;
+    if (doc === null || typeof doc !== 'object' || doc.tasks === null || typeof doc.tasks !== 'object' || Array.isArray(doc.tasks)) throw new Error('tasks must be an object keyed by task id');
+    for (const [id, t] of Object.entries(doc.tasks)) if (typeof t?.task_version !== 'string') throw new Error(`tasks.${id}.task_version must be a string`);
+    return (frozenRead = { frozen: doc, problem: '' });
+  } catch (e) {
+    return (frozenRead = { frozen: null, problem: `${TASKS_FINAL}: ${(e as Error).message}` });
+  }
+}
+
+// Clause (5)'s summary call: the frozen tasks held to N valid trials in the band (the constants),
+// no raw ENV_ERROR, no current GRADER_ERROR, the model, replay=all (the replay.json P22 writes).
 // env_limit=0: an ENV_LIMIT is never rerun and a human reviews it first, so the final run passes
-// only with none (verifier-phase-P17i-W0-A-r3-1 M4).
-const summaryArgs = [
+// only with none (verifier-phase-P17i-W0-A-r3-1 M4). Clause (4) reads the same call.
+const summaryArgs = (frozenIds: string[]) => [
   'summary',
   FINAL_RUN,
+  ...(frozenIds.length > 0 ? ['--tasks', frozenIds.join(',')] : []),
   '--require',
-  `trials=10,pass-min=2,pass-max=7,model=${MODEL},env_limit=0`,
+  `valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=${MODEL},replay=all,env_limit=0`,
   '--json',
 ];
+const frozenIds = () => Object.keys(readFrozen().frozen?.tasks ?? {}).sort();
+
+type SummaryJson = { tasks?: Record<string, { passes: number; trials: number; task_versions?: string[] }>; initial_state_hashes?: unknown; totals?: { grader_error?: number; grader_error_history?: number } };
 
 function clause4(): Verdict {
-  const r = cli(summaryArgs);
-  const hashes = (r.json as { initial_state_hashes?: unknown } | undefined)?.initial_state_hashes;
+  const r = cli(summaryArgs(frozenIds()));
+  const hashes = (r.json as SummaryJson | undefined)?.initial_state_hashes;
   if (!Array.isArray(hashes)) return { pass: false, evidence: `${describeExit('summary', r)}, no initial_state_hashes` };
   return {
     pass: hashes.length === 1,
@@ -194,20 +239,68 @@ function clause4(): Verdict {
 }
 
 function clause5(): Verdict {
-  const r = cli(summaryArgs);
-  const tasks = (r.json as { tasks?: Record<string, { passes: number; trials: number }> } | undefined)?.tasks;
-  const rates = tasks ? Object.entries(tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials}`).join(', ') : '';
-  return { pass: r.exit === 0, evidence: `${describeExit('summary', r)}${rates ? `; ${rates}` : ''}` };
+  const { frozen, problem } = readFrozen();
+  if (frozen === null) return { pass: false, evidence: problem };
+  const ids = taskIds();
+  const frozenList = frozenIds();
+  const notFrozen = ids.filter((id) => !(id in frozen.tasks));
+  const notTasks = frozenList.filter((id) => !ids.includes(id));
+  const parts = [`frozen ${frozenList.length - notTasks.length}/${ids.length}${notFrozen.length ? `, not frozen: ${notFrozen.join(', ')}` : ''}${notTasks.length ? `, frozen but not a task: ${notTasks.join(', ')}` : ''}`];
+  let pass = notFrozen.length === 0 && notTasks.length === 0;
+  const r = cli(summaryArgs(frozenList));
+  const j = r.json as SummaryJson | undefined;
+  parts.push(describeExit('summary', r));
+  if (r.exit !== 0) pass = false;
+  const tasks = j?.tasks ?? {};
+  const rates = Object.entries(tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials}`).join(', ');
+  if (rates) parts.push(rates);
+  // Every record of a frozen task at its frozen task_version (summary lists the versions seen).
+  for (const id of frozenList) {
+    const want = frozen.tasks[id]!.task_version;
+    const seen = tasks[id]?.task_versions ?? [];
+    const other = seen.filter((v) => v !== want);
+    if (other.length > 0) {
+      pass = false;
+      parts.push(`${id} at task_version ${other.join(', ')}, frozen ${want}`);
+    }
+  }
+  // R14-37: every trial started from the world in fixtures/manifest.json.
+  const manifest = read(WORLD_MANIFEST);
+  let world: string | undefined;
+  try {
+    world = (JSON.parse(manifest) as { world?: { state_hash?: unknown } }).world?.state_hash as string | undefined;
+  } catch {
+    world = undefined;
+  }
+  const hashes = Array.isArray(j?.initial_state_hashes) ? (j!.initial_state_hashes as unknown[]).filter((h): h is string => typeof h === 'string') : [];
+  if (typeof world !== 'string') {
+    pass = false;
+    parts.push(`${WORLD_MANIFEST}: no world.state_hash`);
+  } else {
+    const other = hashes.filter((h) => h !== world);
+    if (other.length > 0 || hashes.length === 0) {
+      pass = false;
+      parts.push(hashes.length === 0 ? 'no initial state hash' : `initial state hash ${other.join(', ')} is not the world's ${world}`);
+    } else parts.push(`every trial started from the world ${world.slice(0, 12)}`);
+  }
+  return { pass, evidence: parts.join('; ') };
 }
 
 function clause6(): Verdict {
-  const r = cli(['audit-check', FINAL_RUN, '--json']);
+  const r = cli(['audit-check', FINAL_RUN, '--final', '--json']);
   const j = r.json as { failures?: number; labelled?: number; labelled_environment?: number; labelled_grader?: number } | undefined;
   const counts =
     j && typeof j.failures === 'number'
       ? `; labelled ${j.labelled}/${j.failures} failures, environment ${j.labelled_environment}, grader ${j.labelled_grader}`
       : '';
-  return { pass: r.exit === 0, evidence: `${describeExit('audit-check', r)}${counts}` };
+  // grader_error=0 reads each record's current grade; the history is disclosed, never required.
+  const g = cli(['summary', FINAL_RUN, '--require', 'grader_error=0', '--json']);
+  const totals = (g.json as SummaryJson | undefined)?.totals;
+  const graderError = totals && typeof totals.grader_error === 'number' ? `, GRADER_ERROR ${totals.grader_error} at the current grade, history ${totals.grader_error_history ?? 0}` : '';
+  return {
+    pass: r.exit === 0 && g.exit === 0,
+    evidence: `${describeExit('audit-check --final', r)}${counts}; ${describeExit('summary grader_error=0', g)}${graderError}`,
+  };
 }
 
 function clause7(): Verdict {
@@ -233,8 +326,8 @@ const CLAUSES: Array<[string, () => Verdict]> = [
   ['CLI, local runner and Worker share run()', clause2],
   ['>= 5 complete tasks, oracle scores 1.0', clause3],
   ['every trial starts from the same state hash', clause4],
-  ['10 trials per task, pass rate 2/10 to 7/10', clause5],
-  ['every failure attributed, none to environment or grader', clause6],
+  [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, from the world`, clause5],
+  ['every failure attributed, none to environment or grader, no current GRADER_ERROR', clause6],
   ['README writeup and dated references', clause7],
 ];
 
