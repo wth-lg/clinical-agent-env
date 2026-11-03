@@ -19,9 +19,11 @@
 // world by the Synthea cohort's own rule (per type, (patient, date, code) order), so a planted
 // resource's id sits among its patient's generated ones. A Practitioner, Organization or Group
 // takes the name the overlay gives its key in `names` (pr-raman, org-lakeshore), like the
-// setting's. A Patient an overlay adds (pt-t3-<rest>, only where no free slot fits a probe's class)
-// is numbered after the cohort's last Patient, pt-0061 on, in key order across every overlay, so the
-// numbers do not depend on the order overlays run in; its task owns it as it owns a slot. Every id,
+// setting's. A Patient an overlay adds (pt-t6-<rest>, only where no free slot fits a probe's class)
+// takes one of its task's fixed slots after the cohort's last Patient (TASKS added, below), in key
+// order within the task, so the numbers depend neither on the order overlays run in nor on what
+// the other tasks add, and its resources are numbered in a block of its slot (renumber.ts); its
+// task owns it as it owns a slot. Every id,
 // reference and lint entry is rewritten to its world id, and a key left
 // anywhere in what an overlay writes (text attachments decoded) fails the build, so the world
 // carries no key. The registries (key -> world id) and the base map (base id -> world id) are
@@ -42,17 +44,33 @@ import { Store } from './store.ts';
 // adults (no child's chart), the ones with the most active orders and problems to the medication
 // reviews (T1, T4), the oldest to the screening panel (T3); an overlay patches their name and birth
 // date as it needs. pt-0051, pt-0052 and pt-0054..pt-0060 stay free.
+// Added-Patient slots (W5, the T1 gate's F3; builder-302-slots): a task that may add Patients
+// declares a range of Patient numbers after the cohort's last, `added: { first, count }`, three
+// each (T1 pt-0061 to pt-0063, T2 pt-0064 to pt-0066, T4 pt-0067 to pt-0069, T6 pt-0070 to
+// pt-0072). Its added Patients take the slots their overlay declares for their keys (Overlay.added),
+// whatever the other tasks add, and each one's resources are numbered in a block of its slot
+// (renumber.ts). So a lever toggle that adds or removes an added Patient and its resources moves no
+// other id: not another task's, not the task's other Patients', not the cohort's. That holds only for
+// resources on added Patients: a resource on a cohort Patient is numbered in the cohort's sequence,
+// and adding or removing it would renumber that sequence. What applyOverlays checks is the keys an
+// overlay lists in OverlayEdits.lever: each in this build's put sits on an added Patient, and none
+// names a removal. That the list is complete (every key a toggle adds is listed, every listed key
+// is put in some state, no toggle changes the removals) and that no toggle moves an id outside its
+// item's block is scripts/test/lever-invariant.test.ts: it builds the world per LEVER state of every
+// task that exports LEVER_ITEMS (none on main, so it binds when the W5-E branches land; its loops
+// run on a synthetic task today). The frozen tasks (T3, T5) declare no slots and may add no
+// Patient. A range may not reach past pt-0099.
 export const TASKS = {
-  T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'] },
-  T2: { slug: 'results-inbox', slots: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'] },
+  T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'], added: { first: 61, count: 3 } },
+  T2: { slug: 'results-inbox', slots: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'], added: { first: 64, count: 3 } },
   T3: {
     slug: 'crc-care-gap',
     slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0032', 'pt-0034', 'pt-0035', 'pt-0036', 'pt-0037'],
   },
-  T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005', 'pt-0042', 'pt-0044'] },
+  T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005', 'pt-0042', 'pt-0044'], added: { first: 67, count: 3 } },
   T5: { slug: 'contrast-ct-prep', slots: ['pt-0012', 'pt-0015', 'pt-0046', 'pt-0047', 'pt-0048', 'pt-0049', 'pt-0050'] },
-  T6: { slug: 'message-queue', slots: ['pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031'] },
-} as const satisfies Record<string, { slug: string; slots: readonly string[] }>;
+  T6: { slug: 'message-queue', slots: ['pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031'], added: { first: 70, count: 3 } },
+} as const satisfies Record<string, { slug: string; slots: readonly string[]; added?: { first: number; count: number } }>;
 
 export type TaskId = keyof typeof TASKS;
 
@@ -65,6 +83,16 @@ export interface OverlayEdits {
   // Added or replaced resources.
   put?: readonly Resource[];
   remove?: ReadonlyArray<{ resourceType: string; id: string }>;
+  // The keys of every resource the task's LEVER toggles can add (an active or inactive lever item's
+  // Patient and records, W5), whether or not this build's put holds them. applyOverlays checks the
+  // listed keys: each in put must sit on an added Patient of the task (its own key, or at least one
+  // Patient reference, all of them the task's added keys), so that toggling it moves no other id
+  // (TASKS added); one on a cohort Patient, one with no Patient reference, or one that names a
+  // removal fails the build. A key absent from put passes (an inactive item's). Whether the list is
+  // complete is not checked here: scripts/test/lever-invariant.test.ts builds the world per LEVER
+  // state and requires every key a toggle adds to be listed and every listed key to be put in some
+  // state.
+  lever?: readonly string[];
   // The task's margins, windows, answers and prompts for the fixture lint.
   lint?: LintSpec;
 }
@@ -74,6 +102,11 @@ export interface Overlay {
   // The world id of each Practitioner, Organization or Group the overlay adds, by key: a name
   // like the setting's (pr-raman). Every other added resource is numbered by fixtures:build.
   names?: Readonly<Record<string, string>>;
+  // The slot of each Patient the overlay may add, by key: an index into the task's added-Patient
+  // slots (TASKS added: 0 is the task's first slot), fixed whether or not the Patient is added in
+  // this build (W5: an inactive lever item's Patient is absent and the others keep their ids).
+  // Required for every added Patient key; two keys may not share a slot.
+  added?: Readonly<Record<string, number>>;
   build(world: WorldReader): OverlayEdits;
 }
 
@@ -152,6 +185,21 @@ export interface World {
   ids: Record<TaskId, Record<string, string>>;
   // Base id (as base.ndjson.gz has it) -> world id, for every numbered base resource still in the world.
   synthea: Record<string, string>;
+}
+
+const pt = (n: number) => `pt-${String(n).padStart(4, '0')}`;
+// The last slot a block id can carry (renumber.ts: two digits).
+export const LAST_ADDED_SLOT = 99;
+
+// Throws, naming the task, when an added-Patient range (TASKS added) starts inside the cohort (last
+// is the cohort's last Patient number), reaches past pt-0099, or overlaps another task's.
+export function checkAddedRanges(ranges: ReadonlyArray<readonly [TaskId, { first: number; count: number }]>, last: number): void {
+  for (const [t, r] of ranges) {
+    if (!Number.isInteger(r.first) || !Number.isInteger(r.count) || r.count < 1) throw new Error(`overlay: ${t}'s added-Patient slots are not a whole first number and a count of at least 1`);
+    if (r.first <= last) throw new Error(`overlay: ${t}'s added-Patient slots start at ${pt(r.first)}, inside the cohort (last ${pt(last)})`);
+    if (r.first + r.count - 1 > LAST_ADDED_SLOT) throw new Error(`overlay: ${t}'s added-Patient slots reach ${pt(r.first + r.count - 1)}, past ${pt(LAST_ADDED_SLOT)}`);
+    for (const [u, s] of ranges) if (u !== t && r.first <= s.first + s.count - 1 && s.first <= r.first + r.count - 1) throw new Error(`overlay: the added-Patient slots of ${t} and ${u} overlap`);
+  }
 }
 
 export function applyOverlays(base: readonly Resource[], setting: readonly Resource[], settingLint: LintSpec, overlays: readonly Overlay[]): World {
@@ -244,17 +292,62 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
       world.set(key(r), r);
     }
     for (const k of Object.keys(names)) if (!added.has(`Practitioner/${k}`) && !added.has(`Organization/${k}`) && !added.has(`Group/${k}`)) throw new Error(`overlay ${task}: name key ${k} is named but the overlay never adds it`);
+    // The keys an overlay lists in OverlayEdits.lever (the resources its LEVER toggles add; a key
+    // absent from this build's put is an inactive item's) are checked: one that names a removal is
+    // refused (a removal is of a base resource, on a cohort Patient, N3), and one in put must sit
+    // on an added Patient: its own key for a Patient, else at least one Patient reference, all of
+    // them the task's added keys (F4: no reference is no Patient). Whether the list is complete is
+    // scripts/test/lever-invariant.test.ts's check, per LEVER state, not this build's.
+    const addedKeys = new Set([...owner].filter(([p, t]) => t === task && !start.has(`Patient/${p}`)).map(([p]) => p));
+    const put = new Map((edits.put ?? []).map((r) => [r.id!, r]));
+    const removed = new Set((edits.remove ?? []).map((r) => r.id));
+    for (const k of edits.lever ?? []) {
+      if (removed.has(k)) throw new Error(`overlay ${task}: lever names ${k}, a removal; a LEVER toggle may not remove a resource (a removal is of a base resource, on a cohort Patient)`);
+      const r = put.get(k);
+      if (r === undefined) continue;
+      const refs = [...patientRefs(r)];
+      if (r.resourceType !== 'Patient' && refs.length === 0) throw new Error(`overlay ${task}: lever resource ${key(r)} references no Patient; a resource a LEVER toggle adds or removes must sit on an added Patient (packages/env/overlay.ts TASKS added)`);
+      if (r.resourceType === 'Patient' ? !addedKeys.has(k) : refs.some((p) => !addedKeys.has(p))) {
+        const on = r.resourceType === 'Patient' ? `Patient/${k}` : `Patient/${refs.find((p) => !addedKeys.has(p))}`;
+        throw new Error(`overlay ${task}: lever resource ${key(r)} sits on the cohort's ${on}; a resource a LEVER toggle adds or removes must sit on an added Patient (packages/env/overlay.ts TASKS added)`);
+      }
+    }
     if (edits.lint) lintByTask.push({ task, spec: edits.lint });
   }
 
-  // World ids: names for the name-shaped, the next Patient numbers for the added Patients, Synthea's
-  // numbering for the rest. The added Patients' references take their world ids before the
-  // numbering, which sorts each resource by its patient.
+  // World ids: names for the name-shaped, each task's slot numbers for its added Patients (TASKS
+  // added: in key order from the task's first slot, independent of the other tasks), Synthea's
+  // numbering for the rest, with an added Patient's resources in a block of its slot (renumber.ts
+  // worldIds). The added Patients' references take their world ids before the numbering, which
+  // sorts each resource by its patient.
   const last = Math.max(0, ...[...start.values()].flatMap((r) => (r.resourceType === 'Patient' ? [Number(/^pt-(\d{4})$/.exec(r.id!)?.[1] ?? 0)] : [])));
-  const addedPatients = [...added.keys()].filter((k) => k.startsWith('Patient/')).map((k) => k.slice('Patient/'.length)).sort();
-  const patientIds = new Map(addedPatients.map((k, i) => [k, `pt-${String(last + i + 1).padStart(4, '0')}`]));
+  const ranges = (Object.entries(TASKS) as Array<[TaskId, { added?: { first: number; count: number } }]>).flatMap(([t, v]) => (v.added ? [[t, v.added] as const] : []));
+  checkAddedRanges(ranges, last);
+  const patientIds = new Map<string, string>();
+  for (const { task, added: slotOf = {} } of sorted) {
+    const keys = [...added].filter(([k, t]) => t === task && k.startsWith('Patient/')).map(([k]) => k.slice('Patient/'.length)).sort();
+    const range = (TASKS[task] as { added?: { first: number; count: number } }).added;
+    if (range === undefined) {
+      if (keys.length > 0) throw new Error(`overlay ${task}: adds Patient/${keys[0]}, and ${task} declares no added-Patient slots (packages/env/overlay.ts TASKS)`);
+      continue;
+    }
+    const slots = `${pt(range.first)} to ${pt(range.first + range.count - 1)}`;
+    const taken = new Map<number, string>();
+    const patientKey = new RegExp(`^pt-${idTag(task)}-[a-z0-9][a-z0-9-]*$`);
+    for (const [k, i] of Object.entries(slotOf)) {
+      if (!patientKey.test(k)) throw new Error(`overlay ${task}: added names ${k}, which is not a Patient key of ${task} (pt-${idTag(task)}-<rest>)`);
+      if (!Number.isInteger(i) || i < 0 || i >= range.count) throw new Error(`overlay ${task}: added slot ${i} for ${k} is outside 0 to ${range.count - 1} (${range.count} slots, ${slots})`);
+      if (taken.has(i)) throw new Error(`overlay ${task}: added slot ${i} is given to ${taken.get(i)} and ${k}`);
+      taken.set(i, k);
+    }
+    for (const k of keys) {
+      const i = slotOf[k];
+      if (i === undefined) throw new Error(`overlay ${task}: adds Patient/${k} without a slot: declare its slot index in the overlay's added (${range.count} slots, ${slots})`);
+      patientIds.set(k, pt(range.first + i));
+    }
+  }
   const renamePatients = renamer(patientIds);
-  const numbered = worldIds([...world].map(([k, r]) => (written.has(k) && patientIds.size > 0 ? mapStrings(r, renamePatients) : r)));
+  const numbered = worldIds([...world].map(([k, r]) => (written.has(k) && patientIds.size > 0 ? mapStrings(r, renamePatients) : r)), new Set(patientIds.values()));
   const bare = new Map<string, string>(patientIds);
   for (const { names = {} } of sorted) for (const [k, v] of Object.entries(names)) bare.set(k, v);
   for (const [ref, id] of numbered) bare.set(ref.slice(ref.indexOf('/') + 1), id);
