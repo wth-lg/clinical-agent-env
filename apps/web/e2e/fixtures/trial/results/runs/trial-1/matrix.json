@@ -2,9 +2,9 @@
   "grader_task_versions": {
     "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3": {
       "task_id": "crc-care-gap",
-      "env_version": "209352e0b89a5749763a0b9985c55bb76e7198687119cd957746735dec0ecbbb",
-      "task_version": "0acc4105c27696b15c0a7edcae178fe1138e6b4d8b7384c58308524c326ee778",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "2a820e4e15b6125bfa29d052db8e8071c85da320a957376a37ca5b3e93b854c5",
+      "task_version": "995dbb53ce2164fbd558c3bbb89093fa5c7792a7e0f2b2f1e9cd779c58cb07f6",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -17494,11 +17494,11 @@
         }
       ]
     },
-    "40bb1d30d29a3ae033141f3d4512ac5dee1c96bbba17f5cac7ff26cfaa322c85": {
+    "43778c36e289d681e31b869dbb92fd8e6b9324c771378f3e10b8ee6a2307766a": {
       "task_id": "renal-dose-review",
-      "env_version": "4370d83ae31eed9df97b5facea6580b6591f3d0630672504f56a1c9b0803ecaa",
-      "task_version": "c7a48eba365dd998d6e778f951526b16ace67b05d231454f2659a366d2975c94",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "487ce2cf02f9067dc6be731a1cddc51ab99351898a19f7c36ca901327e806c20",
+      "task_version": "6ae8ea20475b96472badf578b8088e8f6bd8ef45e5801268adb9ae3e216b3916",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -34285,9 +34285,9 @@
     },
     "48cea45e1ff60d6112f90ba203e7b6712d5d2bf5b7f94a462c862d41a0da37f7": {
       "task_id": "message-queue",
-      "env_version": "b36c24e0e906b20e3abb7070dd9c0df5f02c5d89b3c7d44e40a4d62555d3ffcf",
-      "task_version": "2089ef2d318a44d2e8f9f1514099cda2407e32f0e2291048914e1dbc6b31e693",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "34ef15ee29c47bfa3d22187c793d369e9bd721f31055e44cecab4f8c75a20e95",
+      "task_version": "25a8b2109d193c487adaf0d15da00d78948c155ff9e3dec31f3ce6994c60a4a4",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -44269,9 +44269,9 @@
     },
     "8e0236b3edaa1ee750d4009db0030b2e2326739c18f2342ba6e474b2c7699b15": {
       "task_id": "results-inbox",
-      "env_version": "3ae5c208f1b80477178681d033705e0d07f4e81cca9b99a51539c4aadda86460",
-      "task_version": "d237f6ec55d555a6ddd19c4df29601d8d44b70f524d3c197f6fd8c235cf12820",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "655841266184bad2bcae5f7fca12b4f77a090368f9697fb0cd660e9327f76453",
+      "task_version": "92b04e551e64cc9b9c34b214eb4b30471f7c0fed07d48e308aba1b77b1dfe84e",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -62720,9 +62720,9 @@
     },
     "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca": {
       "task_id": "contrast-ct-prep",
-      "env_version": "04d2bb43259444d478b44fd489d79fb56dbdf678ceb3505c37aebe27fa230ffd",
-      "task_version": "884e328f6974b6d83606e2dc8f6964d0b484af9921c3377bd4738756c95fa5db",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "c71b9b71033be98ca57c3871a89405e5b87623381d290a2b742d3ba009fe87d1",
+      "task_version": "c9d8253e143dcad0be6b469ba979d4471ff89765982f5e8ce921bdde0b1f81c5",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -74555,9 +74555,9 @@
     },
     "e89d35456f1d017ac428ece0b1086e170a55579352197b8edfb8b473ad7a0d72": {
       "task_id": "discharge-medrec",
-      "env_version": "a36a80ea8eaeba47e874c5889dd1a8810aa65eec7dabdb490ac790d7334c3951",
-      "task_version": "58ac93f51f53a804e79c4ba8e85d7dd6467f73d52d5f981c78c7687ab5e6ccca",
-      "world_hash": "08a42b644591e26d7efa5cb59d9c167824e9b732a6e102b66cb3708d291e0dc3",
+      "env_version": "0b35a404e32916a9ca547aaffab07e7b74639bcc08269a3dd6eced74e4f5a484",
+      "task_version": "9a50503ef518993f1db67d8d228301f6903042d38c01b571aa6fb5139af3d6ba",
+      "world_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,

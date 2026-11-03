@@ -115,7 +115,7 @@ export function alternativesFor(active: readonly string[]): Alternative[] {
       ? (() => {
           const WH = leverPatient('reserve');
           const c = CASES.whitcombe!;
-          const task: ScriptCall = { name: 'create_task', input: { patient: WH, owner: 'Practitioner/pr-reyes', due: '2026-10-30', priority: 'routine', description: 'Apixaban 2.5 mg twice daily with itraconazole (started 10/5, 12 weeks): the apixaban prescribing information advises against the combination in a patient already on 2.5 mg (RBC-PHARM-07 §2). Dose kept; please review the combination.', focus: lref('MedicationRequest/mr-t1-wh-doac') } };
+          const task: ScriptCall = { name: 'create_task', input: { patient: WH, owner: 'Practitioner/pr-reyes', due: '2026-10-30', priority: 'routine', description: 'Apixaban 2.5 mg twice daily with itraconazole (started 9/21, 12 weeks): the apixaban prescribing information advises against the combination in a patient already on 2.5 mg (RBC-PHARM-07 §2). Dose kept; please review the combination.', focus: lref('MedicationRequest/mr-t1-wh-doac') } };
           return [
             {
               id: 'whitcombe_resigned',
