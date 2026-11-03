@@ -1,4 +1,4 @@
-// pnpm cli judge-calibrate --task <id|all> [--dry-run]
+// pnpm cli judge-calibrate --task <id|all|id,...> [--dry-run]
 //                         [--from-trials <run dir>[,<run dir>...] [--misses-only --out <file>] | --probes | --annotate]
 // Live judge calibration (plan phase P11c): asks every key of tasks/<id>/tests/judge-cache.json
 // live, once, compares each live answer with the scripted one and writes
@@ -46,7 +46,7 @@
 //               calibration file from the task's cache, every other field unchanged; no call and
 //               no key.
 // `all` is every task (with _-prefixed ones only in test mode; with --probes, the tasks with
-// probes). Exit 0 when every task's keys all agree and its oracle is PASS with score 1.0 and no
+// probes); a comma list names several (P21: the frozen tasks). Exit 0 when every task's keys all agree and its oracle is PASS with score 1.0 and no
 // judge item unknown (--from-trials: no trial excluded; --probes: every probe agrees); 1
 // otherwise (the calibration file is still written), or when a call fails (nothing is written
 // for that task); 2 on a usage error. The live mode and --from-trials keep the `probes` of the
@@ -75,7 +75,7 @@ import { loadMatrixTask, matrixEnv, TASK_ID } from './matrix.ts';
 import { recordingClient } from './oracle.ts';
 import { repoWorld, taskChecks } from './run.ts';
 
-const USAGE = 'usage: pnpm cli judge-calibrate --task <id|all> [--dry-run] [--from-trials <run dir>[,<run dir>...] [--misses-only --out <file>] | --probes | --annotate]';
+const USAGE = 'usage: pnpm cli judge-calibrate --task <id|all|id,...> [--dry-run] [--from-trials <run dir>[,<run dir>...] [--misses-only --out <file>] | --probes | --annotate]';
 const RESULTS_DIR = fileURLToPath(new URL('../results/judge-calibration/', import.meta.url));
 
 export interface Deps {
@@ -635,12 +635,15 @@ export async function main(args: string[], deps: Deps): Promise<number> {
     else return usage(deps, a === '--task' || a === '--from-trials' || a === '--out' ? `${a} needs a value` : `unknown argument ${a}`);
   }
   if (id === undefined) return usage(deps, '--task is required');
-  if (id !== 'all' && !TASK_ID.test(id)) return usage(deps, `--task ${JSON.stringify(id)} is not a task id (letters, digits, _ and - only)`);
+  const named = id === 'all' ? [] : id.split(',').map((t) => t.trim());
+  const badId = named.find((t) => !TASK_ID.test(t));
+  if (badId !== undefined) return usage(deps, `--task ${JSON.stringify(badId)} is not a task id (letters, digits, _ and - only)`);
+  if (named.length !== new Set(named).size) return usage(deps, `--task ${id} names a task twice`);
   if ([fromTrials !== undefined, probes, annotate].filter(Boolean).length > 1) return usage(deps, '--from-trials, --probes and --annotate do not combine');
   if (annotate && dry) return usage(deps, '--annotate makes no call; --dry-run does not apply');
   if (missesOnly && fromTrials === undefined) return usage(deps, '--misses-only needs --from-trials');
   if (missesOnly !== (out !== undefined)) return usage(deps, '--misses-only and --out go together');
-  if (missesOnly && id === 'all') return usage(deps, '--misses-only fills one task: name it with --task');
+  if (missesOnly && (id === 'all' || named.length > 1)) return usage(deps, '--misses-only fills one task: name it with --task');
   if (fromTrials !== undefined) {
     if (fromTrials.length === 0) return usage(deps, '--from-trials needs at least one run dir');
     const missing = fromTrials.find((d) => !existsSync(join(d, 'trials')));
@@ -654,7 +657,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   }
   let tasks: MatrixTask[];
   try {
-    const all = id === 'all' ? (await nodeTaskSource({ testMode: isTestMode(deps.env) }).all()).map((t) => t.id) : [id];
+    const all = id === 'all' ? (await nodeTaskSource({ testMode: isTestMode(deps.env) }).all()).map((t) => t.id) : named;
     const ids = probes ? all.filter((t) => PROBES[t] !== undefined) : all;
     tasks = await Promise.all(ids.map((t) => (deps.load ?? loadMatrixTask)(t)));
   } catch (e) {

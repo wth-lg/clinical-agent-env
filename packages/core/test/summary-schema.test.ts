@@ -2,7 +2,7 @@
 // record missing a field fails it, and Wilson 95% intervals match hand-checked values.
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../anthropic.ts';
-import { assertSummary, checkRequirements, parseRequire, summarize, validateSummary, wilson, type SummaryTrial } from '../summary.ts';
+import { assertSummary, checkRequirements, parseRequire, summarize, validateSummary, wilson, type Requirements, type SummaryTrial } from '../summary.ts';
 
 const trial = (task_id: string, index: number, outcome: string, over: Partial<SummaryTrial> = {}): SummaryTrial => ({
   task_id, task_version: 'v1', index, outcome, model_requested: MODEL, models_returned: [MODEL],
@@ -70,6 +70,42 @@ describe('--require', () => {
     expect(parseRequire(`trials=10,pass-min=2,pass-max=7,model=${MODEL}`)).toEqual({ valid: 10, band: [2, 7], model: MODEL });
     expect(() => parseRequire('valid=ten')).toThrow(/valid/);
     expect(() => parseRequire('colour=blue')).toThrow(/colour/);
+  });
+
+  // P21: the final run's band is a proportion of each task's valid trials, inclusive (cost.ts
+  // FINAL_PASS_BAND), beside P12's count form. A decimal point names the proportion form.
+  it('parses the proportion band 0.2-0.7 beside the count band, and refuses a mixed or reversed one', () => {
+    expect(parseRequire('valid=20,band=0.2-0.7')).toEqual({ valid: 20, band_rate: [0.2, 0.7] });
+    expect(parseRequire('band=0.20-0.70')).toEqual({ band_rate: [0.2, 0.7] });
+    expect(parseRequire('band=2-7')).toEqual({ band: [2, 7] });
+    expect(() => parseRequire('band=0.2-7')).toThrow(/band=0\.2-7/);
+    expect(() => parseRequire('band=0.7-0.2')).toThrow(/band=0\.7-0\.2/);
+    expect(() => parseRequire('band=1.2-1.5')).toThrow(/band=1\.2-1\.5/);
+    expect(() => parseRequire('band=0.2-0.7,pass-min=2')).toThrow(/not both/);
+  });
+
+  it('the proportion band is k/N inclusive: 3/20 and 15/20 violate, 4/20 and 14/20 hold, and 3/15 holds at 0.2', () => {
+    const nOf = (task: string, n: number, passes: number) => Array.from({ length: n }, (_, i) => trial(task, i, i < passes ? 'PASS' : 'FAIL'));
+    const req = parseRequire('valid=20,band=0.2-0.7');
+    const check = (ts: SummaryTrial[], r = req) => checkRequirements(summarize({ run_id: 'r', trials: ts, requeued: [], replay: replayAll(ts), mode: 'live' }), r);
+    expect(check([...nOf('t-a', 20, 4), ...nOf('t-b', 20, 14)])).toEqual([]);
+    expect(check([...nOf('t-a', 20, 3), ...nOf('t-b', 20, 15)])).toEqual(['t-a: 3/20 passes, outside the band 0.2-0.7 of its valid trials', 't-b: 15/20 passes, outside the band 0.2-0.7 of its valid trials']);
+    expect(check(nOf('t-a', 15, 3), parseRequire('band=0.2-0.7'))).toEqual([]);
+    expect(check(nOf('t-a', 10, 7), parseRequire('band=0.2-0.7'))).toEqual([]);
+    expect(check([], parseRequire('band=0.2-0.7'))).toEqual(['no trials in the run']);
+  });
+
+  // P21: --tasks names the tasks the per-task requirements (valid, band) hold for; every one of
+  // them must have records, and a task outside the list is summarized but not held to them. The
+  // run-wide requirements stay run-wide.
+  it('tasks restricts valid and band to the named tasks, which must have records', () => {
+    const ts = [...tenOf('t-a', 5), ...tenOf('t-b', 9), ...tenOf('t-c', 3).slice(0, 9)];
+    const s = (req: Requirements) => checkRequirements(summarize({ run_id: 'r', trials: ts, requeued: [], replay: replayAll(ts), mode: 'live' }), req);
+    expect(s({ ...parseRequire('valid=10,band=2-7'), tasks: ['t-a'] })).toEqual([]);
+    expect(s({ ...parseRequire('valid=10,band=2-7'), tasks: ['t-a', 't-b'] })).toEqual(['t-b: 9/10 passes, outside the band 2-7']);
+    expect(s({ ...parseRequire('valid=10,band=2-7'), tasks: ['t-a', 't-d'] })).toEqual(['t-d: expected by --tasks, no records', 't-d: 0 valid trials, required 10']);
+    expect(s(parseRequire('valid=10,band=2-7'))).toEqual(['t-b: 9/10 passes, outside the band 2-7', 't-c: 9 valid trials, required 10']);
+    expect(s({ ...parseRequire('valid=10,grader_error=0'), tasks: ['t-a'] })).toEqual([]);
   });
 
   it('a clean run meets every requirement; 8/10 breaks the band', () => {

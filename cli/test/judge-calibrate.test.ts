@@ -78,6 +78,13 @@ describe('judge-calibrate', () => {
     expect(h.written).toHaveLength(0);
   });
 
+  it('--task takes a comma list and plans each named task (P21: the frozen tasks)', { timeout: SLOW }, async () => {
+    const h = harness();
+    expect(await main(['--task', '_toy,_toy2', '--dry-run'], h.deps)).toBe(0);
+    expect(h.text().match(/^judge-calibrate dry run: _toy: /gm)).toHaveLength(2);
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+
   it('asks every cache key once, agrees with the scripted cache, and leaves the cache file byte-equal', { timeout: SLOW }, async () => {
     const before = readFileSync(CACHE_FILE);
     const judge = cacheJudge(TOY);
@@ -173,6 +180,8 @@ describe('judge-calibrate', () => {
     expect(await main([], h.deps)).toBe(2);
     expect(await main(['--task'], h.deps)).toBe(2);
     expect(await main(['--task', '../x'], h.deps)).toBe(2);
+    expect(await main(['--task', '_toy,../x'], h.deps)).toBe(2);
+    expect(await main(['--task', '_toy,_toy'], h.deps)).toBe(2);
     expect(await main(['--task', '_toy', '--live-judge'], h.deps)).toBe(2);
     expect(await main(['--task', '_toy'], h.deps)).toBe(1);
     expect(h.text()).toContain('ANTHROPIC_API_KEY is not set');

@@ -406,6 +406,18 @@ describe('runCompleteAt: a narrower query that completes a stopped run (G5)', ()
     const n3: StepSearch = { ...q, date_le: '2025-10-01', total: 44, whole: true, span: [at('2024-12-31T06:47:10-05:00'), at('2025-10-01T09:00:00-04:00')] };
     expect(runCompleteAt([st(1, p1), st(2, n1Short), st(3, n3)], covers, never)).toBe(3);
   });
+  // verifier-phase-P17i-G5-210-1 M1: a row whose date Period has no start sorts at -Infinity
+  // (env search.ts sortStart), so the stopped page's span holds a value no bound can reach. The
+  // run is refused, and the grader does not throw.
+  it('refuses, without throwing, when the last row shown sorts at a non-finite instant (M1)', () => {
+    const open: StepSearch = { ...p1, span: [-Infinity, p1.span![1]] };
+    expect(runCompleteAt([st(1, open), st(2, n1), st(3, n2)], covers, never)).toBe(null);
+    // Oldest first: every dated row of the stopped page has an open start.
+    const a = { type: 'Observation', patient: 'Patient/pt-A', date_le: '2026-10-23', sort: 'date', whole: false } satisfies StepSearch;
+    const first: StepSearch = { ...a, next_offset: 10, total: 30, span: [-Infinity, -Infinity] };
+    const rest: StepSearch = { ...a, date_ge: '2020-05-05', total: 21, whole: true, span: [at('2020-05-05T09:00:00Z'), at('2026-10-01T09:00:00Z')] };
+    expect(runCompleteAt([st(1, first), st(2, rest)], (s) => s.date_ge === undefined, never)).toBe(null);
+  });
 });
 
 // verifier-phase-P17i-S0-208-r2-1 N1: a run with the same filters is refused too when an arrival of
