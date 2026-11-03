@@ -40,8 +40,11 @@ const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
   .map((e) => e.name);
 const LISTS_TASKS = new Set(['overview', 'tasks', 'runs', 'findings', 'live']);
 const viewOf = (route: string | undefined) => (route === undefined ? null : new URL(route, 'http://x/').searchParams.get('view'));
-// Rows whose UI a named later P17j UI PR builds; each line says which. Remove the row when it lands.
-const BUILT_BY: Record<string, string> = {};
+// Rows whose UI a named later UI PR builds; each line says which. Remove the row when it lands.
+// The Overview band line (ui-contract P14: `<k> of 6 tasks in band`, k counted from the official
+// run's summary, never a fixed text) is pre-audit finding F1, owed to the UI follow-up of #218.
+const BAND_LINE = 'the Overview band line (pre-audit F1), the UI follow-up of #218';
+const BUILT_BY: Record<string, string> = { W1: BAND_LINE, W2: BAND_LINE, W3: BAND_LINE, U21: BAND_LINE, U26: BAND_LINE };
 
 type AxText = { file: string; text: string };
 type Row = { id: string; code?: string[]; pending?: string[]; ui?: { route: string }; expect?: unknown };
