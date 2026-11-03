@@ -34,14 +34,18 @@ function expected(s: Summary) {
   const k = final.filter((id) => s.tasks[id]!.band_verdict === 'In band').length;
   const notFinal = TASKS.filter((id) => !isFinal(id));
   const named = notFinal.map((id) => (s.tasks[id] === undefined ? id : `${id} (in progress, ${s.tasks[id].trials} of ${FINAL_TRIALS_PER_TASK} valid trials)`));
-  const note = notFinal.length === 0 ? null : `${notFinal.length} tasks have no final result yet and are not counted: ${named.join(', ')}.`;
+  const counts = new Set(notFinal.map((id) => s.tasks[id]?.trials ?? null));
+  // One line when every task of the environment is in progress at one count (the sample run).
+  const note = notFinal.length === 0 ? null
+    : final.length === 0 && counts.size === 1 && !counts.has(null) ? `All six tasks are in progress: ${[...counts][0]} of ${FINAL_TRIALS_PER_TASK} valid trials each.`
+      : `${notFinal.length} tasks have no final result yet and are not counted: ${named.join(', ')}.`;
   return { line: `${k} of ${final.length} tasks in band`, notFinal, note };
 }
 
 test('the fixtures: the band run has a task out of band and tasks with no record; the sample run has six tasks of 12 trials, none final', () => {
   expect(expected(bandSummary)).toMatchObject({ line: '1 of 3 tasks in band', notFinal: ['crc-care-gap', 'renal-dose-review', 'results-inbox'] });
-  expect(expected(sampleSummary)).toMatchObject({ line: '0 of 0 tasks in band', notFinal: TASKS });
-  expect(expected(sampleSummary).note).toContain('renal-dose-review (in progress, 12 of 20 valid trials)');
+  expect(expected(sampleSummary)).toMatchObject({ line: '0 of 0 tasks in band', notFinal: TASKS, note: 'All six tasks are in progress: 12 of 20 valid trials each.' });
+  expect(expected(bandSummary).note).toBe('3 tasks have no final result yet and are not counted: crc-care-gap, renal-dose-review, results-inbox.');
 });
 
 async function inViewport(page: Page) {
@@ -68,9 +72,12 @@ for (const size of SIZES) {
     await expect(note).toHaveText(want.note!);
     // The task ids the note names are the ones with no row in the table, and no table row's task is named.
     for (const id of want.notFinal) await expect(page.locator(`[data-testid="overview-row"][data-task="${id}"]`)).toHaveCount(0);
-    for (const id of Object.keys(bandSummary.tasks)) {
+    for (const [id, t] of Object.entries(bandSummary.tasks)) {
       await expect(page.locator(`[data-testid="overview-row"][data-task="${id}"]`)).toHaveCount(1);
       expect(await note.textContent()).not.toContain(id);
+      const v = page.locator(`[data-testid="overview-row"][data-task="${id}"] [data-testid="band-verdict"]`);
+      await expect(v).toHaveText(t.band_verdict!);
+      await expect(v).toHaveAttribute('data-provisional', 'false');
     }
     await inViewport(page);
   });
@@ -85,25 +92,35 @@ for (const size of SIZES) {
     await expect(group).toHaveAttribute('data-final', '0');
     await expect(group).toContainText('No task has a final result yet: a final result is 20 valid trials.');
     await expect(group.getByTestId('band-not-final')).toHaveText(want.note!);
+    // Each row's verdict says it is provisional, with the count, so it cannot read against the line.
+    for (const [id, t] of Object.entries(sampleSummary.tasks)) {
+      const v = page.locator(`[data-testid="overview-row"][data-task="${id}"] [data-testid="band-verdict"]`);
+      await expect(v).toHaveText(`${t.band_verdict}, provisional (${t.trials} of ${FINAL_TRIALS_PER_TASK} valid trials)`);
+      await expect(v).toHaveAttribute('data-provisional', 'true');
+      const box = (await v.boundingBox())!;
+      expect(box.x + box.width, `${id} verdict ends inside the viewport`).toBeLessThanOrEqual(page.viewportSize()!.width);
+    }
     await inViewport(page);
   });
 }
 
-test('the Overview with the band line: axe finds nothing serious or critical, light and dark, at 375 px and desktop; screenshots with SHOTS_DIR', async ({ page }) => {
-  test.setTimeout(180_000);
-  for (const size of SIZES) {
-    await page.setViewportSize({ width: size.width, height: size.height });
-    for (const scheme of ['light', 'dark'] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
-      await band(page, './?view=overview');
-      await expect(page.getByTestId('band-not-final')).toBeVisible();
-      await page.evaluate(() => document.fonts.ready);
-      const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
-      expect(bad, `${scheme} ${size.name}`).toEqual([]);
-      if (process.env.SHOTS_DIR) {
-        mkdirSync(process.env.SHOTS_DIR, { recursive: true });
-        await page.screenshot({ path: join(process.env.SHOTS_DIR, `overview-band-${size.width}x${size.height}-${scheme}.png`), fullPage: true });
-        await page.getByTestId('band-line').screenshot({ path: join(process.env.SHOTS_DIR, `band-line-${size.width}x${size.height}-${scheme}.png`) });
+test('the Overview with the band line, on the band run and the zero-final sample run: axe finds nothing serious or critical, light and dark, at 375 px and desktop; screenshots with SHOTS_DIR', async ({ page }) => {
+  test.setTimeout(240_000);
+  for (const [name, open] of [['band', band], ['zero-final', sample]] as const) {
+    for (const size of SIZES) {
+      await page.setViewportSize({ width: size.width, height: size.height });
+      for (const scheme of ['light', 'dark'] as const) {
+        await page.emulateMedia({ colorScheme: scheme });
+        await open(page, './?view=overview');
+        await expect(page.getByTestId('band-not-final')).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+        expect(bad, `${name} ${scheme} ${size.name}`).toEqual([]);
+        if (process.env.SHOTS_DIR) {
+          mkdirSync(process.env.SHOTS_DIR, { recursive: true });
+          await page.screenshot({ path: join(process.env.SHOTS_DIR, `overview-${name}-${size.width}x${size.height}-${scheme}.png`), fullPage: true });
+          await page.getByTestId('band-line').screenshot({ path: join(process.env.SHOTS_DIR, `band-line-${name}-${size.width}x${size.height}-${scheme}.png`) });
+        }
       }
     }
   }

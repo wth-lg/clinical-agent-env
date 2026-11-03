@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FINAL_TRIALS_PER_TASK } from '../../../packages/core/cost.ts';
-import { bandCount, bandLine, notFinalLine } from '../src/overview/band.ts';
+import { bandCount, bandLine, notFinalLine, verdictLabel } from '../src/overview/band.ts';
 
 const N = FINAL_TRIALS_PER_TASK;
 const inBand = { band_verdict: 'In band' as const, trials: N };
@@ -45,7 +45,7 @@ describe('bandCount', () => {
     const c = bandCount({ 'crc-care-gap': { band_verdict: 'In band', trials: 19 }, 'contrast-ct-prep': inBand }, ['crc-care-gap', 'contrast-ct-prep']);
     expect(c).toEqual({ inBand: 1, final: 1, notFinal: [{ id: 'crc-care-gap', trials: 19 }] });
     expect(bandLine(c)).toBe('1 of 1 tasks in band');
-    expect(notFinalLine(c)).toBe('1 task has no final result yet and is not counted: crc-care-gap (in progress, 19 of 20 valid trials).');
+    expect(notFinalLine(c)).toBe('1 task is in progress and not counted, 19 of 20 valid trials: crc-care-gap.');
   });
 
   it('20 of 20 valid trials is final, and more than 20 still is', () => {
@@ -56,12 +56,31 @@ describe('bandCount', () => {
   it('a task in the summary with no valid trial is in progress at 0 of 20', () => {
     const c = bandCount({ 'crc-care-gap': inBand, 'message-queue': { band_verdict: null, trials: 0 } }, ['crc-care-gap', 'message-queue']);
     expect(c).toEqual({ inBand: 1, final: 1, notFinal: [{ id: 'message-queue', trials: 0 }] });
-    expect(notFinalLine(c)).toBe('1 task has no final result yet and is not counted: message-queue (in progress, 0 of 20 valid trials).');
+    expect(notFinalLine(c)).toBe('1 task is in progress and not counted, 0 of 20 valid trials: message-queue.');
   });
 
   it('in-progress and absent tasks share one note, each in its own words', () => {
     const c = bandCount({ 'crc-care-gap': inBand, 'results-inbox': { band_verdict: 'In band', trials: 12 } }, ['renal-dose-review', 'results-inbox', 'crc-care-gap']);
     expect(notFinalLine(c)).toBe('2 tasks have no final result yet and are not counted: renal-dose-review, results-inbox (in progress, 12 of 20 valid trials).');
+  });
+
+  it('in-progress tasks at different counts are each named with their count', () => {
+    const c = bandCount({ a: { band_verdict: 'In band', trials: 12 }, b: { band_verdict: null, trials: 0 }, c: inBand }, ['a', 'b', 'c']);
+    expect(notFinalLine(c)).toBe('2 tasks have no final result yet and are not counted: a (in progress, 12 of 20 valid trials), b (in progress, 0 of 20 valid trials).');
+  });
+
+  it('every task in progress at one count collapses to one line', () => {
+    const run = Object.fromEntries(ALL.map((t) => [t, { band_verdict: 'In band' as const, trials: 12 }]));
+    const c = bandCount(run, ALL);
+    expect(c.final).toBe(0);
+    expect(bandLine(c)).toBe('0 of 0 tasks in band');
+    expect(notFinalLine(c)).toBe('All six tasks are in progress: 12 of 20 valid trials each.');
+    expect(notFinalLine(bandCount({ a: { band_verdict: 'Below band', trials: 3 }, b: { band_verdict: 'In band', trials: 3 } }, ['a', 'b']))).toBe('All two tasks are in progress: 3 of 20 valid trials each.');
+  });
+
+  it('some tasks final and the rest in progress at one count: one line that names them', () => {
+    const c = bandCount({ a: inBand, b: { band_verdict: 'In band', trials: 12 }, c: { band_verdict: 'Above band', trials: 12 } }, ['a', 'b', 'c']);
+    expect(notFinalLine(c)).toBe('2 tasks are in progress and not counted, 12 of 20 valid trials each: b, c.');
   });
 
   it('with no task list yet, the note names only the summary tasks short of the sample', () => {
@@ -77,6 +96,19 @@ describe('bandCount', () => {
     const c = bandCount({}, ['a', 'b']);
     expect(bandLine(c)).toBe('0 of 0 tasks in band');
     expect(notFinalLine(c)).toBe('2 tasks have no final result yet and are not counted: a, b.');
+  });
+});
+
+describe('verdictLabel', () => {
+  it('a verdict over the final sample is itself, with no count', () => {
+    expect(verdictLabel('In band', 20)).toEqual({ label: 'In band', count: null });
+    expect(verdictLabel('Saturated', 21)).toEqual({ label: 'Saturated', count: null });
+  });
+
+  it('a verdict over fewer valid trials is provisional, with its count', () => {
+    expect(verdictLabel('In band', 12)).toEqual({ label: 'In band, provisional', count: '12 of 20 valid trials' });
+    expect(verdictLabel('Above band', 19)).toEqual({ label: 'Above band, provisional', count: '19 of 20 valid trials' });
+    expect(verdictLabel('Below band', 8)).toEqual({ label: 'Below band, provisional', count: '8 of 20 valid trials' });
   });
 });
 

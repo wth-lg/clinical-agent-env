@@ -9,8 +9,9 @@
 // (a committed result or document, such as results/runs/final-1 or docs/findings.md; trace-check
 // keeps that list true) is listed as a todo, not failed. Snapshots that are not
 // accessibility trees (.txt counts, not .ax.txt) are not UI text and are skipped.
-// Source comments (// and /* */) are stripped before the match, so a phrase a comment quotes never
-// counts as drawn (verifier UIBAND-219 F2: band.ts's header named the band line it draws).
+// Source comments (// and /* */, by the TypeScript parser) are stripped before the match, so a
+// phrase a comment quotes never counts as drawn (verifier UIBAND-219 F2: band.ts's header named
+// the band line it draws); strings, templates, regexes and JSX text are kept whole.
 // Limit: this is a grep by view, not by tab, and it reads the view's data files whole, so it shows
 // that the route's code or data holds the text, not that this exact screen draws it (a data file such
 // as packages/core/anthropic.ts passes a model-name row on its own). e2e/labels.spec.ts asserts the
@@ -18,6 +19,7 @@
 // prompt tab and the Live launcher.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const REPO = join(import.meta.dirname, '../../..');
@@ -71,9 +73,36 @@ function files(path: string): string[] {
     .map((e) => join(e.parentPath, e.name));
 }
 
-// A TypeScript source without its comments: /* */ blocks, and // to the end of its line when the
-// // starts the line or follows whitespace (so a URL's :// in a string stays). Markdown is not code.
-export const stripComments = (s: string, file: string) => (/\.tsx?$/.test(file) ? s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1') : s);
+// A TypeScript source without its comments, by the TypeScript parser's comment ranges: the
+// leading and trailing comment trivia of every token (punctuation included, via getChildren, so a
+// comment before a closing brace or at the end of the file counts). A string, template, regex or
+// JSX text is a token, so a // or /* inside one is kept (verifier UIBAND-219-2 N2: the glob
+// strings of tasks/matrix-task.ts). JSX text is never scanned for comments: its own start, and the
+// end of the token before it, are not comment positions. Markdown is not code.
+export function stripComments(s: string, file: string): string {
+  if (!/\.tsx?$/.test(file)) return s;
+  const sf = ts.createSourceFile(file, s, ts.ScriptTarget.Latest, false, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const ranges = new Map<number, number>();
+  const add = (r: ts.CommentRange) => ranges.set(r.pos, Math.max(r.end, ranges.get(r.pos) ?? 0));
+  const visit = (node: ts.Node) => {
+    const kids = node.getChildren(sf);
+    kids.forEach((k, i) => {
+      if (k.kind !== ts.SyntaxKind.JsxText) for (const r of ts.getLeadingCommentRanges(s, k.pos) ?? []) add(r);
+      if (k.kind !== ts.SyntaxKind.JsxText && kids[i + 1]?.kind !== ts.SyntaxKind.JsxText) for (const r of ts.getTrailingCommentRanges(s, k.end) ?? []) add(r);
+      visit(k);
+    });
+  };
+  visit(sf);
+  let out = s;
+  for (const [pos, end] of [...ranges].sort((a, b) => b[0] - a[0])) out = out.slice(0, pos) + out.slice(end);
+  return out;
+}
+// Each source file is parsed once for every row that reads it.
+const stripped = new Map<string, string>();
+const sourceOf = (f: string) => {
+  if (!stripped.has(f)) stripped.set(f, stripComments(readFileSync(f, 'utf8'), f));
+  return stripped.get(f)!;
+};
 // A value placeholder, whitespace collapsed, and the typographic quotes of JSX text kept as is.
 const V = '\u0000';
 // JSX tags go (their text stays); outcome words are values, as numbers are.
@@ -97,6 +126,17 @@ describe('stripComments', () => {
     expect(stripComments("const u = 'http://x/'; // c", 'x.tsx')).toBe("const u = 'http://x/'; ");
     expect(stripComments('// kept in markdown', 'x.md')).toBe('// kept in markdown');
   });
+
+  // The shapes of apps/web/src/tasks/matrix-task.ts (import.meta.glob patterns with /* in strings),
+  // and " //" inside a string, a template and JSX text (verifier UIBAND-219-2 N2).
+  it('keeps /* and // inside strings, templates, regexes and JSX text, and still drops the comments around them', () => {
+    const globs = "const MODULES = import.meta.glob<Record<string, unknown>>([\n  '../../../../tasks/*/tests/{grader,alternatives,mutants,agents}.ts',\n  '../../../../tasks/*/solution/solve.ts',\n  '../../../../tasks/*/{expected,policy}.ts',\n]); // the modules\nconst TEXT = import.meta.glob<string>(['../../../../tasks/*/task.toml'], { query: '?raw' });";
+    expect(stripComments(globs, 'matrix-task.ts')).toBe(globs.replace(' // the modules', ' '));
+    const literals = "const a = 'see // this'; const b = `and /* that */ ${x} // too`; const r = /\\/\\/ok/; /* gone */ const c = 1; // gone too";
+    expect(stripComments(literals, 'x.ts')).toBe("const a = 'see // this'; const b = `and /* that */ ${x} // too`; const r = /\\/\\/ok/;  const c = 1; ");
+    const jsx = "const el = <p title=\"a // b\">See // this and /* that */ here {/* a JSX comment */}</p>; // trailing";
+    expect(stripComments(jsx, 'x.tsx')).toBe("const el = <p title=\"a // b\">See // this and /* that */ here {}</p>; ");
+  });
 });
 
 describe('ax_text strings are rendered on their routes', () => {
@@ -113,7 +153,7 @@ describe('ax_text strings are rendered on their routes', () => {
     const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
     const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
     const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
-    const source = () => [...paths.flatMap(files).map((f) => stripComments(readFileSync(f, 'utf8'), f)), ...data].join('\n');
+    const source = () => [...paths.flatMap(files).map(sourceOf), ...data].join('\n');
     if (pending.length > 0) {
       it.todo(`${row.id}: "${a.text}" pending ${pending.join(', ')}`);
       continue;

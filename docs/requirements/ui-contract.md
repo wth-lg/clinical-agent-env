@@ -183,7 +183,11 @@ launcher (P15) shows the Run lines.
   counted in n or k. The line is the accessible name of its group; under it, a sentence says what k
   and n count, and a note names the tasks the count leaves out (`have no final result yet`): an
   in-progress task with its count (`in progress, <v> of 20 valid trials`), a task with no record in
-  the run by its id.
+  the run by its id; when every such task is in progress at one count, the note is one line
+  (`All six tasks are in progress: 12 of 20 valid trials each.` on the 12-trial sample). A task's
+  verdict beside its Wilson interval (Overview, Findings, the difficulty history) reads
+  `<verdict>, provisional (<v> of 20 valid trials)` while its valid trials are short of the final
+  sample, so a card never reads against the line.
 - The pass rate is the text `<k>/<N> passed, Wilson 95% <lo>-<hi>%`, with k the passes out of N
   valid trials, N read from the run (never a constant), and lo and hi whole percentages joined
   by an ASCII hyphen. A 12-trial sample shows `/12`. It shows on each Overview task row, on the
