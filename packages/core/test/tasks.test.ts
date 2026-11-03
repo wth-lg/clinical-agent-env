@@ -135,3 +135,59 @@ describe('a TaskSource reads its task directories once', () => {
     expect((await source.get('a')).id).toBe('a');
   });
 });
+
+// plan-amendment-w5 G1 (W5-H): a task's lever items are toggled by tasks/<id>/expected.ts
+// `export const LEVER = [...]`, the ids of the active items. The loader reads the literal list from
+// the file's text, so every runtime (Node, the browser) hashes the same value, and env_version
+// covers it: a toggle is a new env_version with no world rebuild. A task without LEVER is unchanged.
+describe('expected.ts LEVER is loaded and env_version covers it (W5-H)', () => {
+  const files = { 'task.toml': toml('a'), 'instruction.md': 'Do a.\n', 'overlay.ts': 'o' };
+  const withExpected = (text: string) => parseTask({ id: 'a', files: { ...files, 'expected.ts': text } });
+  const versions = async (text: string | null) => taskVersions(text === null ? await parseTask({ id: 'a', files }) : await withExpected(text), 'h1');
+
+  it('reads the literal list, with a type annotation, comments, double quotes, a trailing comma or as const', async () => {
+    expect((await parseTask({ id: 'a', files })).lever).toBeNull();
+    expect((await withExpected('export const expected = { items: [] };\n')).lever).toBeNull();
+    expect((await withExpected("export const LEVER = ['A', 'B'];\n")).lever).toEqual(['A', 'B']);
+    expect((await withExpected('export const LEVER: readonly string[] = [\n  \'A\', // the routing defect\n  "B", /* the dial */\n];\n')).lever).toEqual(['A', 'B']);
+    expect((await withExpected('export const LEVER = [] as const;\n')).lever).toEqual([]);
+    expect((await withExpected("export const LEVER = ['A'] as const satisfies readonly string[];\n")).lever).toEqual(['A']);
+  });
+
+  it('follows a re-export from lever.ts, a file with no imports that overlay.ts and events.ts can read too', async () => {
+    const both = (expected: string, lever: string | undefined) => parseTask({ id: 'a', files: { ...files, 'expected.ts': expected, ...(lever === undefined ? {} : { 'lever.ts': lever }) } });
+    expect((await both("export { LEVER } from './lever.ts';\n", "export const LEVER: readonly string[] = ['A', 'B'];\n")).lever).toEqual(['A', 'B']);
+    expect((await both('export { LEVER } from "./lever.ts"\n', "export const LEVER = [];\n")).lever).toEqual([]);
+    await expect(both("export { LEVER } from './lever.ts';\n", undefined)).rejects.toThrow(/re-exports LEVER from \.\/lever\.ts, which does not exist/);
+    await expect(both("export { LEVER } from './lever.ts';\n", 'export const LEVER = ACTIVE;\n')).rejects.toThrow(/tasks\/a\/lever\.ts: LEVER must be a literal list/);
+    await expect(both("export { LEVER } from './lever.ts';\nexport const LEVER = ['A'];\n", "export const LEVER = ['A'];\n")).rejects.toThrow(/LEVER is declared twice/);
+    await expect(both('export const expected = {};\n', "export const LEVER = ['A'];\n")).rejects.toThrow(/lever\.ts declares LEVER, and expected\.ts does not re-export it/);
+    // The re-export and the literal hash the same env_version.
+    const direct = await taskVersions(await withExpected("export const LEVER = ['A', 'B'];\n"), 'h1');
+    const via = await taskVersions(await both("export { LEVER } from './lever.ts';\n", "export const LEVER = ['A', 'B'];\n"), 'h1');
+    expect(via.env_version).toBe(direct.env_version);
+  });
+
+  it('env_version moves with the LEVER list and with nothing else in expected.ts; grader_task_version covers the file as before', async () => {
+    const none = await versions(null);
+    const noLever = await versions('export const expected = {};\n');
+    const ab = await versions("export const expected = {};\nexport const LEVER = ['A', 'B'];\n");
+    const a = await versions("export const expected = {};\nexport const LEVER = ['A'];\n");
+    const abEdited = await versions("export const expected = { items: [] };\nexport const LEVER = ['A', 'B'];\n");
+    // Without LEVER the env_version is what it was before LEVER existed (the file is grader-side).
+    expect(noLever.env_version).toBe(none.env_version);
+    expect(ab.env_version).not.toBe(noLever.env_version);
+    expect(a.env_version).not.toBe(ab.env_version);
+    expect(abEdited.env_version).toBe(ab.env_version);
+    expect(abEdited.grader_task_version).not.toBe(ab.grader_task_version);
+    expect(a.grader_task_version).not.toBe(ab.grader_task_version);
+  });
+
+  it('refuses a LEVER that is not one literal list of distinct string ids, naming the file', async () => {
+    await expect(withExpected('export const LEVER = ACTIVE;\n')).rejects.toThrow(/tasks\/a\/expected\.ts: LEVER must be a literal list of string ids/);
+    await expect(withExpected("export const LEVER = [A.id, 'B'];\n")).rejects.toThrow(/LEVER must be a literal list/);
+    await expect(withExpected("export const LEVER = ['A', 'A'];\n")).rejects.toThrow(/LEVER names A twice/);
+    await expect(withExpected("export const LEVER = ['A'];\nexport const LEVER = ['B'];\n")).rejects.toThrow(/LEVER is declared twice/);
+    await expect(withExpected("export const LEVER = [''];\n")).rejects.toThrow(/LEVER must be a literal list/);
+  });
+});

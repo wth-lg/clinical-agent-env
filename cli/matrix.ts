@@ -51,7 +51,7 @@ import { stripTimestamps, toJsonl } from '../packages/core/trajectory.ts';
 import type { Check, Json } from '../packages/grader/check.ts';
 import type { Grade } from '../packages/grader/grade.ts';
 import { judgeCallBudget, type JudgeCacheEntry } from '../packages/grader/judge.ts';
-import { declaresOf, gradeRun, runMatrix, type CaseRun, type FreshGrade, type MatrixEnv, type MatrixOptions, type CaseKind, type MatrixResult, type ReplayDiff } from '../packages/grader/matrix/matrix.ts';
+import { declaresOf, gradeRun, matrixLever, runMatrix, type CaseRun, type FreshGrade, type MatrixEnv, type MatrixOptions, type CaseKind, type MatrixResult, type ReplayDiff } from '../packages/grader/matrix/matrix.ts';
 import type { Agents, Alternative, MatrixTask, Mutant, Script, WorldView } from '../packages/grader/matrix/types.ts';
 import { nodeNow } from './adapters/clock-node.ts';
 import { taskVersions, type TaskSource, type TaskVersions } from '../packages/core/tasks.ts';
@@ -154,6 +154,8 @@ export async function loadMatrixTask(id: string, root: string = TASKS_DIR, tasks
   const checks = await exported<Check[]>(dir, 'tests/grader.ts', 'checks', []);
   // Throws on an item whose judge_questions is not a whole number >= 0, naming it.
   judgeCallBudget(checks);
+  const expectedFile = join(dir, 'expected.ts');
+  const lever = matrixLever(existsSync(expectedFile) ? ((await import(pathToFileURL(expectedFile).href)) as Record<string, unknown>) : {}, task.lever, `tasks/${id}`);
   return {
     id,
     events: task.events,
@@ -170,6 +172,8 @@ export async function loadMatrixTask(id: string, root: string = TASKS_DIR, tasks
     derive: await exported<((w: WorldView) => Json) | undefined>(dir, 'policy.ts', 'derive', undefined),
     cache: existsSync(cacheFile) ? (JSON.parse(readFileSync(cacheFile, 'utf8')) as JudgeCacheEntry[]) : [],
     judgeEffort: task.judgeEffort,
+    // The lever items and active ids (W5-H), checked against the LEVER the task loader hashed.
+    ...(lever === undefined ? {} : { lever }),
   };
 }
 
