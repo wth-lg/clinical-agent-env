@@ -123,6 +123,10 @@ function label(gate: GateCheck, marks: { omission?: boolean; action_form?: boole
 }
 
 // When decisive id `id` of `gate` was first exposed, and, as the gate declares, first shown or seen.
+// The seen rule is judged at the trial's end (check.ts SeenRule without `at`): a window review by
+// exposure owes the chart as delivered, so first_seen_step is the step the review of that chart was
+// complete. A gate judges the same rule at its decision write; the two differ only when an arrival
+// fired at or after that write replaced a record of the window (R41 addendum 2).
 function exposureOf(steps: readonly Step[], gate: GateCheck, id: string, world?: SeenWorld): Exposure {
   const phrase = gate.decisive_phrases?.[id];
   const seenAt = gate.seen_at?.[id];

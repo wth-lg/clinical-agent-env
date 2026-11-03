@@ -22,7 +22,7 @@
           "grader_task_version": "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528",
           "task_version": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7",
           "at": "regrade-r41",
-          "reason": "R41 grader bug fix (builder-304, builder-305, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the set evaluated as of the decision step (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+          "reason": "R41 grader bug fix (builder-304, builder-305, builder-306, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the set the one owed at the decision step (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
         }
       ]
     },
@@ -39,10 +39,10 @@
       "regrades": [
         {
           "grader_version": "22",
-          "grader_task_version": "d0f6e5025c4d37d27f0b28f4ff0fcb3e0ea58978974c60bfbb147ee2c1574716",
-          "task_version": "368dc9b36ff1e7d886103fb25b036b493dd69c1e52b12c0c7ad7561b07acf38e",
+          "grader_task_version": "e40975b0aaeb86f3e94c88abeb6df7314f7795b4708b60a047039fa03f2c2968",
+          "task_version": "35e4dd27d5996d32adf43a097ae63458b7d40644c537f810b1ee9bc32bc3fcb3",
           "at": "regrade-r41",
-          "reason": "R41 grader bug fix (builder-304, builder-305, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the set evaluated as of the decision step (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+          "reason": "R41 grader bug fix (builder-304, builder-305, builder-306, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the set the one owed at the decision step (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
         }
       ]
     }

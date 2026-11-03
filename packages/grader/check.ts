@@ -72,7 +72,8 @@ interface Common {
   // as well as by exposure or a shown phrase, so the label agrees with the check. A rule that
   // reads the chart (a window review by exposure, ruling R41: exposure.ts windowTargets) gets the
   // trial's states as its second argument; attribution passes them, and a caller without them
-  // (a test over bare steps) gets the rule's search-shape routes alone.
+  // (a test over bare steps) gets the rule's search-shape routes alone. A gate that compares the
+  // step with a decision write passes that write as the third (the review is judged at it).
   seen_at?: Readonly<Record<string, SeenRule>>;
   // Attribution counts a decisive id seen only by its seen_at rule: an arrival may replace a record
   // read before it (class B, events.ts).
@@ -221,8 +222,10 @@ export interface GateCtx extends CtxBase {
 // The states a seen rule may read (ruling R41): the initial world and the chart as delivered, as
 // gates see them. A GateCtx is one.
 export type SeenWorld = Pick<GateCtx, 'initial' | 'final'>;
-// When a decisive id was first seen by a check's own rule (Common.seen_at), or null.
-export type SeenRule = (steps: readonly Step[], world?: SeenWorld) => number | null;
+// When a decisive id was first seen by a check's own rule (Common.seen_at), or null. `at` is the
+// decision step the rule judges at: a window review by exposure owes the records of the chart as
+// of that step (R41 addendum 2, exposure.ts windowExposed); omitted, it judges at the trial's end.
+export type SeenRule = (steps: readonly Step[], world?: SeenWorld, at?: number) => number | null;
 
 // A note the agent wrote: a DocumentReference the trial created, with its text decoded.
 export interface Note {

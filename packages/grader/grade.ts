@@ -110,7 +110,14 @@ import type { Progress } from './progress.ts';
 // of the decision step. A record a class B arrival replaced is judged by its initial status and
 // date up to the step that fired the arrival and by its final ones after it (a result withdrawn on
 // the decision write was still owed at the decision); a record that first arrives during the trial
-// is not a window target, its event gates grade it. No grade on today's data moves.
+// is not a window target, its event gates grade it. No grade on today's data moves. R41 addendum 2
+// (builder-306, verifier-phase-P17i-R41-216-2-1 F1, F2), still 22: the target set is the set owed
+// at the decision step, which each gate passes to its seen rule (check.ts SeenRule `at`). A record
+// replaced by an arrival fired before the decision is owed in its final state, one replaced at or
+// after it in its initial state, and the review completes at the latest first exposure among the
+// owed records, so a withdrawal fired in an earlier turn no longer dates the review one step late,
+// and a correction that moves a never-shown record into the window before the decision makes it a
+// target. No grade on today's data moves.
 export const GRADER_VERSION = '22';
 
 export interface CheckResult {
