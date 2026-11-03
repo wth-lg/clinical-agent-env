@@ -1,5 +1,23 @@
 [
   {
+    "key": "07644a25b3d70a0d8db3dd78e31fd133960ee1073f7f3d497c185d6c7eef5f26",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T08:24:34.516Z"
+    }
+  },
+  {
     "key": "07705630f3ca69a2091a3b6d1141ce354e58efd47085ee06372a3944d6ab8a5f",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -18,21 +36,21 @@
     }
   },
   {
-    "key": "141f3e8bb3f0c79f9a8575c9ced45e4ca939deffe6ee31a6aeafa99658bbcff4",
+    "key": "07dd90d7596c4f44bdc55a2c64248233d61dfa114d13d2aa3bca5cbc08fb4ec4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
+      "verdict": "not_met",
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
@@ -54,6 +72,42 @@
     }
   },
   {
+    "key": "4d9add5420e11588dcbc5f7f67efc68d49a4650f1b7cebd73900825cb6e12195",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T08:24:34.516Z"
+    }
+  },
+  {
+    "key": "64a855cece8e4f7ea1380b408a0311e1b2ecce114419bd923b3f586cc4da759c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T08:24:34.516Z"
+    }
+  },
+  {
     "key": "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -72,21 +126,21 @@
     }
   },
   {
-    "key": "70682cce620b0e3874261eda0fa7cfe66b4038b8310f11ff0f062bfaed46124b",
+    "key": "6e20b03b1b63edf51c100c2e77279ddbb40ab1828d407850faa0144ca905f110",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "Your next screening CT is now due within the next three weeks, not in April 2027; we have ordered it and scheduling will call you."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
@@ -108,6 +162,24 @@
     }
   },
   {
+    "key": "72ebf086976a3aac85f521ee1c6478d5b4daf01dc530827963eb518282fc9267",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your kidney blood test from urgent care on Thursday evening was much higher than the one from Wednesday morning. Please drink fluids, do not take naproxen"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T08:24:34.516Z"
+    }
+  },
+  {
     "key": "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -126,25 +198,7 @@
     }
   },
   {
-    "key": "8a0d820fd2dd4fca36c1f5e905886ce2fdbc1fe5ae570be706b3780434900e31",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
-    }
-  },
-  {
-    "key": "902a62233d9a3db4cdbb63c1b5ae81872f9f55e7247c718c9393b5752153b8d9",
+    "key": "883afcf9f2cfd5c178c36bf11ec7178be0a5b4d5fc0851bdf543afb1c074d01b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -158,11 +212,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
-    "key": "93a323788e49598b676510d808a9096297535b9af4f0bbe1c035763c190af999",
+    "key": "cb463359ceaf618e01abdab439aeaa5ea83f4919a1e89f51aa99f8c5f32a8bea",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -176,61 +230,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
-    "key": "95db7a69e6e6778bee8715a1445f894e51273b7921782e85d1e9003c693b48ea",
+    "key": "cfb2b92ef45a1b4e5f682d5867c4973407c916b72dd1182e14d353fe02ecf91c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Your kidney blood test from urgent care on Thursday evening was much higher than the one from Wednesday morning. Please drink fluids, do not take naproxen"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
-    }
-  },
-  {
-    "key": "a6386a69795d91fef6d9229a197c01abd10a132537ebbd6c4f8fd3585c02e628",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
-    }
-  },
-  {
-    "key": "b960352bad60e7311caec93d3ff2534e351455eac2a17933140ffb5ba0ca278a",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your next screening CT is now due within the next three weeks, not in April 2027; we have ordered it and scheduling will call you."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
@@ -252,21 +270,21 @@
     }
   },
   {
-    "key": "d9c748b04665377ff59da4530cea916ffa2f5b93ffd85394aa50c6cb4af5f33d",
+    "key": "e1ac9399e0353d39d190b04d98dac5492fa850fdfde3cc7062bd5667c7db6018",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "One of your blood tests needs repeating because the sample was damaged."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
+      "at": "2026-11-03T08:24:34.516Z"
     }
   },
   {
@@ -303,24 +321,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "f51519754eaef57d86b0a0b7f789f0bde062830f5ca3e46ec17c1c6f24dac52f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your kidney blood test from urgent care last night was higher than the one from the clinic that morning."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-03T07:58:30.273Z"
     }
   }
 ]

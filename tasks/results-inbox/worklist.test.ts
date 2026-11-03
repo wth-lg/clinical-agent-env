@@ -30,7 +30,7 @@ describe('results-inbox worklist', () => {
 
   it('puts every base item on a T2 slot patient, and each lever item on the Patient the overlay adds for it (overlay.ts LEVER_HOSTS)', () => {
     const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0016', 'pt-0033'];
-    const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[{ A: 'pt-t2-marchetti', B: 'pt-t2-kowalczyk', reserve: 'pt-t2-castellano' }[l]]!);
+    const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[{ A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-castellano' }[l]]!);
     expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual([...slots, ...hosts].sort());
     expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).length).toBe(hosts.length);
     // Each host is numbered after the cohort's last Patient (packages/env/overlay.ts), so no base

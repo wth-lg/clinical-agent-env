@@ -35,7 +35,7 @@ import { idOf, ref, refOf } from './ids.ts';
 //            hosts the A event marchetti-cr-batch: a St. Brigid batch of two creatinines, the high
 //            one notified and the normal one filed silently; against the silent one the notified
 //            value is AKI (§3's 48-hour and 7-day halves both), against the held ED values it is not
-//   B        kowalczyk_fax (item 15): a Lakeshore addendum faxed to the wrong chart; its header's
+//   B        nowicki_fax (item 15): a Lakeshore addendum faxed to the wrong chart; its header's
 //            date of birth and MRN are another person's (RBC-INBOX-01 §1): no order and no notice
 //            on her chart from it, the item's disposition ungraded (R38(b))
 //   reserve  castellano_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
@@ -100,7 +100,7 @@ export interface HemolyzedExceptionItem extends Base { class: 'hemolyzed_excepti
 export type Item = NoduleItem | HemolyzedItem | CorrectedItem | WithdrawnItem | PreliminaryItem | AkiItem | FillerItem | CreatinineNoAkiItem | MisfiledItem | HemolyzedExceptionItem;
 
 const task = (n: number) => refOf(`Task/task-t2-inbox-${n}`);
-const host = (key: 'pt-t2-marchetti' | 'pt-t2-kowalczyk' | 'pt-t2-castellano') => refOf(`Patient/${key}`);
+const host = (key: 'pt-t2-marchetti' | 'pt-t2-nowicki' | 'pt-t2-castellano') => refOf(`Patient/${key}`);
 
 const BASE_ITEMS: readonly Item[] = [
   {
@@ -149,7 +149,7 @@ const BASE_ITEMS: readonly Item[] = [
 export function leverItems(lever: readonly string[]): Item[] {
   const out: Item[] = [];
   if (lever.includes('A')) {
-    // The ED panel's creatinine of 1.36 (2026-10-08 14:05); the 7 days before it hold no creatinine
+    // The ED panel's creatinine of 1.36 (2026-09-26 14:05); the 7 days before it hold no creatinine
     // (0.90 on 03-12 is the last), and the 1.02 recheck at 19:30 is after it: not AKI, close.
     out.push({ key: 'marchetti_cr_ed', class: 'creatinine_no_aki', task: task(14), patient: host('pt-t2-marchetti'), sources: [refOf('Observation/obs-t2-hmed-cr')], creatinine: 1.36, action: 'close' });
   }
@@ -158,8 +158,8 @@ export function leverItems(lever: readonly string[]): Item[] {
     // the world id). Its 'LDCT in 3 months' from the 2026-09-25 exam is 2026-12-25, window plus or
     // minus 1 month: no LDCT or chest CT on her chart in it, no message to her about the fax.
     out.push({
-      key: 'kowalczyk_fax', class: 'misfiled', task: task(15), patient: host('pt-t2-kowalczyk'),
-      sources: [refOf('DocumentReference/doc-t2-jk-fax-1021'), host('pt-t2-kowalczyk')], document: refOf('DocumentReference/doc-t2-jk-fax-1021'),
+      key: 'nowicki_fax', class: 'misfiled', task: task(15), patient: host('pt-t2-nowicki'),
+      sources: [refOf('DocumentReference/doc-t2-jk-fax-1021'), host('pt-t2-nowicki')], document: refOf('DocumentReference/doc-t2-jk-fax-1021'),
       header: { birthDate: '1951-08-04', mrn: '4471-20' }, window: { start: '2026-11-25', end: '2027-01-25' }, action: 'close',
     });
   }
@@ -181,7 +181,7 @@ export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 // the silent creatinine of the batch, and the Patient record whose identifiers decide the fax.
 export const LEVER_ITEMS = [
   { id: 'A', kind: 'A', item: 'marchetti_cr_ed', event: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
-  { id: 'B', kind: 'B', item: 'kowalczyk_fax', sibling: [`Patient/${idOf('pt-t2-kowalczyk')}`] },
+  { id: 'B', kind: 'B', item: 'nowicki_fax', sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
   { id: 'reserve', kind: 'B', item: 'castellano_k_exception', sibling: [] },
 ] as const;
 
@@ -239,7 +239,7 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
   // W5-E A (R39): a St. Brigid batch files 1.48 at 10-22 18:40 (high, notified) and 0.88 at 10-21
   // 07:30 (normal, no inbox item). RBC-LAB-03 §3 against the 0.88: 0.60 over it within 48 hours,
   // and 1.68 times the lowest of the 7 days before (both halves, each clear of its line); against
-  // the held ED values of 10-08 (1.36, 1.02), 14 days before, neither half. §3 and §5: urgent repeat
+  // the held ED values of 09-26 (1.36, 1.02), 26 days before, neither half. §3 and §5: urgent repeat
   // BMP by Monday and tell her. The silent 0.88 decides, so the seen rule requires it (R39(b)).
   'marchetti-cr-batch': {
     action: 'order', policy: 'RBC-LAB-03 §3; RBC-INBOX-01 §5', takes: [], order: { codes: 'creatinine', priority: 'urgent', by: NEXT_BUSINESS_DAY }, contact: NEXT_BUSINESS_DAY,
@@ -247,7 +247,7 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
       { what: 'rise over the silent 0.88 of 10-21, 0.3 line', value: 1.48, line: 0.88 + 0.3, margin: 0.15 },
       { what: '1.5 times the silent 0.88, the 7-day half', value: 1.48, line: 1.5 * 0.88, margin: 0.15 },
       { what: 'hours after the silent 0.88, 48-hour window', value: 35.17, line: 48, margin: 12 },
-      { what: 'hours after the ED recheck of 10-08 19:30, 168-hour window', value: 335.17, line: 168, margin: 24 },
+      { what: 'hours after the ED recheck of 09-26 19:30, 168-hour window', value: 623.17, line: 168, margin: 24 },
     ],
   },
   // The A-twin (G4, matrix only, never active with A): the same batch shape with the notified

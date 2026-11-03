@@ -74,7 +74,7 @@ const TRAP: Record<string, string | null> = {
   aki_48h: SRC.crLpEd,
   normal_tsh: null,
   ...(LEVER.includes('A') ? { marchetti_cr_ed: null } : {}),
-  ...(LEVER.includes('B') ? { kowalczyk_fax: SRC.ptJk } : {}),
+  ...(LEVER.includes('B') ? { nowicki_fax: SRC.ptJk } : {}),
   ...(LEVER.includes('reserve') ? { castellano_k_exception: SRC.spironolactoneRc } : {}),
 };
 // The task.toml trap of each item's own class mutant.
@@ -87,7 +87,7 @@ const OWN_TRAP: Record<string, string> = {
   aki_48h: 'aki_48_hours',
   normal_tsh: 'normal_control',
   ...(LEVER.includes('A') ? { marchetti_cr_ed: 'batch_sibling_unread' } : {}),
-  ...(LEVER.includes('B') ? { kowalczyk_fax: 'misfiled_record_acted_on' } : {}),
+  ...(LEVER.includes('B') ? { nowicki_fax: 'misfiled_record_acted_on' } : {}),
   ...(LEVER.includes('reserve') ? { castellano_k_exception: 'hemolysis_exception_missed' } : {}),
 };
 const NEWEST_CREATININE = 'the creatinine list newest first shows it: its own results are the newest in the clinic, and the comparison value sits inside the window just below them';

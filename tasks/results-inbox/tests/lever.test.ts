@@ -66,7 +66,7 @@ describe('results-inbox lever toggles (W5-E)', () => {
 
   it.each(STATES.map((s) => [s.join('+'), s] as const))('state %s: leverItems and LEVER_SPECS hold exactly the active items', (_k, state) => {
     const keys = leverItems(state).map((x) => x.key).sort();
-    expect(keys).toEqual([...(state.includes('A') ? ['marchetti_cr_ed'] : []), ...(state.includes('B') ? ['kowalczyk_fax'] : []), ...(state.includes('reserve') ? ['castellano_k_exception'] : [])].sort());
+    expect(keys).toEqual([...(state.includes('A') ? ['marchetti_cr_ed'] : []), ...(state.includes('B') ? ['nowicki_fax'] : []), ...(state.includes('reserve') ? ['castellano_k_exception'] : [])].sort());
     const specs = state.flatMap((l) => LEVER_SPECS[l] ?? []);
     expect(specs).toEqual(state.includes('A') ? ['marchetti-cr-batch'] : []);
     // Each item's patient is its host (its world id while the host is in the registry, else its key).

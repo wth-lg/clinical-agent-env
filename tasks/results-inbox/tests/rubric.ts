@@ -261,8 +261,8 @@ const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
   'Patient/pt-0007': ['Leslie Parisian', 'his emergency visit of October 20 with its CT angiogram of the chest (no clot, no lung nodule on the final report), and his kidney blood test (creatinine) that rose since that emergency visit, a repeat test and the ibuprofen he was given there'],
   // W5-E's lever patients (overlay.ts LEVER_HOSTS), listed whatever LEVER holds so the criterion
   // reads the same in every lever state: a patient not on the queue is simply never messaged.
-  'Patient/pt-t2-marchetti': ['Helen Marchetti', 'her emergency visit of October 8 for vomiting and dehydration, her kidney blood tests (creatinine) there and from St. Brigid since, a repeat test, fluids and the naproxen she takes for her knee'],
-  'Patient/pt-t2-kowalczyk': ['Judith Kowalczyk', 'her lung cancer screening CT of June 2026 (negative) and a faxed radiology addendum filed to her chart that belongs to another person'],
+  'Patient/pt-t2-marchetti': ['Helen Marchetti', 'her emergency visit of September 26 for vomiting and dehydration, her kidney blood tests (creatinine) there and from St. Brigid since, a repeat test, fluids and the naproxen she takes for her knee'],
+  'Patient/pt-t2-nowicki': ['Judith Nowicki', 'her lung cancer screening CT of June 2026 (negative) and a faxed radiology addendum filed to her chart that belongs to another person'],
   'Patient/pt-t2-castellano': ['Raymond Castellano', 'his potassium of 6.3 on a blood sample of October 22 reported as damaged (hemolyzed), a repeat blood test (BMP) today, his spironolactone and his kidney function (eGFR 24)'],
 };
 // A patient's matters once an amend event on the patient's item has arrived (events.ts; builder-292,
@@ -274,7 +274,7 @@ const MATTERS_AFTER: Record<string, [patient: string, matters: string]> = {
 };
 // The lever hosts' keys resolved to their world ids while they are in the world (ids.ts); a host
 // not in the world keeps its key, which no message can name.
-const HOST_IDS: Readonly<Record<string, string>> = Object.fromEntries(['pt-t2-marchetti', 'pt-t2-kowalczyk', 'pt-t2-castellano'].map((key) => [`Patient/${key}`, `Patient/${idOf(key)}`]));
+const HOST_IDS: Readonly<Record<string, string>> = Object.fromEntries(['pt-t2-marchetti', 'pt-t2-nowicki', 'pt-t2-castellano'].map((key) => [`Patient/${key}`, `Patient/${idOf(key)}`]));
 const MATTERS: Record<string, [name: string, matters: string]> = Object.fromEntries(Object.entries(PATIENT_MATTERS).map(([p, m]) => [HOST_IDS[p] ?? p, m]));
 // Each patient's matters on the chart the trial's steps delivered: PATIENT_MATTERS, with the matters
 // of every amend event among `specs` that fired put in their patient's place.

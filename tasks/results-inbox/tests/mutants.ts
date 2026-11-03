@@ -349,7 +349,7 @@ function leverMutants(active: readonly string[]): Mutant[] {
   if (active.includes('marchetti-cr-batch')) {
     const one = (id: string, trap: string, vary: RecheckVary, why: string, fails: string[], label: 'reasoning' | 'retrieval' | 'process'): Mutant => ({ id, trap, why, fails, loses: [], items: { marchetti_cr_ed: label }, script: solve({ recheck: { 'marchetti-cr-batch': vary } }) });
     out.push(
-      one('marchetti-cr-batch_focus_only', 'batch_sibling_unread', 'focus_only', "Reads the batch's notified creatinine of 1.48 from the inbox, compares it with the ED values of 10-08 she already holds (14 days before, outside both windows of RBC-LAB-03 §3), and closes the arrival's item as not AKI: the silent 0.88 of the morning before, which decides, is never shown.", ['event_seen', 'amended'], 'retrieval'),
+      one('marchetti-cr-batch_focus_only', 'batch_sibling_unread', 'focus_only', "Reads the batch's notified creatinine of 1.48 from the inbox, compares it with the ED values of 09-26 she already holds (14 days before, outside both windows of RBC-LAB-03 §3), and closes the arrival's item as not AKI: the silent 0.88 of the morning before, which decides, is never shown.", ['event_seen', 'amended'], 'retrieval'),
       one('marchetti-cr-batch_routine_repeat', 'arrival_not_acted_on', 'routine', 'Lists her creatinines again, sees the 0.88 and the 1.48, and orders the repeat BMP routine in two weeks: a rise of 0.60 within 48 hours meets the AKI rule, which asks for an urgent repeat by the next business day.', ['amended'], 'reasoning'),
       one('marchetti-cr-batch_closed_without_link', 'closed_without_link', 'no_link', "Makes the correction for the batch and tells her, but completes the arrival's item linking only the result, so the closure does not show what closed the loop (RBC-INBOX-01 §3).", ['amended'], 'reasoning'),
     );
@@ -357,39 +357,39 @@ function leverMutants(active: readonly string[]): Mutant[] {
   if (LEVER.includes('B')) {
     out.push(
       {
-        id: 'kowalczyk_fax_ldct_ordered',
+        id: 'nowicki_fax_ldct_ordered',
         trap: 'misfiled_record_acted_on',
-        why: "Reads the faxed addendum and orders Judith Kowalczyk's screening LDCT for December 2026 on its 'LDCT in 3 months', although its header names another person's date of birth and MRN (RBC-INBOX-01 §1); her own LDCT of June was negative and her next is due next June.",
+        why: "Reads the faxed addendum and orders Judith Nowicki's screening LDCT for December 2026 on its 'LDCT in 3 months', although its header names another person's date of birth and MRN (RBC-INBOX-01 §1); her own LDCT of June was negative and her next is due next June.",
         fails: ['item_no_forbidden'],
         loses: [],
-        items: { kowalczyk_fax: 'over_action' },
-        script: solve({ plans: { kowalczyk_fax: { more: (w) => [w.order(PT.kowalczyk, LDCT, 'routine', '2026-12-20', 'Lung-RADS 4A addendum: LDCT in 3 months', { end: '2027-01-20', supporting: [SRC.faxJk] })], comment: 'Addendum: Lung-RADS 4A, LDCT in 3 months ordered.' } } }),
+        items: { nowicki_fax: 'over_action' },
+        script: solve({ plans: { nowicki_fax: { more: (w) => [w.order(PT.nowicki, LDCT, 'routine', '2026-12-20', 'Lung-RADS 4A addendum: LDCT in 3 months', { end: '2027-01-20', supporting: [SRC.faxJk] })], comment: 'Addendum: Lung-RADS 4A, LDCT in 3 months ordered.' } } }),
       },
       {
-        id: 'kowalczyk_fax_patient_messaged',
+        id: 'nowicki_fax_patient_messaged',
         trap: 'misfiled_record_acted_on',
-        why: "Reads the faxed addendum and messages Judith Kowalczyk about the new nodule it describes: the record is another person's, and the message discloses that person's result to her (the judged reply_names_other_patient penalty applies).",
+        why: "Reads the faxed addendum and messages Judith Nowicki about the new nodule it describes: the record is another person's, and the message discloses that person's result to her (the judged reply_names_other_patient penalty applies).",
         fails: ['item_no_forbidden'],
         loses: ['reply_names_other_patient'],
-        items: { kowalczyk_fax: 'over_action' },
-        script: solve({ plans: { kowalczyk_fax: { more: (w) => [w.message(`Patient/${PT.kowalczyk}`, 'urgent', 'Your lung screening CT', 'The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months. We will arrange it.', [SRC.faxJk])] } } }),
+        items: { nowicki_fax: 'over_action' },
+        script: solve({ plans: { nowicki_fax: { more: (w) => [w.message(`Patient/${PT.nowicki}`, 'urgent', 'Your lung screening CT', 'The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months. We will arrange it.', [SRC.faxJk])] } } }),
       },
       {
-        id: 'kowalczyk_fax_closed_unread',
+        id: 'nowicki_fax_closed_unread',
         trap: 'decision_without_deciding_fact',
         why: "Completes the fax item from its inbox summary without opening the document or the patient's record: the right disposition, reached without the identifiers it rests on.",
         fails: ['decisive_seen', 'result_seen_before_action', 'seen_before_change'],
         loses: [],
-        items: { kowalczyk_fax: 'retrieval' },
-        script: solve({ reads: readsWithout(ITEM_READS.kowalczyk_fax!) }),
+        items: { nowicki_fax: 'retrieval' },
+        script: solve({ reads: readsWithout(ITEM_READS.nowicki_fax!) }),
       },
       {
-        id: 'kowalczyk_fax_patient_unchecked',
+        id: 'nowicki_fax_patient_unchecked',
         trap: 'decision_without_deciding_fact',
-        why: "Reads the faxed addendum and closes its item as misfiled without ever looking at Judith Kowalczyk's own record: the right call, but the identifiers it turns on were never compared (RBC-INBOX-01 §1, R33).",
+        why: "Reads the faxed addendum and closes its item as misfiled without ever looking at Judith Nowicki's own record: the right call, but the identifiers it turns on were never compared (RBC-INBOX-01 §1, R33).",
         fails: ['decisive_seen', 'seen_before_change'],
         loses: [],
-        items: { kowalczyk_fax: 'retrieval' },
+        items: { nowicki_fax: 'retrieval' },
         script: solve({ reads: readsWithout([read(SRC.ptJk)]) }),
       },
     );

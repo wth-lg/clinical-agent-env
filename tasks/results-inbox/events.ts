@@ -43,7 +43,7 @@
 //                                                  with no item                    (and 1.68 times it): AKI; urgent
 //                                                                                  repeat BMP by 10-26, tell her.
 //                                                                                  Against the held ED values of
-//                                                                                  10-08 (14 days before) neither half
+//                                                                                  09-26 (26 days before) neither half
 //   marchetti-cr-batch-twin D     marchetti_cr_ed  the same batch shape: 1.42      RBC-LAB-03 §3: 0.12 over the 1.30
 //   (G4's A-twin, matrix only;                     notified, 1.30 silent           and 1.09 times it; neither half,
 //   never active with A)                                                           so no repeat; the notified value

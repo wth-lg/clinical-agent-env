@@ -27,7 +27,7 @@ const CORRECTED = ['corrected', 'amended'];
 // lever items (plan-amendment-w5), each present only while its patient is in the world (expected.ts
 // LEVER, overlay.ts LEVER_HOSTS): the derivation never reads LEVER, it classifies what the queue holds.
 const ORDER = ['nodule_scheduled', 'hemolyzed_note', 'corrected_down', 'eie_baseline', 'prelim_negative', 'aki_48h', 'normal_tsh'];
-const LEVER_ORDER = ['marchetti_cr_ed', 'kowalczyk_fax', 'castellano_k_exception'];
+const LEVER_ORDER = ['marchetti_cr_ed', 'nowicki_fax', 'castellano_k_exception'];
 // RBC-LAB-03 §2's exception (the reserve's sentence, expected.ts RESERVE_SENTENCE): a hemolyzed
 // potassium on a patient whose most recent eGFR is below 30, or who takes a potassium-raising drug,
 // is graded under §1. The rule is applied whether or not the sentence is in the policy file; while
@@ -178,7 +178,7 @@ export function derive(world: WorldView): Json {
       const interval = /\bLDCT in (\d+) months\b/.exec(words);
       if (!exam || !interval) throw new Error(`${key(focus)}: outside document names no exam date and interval`);
       const due = plusMonths(exam[1]!, Number(interval[1]));
-      put('kowalczyk_fax', { class: 'misfiled', ...base, sources: [key(focus), patient], document: key(focus), header: { birthDate: header[1]!, mrn: header[2]! }, window: { start: plusMonths(due, -1), end: plusMonths(due, 1) }, action: 'close' });
+      put('nowicki_fax', { class: 'misfiled', ...base, sources: [key(focus), patient], document: key(focus), header: { birthDate: header[1]!, mrn: header[2]! }, window: { start: plusMonths(due, -1), end: plusMonths(due, 1) }, action: 'close' });
       continue;
     }
     if (focus.resourceType !== 'DiagnosticReport') throw new Error(`${key(t)}: focus ${key(focus)} not classified`);

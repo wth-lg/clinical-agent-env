@@ -20,7 +20,7 @@ export const PT = {
   // W5-E's lever hosts (overlay.ts LEVER_HOSTS): in the world, and the registry, while their item
   // is in expected.ts LEVER; otherwise their key, which no script names.
   marchetti: idOf('pt-t2-marchetti'),
-  kowalczyk: idOf('pt-t2-kowalczyk'),
+  nowicki: idOf('pt-t2-nowicki'),
   castellano: idOf('pt-t2-castellano'),
 } as const;
 const lever = (_l: string, key: `${string}/${string}`) => refOf(key);
@@ -60,7 +60,7 @@ export const SRC = {
   crHmEd: lever('A', 'Observation/obs-t2-hmed-cr'),
   crHmRecheck: lever('A', 'Observation/obs-t2-hm-cr-recheck'),
   faxJk: lever('B', 'DocumentReference/doc-t2-jk-fax-1021'),
-  ptJk: `Patient/${PT.kowalczyk}`,
+  ptJk: `Patient/${PT.nowicki}`,
   ldctJk: lever('B', 'DiagnosticReport/dr-t2-jk-ldct-0610'),
   bmpRc: lever('reserve', 'DiagnosticReport/dr-t2-bmp-rc'),
   kRc: lever('reserve', 'Observation/obs-t2-rc-k'),
@@ -104,7 +104,7 @@ export const ITEM_READS: Record<string, ScriptCall[]> = {
   // base work pulls her creatinines, so the held comparator is on the chart before the batch.
   ...(LEVER.includes('A') ? { marchetti_cr_ed: [read(SRC.bmpHmEd), read(SRC.crHmEd), creatininesOf(PT.marchetti)] } : {}),
   // RBC-INBOX-01 §1: the fax, then the patient's own identifiers (the Patient record).
-  ...(LEVER.includes('B') ? { kowalczyk_fax: [read(SRC.faxJk), read(SRC.ptJk)] } : {}),
+  ...(LEVER.includes('B') ? { nowicki_fax: [read(SRC.faxJk), read(SRC.ptJk)] } : {}),
   ...(LEVER.includes('reserve') ? { castellano_k_exception: [read(SRC.bmpRc), read(SRC.kRc), activeOrdersOf(PT.castellano), egfrOf(PT.castellano)] } : {}),
 };
 
