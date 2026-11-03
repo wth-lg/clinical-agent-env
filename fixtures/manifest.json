@@ -2,27 +2,27 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "ndjson_sha256": "1e4ffcd69f40301d97ae6da29ac24ce3da4ce33b5deac64fe1647ab552c3308d",
-    "resources": 7411,
+    "state_hash": "116d1aaaf08fadd0a587d71e1a4ff6d2d6cc700f494d5e0b1977a3680a51c9d6",
+    "ndjson_sha256": "0c745c03359200cde399e50f588acdefd4f638403b2591b5db54b274e0792435",
+    "resources": 7465,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
       "Communication": 13,
-      "Condition": 889,
-      "DiagnosticReport": 483,
-      "DocumentReference": 214,
-      "Encounter": 407,
+      "Condition": 894,
+      "DiagnosticReport": 487,
+      "DocumentReference": 218,
+      "Encounter": 412,
       "EpisodeOfCare": 2,
       "Group": 5,
-      "MedicationRequest": 422,
-      "Observation": 3552,
+      "MedicationRequest": 427,
+      "Observation": 3579,
       "Organization": 10,
-      "Patient": 60,
+      "Patient": 62,
       "Practitioner": 20,
       "Procedure": 1251,
       "ServiceRequest": 3,
-      "Task": 26
+      "Task": 28
     }
   },
   "base": {
@@ -84,7 +84,7 @@
     "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
     "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
     "tasks/renal-dose-review/overlay.ts": "634fa927a66ea136a0a8094906eac5282f74d0b6e20c87b47df97f84b86c47e5",
-    "tasks/results-inbox/overlay.ts": "8091851412792e2f1096db877410f38449941aa3fbaf3e38f815843e11682c3c"
+    "tasks/results-inbox/overlay.ts": "d0cd020a8330a5e55939bc8b4abe6d5cbc3c256f4e0a36465afd019b340ee277"
   },
   "definitions": {
     "file": "fixtures/definitions-pruned.json",
@@ -113,7 +113,7 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "8b00435b1f49261b6d265f7bb0183a0d485630b719025af2cc8b2775e60ceb39",
+    "sha256": "7eb7ec8fe6345a736c323aa88c90bbfc7ac63c555abd7c328c3d3baa695b2d1d",
     "synthea_file": "fixtures/synthea-ids.ts",
     "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }

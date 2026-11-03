@@ -13,9 +13,10 @@
 // order a new one as well as modify' has no T2 case: every correction here adds an order or a
 // notice, and no event changes an order the trial placed. Each declares the rubric items it loses.
 import type { Alternative, Script, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { ACTIVE, SPECS } from '../events.ts';
+import { ARRIVAL, ACTIVE, SPECS } from '../events.ts';
+import { LEVER } from '../expected.ts';
 import { BMP, LDCT, solve as solveWith, type Options } from '../solution/solve.ts';
-import { creatininesOf, inbox, ITEM_READS, policies, PT, read, readsWithout, searchNotes, SRC, type Writer } from '../solution/steps.ts';
+import { creatininesOf, egfrOf, inbox, ITEM_READS, policies, PT, read, readsWithout, searchNotes, SRC, type Writer } from '../solution/steps.ts';
 
 // A page to on-call about the item's result whose about also names another patient's result: the
 // tool refuses it (a message is about at most one patient), so nothing is committed.
@@ -219,8 +220,49 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
     why: "Sees Leslie Parisian's final CT angiogram report only through a note search for 'follow-up', whose snippet shows 'is a vessel. No follow-up imaging needed for the lungs' and not 'no pulmonary nodule', and closes the item with no chest CT as the oracle does.",
     script: solve({ reads: snippetInstead('prelim_negative', SRC.cta, searchNotes('follow-up', PT.parisian)) }),
   },
+  ...leverAlternatives(active),
   ...eventAlternatives(active),
   ] satisfies Alternative[];
+}
+
+// W5-E: the lever items' other correct routes (plan-amendment-w5 "T2 results-inbox" alternatives),
+// present while each item is in LEVER. For the batch (A): the silent sibling shown by a date-bounded
+// Observation search with no code filter, by reading it, by a sorted run of one-row pages past the
+// 48-hour edge (R36), and a stat repeat in place of urgent (R3); told_by_call is generic. For the
+// fax (B): the item reassigned, cancelled, or closed with staff tasked to return it; her own annual
+// LDCT ordered for next June, outside the fax's window (R3); her identifiers seen by a patient
+// search instead of the Patient read. For the reserve: the spironolactone reduced instead of held,
+// on-call told by a task, the exception seen through either record alone (R21).
+function leverAlternatives(active: readonly string[]): Alternative[] {
+  const solve = (o: Options = {}) => solveWith({ active, ...o });
+  const out: Alternative[] = [];
+  if (active.includes('marchetti-cr-batch')) {
+    const route = (id: string, why: string, more: ScriptCall[]): Alternative => ({ id, why, script: solve({ recheckReads: { 'marchetti-cr-batch': more } }) });
+    out.push(
+      route('marchetti-cr-batch_sibling_by_date', "Reads the batch's 1.48, then lists her results from 2026-10-20 with no code filter: the silent 0.88 of 10-21 is among them, and the correction is the oracle's.", [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.marchetti, date_ge: '2026-10-20' } }]),
+      route('marchetti-cr-batch_sibling_read', "Reads the batch's 1.48, then the 0.88 itself (its id shown by a creatinine search page of one row that lists the 1.48 first), and corrects as the oracle does.", [{ name: 'fhir_search', input: { ...creatininesOf(PT.marchetti).input, count: 1 } }, read(`Observation/${ARRIVAL.marchettiCrSilent}`)]),
+      route('marchetti-cr-batch_sorted_pages_past_edge', 'Lists her creatinines one at a time, newest first, to the page of 10-08, past the 48-hour window of the 1.48 (R36), and corrects as the oracle does.', [0, 1, 2].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.marchetti).input, count: 1, ...(offset ? { offset } : {}) } }))),
+      { id: 'marchetti-cr-batch_stat_repeat', why: 'Sees both creatinines of the batch and repeats the BMP stat today instead of urgent by Monday (a priority above the policy\'s, R3), telling her as the oracle does.', script: solve({ recheck: { 'marchetti-cr-batch': 'stat' } }) },
+    );
+  }
+  if (LEVER.includes('B')) {
+    out.push(
+      { id: 'kowalczyk_fax_reassigned', why: 'Reads the fax and the patient\'s record, writes why it is not hers, and reassigns the item to scheduling to return the fax to Lakeshore, leaving it open.', script: solve({ plans: { kowalczyk_fax: { close: 'reassign', comment: "Misfiled: another Judith Kowalczyk (DOB 1951-08-04, MRN 4471-20). Please return the fax to Lakeshore Imaging and ask them to refile; nothing to act on for this patient." } } }) },
+      { id: 'kowalczyk_fax_cancelled', why: 'Reads the fax and the patient\'s record and cancels the item with a comment that the record is another person\'s.', script: solve({ plans: { kowalczyk_fax: { close: 'cancel' } } }) },
+      { id: 'kowalczyk_fax_staff_task', why: 'Closes the fax item as misfiled and tasks the scheduling pool to return the fax to Lakeshore (a task focused on the fax that asks no one to contact the patient).', script: solve({ plans: { kowalczyk_fax: { more: (w) => [w.task(PT.kowalczyk, 'Group/pool-scheduling', '2026-10-26', 'routine', 'Return this faxed Lakeshore addendum: it is another patient\'s (DOB 1951-08-04, MRN 4471-20), filed here by name. Ask Lakeshore to refile it; do not forward it to the patient.', SRC.faxJk)] } } }) },
+      { id: 'kowalczyk_fax_own_annual_ldct', why: "Closes the fax item as misfiled and, since her own screening LDCT of June 2026 was Lung-RADS 1 with annual screening recommended, orders her next screening LDCT for June 2027: her own schedule, outside the fax's window (R3).", script: solve({ plans: { kowalczyk_fax: { more: (w) => [w.order(PT.kowalczyk, LDCT, 'routine', '2027-06-10', 'Annual lung cancer screening LDCT (Lung-RADS 1 on 2026-06-10)', { end: '2027-07-10', supporting: [SRC.ldctJk] })] } } }) },
+      { id: 'kowalczyk_fax_identity_by_search', why: "Sees Judith Kowalczyk's date of birth and MRN on a patient search row instead of reading her record, and closes the fax item as the oracle does.", script: solve({ reads: swapRead(read(SRC.ptJk), [{ name: 'search_patients', input: { name: 'kowalczyk' } }]) }) },
+    );
+  }
+  if (LEVER.includes('reserve')) {
+    out.push(
+      { id: 'castellano_k_exception_dose_reduced', why: 'Pages on-call at stat, orders the stat BMP, and halves the spironolactone to 12.5 mg daily instead of holding it ("hold or reduce it where that is safe").', script: solve({ plans: { castellano_k_exception: { more: (w) => [w.other({ name: 'change_medication', input: { medication_request: SRC.spironolactoneRc, action: 'modify', reason: 'Potassium 6.3 with eGFR 24: reduce pending the stat repeat (RBC-LAB-03 §1)', new_dose: { value: 12.5, unit: 'mg', frequency: 'daily' } } })] } } }) },
+      { id: 'castellano_k_exception_oncall_task', why: 'Tells on-call by a stat task for the patient instead of a message, holds the spironolactone and orders the stat BMP as the oracle does.', script: solve({ plans: { castellano_k_exception: { oncall: { via: 'task', priority: 'stat' } } } }) },
+      { id: 'castellano_k_exception_drug_only', why: 'Sees his spironolactone on the active orders and applies the exception on it alone, never looking up his eGFR (either record makes the sentence apply, R21).', script: solve({ reads: readsWithout([egfrOf(PT.castellano)]) }) },
+      { id: 'castellano_k_exception_egfr_only', why: 'Sees his eGFR of 24 and applies the exception on it alone, never listing his medications (R21); the oracle\'s hold of the spironolactone stands on the order it names.', script: solve({ reads: readsWithout([ITEM_READS.castellano_k_exception![2]!]) }) },
+    );
+  }
+  return out;
 }
 export const alternatives: Alternative[] = alternativesFor();
 

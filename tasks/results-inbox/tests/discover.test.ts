@@ -34,7 +34,7 @@ import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { cases, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
-import { expected } from '../expected.ts';
+import { expected, LEVER } from '../expected.ts';
 import { SRC } from '../solution/steps.ts';
 import { finish } from '../solution/steps.ts';
 import { SPECS } from '../events.ts';
@@ -61,6 +61,10 @@ export const BROAD: ScriptCall[] = [
 export const TARGETED: ScriptCall[] = ['hemolyzed', 'corrected', 'entered in error', 'preliminary', 'final', 'lung cancer screening', 'creatinine', 'nodule', 'urgent'].map((query) => ({ name: 'search_notes', input: { query } }));
 
 // Each item's trap-deciding record; the filler has none.
+// W5-E: the A host's base item has no trap in the world (its batch is an arrival, graded by the
+// event gates); the fax item's trap-deciding record is the Patient record, whose identifiers no
+// broad search shows (list_inbox references patients; search_patients is a targeted route); the
+// reserve's is its spironolactone order, which no broad first search lists.
 const TRAP: Record<string, string | null> = {
   nodule_scheduled: SRC.ldctRp,
   hemolyzed_note: SRC.kC,
@@ -69,6 +73,9 @@ const TRAP: Record<string, string | null> = {
   prelim_negative: SRC.cta,
   aki_48h: SRC.crLpEd,
   normal_tsh: null,
+  ...(LEVER.includes('A') ? { marchetti_cr_ed: null } : {}),
+  ...(LEVER.includes('B') ? { kowalczyk_fax: SRC.ptJk } : {}),
+  ...(LEVER.includes('reserve') ? { castellano_k_exception: SRC.spironolactoneRc } : {}),
 };
 // The task.toml trap of each item's own class mutant.
 const OWN_TRAP: Record<string, string> = {
@@ -79,6 +86,9 @@ const OWN_TRAP: Record<string, string> = {
   prelim_negative: 'preliminary_positive_final_negative',
   aki_48h: 'aki_48_hours',
   normal_tsh: 'normal_control',
+  ...(LEVER.includes('A') ? { marchetti_cr_ed: 'batch_sibling_unread' } : {}),
+  ...(LEVER.includes('B') ? { kowalczyk_fax: 'misfiled_record_acted_on' } : {}),
+  ...(LEVER.includes('reserve') ? { castellano_k_exception: 'hemolysis_exception_missed' } : {}),
 };
 const NEWEST_CREATININE = 'the creatinine list newest first shows it: its own results are the newest in the clinic, and the comparison value sits inside the window just below them';
 const OWN_RESULT = 'the deciding fact is on the item\'s own result (status, comment or conclusion), the newest of its kind in the clinic';

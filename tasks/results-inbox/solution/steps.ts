@@ -5,7 +5,8 @@
 // script makes them. Calls run in order, so a script must take its writes from one Writer in
 // that same order. A rejected write takes no number.
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { ref } from '../ids.ts';
+import { LEVER } from '../expected.ts';
+import { idOf, ref, refOf } from '../ids.ts';
 
 export const PT = {
   marsh: 'pt-0013',
@@ -16,9 +17,15 @@ export const PT = {
   holloway: 'pt-0010',
   ruiz: 'pt-0053',
   ondricka: 'pt-0016',
+  // W5-E's lever hosts (overlay.ts LEVER_HOSTS): in the world, and the registry, while their item
+  // is in expected.ts LEVER; otherwise their key, which no script names.
+  marchetti: idOf('pt-t2-marchetti'),
+  kowalczyk: idOf('pt-t2-kowalczyk'),
+  castellano: idOf('pt-t2-castellano'),
 } as const;
+const lever = (_l: string, key: `${string}/${string}`) => refOf(key);
 
-export const ITEM = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}`);
+export const ITEM = (n: number) => refOf(`Task/task-t2-inbox-${n}`);
 export const SRC = {
   ct: ref('DiagnosticReport/dr-t2-ct-0604'),
   ldct: ref('DiagnosticReport/dr-t2-ldct-0915'),
@@ -48,6 +55,17 @@ export const SRC = {
   bmpLm: ref('DiagnosticReport/dr-t2-bmp-lm'),
   crLm: ref('Observation/obs-t2-lm-cr'),
   crLmUc: ref('Observation/obs-t2-lmuc-cr'),
+  // W5-E lever hosts.
+  bmpHmEd: lever('A', 'DiagnosticReport/dr-t2-bmp-hmed'),
+  crHmEd: lever('A', 'Observation/obs-t2-hmed-cr'),
+  crHmRecheck: lever('A', 'Observation/obs-t2-hm-cr-recheck'),
+  faxJk: lever('B', 'DocumentReference/doc-t2-jk-fax-1021'),
+  ptJk: `Patient/${PT.kowalczyk}`,
+  ldctJk: lever('B', 'DiagnosticReport/dr-t2-jk-ldct-0610'),
+  bmpRc: lever('reserve', 'DiagnosticReport/dr-t2-bmp-rc'),
+  kRc: lever('reserve', 'Observation/obs-t2-rc-k'),
+  egfrRc: lever('reserve', 'Observation/obs-t2-rc-egfr'),
+  spironolactoneRc: lever('reserve', 'MedicationRequest/mr-t2-rc-spironolactone'),
 } as const;
 
 const split = (ref: string) => ref.split('/') as [string, string];
@@ -70,6 +88,10 @@ export const creatininesOf = (patient: string): ScriptCall => ({ name: 'fhir_sea
 
 // The reads behind each item, in inbox order. A lab panel's report shows only references to its
 // members, so the member the item turns on is read too.
+// A patient's active orders: how the oracle finds the potassium-raising drug of the reserve item.
+export const activeOrdersOf = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient, status: 'active' } });
+// A patient's eGFR results, newest first (RESERVE_SENTENCE's "most recent eGFR").
+export const egfrOf = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient, code: '98979-8,33914-3,62238-1', sort: '-date' } });
 export const ITEM_READS: Record<string, ScriptCall[]> = {
   nodule_scheduled: [read(SRC.ctRp), reportsOf(PT.patel), read(SRC.ldctRp)],
   hemolyzed_note: [read(SRC.bmpC), read(SRC.kC)],
@@ -78,6 +100,12 @@ export const ITEM_READS: Record<string, ScriptCall[]> = {
   eie_baseline: [read(SRC.bmpCw), read(SRC.crCw), creatininesOf(PT.whitfield)],
   prelim_negative: [read(SRC.ctaPrelim), reportsOf(PT.parisian), read(SRC.cta)],
   aki_48h: [read(SRC.bmpLp), read(SRC.crLp), creatininesOf(PT.parisian)],
+  // W5-E (each only while its item is in LEVER; solve.ts reads the items that exist). The A host's
+  // base work pulls her creatinines, so the held comparator is on the chart before the batch.
+  ...(LEVER.includes('A') ? { marchetti_cr_ed: [read(SRC.bmpHmEd), read(SRC.crHmEd), creatininesOf(PT.marchetti)] } : {}),
+  // RBC-INBOX-01 §1: the fax, then the patient's own identifiers (the Patient record).
+  ...(LEVER.includes('B') ? { kowalczyk_fax: [read(SRC.faxJk), read(SRC.ptJk)] } : {}),
+  ...(LEVER.includes('reserve') ? { castellano_k_exception: [read(SRC.bmpRc), read(SRC.kRc), activeOrdersOf(PT.castellano), egfrOf(PT.castellano)] } : {}),
 };
 
 // The oracle's reads: the inbox, the policies, then each item's records in one answer per item.
@@ -156,4 +184,4 @@ export function writer() {
 }
 export type Writer = ReturnType<typeof writer>;
 
-export const DONE = 'Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.';
+export const DONE = 'Results inbox cleared: every item completed with its follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.';

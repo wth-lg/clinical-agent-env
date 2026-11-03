@@ -10,6 +10,7 @@ import { rubric as item, type Check, type RubricCtx, type StateView, type Step }
 import { arrivalOf } from '../../../packages/grader/events.ts';
 import { clinicDate } from '../../../packages/grader/normalize.ts';
 import { expected, type Item } from '../expected.ts';
+import { idOf } from '../ids.ts';
 import { oncall, patientOf, type NotifyCtx, type Res as Made } from './notify.ts';
 
 const split = (ref: string) => ref.split('/') as [string, string];
@@ -204,6 +205,12 @@ const FINDINGS: Record<string, Finding> = {
     finding: 'a creatinine of 1.64 mg/dL, up from 0.98 mg/dL 34 hours earlier: acute kidney injury',
     contrary: 'a stable or unchanged creatinine, a normal kidney function needing no repeat, or a creatinine that fell',
   },
+  // W5-E reserve (in the list only while 'reserve' is in LEVER).
+  castellano_k_exception: {
+    result: 'basic metabolic panel of 2026-10-22, with his eGFR of 24 on 2026-10-02 and his spironolactone',
+    finding: 'a potassium of 6.3 mmol/L on a hemolyzed specimen, on a patient with an eGFR below 30 who takes spironolactone, so it is handled as a true critical potassium: a stat repeat, on-call notified and the spironolactone held',
+    contrary: 'a normal potassium, a potassium that needs only a routine repeat because the specimen was hemolyzed, or a normal kidney function',
+  },
 };
 // The finding as the chart delivers it once an amend event on the item has arrived (events.ts): the
 // notes are read against it, and a note written before the arrival may state the first report.
@@ -252,6 +259,11 @@ const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
   'Patient/pt-0016': ['Edra Ondricka', 'her normal thyroid (TSH) result, her potassium result (filed as 6.3, corrected to a normal 4.4) and a stool test (FIT) result filed to her chart in error'],
   'Patient/pt-0033': ['Carol Whitfield', 'her kidney blood test (creatinine) and her chronic kidney disease'],
   'Patient/pt-0007': ['Leslie Parisian', 'his emergency visit of October 20 with its CT angiogram of the chest (no clot, no lung nodule on the final report), and his kidney blood test (creatinine) that rose since that emergency visit, a repeat test and the ibuprofen he was given there'],
+  // W5-E's lever patients (overlay.ts LEVER_HOSTS), listed whatever LEVER holds so the criterion
+  // reads the same in every lever state: a patient not on the queue is simply never messaged.
+  'Patient/pt-t2-marchetti': ['Helen Marchetti', 'her emergency visit of October 8 for vomiting and dehydration, her kidney blood tests (creatinine) there and from St. Brigid since, a repeat test, fluids and the naproxen she takes for her knee'],
+  'Patient/pt-t2-kowalczyk': ['Judith Kowalczyk', 'her lung cancer screening CT of June 2026 (negative) and a faxed radiology addendum filed to her chart that belongs to another person'],
+  'Patient/pt-t2-castellano': ['Raymond Castellano', 'his potassium of 6.3 on a blood sample of October 22 reported as damaged (hemolyzed), a repeat blood test (BMP) today, his spironolactone and his kidney function (eGFR 24)'],
 };
 // A patient's matters once an amend event on the patient's item has arrived (events.ts; builder-292,
 // G3, pilot-4a results-inbox/0-2): the criterion names what the chart as delivered says, so a reply
@@ -260,14 +272,18 @@ const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
 const MATTERS_AFTER: Record<string, [patient: string, matters: string]> = {
   'brennan-k-corrected': ['Patient/pt-0008', 'his potassium result of 6.4 on a blood sample of October 22, first reported as damaged (hemolyzed) and corrected by the laboratory on October 23: the sample was not damaged (not hemolyzed), so his 6.4 is a true high potassium; a repeat blood test (BMP) and an on-call notice about it'],
 };
+// The lever hosts' keys resolved to their world ids while they are in the world (ids.ts); a host
+// not in the world keeps its key, which no message can name.
+const HOST_IDS: Readonly<Record<string, string>> = Object.fromEntries(['pt-t2-marchetti', 'pt-t2-kowalczyk', 'pt-t2-castellano'].map((key) => [`Patient/${key}`, `Patient/${idOf(key)}`]));
+const MATTERS: Record<string, [name: string, matters: string]> = Object.fromEntries(Object.entries(PATIENT_MATTERS).map(([p, m]) => [HOST_IDS[p] ?? p, m]));
 // Each patient's matters on the chart the trial's steps delivered: PATIENT_MATTERS, with the matters
 // of every amend event among `specs` that fired put in their patient's place.
 export function mattersAt(steps: readonly Step[], specs: readonly EventSpec[]): Record<string, [name: string, matters: string]> {
-  const out = { ...PATIENT_MATTERS };
+  const out = { ...MATTERS };
   for (const s of specs) {
     const after = MATTERS_AFTER[s.id];
     if (after === undefined || !AMEND_CLASSES.has(s.class) || arrivalOf(steps, s.id) === null) continue;
-    out[after[0]] = [PATIENT_MATTERS[after[0]]![0], after[1]];
+    out[after[0]] = [MATTERS[after[0]]![0], after[1]];
   }
   return out;
 }

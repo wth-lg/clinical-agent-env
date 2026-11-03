@@ -22,7 +22,7 @@ import type { Task, TaskSource } from '../../../packages/core/tasks.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/grader/matrix/matrix.ts';
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
-import { EVENTS, expected } from '../expected.ts';
+import { EVENTS, expected, LEVER } from '../expected.ts';
 import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
@@ -64,10 +64,12 @@ async function run(at: { env: MatrixEnv; task: MatrixTask }, kind: 'oracle' | 'a
 }
 
 describe('T2 event specs', () => {
-  it('authors e_max = 8 specs; ACTIVE is one class A, B and O amend and one class D lure', () => {
-    expect(SPECS).toHaveLength(8);
+  it('authors e_max = 8 specs plus the W5-E batch and its twin; ACTIVE is one class A, B and O amend and one class D lure, plus the batch while A is in LEVER', () => {
+    expect(SPECS).toHaveLength(10);
     const active = activeSpecs({ SPECS, ACTIVE });
-    expect(active.map((s) => s.class).sort()).toEqual(['A', 'B', 'D', 'O']);
+    expect(active.map((s) => s.class).sort()).toEqual(LEVER.includes('A') ? ['A', 'A', 'B', 'D', 'O'] : ['A', 'B', 'D', 'O']);
+    expect(ACTIVE.includes('marchetti-cr-batch')).toBe(LEVER.includes('A'));
+    expect(ACTIVE.includes('marchetti-cr-batch-twin')).toBe(false);
   });
 
   it('each spec bears on a list item; at most one amend event per item (a lure may be a second event)', () => {
@@ -87,13 +89,19 @@ describe('T2 event specs', () => {
     }
   });
 
-  // R38(g): an arrival is seen only when its deciding atoms are. Every T2 arrival is one resource,
+  // R38(g), R39(b): an arrival is seen only when its deciding atoms are. A one-resource arrival is
   // its focus, which holds the deciding value; the seen rule (grader.ts seenRule) is exposure of it
   // after the arrival (a fhir_search row of a note or report is only referenced, a list_inbox row
-  // only points at it) or a snippet that shows its atoms (EVENT_ATOMS). A spec with a second
-  // resource needs a rule for the resource that holds its deciding value, and this test stops it.
-  it('R38(g): every arrival is one resource, its focus, which holds the deciding value', () => {
-    for (const s of SPECS) expect([s.id, s.resources.length]).toEqual([s.id, 1]);
+  // only points at it) or a snippet that shows its atoms (EVENT_ATOMS). An arrival of several
+  // resources (W5-E's batch) declares a seen rule for every one (seenBy), so the gates name each
+  // in decisive_ids, and the whole is seen only when the last of them is.
+  it('R38(g), R39(b): a one-resource arrival is its focus; a batch declares a seen rule per resource', () => {
+    for (const s of SPECS) {
+      const keys = s.resources.map((r) => `${r.resourceType}/${r.id}`);
+      if (keys.length === 1) continue;
+      const seen = checksFor([s]).find((c) => c.kind === 'gate' && c.id === 'event_seen')!;
+      expect([...seen.decisive_ids].sort(), s.id).toEqual([...keys].sort());
+    }
   });
 
   it("Addendum 2: every trigger is after_write on the item's own patient, whose inbox items every passing route completes", () => {

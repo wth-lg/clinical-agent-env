@@ -1,5 +1,5 @@
 import { syntheaRef } from '../../packages/env/synthea-ids.ts';
-import { ref } from './ids.ts';
+import { idOf, ref, refOf } from './ids.ts';
 // T2's expected end state, written by hand from the overlay (overlay.ts) and the policies: each inbox
 // item, its class, its decisive sources and what the policies make of it. policy.ts computes the same
 // from the initial world, and the matrix fails when the two differ. The grader reads its targets from
@@ -25,10 +25,37 @@ import { ref } from './ids.ts';
 // (9) and aki_7day (13). The mid-trial events on these items are in events.ts; EVENTS below states
 // what each one makes of its item on the chart as delivered (plan-amendment-w4 C1).
 // The duplicate-draw class of the plan's T2 list is dropped: no dated source states its rule (report).
+//
+// W5-E (plan-amendment-w5 "T2 results-inbox", G1): three lever items on three patients the overlay
+// adds (overlay.ts LEVER_HOSTS), each a toggle in LEVER below. An inactive item's patient, list
+// entry, event and policy sentence are all absent; the loader hashes LEVER into env_version
+// (packages/core/tasks.ts leverOf) and the overlay reads the same literal, so toggling B or the
+// reserve is a world rebuild, toggling A is not (its arrival lives in events.ts).
+//   A        marchetti_cr_ed (item 14): a creatinine item that closes (RBC-LAB-03 §3 not met) and
+//            hosts the A event marchetti-cr-batch: a St. Brigid batch of two creatinines, the high
+//            one notified and the normal one filed silently; against the silent one the notified
+//            value is AKI (§3's 48-hour and 7-day halves both), against the held ED values it is not
+//   B        kowalczyk_fax (item 15): a Lakeshore addendum faxed to the wrong chart; its header's
+//            date of birth and MRN are another person's (RBC-INBOX-01 §1): no order and no notice
+//            on her chart from it, the item's disposition ungraded (R38(b))
+//   reserve  castellano_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
+//            mineralocorticoid antagonist with an eGFR of 24; RBC-LAB-03 §2 gains RESERVE_SENTENCE
+//            only while it is active, and §1 then applies
+// Toggling (W5-S): change LEVER here; for B or the reserve run `pnpm fixtures:build` and commit its
+// outputs; for the reserve also append RESERVE_SENTENCE to RBC-LAB-03 §2 (policy/rbc-lab-03.md,
+// version 3) and add "hemolysis_exception_missed" to task.toml [matrix] traps; then refill the judge
+// cache (`pnpm cli oracle --task results-inbox --live-judge --misses-only`). tests/lever.test.ts
+// checks each of these against LEVER.
 export const NEXT_BUSINESS_DAY = '2026-10-26';
 export const TODAY = '2026-10-23';
 
-export const CLASSES = ['nodule_screening', 'hemolyzed', 'corrected', 'entered_in_error', 'preliminary', 'aki', 'filler'] as const;
+// The active lever items, one literal list (packages/core/tasks.ts leverOf reads this text).
+export const LEVER = ['A', 'B'];
+// RBC-LAB-03 §2's sentence while the reserve is active, word for word (lever.test.ts): the policy
+// file holds it exactly when 'reserve' is in LEVER.
+export const RESERVE_SENTENCE = "This does not apply when the patient's most recent eGFR is below 30 or the patient takes a potassium-raising drug (an ACE inhibitor, ARB, mineralocorticoid antagonist or potassium supplement); then §1 applies.";
+
+export const CLASSES = ['nodule_screening', 'hemolyzed', 'corrected', 'entered_in_error', 'preliminary', 'aki', 'filler', 'creatinine_no_aki', 'misfiled', 'hemolyzed_exception'] as const;
 export type Class = (typeof CLASSES)[number];
 
 interface Base {
@@ -57,11 +84,25 @@ export interface WithdrawnItem extends Base { class: 'entered_in_error'; withdra
 export interface PreliminaryItem extends Base { class: 'preliminary'; final: string; report_date: string; by?: string }
 export interface AkiItem extends Base { class: 'aki'; creatinine: number; compare: string; compare_value: number; rule: '48h' | '7d'; by: string }
 export interface FillerItem extends Base { class: 'filler' }
-export type Item = NoduleItem | HemolyzedItem | CorrectedItem | WithdrawnItem | PreliminaryItem | AkiItem | FillerItem;
+// W5-E. A creatinine that meets neither half of RBC-LAB-03 §3 and has no withdrawn comparison
+// value: close, no order (§3 "needs no action under this section", RBC-INBOX-01 §4). Its decisive
+// record is the result; the 7 days before it hold no creatinine, so no window review is gated
+// (a disclosed R34 limit, docs/tasks.md).
+export interface CreatinineNoAkiItem extends Base { class: 'creatinine_no_aki'; creatinine: number }
+// An outside document filed to the wrong chart: its header's date of birth and MRN (header) are
+// not the patient's (RBC-INBOX-01 §1, R33: the Patient record decides). No order in `window`, the
+// interval the document recommends, and no notice to the patient about it; disposition ungraded.
+export interface MisfiledItem extends Base { class: 'misfiled'; document: string; header: { birthDate: string; mrn: string }; window: { start: string; end: string } }
+// A hemolyzed potassium of 6.0 or higher where RESERVE_SENTENCE makes §1 apply: a stat on-call
+// notice, a stat BMP today, the potassium-raising drug held or reduced, the patient told by Monday.
+// The drug and the eGFR are any-of decisive (R21): either makes the sentence apply.
+export interface HemolyzedExceptionItem extends Base { class: 'hemolyzed_exception'; k: number; by: string; drug: string; egfr: string }
+export type Item = NoduleItem | HemolyzedItem | CorrectedItem | WithdrawnItem | PreliminaryItem | AkiItem | FillerItem | CreatinineNoAkiItem | MisfiledItem | HemolyzedExceptionItem;
 
-const task = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}`);
+const task = (n: number) => refOf(`Task/task-t2-inbox-${n}`);
+const host = (key: 'pt-t2-marchetti' | 'pt-t2-kowalczyk' | 'pt-t2-castellano') => refOf(`Patient/${key}`);
 
-export const items: readonly Item[] = [
+const BASE_ITEMS: readonly Item[] = [
   {
     // 4 mm nodule on the October CT urogram, followed by the screening LDCT of 2026-04-14 (Lung-RADS
     // 2, annual): the next one is due 2027-04-14, window 2027-03-14 to 2027-05-14. Without the
@@ -102,6 +143,47 @@ export const items: readonly Item[] = [
   },
   { key: 'normal_tsh', class: 'filler', task: task(7), patient: 'Patient/pt-0016', sources: [ref('Observation/obs-t2-tsh-1020')], action: 'close' },
 ];
+
+// The lever items (LEVER_HOSTS), each in the list while its id is in `lever`. Their ids resolve only
+// on a world built in that state (fixtures/ids.ts), so the table is built on demand.
+export function leverItems(lever: readonly string[]): Item[] {
+  const out: Item[] = [];
+  if (lever.includes('A')) {
+    // The ED panel's creatinine of 1.36 (2026-10-08 14:05); the 7 days before it hold no creatinine
+    // (0.90 on 03-12 is the last), and the 1.02 recheck at 19:30 is after it: not AKI, close.
+    out.push({ key: 'marchetti_cr_ed', class: 'creatinine_no_aki', task: task(14), patient: host('pt-t2-marchetti'), sources: [refOf('Observation/obs-t2-hmed-cr')], creatinine: 1.36, action: 'close' });
+  }
+  if (lever.includes('B')) {
+    // The fax's header: DOB 1951-08-04 and MRN 4471-20, neither hers (1960-03-22; her MRN follows
+    // the world id). Its 'LDCT in 3 months' from the 2026-09-25 exam is 2026-12-25, window plus or
+    // minus 1 month: no LDCT or chest CT on her chart in it, no message to her about the fax.
+    out.push({
+      key: 'kowalczyk_fax', class: 'misfiled', task: task(15), patient: host('pt-t2-kowalczyk'),
+      sources: [refOf('DocumentReference/doc-t2-jk-fax-1021'), host('pt-t2-kowalczyk')], document: refOf('DocumentReference/doc-t2-jk-fax-1021'),
+      header: { birthDate: '1951-08-04', mrn: '4471-20' }, window: { start: '2026-11-25', end: '2027-01-25' }, action: 'close',
+    });
+  }
+  if (lever.includes('reserve')) {
+    // K 6.3 hemolyzed; spironolactone active and eGFR 24 on 10-02: RESERVE_SENTENCE, so §1.
+    out.push({
+      key: 'castellano_k_exception', class: 'hemolyzed_exception', task: task(16), patient: host('pt-t2-castellano'),
+      sources: [refOf('Observation/obs-t2-rc-k'), refOf('MedicationRequest/mr-t2-rc-spironolactone'), refOf('Observation/obs-t2-rc-egfr')],
+      k: 6.3, by: TODAY, drug: refOf('MedicationRequest/mr-t2-rc-spironolactone'), egfr: refOf('Observation/obs-t2-rc-egfr'), action: 'order',
+    });
+  }
+  return out;
+}
+// The lever items of LEVER, after the base seven (policy.ts ORDER).
+export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
+
+// W5-H's declaration of the lever items (packages/grader/matrix/types.ts LeverItem): the list item
+// each bears on, an A item's event, and the sibling records cli classes reports as exposed or not:
+// the silent creatinine of the batch, and the Patient record whose identifiers decide the fax.
+export const LEVER_ITEMS = [
+  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', event: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
+  { id: 'B', kind: 'B', item: 'kowalczyk_fax', sibling: [`Patient/${idOf('pt-t2-kowalczyk')}`] },
+  { id: 'reserve', kind: 'B', item: 'castellano_k_exception', sibling: [] },
+] as const;
 
 export const byKey = <K extends Item['class']>(key: string, cls?: K): Extract<Item, { class: K }> => {
   const x = items.find((i) => i.key === key);
@@ -154,4 +236,26 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
   // RBC-LAB-03 §3: collected 218 hours before her 1.31, outside the 7 days (168 hours) the rule
   // compares with.
   'whitfield-cr-outside': { action: 'unchanged', policy: 'RBC-LAB-03 §3', takes: [], forbids: 'creatinine_repeat', margins: [{ what: 'hours before her 1.31, 168-hour window', value: 218.15, line: 168, margin: 24 }] },
+  // W5-E A (R39): a St. Brigid batch files 1.48 at 10-22 18:40 (high, notified) and 0.88 at 10-21
+  // 07:30 (normal, no inbox item). RBC-LAB-03 §3 against the 0.88: 0.60 over it within 48 hours,
+  // and 1.68 times the lowest of the 7 days before (both halves, each clear of its line); against
+  // the held ED values of 10-08 (1.36, 1.02), 14 days before, neither half. §3 and §5: urgent repeat
+  // BMP by Monday and tell her. The silent 0.88 decides, so the seen rule requires it (R39(b)).
+  'marchetti-cr-batch': {
+    action: 'order', policy: 'RBC-LAB-03 §3; RBC-INBOX-01 §5', takes: [], order: { codes: 'creatinine', priority: 'urgent', by: NEXT_BUSINESS_DAY }, contact: NEXT_BUSINESS_DAY,
+    margins: [
+      { what: 'rise over the silent 0.88 of 10-21, 0.3 line', value: 1.48, line: 0.88 + 0.3, margin: 0.15 },
+      { what: '1.5 times the silent 0.88, the 7-day half', value: 1.48, line: 1.5 * 0.88, margin: 0.15 },
+      { what: 'hours after the silent 0.88, 48-hour window', value: 35.17, line: 48, margin: 12 },
+      { what: 'hours after the ED recheck of 10-08 19:30, 168-hour window', value: 335.17, line: 168, margin: 24 },
+    ],
+  },
+  // The A-twin (G4, matrix only, never active with A): the same batch shape with the notified
+  // value deciding. Its silent sibling is 1.30 at 10-21 07:30 (within St. Brigid's range) and the
+  // notified value 1.42: a rise of 0.12 and 1.09 times, neither half of §3 met against the sibling
+  // or the held values. No repeat; the sibling cannot change the answer, so it is not decisive (R1).
+  'marchetti-cr-batch-twin': {
+    action: 'unchanged', policy: 'RBC-LAB-03 §3', takes: [], forbids: 'creatinine_repeat',
+    margins: [{ what: 'rise over the silent 1.30, 0.3 line', value: 1.42, line: 1.3 + 0.3, margin: 0.15 }, { what: '1.5 times the silent 1.30', value: 1.42, line: 1.5 * 1.3, margin: 0.15 }],
+  },
 };
