@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:8",
   "task_id": "crc-care-gap",
-  "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
+  "task_version": "86cebc4cad1c682aa575e042eb165aab49cf8fae7e533ccf1162b7144758700a",
   "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
+  "grader_task_version": "623064d5c6aa2e8867105293db5bf96b25124e996ea5a6f44be1b896a11ab7c9",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:58:40.000Z",
+  "started": "2026-10-23T12:58:56.000Z",
   "turns": 15,
   "tool_calls": 50,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 3 FIT kits ordered and 3 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:01:33.000Z",
+  "ended": "2026-10-23T13:01:49.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",

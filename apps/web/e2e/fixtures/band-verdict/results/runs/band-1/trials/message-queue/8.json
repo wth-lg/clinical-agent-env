@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:message-queue/8",
   "task_id": "message-queue",
-  "task_version": "490a53d8796949b22a551e675d177c52ec0c8aa85a9b4892b103f446d06329b1",
+  "task_version": "d37b10457b393d3853c34daa08df94dacdc290de5fd5a863a0f1a89eb49c1501",
   "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
-  "grader_task_version": "48cea45e1ff60d6112f90ba203e7b6712d5d2bf5b7f94a462c862d41a0da37f7",
+  "grader_task_version": "7c1dbdcec76cfae07c6f5f6aa3b50f0873b5fb3a8f887dcc08805cc2df822a70",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:40:07.000Z",
+  "started": "2026-10-23T13:40:23.000Z",
   "turns": 14,
   "tool_calls": 54,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8), Price (corrected creatinine, 35% rise) and Webb (potassium 5.8), each with a task to Dr. Okafor and the earlier order cancelled; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:43:23.000Z",
+  "ended": "2026-10-23T13:43:39.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

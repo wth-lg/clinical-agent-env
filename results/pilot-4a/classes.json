@@ -4,7 +4,7 @@
   "results/pilot-4a"
  ],
  "grader_versions": [
-  "21"
+  "22"
  ],
  "tasks": {
   "contrast-ct-prep": {
@@ -267,7 +267,7 @@
     "task_versions": [
      "1fbab17f8c1eaf1c3fdc186a97cd082864b7fb7fb7e74e2786fced14478e99a1"
     ],
-    "checkout": "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc"
+    "checkout": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7"
    }
   },
   "crc-care-gap": {
@@ -489,7 +489,7 @@
     "task_versions": [
      "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67"
     ],
-    "checkout": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535"
+    "checkout": "86cebc4cad1c682aa575e042eb165aab49cf8fae7e533ccf1162b7144758700a"
    }
   },
   "discharge-medrec": {
@@ -830,7 +830,7 @@
     "task_versions": [
      "88ae71732e13b07cfd1b88a9157f2480304354509bee18d01b2c07e59a3b1a13"
     ],
-    "checkout": "ac51d2ccdfd36604a6550b4ca14fcdf358658d520199f49afeae8397144d7e37"
+    "checkout": "75d5b4b8a9441c19517da3ea93277c321b7cd329d3e5ab1b3c6082f0bfe6569f"
    }
   },
   "message-queue": {
@@ -1104,7 +1104,7 @@
     "task_versions": [
      "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7"
     ],
-    "checkout": "490a53d8796949b22a551e675d177c52ec0c8aa85a9b4892b103f446d06329b1"
+    "checkout": "d37b10457b393d3853c34daa08df94dacdc290de5fd5a863a0f1a89eb49c1501"
    }
   },
   "renal-dose-review": {
@@ -1357,7 +1357,7 @@
     "task_versions": [
      "5f5d871cae2fbcfb648064ddd1c1466e1c31800ad170220c51ad562bf65c1c98"
     ],
-    "checkout": "39b84847d177ca46b6039851bcfe981315c1dd3962f5b0f3c10a33b27adeb26b"
+    "checkout": "ed1a7bd5c38b4637c82e770f9dead42990200120e83db01ce26c6ab8e9569cb3"
    }
   },
   "results-inbox": {
@@ -1678,7 +1678,7 @@
     "task_versions": [
      "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d"
     ],
-    "checkout": "aef2188b1e7f9ba1feac73df745c61c1c323ab402757ba61aafbb91b715f7fa2"
+    "checkout": "b9f48b1fcc2504afc643cab07b3e37e35513cff2a1c4c6a640e9ae74f989d28b"
    }
   }
  }

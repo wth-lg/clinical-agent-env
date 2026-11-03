@@ -16,7 +16,15 @@
         "tag": "freeze-t3t5"
       },
       "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
-      "regrades": []
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528",
+          "task_version": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7",
+          "at": "regrade-r41",
+          "reason": "R41 grader bug fix (builder-304, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+        }
+      ]
     },
     "crc-care-gap": {
       "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
@@ -28,7 +36,15 @@
         "tag": "freeze-t3t5"
       },
       "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
-      "regrades": []
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "623064d5c6aa2e8867105293db5bf96b25124e996ea5a6f44be1b896a11ab7c9",
+          "task_version": "86cebc4cad1c682aa575e042eb165aab49cf8fae7e533ccf1162b7144758700a",
+          "at": "regrade-r41",
+          "reason": "R41 grader bug fix (builder-304, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
+        }
+      ]
     }
   }
 }

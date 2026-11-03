@@ -98,8 +98,16 @@ import type { Progress } from './progress.ts';
 // of the searched type lands between its pages (N1), and a failed call's reference never makes an
 // arrival's key a known record (N4). 21: the P21 freeze fix (builder-297, verifier-phase-P17i-G5-210-1
 // M1). boundHolds refuses a stopped page whose last row sorts at a non-finite instant (a date
-// Period with no start) instead of throwing; no grade on today's data moves.
-export const GRADER_VERSION = '21';
+// Period with no start) instead of throwing; no grade on today's data moves. 22: the R41 fix
+// (builder-304; final-1 crc-care-gap G6, G7). A window review is complete by exposure: when every
+// record of the reviewed kind for the patient inside the window, on the chart as delivered, was
+// exposed before the decision (exposure.ts windowTargets, windowExposed), by any searches, pages
+// or reads; the page-run rules stay as sufficient routes. T3 absenceShownAt, T2 windowSearchedAt
+// and T6 coveredAt take the earlier of the two, and their seen rules read the trial's states
+// (check.ts SeenRule; attribute passes them). The gate view gains EpisodeOfCare. Frozen tasks are
+// regraded with disclosure (results/tasks-final.json regrades); the world and every env_version
+// stay.
+export const GRADER_VERSION = '22';
 
 export interface CheckResult {
   id: string;
@@ -187,7 +195,7 @@ function view(resources: readonly Readonly<Resource>[]): StateView {
 }
 
 // The gate view of a state, projected on first use.
-function gateView(resources: readonly Readonly<Resource>[]): GateStateView {
+export function gateView(resources: readonly Readonly<Resource>[]): GateStateView {
   let projected: { list: GateResource[]; byKey: Map<string, GateResource> } | undefined;
   const p = () => {
     if (projected === undefined) {
@@ -375,7 +383,7 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
     checks: results,
     score: score(results),
     judge: judgeOf(judge, results, true),
-    attribution: attribute(outcome, gates, results, steps),
+    attribution: attribute(outcome, gates, results, steps, gateCtx),
     error: null,
   };
 }

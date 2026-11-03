@@ -13,8 +13,8 @@ import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type ReadContext } from '../../env/tool
 import { callTool } from '../../env/tools/registry.ts';
 import { attribute } from '../attribution.ts';
 import { gate } from '../check.ts';
-import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow, runCompleteAt } from '../exposure.ts';
-import type { CheckResult } from '../grade.ts';
+import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow, runCompleteAt, windowExposed, windowTargets, type WindowKind } from '../exposure.ts';
+import { gateView, type CheckResult } from '../grade.ts';
 import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 
 const inboxItem: Resource = {
@@ -443,5 +443,71 @@ describe('runCompleteAt: N1 (same-filter runs) and N4 (failed calls)', () => {
     expect(runCompleteAt([failed, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(null);
     // The same reference from a call that ran keeps it (the in-place case).
     expect(runCompleteAt([{ ...failed, is_error: false }, st(2, p1), arrival(3, 'Observation/obs-a'), st(4, { ...q, offset: 28 })], all, never, patientOf)).toBe(4);
+  });
+});
+
+// builder-304, ruling R41: window completeness by exposure. The target set is the patient's records
+// of the kind inside the window on the chart as delivered; the review is complete at the first step
+// by which every target then present had been exposed.
+describe('windowTargets and windowExposed (R41)', () => {
+  const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
+  const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
+  const obs = (id: string, date: string | undefined, more: Record<string, unknown> = {}): Resource =>
+    ({ resourceType: 'Observation', id, status: 'final', category: cat('laboratory'), code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: 'Patient/pt-1' }, ...(date === undefined ? {} : { effectiveDateTime: date }), ...more }) as Resource;
+  const episode = (id: string, start: string | undefined, end: string | undefined): Resource =>
+    ({ resourceType: 'EpisodeOfCare', id, status: 'finished', patient: { reference: 'Patient/pt-1' }, period: { ...(start ? { start } : {}), ...(end ? { end } : {}) } }) as Resource;
+  const st = (n: number, exposed: string[] = [], more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...more });
+  const opens = Date.parse('2024-01-01T05:00:00Z');
+  const closes = Date.parse('2026-10-23T12:00:00Z');
+  const kind: WindowKind = { type: 'Observation', patient: 'Patient/pt-1', categories: [LAB], statuses: ['final', 'amended', 'corrected'], opens, closes };
+  const initial = [
+    obs('in-1', '2025-06-01T10:00:00-04:00'),
+    obs('in-2', '2026-02-01T10:00:00-04:00', { status: 'corrected' }),
+    obs('vital', '2026-03-01T10:00:00-04:00', { category: cat('vital-signs') }),
+    obs('before', '2023-12-31T23:00:00-05:00'),
+    obs('edge', '2024-01-01T00:00:00-05:00'),
+    obs('withdrawn', '2026-04-01T10:00:00-04:00', { status: 'entered-in-error' }),
+    obs('prelim', '2026-05-01T10:00:00-04:00', { status: 'preliminary' }),
+    obs('undated', undefined),
+    obs('future', '2026-12-01T10:00:00-04:00'),
+    obs('other', '2026-06-01T10:00:00-04:00', { subject: { reference: 'Patient/pt-2' } }),
+    obs('nocat', '2026-07-01T10:00:00-04:00', { category: undefined }),
+  ];
+  const arrived = obs('arrived', '2026-06-01T10:00:00-04:00');
+  const world = { initial: gateView(initial), final: gateView([...initial, arrived]) };
+  const arrival = st(3, [], { arrivals: [{ spec: 'e', keys: ['Observation/arrived', 'Task/inbox-x'] }] });
+
+  it('targets the patient\'s records of the kind inside the window on the chart as delivered, each with the step that put it', () => {
+    expect(windowTargets(world, [st(1), st(2), arrival, st(4)], kind)).toEqual([
+      { id: 'Observation/in-1', arrived: null },
+      { id: 'Observation/in-2', arrived: null },
+      { id: 'Observation/edge', arrived: null },
+      { id: 'Observation/arrived', arrived: 3 },
+    ]);
+    // A record the chart holds but no arrival put and the initial world lacks is not a target.
+    expect(windowTargets(world, [st(1)], kind).map((t) => t.id)).toEqual(['Observation/in-1', 'Observation/in-2', 'Observation/edge']);
+    // No category or status named: every category and status but entered in error; no window start: every date, undated too.
+    const any: WindowKind = { ...kind, categories: [], statuses: [], opens: null };
+    expect(windowTargets(world, [], any).map((t) => t.id)).toEqual(['Observation/in-1', 'Observation/in-2', 'Observation/vital', 'Observation/before', 'Observation/edge', 'Observation/prelim', 'Observation/undated', 'Observation/future', 'Observation/nocat']);
+  });
+
+  it('dates a period by overlap with the window, as a hospice episode counts', () => {
+    const episodes = [episode('spans', '2025-06-01', '2026-03-01'), episode('ended', '2025-01-01', '2025-12-31'), episode('open', '2025-11-01', undefined), episode('nostart', undefined, '2024-06-01')];
+    const w = { initial: gateView(episodes), final: gateView(episodes) };
+    const year: WindowKind = { type: 'EpisodeOfCare', patient: 'Patient/pt-1', categories: [], statuses: ['planned', 'active', 'onhold', 'finished'], opens: Date.parse('2026-01-01T05:00:00Z'), closes };
+    expect(windowTargets(w, [], year).map((t) => t.id)).toEqual(['EpisodeOfCare/spans', 'EpisodeOfCare/open']);
+  });
+
+  it('is complete at the first step by which every target then present was exposed; a record arriving later is owed from its arrival on', () => {
+    const targets = windowTargets(world, [st(1), st(2), arrival, st(4)], kind);
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/edge']), st(2, ['Observation/in-2']), arrival, st(4)], targets)).toBe(2);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2']), st(5, ['Observation/arrived'])], targets)).toBe(5);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2'])], targets)).toBe(null);
+    // Exposure in any form counts: a read, an earlier step; a later arrival does not reopen it.
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { tool: 'fhir_read' }), st(2), arrival], targets)).toBe(1);
+    // Nothing to show is not a review (R31): an empty target set completes nothing.
+    expect(windowExposed([st(1, ['Observation/in-1'])], [])).toBe(null);
+    // A failed call exposes nothing.
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { is_error: true })], targets.slice(0, 3))).toBe(null);
   });
 });

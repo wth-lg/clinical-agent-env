@@ -30,10 +30,10 @@
 // a gate comparing the two on such a record compares two rules. Before TOOLS_VERSION 3 no
 // snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
-import { search, sortStart } from '../env/search.ts';
+import { dateRangeOf, search, sortStart } from '../env/search.ts';
 import type { Resource } from '../env/store.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
-import type { Step, StepNotes, StepSearch } from './check.ts';
+import type { SeenWorld, Step, StepNotes, StepSearch } from './check.ts';
 
 const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status', 'sort'] as const;
 
@@ -264,6 +264,92 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
     }
   }
   return best;
+}
+
+// Window completeness by exposure (ruling R41, builder-304; final-1 crc-care-gap G6 and G7). A
+// window review (R27, R31, R36) is complete when every record of the reviewed kind for the patient
+// inside the window was exposed before the decision, by any combination of searches, pages or
+// reads. The page-run rules above (one run, a sorted run past the edge, a narrower query) stay as
+// sufficient routes; a gate takes the earlier of the two. A stop-short, a gap or a narrowed filter
+// that leaves a target record unshown completes nothing here, because that record was never
+// exposed.
+//
+// The target set (windowTargets) is computed from the chart as delivered (SeenWorld.final): the
+// patient's records of the kind's type that carry one of its categories (when it names any) and
+// one of its statuses (when it names any), never one entered in error, and are dated inside the
+// window: the range the record is dated by on its type's date parameter (env search.ts
+// dateRangeOf, what date_ge, date_le and _sort read) overlaps [opens, closes], so a Period that
+// began before the window and runs into it counts, as a hospice episode counts for the year; with
+// no window start (opens null) every record of the kind counts, undated ones too. The kind names
+// no codes: the review has to show every record a qualifying one could be among (every
+// laboratory result, every procedure), which is what a code-filtered covering search also lists
+// in full. Each target is present from the start when the initial world holds it, else from the
+// step whose call fired the arrival that put it (Step.arrivals); a record neither holds is not in
+// the delivered chart and is not a target (no write tool creates a record of a reviewed kind).
+// A class B correction replaces a record in place, so its id stays one target, present from the
+// start, and its final status and date are read (a withdrawn result is no longer owed).
+//
+// The review (windowExposed) is complete at the first step by which every target then present,
+// the initial ones and those whose arrival fired at an earlier step, had been exposed by a
+// successful call; as for a page run, an arrival after that step does not reopen it (an arrival
+// is the event gates' to see). A step exposes a target when its exposed_ids name it (R2 places; a
+// fhir_search row of an Observation or Procedure shows what a clinician acts on, a note is
+// exposed by a read or an uncut snippet). The caller compares the step with the decision write
+// by turn (seenBefore). An empty target set completes nothing: nothing shown is not a review
+// (R31), and the shape routes remain for a chart that holds no record of the kind.
+export interface WindowKind {
+  type: string;
+  // 'Patient/<id>'.
+  patient: string;
+  // 'system|code' each; empty for a kind that carries no category.
+  categories: readonly string[];
+  // Bare statuses the policy counts; empty for a kind counted in any status.
+  statuses: readonly string[];
+  // Epoch ms; opens null for a kind with no window start.
+  opens: number | null;
+  closes: number;
+}
+export interface WindowTarget {
+  // '<Type>/<id>'.
+  id: string;
+  // The step whose call fired the arrival that put it, or null when the initial world holds it.
+  arrived: number | null;
+}
+type Coded = { resourceType: string; id: string; status?: string; category?: Array<{ coding?: Array<{ system?: string; code?: string }> }>; subject?: { reference?: string }; patient?: { reference?: string } };
+const carries = (r: Coded, categories: readonly string[]) => (r.category ?? []).some((c) => (c.coding ?? []).some((x) => categories.includes(`${x.system ?? ''}|${x.code ?? ''}`)));
+export function windowTargets(world: SeenWorld, steps: readonly Step[], kind: WindowKind): WindowTarget[] {
+  const arrivedAt = (key: string): number | null => steps.find((s) => (s.arrivals ?? []).some((a) => a.keys.includes(key)))?.n ?? null;
+  const out: WindowTarget[] = [];
+  for (const r of world.final.all(kind.type) as readonly Coded[]) {
+    if ((r.subject?.reference ?? r.patient?.reference) !== kind.patient || r.status === 'entered-in-error') continue;
+    if (kind.statuses.length > 0 && !kind.statuses.includes(r.status ?? '')) continue;
+    if (kind.categories.length > 0 && !carries(r, kind.categories)) continue;
+    if (kind.opens !== null) {
+      let range: readonly [number, number] | undefined;
+      try {
+        range = dateRangeOf(r as unknown as Resource);
+      } catch {
+        range = undefined;
+      }
+      if (range === undefined || range[1] < kind.opens || range[0] > kind.closes) continue;
+    }
+    const key = `${r.resourceType}/${r.id}`;
+    if (world.initial.has(r.resourceType, r.id)) out.push({ id: key, arrived: null });
+    else {
+      const at = arrivedAt(key);
+      if (at !== null) out.push({ id: key, arrived: at });
+    }
+  }
+  return out;
+}
+export function windowExposed(steps: readonly Step[], targets: readonly WindowTarget[]): number | null {
+  if (targets.length === 0) return null;
+  const first = new Map(targets.map((t) => [t.id, steps.find((s) => !s.is_error && s.exposed_ids.some((k) => sameId(k, t.id)))?.n ?? null]));
+  for (const s of steps) {
+    const present = targets.filter((t) => t.arrived === null || t.arrived < s.n);
+    if (present.length > 0 && present.every((t) => { const n = first.get(t.id); return n !== null && n !== undefined && n <= s.n; })) return s.n;
+  }
+  return null;
 }
 
 // Whether <Type>/<id> names `id`, given bare or typed.

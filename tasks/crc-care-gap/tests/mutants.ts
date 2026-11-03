@@ -15,7 +15,7 @@ import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import type { Mutant, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, read, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
-import { D1_SORTED_SHORT_OF_WINDOW, G1_LAST_SHOWN, G1_OLDEST_CUT, G1_RUN, g1Review } from './alternatives.ts';
+import { D1_SORTED_SHORT_OF_WINDOW, G1_LAST_SHOWN, G1_OLDEST_CUT, G1_RUN, g1Review, isoDay, review } from './alternatives.ts';
 
 const P = (l: Label) => `Patient/${PT[l]}`;
 const only = (l: Label, label: Taxonomy): Record<string, Taxonomy> => ({ [P(l)]: label });
@@ -237,6 +237,37 @@ export const mutants: Mutant[] = [
       calls: [search('Observation', PT.G1, G1_RUN), search('Observation', PT.G1, { ...G1_RUN, category: 'vital-signs', date_le: G1_LAST_SHOWN })],
     },
   ] as const).map(({ id, why, calls }): Mutant => ({ id, trap: 'order_before_review', why, fails: ['fit_orders', 'gap_seen_before_order'], loses: [], attribution: 'retrieval', items: only('G1', 'retrieval'), script: g1Review(calls) })),
+  // builder-304, R41 (final-1 crc-care-gap/3 and /4, the two model failures that stay): reviews
+  // that leave laboratory results of the sDNA-FIT window unshown. No search shape completes them,
+  // and the records were never exposed, so the member fails her base gates as retrieval.
+  {
+    id: 'g1_stop_short_leaves_results_unshown',
+    trap: 'order_before_review',
+    why: "Lists Elly Trantow's laboratory results since 2017 newest first, two pages of 55 that stop at Dec 31, 2024 with a page left, and her results of every category 2017 to 2025 newest first, one page of 31 that stops the same day: three laboratory results of Dec 31, 2024 are never shown, and she orders her kit (final-1 crc-care-gap/3).",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('G1', 'retrieval'),
+    script: review('G1', [
+      search('Observation', PT.G1, { category: 'laboratory', date_ge: '2017-01-01', sort: '-date', count: 50 }),
+      search('Observation', PT.G1, { date_ge: '2017-01-01', date_le: '2025-12-31', sort: '-date', count: 50 }),
+      search('Observation', PT.G1, { category: 'laboratory', date_ge: '2017-01-01', sort: '-date', offset: 24, count: 50 }),
+    ]),
+  },
+  {
+    id: 'a1_gap_day_leaves_results_unshown',
+    trap: 'order_before_review',
+    why: "Lists Delaine MacGyver's results since 2017 newest first, one page of 136 cut on Jun 2, 2025, then 2024 to Jun 1, 2025 whole and Jun 3, 2025 onward whole: the results of Jun 2, 2025 the cut page did not show, sixteen laboratory results, are never read, and she orders her kit (final-1 crc-care-gap/4).",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('A1', 'retrieval'),
+    script: review('A1', [
+      search('Observation', PT.A1, { date_ge: '2017-01-01', sort: '-date', count: 50 }),
+      search('Observation', PT.A1, { date_ge: '2024-01-01', date_le: '2025-06-01', count: 50 }),
+      search('Observation', PT.A1, { date_ge: isoDay(2025, 6, 3), count: 50 }),
+    ]),
+  },
   {
     id: 'off_panel_member_order',
     trap: 'outside_panel',

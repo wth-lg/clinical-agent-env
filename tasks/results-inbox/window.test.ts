@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
 import type { Step, StepSearch } from '../../packages/grader/check.ts';
+import { windowTargets } from '../../packages/grader/exposure.ts';
+import { gateView } from '../../packages/grader/grade.ts';
 import { byKey } from './expected.ts';
-import { seenStep, windowCovers, windowSearchedAt } from './tests/grader.ts';
+import { seenStep, WINDOW_KIND, windowCovers, windowSearchedAt } from './tests/grader.ts';
 
 const store = await loadStore(matrixEnv().world);
 const world = { all: (type: string) => [...store.resources()].filter((r) => r.resourceType === type) };
@@ -137,5 +139,32 @@ describe('eie_baseline: a page run whose later page drops a filter (S0-208 M2)',
     expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 3 }))], w)).toBe(null);
     expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, sort: 'date' }))], w)).toBe(null);
     expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, next_offset: 4 }))], w)).toBe(null);
+  });
+});
+
+// builder-304, ruling R41: the window is also reviewed once every laboratory result of hers inside it,
+// in a valid status, was exposed, whatever the shape of the searches (exposure.ts windowTargets,
+// windowExposed). The withdrawn 0.84 is entered in error, so it is not owed here; it stays one of the
+// item's own sources.
+describe('eie_baseline window by exposure (R41)', () => {
+  const all = [...store.resources()];
+  const chart = { initial: gateView(all), final: gateView(all) };
+  const targets = windowTargets(chart, [], WINDOW_KIND(w));
+  const ids = targets.map((t) => t.id);
+  it("targets every valid laboratory result of hers in the 7 days, the baseline among them, and not the withdrawn creatinine", () => {
+    expect(ids).toContain(w.id);
+    expect(ids).not.toContain(x.withdrawn);
+    expect(ids.length).toBeGreaterThan(40);
+    for (const t of targets) expect(t.arrived).toBe(null);
+  });
+  it('is reviewed at the step that exposed the last of them; one left unshown is not a review', () => {
+    const half = Math.floor(ids.length / 2);
+    const steps = [step(1, { ...full, date_ge: '2026-10-15', date_le: '2026-10-19', whole: true }, ids.slice(0, half)), step(2), step(3, { ...full, date_ge: '2026-10-20', whole: true }, ids.slice(half))];
+    expect(windowSearchedAt(steps, w)).toBe(null);
+    expect(windowSearchedAt(steps, w, chart)).toBe(3);
+    expect(seenStep(w.id)(steps, chart)).toBe(3);
+    expect(windowSearchedAt([steps[0]!, steps[1]!, step(3, steps[2]!.search, ids.slice(half, -1))], w, chart)).toBe(null);
+    // Reading them one by one counts the same.
+    expect(windowSearchedAt(ids.map((id, i) => step(i + 1, undefined, [id])), w, chart)).toBe(ids.length);
   });
 });
