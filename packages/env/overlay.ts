@@ -55,10 +55,10 @@ import { Store } from './store.ts';
 // and adding or removing it would renumber that sequence. What applyOverlays checks is the keys an
 // overlay lists in OverlayEdits.lever: each in this build's put sits on an added Patient, and none
 // names a removal. That the list is complete (every key a toggle adds is listed, every listed key
-// is put in some state, no toggle changes the removals) and that no toggle moves an id outside its
-// item's block is scripts/test/lever-invariant.test.ts: it builds the world per LEVER state of every
-// task that exports LEVER_ITEMS (none on main, so it binds when the W5-E branches land; its loops
-// run on a synthetic task today). The frozen tasks (T3, T5) declare no slots and may add no
+// is put in some state, no toggle changes the removals) and that no two states differ in an id
+// outside the toggled items' blocks is scripts/test/lever-invariant.test.ts: it builds the world in
+// every subset of the items of every task that exports LEVER_ITEMS (none on main, so it binds when
+// the W5-E branches land; its loops run on a synthetic task today). The frozen tasks (T3, T5) declare no slots and may add no
 // Patient. A range may not reach past pt-0099.
 export const TASKS = {
   T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'], added: { first: 61, count: 3 } },
@@ -89,9 +89,9 @@ export interface OverlayEdits {
   // Patient reference, all of them the task's added keys), so that toggling it moves no other id
   // (TASKS added); one on a cohort Patient, one with no Patient reference, or one that names a
   // removal fails the build. A key absent from put passes (an inactive item's). Whether the list is
-  // complete is not checked here: scripts/test/lever-invariant.test.ts builds the world per LEVER
-  // state and requires every key a toggle adds to be listed and every listed key to be put in some
-  // state.
+  // complete is not checked here: scripts/test/lever-invariant.test.ts builds the world in every
+  // subset of the task's items and requires every key a state adds to be listed and every listed
+  // key to be put in some state.
   lever?: readonly string[];
   // The task's margins, windows, answers and prompts for the fixture lint.
   lint?: LintSpec;
