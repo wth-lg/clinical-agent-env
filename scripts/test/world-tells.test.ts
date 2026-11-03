@@ -28,6 +28,7 @@ import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
+import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../tasks/renal-dose-review/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -399,12 +400,20 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // (verifier-phase-P17i-W1-1-1 M3). Each one is named here, with its class and the planted types of
 // its chart (plantedOnlyTypes, in the order of the within-chart tests' types); the within-chart list
 // of such charts (EMPTY_CELLS) leaves added Patients to this table.
-// W5-E (builder-299): T1's lever patients, numbered after the cohort (pt-0061 Castellano, item B;
-// pt-0062 Fairweather, item A). Their charts are all planted (the Group that lists them is name-shaped, not numbered).
-const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = {
-  'pt-0061': { class: 'inhibitor_stopped', planted_only: ['Condition', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-  'pt-0062': { class: 'filler', planted_only: ['Condition', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation'] },
-};
+// W5-E (builder-299; verifier 214 F2): the rows come from the world and the tasks' LEVER_ITEMS, not
+// by hand, so every LEVER state passes: each added Patient (TASK_IDS pt- keys) with its lever item's
+// class from the task's expected list (an inactive item's patient is off the list: 'off the list'),
+// and its chart's planted-only types computed, every record of the chart being planted (the test
+// below asserts that). T1's lever patients: pt-0061 Castellano (B), pt-0062 Fairweather (A),
+// pt-0063 Whitcombe (the reserve). A later task's lever items join LEVER_TABLES.
+const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }];
+const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
+  [...ADDED_PATIENTS].sort().map((p) => {
+    const table = LEVER_TABLES.find((t) => t.items.some((i) => i.patient === p));
+    const cls = table?.list.find((x) => x.patient === `Patient/${p}`)?.class ?? (table ? 'off the list (inactive lever item)' : 'unknown');
+    return [p, { class: cls, planted_only: plantedOnlyTypes(world, isPlanted, p, comparable) }];
+  }),
+);
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {
   const pts = world.filter((r) => r.resourceType === 'Patient');
 
@@ -416,8 +425,12 @@ describe('a Patient an overlay adds reads like a generated one, apart from its n
     expect([...ADDED_PATIENTS].sort()).toEqual(Object.keys(ADDED_PATIENT_RESIDUALS).sort());
   });
 
-  it('its planted-only chart is named beside its id', () => {
-    for (const p of ADDED_PATIENTS) expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+  it('its planted-only chart is named beside its id, and every record of that chart is planted', () => {
+    for (const p of ADDED_PATIENTS) {
+      expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+      expect(world.filter((r) => r.resourceType !== 'Patient' && patientOf(r) === p && !isPlanted(r.id)).map((r) => `${r.resourceType}/${r.id}`), p).toEqual([]);
+      expect(ADDED_PATIENT_RESIDUALS[p]!.class, p).not.toBe('unknown');
+    }
   });
 
   it('the check finds an added Patient\'s chart that holds only planted records', () => {

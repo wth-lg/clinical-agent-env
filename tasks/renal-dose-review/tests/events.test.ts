@@ -101,6 +101,13 @@ describe('T1 event specs', () => {
     }
     expect(Date.parse((batch.resources[1] as { effectiveDateTime: string }).effectiveDateTime)).toBeGreaterThan(Date.parse((batch.resources[0] as { effectiveDateTime: string }).effectiveDateTime));
     expect(Date.parse((twin.resources[0] as { effectiveDateTime: string }).effectiveDateTime)).toBeGreaterThan(Date.parse((twin.resources[1] as { effectiveDateTime: string }).effectiveDateTime));
+    // Abnormal-only routing notifies what the laboratory flags: the silent sibling must sit inside
+    // its own reference range, or it too would have been flagged and notified (verifier 214 F1).
+    for (const s of [batch, twin]) {
+      const silent = s.resources[1] as unknown as { valueQuantity: { value: number }; referenceRange: Array<{ high: { value: number }; low: { value: number } }> };
+      expect(silent.valueQuantity.value, `${s.id} silent sibling in range`).toBeLessThanOrEqual(silent.referenceRange[0]!.high.value);
+      expect(silent.valueQuantity.value, `${s.id} silent sibling in range`).toBeGreaterThanOrEqual(silent.referenceRange[0]!.low.value);
+    }
     expect(EVENT_EXPECT[batch.id]!.decisive).toEqual([`Observation/${batch.resources[1]!.id}`]);
     expect(a.sibling).toEqual(EVENT_EXPECT[batch.id]!.decisive);
     expect(EVENT_EXPECT[batch.id]!.keeps).toBe(true);

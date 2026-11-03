@@ -31,15 +31,13 @@
 // social and situation findings and the disorders that do not fit an older adult (pregnancy,
 // cerebral palsy), and every visit about a pregnancy or still in progress, with what references it.
 //
-// W5 lever items (plan-amendment-w5 W5-E, builder-299; LEVER in expected.ts, G1): three more
-// patients the overlay adds (pt-t1-<key>, numbered after the cohort's last Patient), each on the
-// list only while its item is active, so an inactive item leaves no trace in the world:
+// W5 lever items (plan-amendment-w5 W5-E, builder-299; LEVER in lever.ts, G1): three more patients
+// the overlay adds (pt-t1-<key>, numbered after the cohort's last Patient), always built so that
+// no toggle moves a world id, each on the list only while its item is active (LIST):
 //
 //   item     key          drug       what decides it                                       dose now -> right dose
 //   A        fairweather  apixaban   82, 71.0 kg, SCr 1.18: one criterion. An outside ED      5 unchanged
-//                                    batch arrives mid-trial (events.ts fairweather-scr-batch;
-//                                    his chart is built whatever LEVER says: A toggles its
-//                                    event only, with no rebuild)
+//                                    batch arrives mid-trial (events.ts fairweather-scr-batch)
 //   B        castellano   apixaban   74, 78.0 kg, SCr 1.02: no criterion. Reduced to 2.5 mg    2.5 -> 5 BID
 //                                    in May for a 12-week itraconazole course that ended
 //                                    08/14; the St. Brigid ID letter of 09/10 (inside 90
@@ -362,11 +360,16 @@ export const PANEL = ['pt-0040', 'pt-0039', 'pt-0003', 'pt-0041', 'pt-0001', 'pt
 // The review list, in the order pharmacy built it (alphabetical by family name): one patient per
 // probe class and the filler (plan-amendment-w4 PW4-E3, n = 5). The other four keep their charts
 // and are off this week's list, so no id renumbers.
-// The lever patients' registry keys (lever.ts LEVER_KEYS): item A's patient is always built (A
-// toggles its event only); B's and the reserve's are on the list only while their item is on.
+// The lever patients' registry keys (lever.ts LEVER_KEYS). Every lever Patient and chart is built
+// whatever LEVER says, so no toggle moves a world id (verifier 214 F3: added Patients are numbered
+// in key order and their resources after the cohort's, so an absent one would shift the rest):
+// pt-0061 Castellano (B), pt-0062 Fairweather (A), pt-0063 Whitcombe (the reserve). LEVER toggles
+// list membership only: an inactive item's patient keeps their chart off the list, as the four W1
+// patients do. A toggles with no world change; B and the reserve change the Group (a rebuild).
 export const LEVER_PATIENT = Object.fromEntries((Object.keys(LEVER_KEYS) as LeverId[]).map((id) => [id, `pt-t1-${LEVER_KEYS[id]}`])) as Record<LeverId, string>;
-const built = (id: LeverId) => id === 'A' || leverOn(id);
-const ADDED = (Object.keys(LEVER_KEYS) as LeverId[]).filter(built).map((id) => LEVER_PATIENT[id]).sort();
+const ADDED = (Object.keys(LEVER_KEYS) as LeverId[]).map((id) => LEVER_PATIENT[id]).sort();
+const listed = (id: LeverId) => id === 'A' || leverOn(id);
+const ON_LIST = (Object.keys(LEVER_KEYS) as LeverId[]).filter(listed).map((id) => LEVER_PATIENT[id]);
 const LIST_BY_NAME: ReadonlyArray<[family: string, pt: string]> = [
   ['Castellano', LEVER_PATIENT.B],
   ['Delgado', 'pt-0003'],
@@ -377,7 +380,7 @@ const LIST_BY_NAME: ReadonlyArray<[family: string, pt: string]> = [
   ['Vance', 'pt-0002'],
   ['Whitcombe', LEVER_PATIENT.reserve],
 ];
-export const LIST: readonly string[] = LIST_BY_NAME.filter(([, pt]) => !pt.startsWith('pt-t1-') || ADDED.includes(pt)).map(([, pt]) => pt);
+export const LIST: readonly string[] = LIST_BY_NAME.filter(([, pt]) => !pt.startsWith('pt-t1-') || ON_LIST.includes(pt)).map(([, pt]) => pt);
 
 const PEOPLE: Record<string, { given: string[]; family: string; birthDate?: string; prefix: string }> = {
   'pt-0001': { given: ['Walter'], family: 'Kowalczyk', birthDate: '1942-02-14', prefix: 'Mr.' },
@@ -839,15 +842,14 @@ const overlay: Overlay = {
       const worldId = `pt-${String(last + 1 + ADDED.indexOf(key)).padStart(4, '0')}`;
       put.push(addedPatient(a, worldId), ...CHARTS[key]!(mrn(worldId)));
     }
-    const on = built;
     return {
       put,
       remove,
       lint: {
         thresholds: [
-          ...(on('A') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-fw-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-fw-scr' }] : []),
-          ...(on('B') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-cas-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-cas-scr' }] : []),
-          ...(on('reserve') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-wh-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-wh-scr' }] : []),
+          { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-fw-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-fw-scr' },
+          { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-cas-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-cas-scr' },
+          { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-wh-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-wh-scr' },
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-1103' },
           { quantity: 'scr', threshold: 1.5, observation: 'obs-t1-1105' },
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-wt-1020' },
@@ -872,8 +874,8 @@ const overlay: Overlay = {
           ...ADDED.map((patient) => ({ patient, threshold: 80 })),
         ],
         // §1's 90-day window for outside letters: the ID letter of item B is well inside it.
-        ...(on('B') ? { windows: [{ name: 'outside letters of the last 90 days (RBC-PHARM-07 §1)', boundary: { days: 90 }, resources: ['doc-t1-cas-id-0910'] }] } : {}),
-        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210', ...(on('B') ? ['doc-t1-cas-id-0910'] : [])] },
+        windows: [{ name: 'outside letters of the last 90 days (RBC-PHARM-07 §1)', boundary: { days: 90 }, resources: ['doc-t1-cas-id-0910'] }],
+        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210', 'doc-t1-cas-id-0910'] },
       },
     };
   },

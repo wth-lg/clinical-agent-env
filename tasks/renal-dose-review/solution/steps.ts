@@ -205,16 +205,16 @@ export interface Recheck {
 }
 const rivaroxabanLatest = (pt: string, mg: 15 | 20, why: string) => modify(LATEST(pt), { value: mg, unit: 'mg', frequency: 'QD' }, why, mg === 15 ? RX.rivaroxaban15 : RX.rivaroxaban20);
 const apixabanLatest = (pt: string, mg: 2.5 | 5, why: string) => modify(LATEST(pt), { value: mg, unit: 'mg', frequency: 'BID' }, why, mg === 2.5 ? RX.apixaban2_5 : RX.apixaban5);
-// Item A's re-check (R39): both creatinines of the batch read; the silent 10/22 result, 116 umol/L
-// = 1.31 mg/dL, is the most recent valid one (§1), so one criterion and 5 mg stays.
+// Item A's re-check (R39): both creatinines of the batch read; the silent 10/22 result, 100 umol/L
+// = 1.13 mg/dL, is the most recent valid one (§1), so one criterion and 5 mg stays.
 const fairweatherRecheck = (): Record<string, Recheck> => {
   const FW = leverPatient('A');
   const WT = lref('Observation/obs-t1-fw-wt');
   const silent = `Observation/${ARRIVAL.fairweatherSilent}`;
   const notified = `Observation/${ARRIVAL.fairweatherNotified}`;
-  const keepText = 'DOAC dose review (RBC-PHARM-07), §5 review of results that arrived: St. Brigid emergency department creatinines of 10/21/2026 (150 umol/L = 1.70 mg/dL, flagged high, on arrival) and 10/22/2026 (116 umol/L = 1.31 mg/dL, before discharge). §1: the most recent valid result is 1.31 mg/dL. Weight 71.0 kg; age 82: one criterion. Apixaban 5 mg twice daily unchanged.';
+  const keepText = 'DOAC dose review (RBC-PHARM-07), §5 review of results that arrived: St. Brigid emergency department creatinines of 10/21/2026 (150 umol/L = 1.70 mg/dL, flagged high, on arrival) and 10/22/2026 (100 umol/L = 1.13 mg/dL, before discharge). §1: the most recent valid result is 1.13 mg/dL. Weight 71.0 kg; age 82: one criterion. Apixaban 5 mg twice daily unchanged.';
   const wrongText = 'DOAC dose review (RBC-PHARM-07), correction under §5: a St. Brigid creatinine of 150 umol/L = 1.70 mg/dL (10/21/2026) arrived during the review. Age 82 and SCr 1.5 or higher: two criteria: apixaban reduced from 5 mg to 2.5 mg twice daily.';
-  const twinText = 'DOAC dose review (RBC-PHARM-07), correction under §5: St. Brigid emergency department creatinines arrived during the review: 116 umol/L (10/21) and 150 umol/L = 1.70 mg/dL (10/22, the most recent valid result). Age 82 and SCr 1.5 or higher: two criteria: apixaban reduced from 5 mg to 2.5 mg twice daily.';
+  const twinText = 'DOAC dose review (RBC-PHARM-07), correction under §5: St. Brigid emergency department creatinines arrived during the review: 100 umol/L (10/21) and 150 umol/L = 1.70 mg/dL (10/22, the most recent valid result). Age 82 and SCr 1.5 or higher: two criteria: apixaban reduced from 5 mg to 2.5 mg twice daily.';
   return {
     'fairweather-scr-batch': {
       read: read('Observation', ARRIVAL.fairweatherNotified),
@@ -222,9 +222,9 @@ const fairweatherRecheck = (): Record<string, Recheck> => {
       search: [search('Observation', FW, { code: '14682-9', sort: '-date' })],
       keep: {
         note: { text: keepText, cites: [WT, silent] },
-        resign: apixabanLatest(FW, 5, 'RBC-PHARM-07 §2: most recent SCr 1.31 mg/dL (10/22/2026), one criterion: 5 mg confirmed'),
-        stopAndOrder: [stop(LATEST(FW), 'RBC-PHARM-07 §2: one criterion, 5 mg confirmed after the ED results'), order(FW, RX.apixaban5, 5, 'BID', 'RBC-PHARM-07 §2: one criterion (age); most recent SCr 1.31 mg/dL')],
-        message: message('Practitioner/pr-lin', 'Fairweather: ED creatinines reviewed, apixaban unchanged', 'Norman Fairweather was seen at St. Brigid ED on 10/21-10/22; creatinine 1.70 mg/dL on arrival and 1.31 mg/dL before discharge. Under RBC-PHARM-07 the most recent result counts: one criterion, apixaban 5 mg twice daily unchanged. For your information as his prescriber.', [`Patient/${FW}`, silent]),
+        resign: apixabanLatest(FW, 5, 'RBC-PHARM-07 §2: most recent SCr 1.13 mg/dL (10/22/2026), one criterion: 5 mg confirmed'),
+        stopAndOrder: [stop(LATEST(FW), 'RBC-PHARM-07 §2: one criterion, 5 mg confirmed after the ED results'), order(FW, RX.apixaban5, 5, 'BID', 'RBC-PHARM-07 §2: one criterion (age); most recent SCr 1.13 mg/dL')],
+        message: message('Practitioner/pr-lin', 'Fairweather: ED creatinines reviewed, apixaban unchanged', 'Norman Fairweather was seen at St. Brigid ED on 10/21-10/22; creatinine 1.70 mg/dL on arrival and 1.13 mg/dL before discharge. Under RBC-PHARM-07 the most recent result counts: one criterion, apixaban 5 mg twice daily unchanged. For your information as his prescriber.', [`Patient/${FW}`, silent]),
         wrong: { change: apixabanLatest(FW, 2.5, 'RBC-PHARM-07 §2: SCr 1.70 mg/dL (10/21/2026) and age 82: two criteria'), note: { text: wrongText, cites: [WT, notified] } },
       },
     },

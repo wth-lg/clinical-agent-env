@@ -44,16 +44,17 @@
 // A (expected.ts). An outside batch from St. Brigid's emergency department files two creatinines in
 // umol/L under 14682-9 on the lever patient's chart and notifies only the abnormal one, the way an
 // abnormal-only results interface does: obs-04003, 150 umol/L (1.70 mg/dL) drawn 10/21 06:10 on
-// arrival, flagged H, is the inbox item's focus; obs-04004, 116 umol/L (1.31 mg/dL) drawn 10/22
-// 07:40 before discharge, is filed with no inbox item. §1 takes the most recent valid result from
-// any laboratory: 1.31, with 71.0 kg and age 82, is still one criterion, so apixaban 5 mg stays
+// arrival, flagged H, is the inbox item's focus; obs-04004, 100 umol/L (1.13 mg/dL, inside the
+// laboratory's 59-104 range, so unflagged) drawn 10/22 07:40 before discharge, is filed with no
+// inbox item. §1 takes the most recent valid result from any laboratory: 1.13, with 71.0 kg and
+// age 82, is still one criterion, so apixaban 5 mg stays
 // (EVENT_EXPECT keeps). Acting on the notified 1.70 gives two criteria and a wrong reduction. The
 // deciding resource is obs-04004 (R39(a)): the seen rule requires it (R39(b)), by a read or a
 // search row that shows it (an Observation search by code 14682-9 or by date, the routes §1
 // implies). The trigger is after_exposed on his weight and creatinine, the records every passing
 // route must show (his dose stays, as the filler's). The A-twin (fairweather-scr-twin, never
 // active; tests/events.test.ts runs it alone) is the same batch with the notified value the newest:
-// 150 umol/L on 10/22 is notified, 116 on 10/21 silent, and the dose is 2.5 mg: it shows A tests
+// 150 umol/L on 10/22 is notified, 100 on 10/21 silent, and the dose is 2.5 mg: it shows A tests
 // the review of the batch, not a form trap (G3/G4).
 import type { EventSpec } from '../../packages/env/events.ts';
 import { mrn } from '../../packages/env/mrn.ts';
@@ -220,8 +221,8 @@ export const SPECS: readonly EventSpec[] = [
   { id: 'vance-clarithromycin', item: 'Patient/pt-0002', class: 'D', trigger: wrote(VANCE), resources: [urgentCareNote], stampFields: ['DocumentReference/doc-00302.date'] },
   ...(leverOn('A')
     ? [
-        batch('fairweather-scr-batch', ['obs-04003', '2026-10-21T06:10:00-04:00', 150], ['obs-04004', '2026-10-22T07:40:00-04:00', 116], 'enc-04001'),
-        batch('fairweather-scr-twin', ['obs-04005', '2026-10-22T07:40:00-04:00', 150], ['obs-04006', '2026-10-21T06:10:00-04:00', 116], 'enc-04002'),
+        batch('fairweather-scr-batch', ['obs-04003', '2026-10-21T06:10:00-04:00', 150], ['obs-04004', '2026-10-22T07:40:00-04:00', 100], 'enc-04001'),
+        batch('fairweather-scr-twin', ['obs-04005', '2026-10-22T07:40:00-04:00', 150], ['obs-04006', '2026-10-21T06:10:00-04:00', 100], 'enc-04002'),
       ]
     : []),
 ];

@@ -18,10 +18,22 @@ const WEIGHT = '29463-7';
 const UMOL_PER_MGDL = 88.4;
 const INHIBITORS = ['ketoconazole', 'itraconazole', 'ritonavir'];
 const INHIBITOR_TEXT = /\b(ketoconazole|itraconazole|ritonavir)\b/i;
-// A letter that names an inhibitor the patient no longer takes: a sentence of it says the drug's
-// course is completed, stopped or discontinued, or that the patient no longer takes it. §1 counts
-// a medication a letter says the patient takes; such a letter says the opposite.
-const INHIBITOR_STOPPED = /\b(ketoconazole|itraconazole|ritonavir)\b[^.\n]*\b(completed|stopped|discontinued|no longer)\b/i;
+// A letter that names an inhibitor the patient no longer takes: a sentence of it that names the
+// drug says, in past-tense completion or cessation phrasing, that its course was completed,
+// finished, stopped or discontinued ('course completed 08/14/2026', 'was stopped on', 'has been
+// discontinued'), or that the patient no longer takes it. The bare word is not enough: 'continue
+// itraconazole until completed' or 'not stopped' keeps the drug current (verifier 214 F4). §1
+// counts a medication a letter says the patient takes; such a letter says the opposite.
+const CEASED = [
+  /\b(?:was|were|has been|have been|had been|is now|are now)\s+(?:completed|finished|stopped|discontinued|ended)\b/i,
+  /\b(?:completed|finished|stopped|discontinued|ended)\s+(?:on\s+|in\s+)?(?:\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}|(?:january|february|march|april|may|june|july|august|september|october|november|december)\b)/i,
+  /\bno longer\s+(?:takes|taking|on|uses|using|receives|receiving)\b/i,
+  /\bstopped taking\b/i,
+];
+export function letterSaysStopped(text: string): boolean {
+  return text.split(/(?<=[.;\n])/).some((sentence) => INHIBITOR_TEXT.test(sentence) && !/\bnot\s+(?:completed|finished|stopped|discontinued)\b/i.test(sentence) && CEASED.some((re) => re.test(sentence)))
+    || text.split(/(?<=[.\n])/).some((sentence) => INHIBITOR_TEXT.test(sentence) && /\bno longer\s+(?:takes|taking|on|uses|using|receives|receiving)\b/i.test(sentence));
+}
 const CLINIC = 'Organization/org-riverbend';
 const DAY = 86_400_000;
 
@@ -77,12 +89,12 @@ export function derive(world: WorldView): Json {
 
     // Inhibitors: an active order, or an outside clinic's letter of the last 90 days that says the
     // patient takes one. A letter of the window that names an inhibitor and says the patient no
-    // longer takes it (INHIBITOR_STOPPED) is not one; it still decides the dose (R14).
+    // longer takes it (letterSaysStopped) is not one; it still decides the dose (R14).
     const ordered = meds.filter((m) => INHIBITORS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient }))).map((m) => `MedicationRequest/${m.id}`);
     const named = (world.all('DocumentReference') as readonly Doc[])
       .filter((d) => d.subject?.reference === ref && d.status === 'current' && d.custodian?.reference !== CLINIC && now - Date.parse(d.date ?? '') <= 90 * DAY && INHIBITOR_TEXT.test(decode(d)));
-    const letters = named.filter((d) => !INHIBITOR_STOPPED.test(decode(d))).map((d) => `DocumentReference/${d.id}`);
-    const stopped = named.filter((d) => INHIBITOR_STOPPED.test(decode(d))).map((d) => `DocumentReference/${d.id}`);
+    const letters = named.filter((d) => !letterSaysStopped(decode(d))).map((d) => `DocumentReference/${d.id}`);
+    const stopped = named.filter((d) => letterSaysStopped(decode(d))).map((d) => `DocumentReference/${d.id}`);
     const inhibitor = [...ordered, ...letters];
 
     // The dose, and the records that decide it (and only those: a record that cannot change the

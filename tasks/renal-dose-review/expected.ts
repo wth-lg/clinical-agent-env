@@ -19,17 +19,18 @@ import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
 // The mid-trial events (events.ts) change some of these on the chart as delivered: EVENT_EXPECT.
 //
 // W5 lever items (plan-amendment-w5 W5-E, builder-299): record-integrity defects on the decisive
-// path, each a toggle (G1). LEVER names the active ones; an inactive item's patient, resources,
-// expected entry and event are absent (overlay.ts, events.ts read LEVER from here). The world must
-// be rebuilt for the LEVER the checkout declares (tests/lever.test.ts); a key of an item the world
-// was not built for reads '<key>#unbuilt' here, so a stale world fails loudly, not silently.
+// path, each a toggle (G1). LEVER names the active ones; an inactive item's expected entry and event
+// are absent and its patient is off the list (overlay.ts LIST), its chart built all the same so that
+// no toggle moves a world id (verifier 214 F3). The world must be rebuilt for the LEVER the checkout
+// declares (tests/lever.test.ts); a key the world lacks reads '<key>#unbuilt' here, so a stale world
+// fails loudly, not silently.
 //
 //   id       kind  patient (overlay.ts key)   what decides it                                   dose -> right dose
 //   A        A     pt-t1-fairweather          82, 71.0 kg, SCr 1.18 (9/30): one criterion. An    5 BID unchanged
 //                  Norman Fairweather         outside ED batch arrives mid-trial (events.ts
 //                                             fairweather-scr-batch): a stale 150 umol/L
 //                                             (1.70 mg/dL) of 10/21 is notified; the newer
-//                                             116 umol/L (1.31) of 10/22 is filed silently.
+//                                             100 umol/L (1.13, inside the range) of 10/22 is filed silently.
 //                                             §1 'most recent valid result': still one criterion
 //   B        B     pt-t1-castellano           74, 78.0 kg, SCr 1.02: no criterion. The 9/10 ID     2.5 -> 5 BID
 //                  Irene Castellano           letter's medication block (copied from 6/2) still
@@ -151,7 +152,7 @@ export const DECISIVE_ATOMS: Record<string, readonly string[]> = {
 //   moravec-scr-new          SCr 1.85: CrCl 61 x 96.0 / (72 x 1.85) = 44.0                     -> rivaroxaban 15
 //   moravec-weight-reported  a reported weight does not count (§1)                          dose stays
 //   vance-clarithromycin     clarithromycin does not count (§2)                             dose stays
-//   fairweather-scr-batch    the newest valid SCr is the silent 116 umol/L = 1.31 (§1):     apixaban 5 stays
+//   fairweather-scr-batch    the newest valid SCr is the silent 100 umol/L = 1.13 (§1):     apixaban 5 stays
 //                            one criterion (W5 item A; the notified 150 umol/L is stale)
 //   fairweather-scr-twin     the notified 150 umol/L = 1.70 is the newest (§1): two          -> apixaban 2.5
 //                            criteria (the A-twin, matrix only: the notified value decides)

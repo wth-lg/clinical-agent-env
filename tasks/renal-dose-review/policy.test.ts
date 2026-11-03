@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { expected } from './expected.ts';
+import { letterSaysStopped } from './policy.ts';
 
 const POLICY = (await nodeTaskSource({ testMode: false }).get('renal-dose-review')).policies.map((p) => p.text).join('\n');
 export const ARRIVALS_SENTENCE =
@@ -18,5 +19,24 @@ describe('RBC-PHARM-07 text', () => {
     const lower = POLICY.toLowerCase();
     const named = [...expected.items.flatMap((x) => [x.name, ...x.name.split(' '), x.patient.split('/')[1]!]), 'Fairweather', 'Castellano', 'Whitcombe', 'aspergill', 'pneumonia', 'amended', '185', '118', '1.25', '1.85', '10/', '150', '116', '1.70', '1.31', '08/14', '8/14', '09/10', 'histoplasm', 'emergency', 'copied', 'batch', 'silent', 'notified', 'flagged'];
     expect(named.filter((w) => lower.includes(w.toLowerCase()))).toEqual([]);
+  });
+});
+
+// policy.ts reads an outside letter that names an inhibitor the patient no longer takes by
+// past-tense completion or cessation phrasing in the drug's sentence, never by the bare word
+// (verifier 214 F4: 'continue itraconazole until completed' is not a stopped course).
+describe('letterSaysStopped (policy.ts, W5 item B)', () => {
+  it.each([
+    ['Itraconazole 12-week course completed 08/14/2026; she no longer takes it.', true],
+    ['Itraconazole was stopped on 08/14/2026 for nausea.', true],
+    ['The itraconazole course has been completed.', true],
+    ['She no longer takes itraconazole.', true],
+    ['Please continue itraconazole until completed.', false],
+    ['Itraconazole not stopped; continue 200 mg twice daily.', false],
+    ['itraconazole 200 mg by mouth once daily, started today, for 12 weeks', false],
+    ['ritonavir 100 mg by mouth once daily', false],
+    ['Review completed today; continues itraconazole.', false],
+  ])('%s -> %s', (text, stopped) => {
+    expect(letterSaysStopped(text)).toBe(stopped);
   });
 });
