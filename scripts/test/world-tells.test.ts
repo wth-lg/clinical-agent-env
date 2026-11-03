@@ -76,21 +76,23 @@ const byType = new Map<string, R[]>();
 for (const r of world) if (NUMBERED.test(r.id)) byType.set(r.resourceType, [...(byType.get(r.resourceType) ?? []), r]);
 for (const rs of byType.values()) rs.sort((a, b) => num(a) - num(b));
 
+// A Patient an overlay adds (ADDED_PATIENTS, below) takes a slot after the cohort and its chart is
+// numbered in a block of that slot (packages/env/renumber.ts, W5): those ids sit apart from the
+// cohort's 1..N sequence by design, the residual the added-Patient tests name, not a tell of their
+// own, so both rules below read the cohort's sequence without them.
+const inAddedChart = (r: R) => ADDED_PATIENTS.has(patientOf(r) ?? '');
 describe('planted ids are numbered as the generated ones are', () => {
-  it('every type is numbered 1..N with no gap', () => {
-    const gaps = [...byType].filter(([, rs]) => rs.some((r, i) => num(r) !== i + 1)).map(([t, rs]) => `${t}: ${rs.length} ids, last ${rs.at(-1)!.id}`);
+  it('every type is numbered 1..N with no gap, the added Patients\' blocks apart', () => {
+    const gaps = [...byType].map(([t, rs]) => [t, rs.filter((r) => !inAddedChart(r))] as const).filter(([, rs]) => rs.some((r, i) => num(r) !== i + 1)).map(([t, rs]) => `${t}: ${rs.length} ids, last ${rs.at(-1)!.id}`);
     expect(gaps).toEqual([]);
   });
 
-  // An added Patient (ADDED_PATIENT_RESIDUALS) is numbered after the cohort's last, so its chart's
-  // ids sit above every generated one of their types by the same (patient, date, code) rule: that
-  // is the id-range residual the table names, not a tell of its own.
   it('no planted id sorts above its type\'s generated range, apart from an added Patient\'s chart', () => {
     const above = [...byType].flatMap(([, rs]) => {
       const base = rs.filter((r) => !isPlanted(r.id));
       if (!base.length) return [];
       const max = Math.max(...base.map(num));
-      return rs.filter((r) => isPlanted(r.id) && num(r) > max && !ADDED_PATIENTS.has(patientOf(r) ?? '')).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
+      return rs.filter((r) => isPlanted(r.id) && num(r) > max && !inAddedChart(r)).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
     });
     expect(above).toEqual([]);
   });

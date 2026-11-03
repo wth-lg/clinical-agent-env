@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:11",
   "task_id": "message-queue",
-  "task_version": "25a8b2109d193c487adaf0d15da00d78948c155ff9e3dec31f3ce6994c60a4a4",
-  "env_version": "34ef15ee29c47bfa3d22187c793d369e9bd721f31055e44cecab4f8c75a20e95",
-  "grader_task_version": "48cea45e1ff60d6112f90ba203e7b6712d5d2bf5b7f94a462c862d41a0da37f7",
-  "fixture_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
+  "task_version": "5d72dde40babab2ce924b5acc5cccda3292eb8a78f2f51402e8432a1b8559e49",
+  "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
+  "grader_task_version": "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd",
+  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
-    "initial": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
-    "final": "728bfc17eb5e7abaa05f61a77520efc0a95a51df64a8b0496164b3056bfd4096",
-    "replay_final": "728bfc17eb5e7abaa05f61a77520efc0a95a51df64a8b0496164b3056bfd4096"
+    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+    "final": "20751c85764b0b82047371c9f9e17d509d9a345c924c04a9d6ee6cfa607a6a73",
+    "replay_final": "20751c85764b0b82047371c9f9e17d509d9a345c924c04a9d6ee6cfa607a6a73"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:16:26.000Z",
+  "started": "2026-10-23T14:16:42.000Z",
   "turns": 14,
   "tool_calls": 54,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8), Price (corrected creatinine, 35% rise) and Webb (potassium 5.8), each with a task to Dr. Okafor and the earlier order cancelled; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:19:42.000Z",
+  "ended": "2026-10-23T14:19:58.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -272,7 +272,8 @@
           "ids": [
             "Observation/obs-02219",
             "Observation/obs-02210"
-          ]
+          ],
+          "at": 22
         },
         {
           "item": "Task/task-00021",

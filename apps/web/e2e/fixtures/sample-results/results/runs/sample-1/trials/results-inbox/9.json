@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:9",
   "task_id": "results-inbox",
-  "task_version": "92b04e551e64cc9b9c34b214eb4b30471f7c0fed07d48e308aba1b77b1dfe84e",
-  "env_version": "655841266184bad2bcae5f7fca12b4f77a090368f9697fb0cd660e9327f76453",
-  "grader_task_version": "8e0236b3edaa1ee750d4009db0030b2e2326739c18f2342ba6e474b2c7699b15",
-  "fixture_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
+  "task_version": "c777671ae322c3bd4c9053d46fef171219a5c52feb8976d3aa7e25bb358f1598",
+  "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
+  "grader_task_version": "718da033bc983069109d3469f6bf9818a4fe63ad7216e072eecf5d03a0684929",
+  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
-    "initial": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
-    "final": "d82352a051f40cf9d107830c06f32ba1b3dc3da85b149ca97ff9f98d1c24ba10",
-    "replay_final": "d82352a051f40cf9d107830c06f32ba1b3dc3da85b149ca97ff9f98d1c24ba10"
+    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+    "final": "f882131b6df8d13d29c83b78bf3495017354577586a1d5481763437b45d0e7b3",
+    "replay_final": "f882131b6df8d13d29c83b78bf3495017354577586a1d5481763437b45d0e7b3"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:55:48.000Z",
+  "started": "2026-10-23T15:43:56.000Z",
   "turns": 21,
   "tool_calls": 55,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:59:39.000Z",
+  "ended": "2026-10-23T15:47:47.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",

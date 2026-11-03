@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:discharge-medrec/3",
   "task_id": "discharge-medrec",
-  "task_version": "9a50503ef518993f1db67d8d228301f6903042d38c01b571aa6fb5139af3d6ba",
-  "env_version": "0b35a404e32916a9ca547aaffab07e7b74639bcc08269a3dd6eced74e4f5a484",
-  "grader_task_version": "e89d35456f1d017ac428ece0b1086e170a55579352197b8edfb8b473ad7a0d72",
-  "fixture_hash": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
+  "task_version": "75d5b4b8a9441c19517da3ea93277c321b7cd329d3e5ab1b3c6082f0bfe6569f",
+  "env_version": "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751",
+  "grader_task_version": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
+  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
-    "initial": "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05",
-    "final": "152407b80959084bdb8aa0e71ab6c30c898ff0d4b7f5b8d68cce1e993eed03e2",
-    "replay_final": "152407b80959084bdb8aa0e71ab6c30c898ff0d4b7f5b8d68cce1e993eed03e2"
+    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+    "final": "3fa089233a8bf75b0e54462e4d6e388229f0ffc2dc839a385e2cc26c6c6bd5ea",
+    "replay_final": "3fa089233a8bf75b0e54462e4d6e388229f0ffc2dc839a385e2cc26c6c6bd5ea"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:10:30.000Z",
+  "started": "2026-10-23T13:10:46.000Z",
   "turns": 8,
   "tool_calls": 41,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Reconciled the three post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:12:44.000Z",
+  "ended": "2026-10-23T13:13:00.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "21",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

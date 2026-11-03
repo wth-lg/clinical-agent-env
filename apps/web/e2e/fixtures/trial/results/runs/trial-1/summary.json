@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "c9d8253e143dcad0be6b469ba979d4471ff89765982f5e8ce921bdde0b1f81c5"
+        "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7"
       ],
       "env_versions": [
-        "c71b9b71033be98ca57c3871a89405e5b87623381d290a2b742d3ba009fe87d1"
+        "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
       ],
       "grader_task_versions": [
-        "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca"
+        "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
       ],
       "records": 1,
       "trials": 1,
@@ -106,13 +106,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "995dbb53ce2164fbd558c3bbb89093fa5c7792a7e0f2b2f1e9cd779c58cb07f6"
+        "edae9b9f4eefface2b44d8029cd1b582b2e875f11197181e83eec73c2a391993"
       ],
       "env_versions": [
-        "2a820e4e15b6125bfa29d052db8e8071c85da320a957376a37ca5b3e93b854c5"
+        "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee"
       ],
       "grader_task_versions": [
-        "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3"
+        "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740"
       ],
       "records": 1,
       "trials": 1,
@@ -206,13 +206,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "9a50503ef518993f1db67d8d228301f6903042d38c01b571aa6fb5139af3d6ba"
+        "75d5b4b8a9441c19517da3ea93277c321b7cd329d3e5ab1b3c6082f0bfe6569f"
       ],
       "env_versions": [
-        "0b35a404e32916a9ca547aaffab07e7b74639bcc08269a3dd6eced74e4f5a484"
+        "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751"
       ],
       "grader_task_versions": [
-        "e89d35456f1d017ac428ece0b1086e170a55579352197b8edfb8b473ad7a0d72"
+        "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371"
       ],
       "records": 1,
       "trials": 0,
@@ -292,13 +292,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "25a8b2109d193c487adaf0d15da00d78948c155ff9e3dec31f3ce6994c60a4a4"
+        "5d72dde40babab2ce924b5acc5cccda3292eb8a78f2f51402e8432a1b8559e49"
       ],
       "env_versions": [
-        "34ef15ee29c47bfa3d22187c793d369e9bd721f31055e44cecab4f8c75a20e95"
+        "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84"
       ],
       "grader_task_versions": [
-        "48cea45e1ff60d6112f90ba203e7b6712d5d2bf5b7f94a462c862d41a0da37f7"
+        "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd"
       ],
       "records": 1,
       "trials": 1,
@@ -392,13 +392,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "6ae8ea20475b96472badf578b8088e8f6bd8ef45e5801268adb9ae3e216b3916"
+        "ed1a7bd5c38b4637c82e770f9dead42990200120e83db01ce26c6ab8e9569cb3"
       ],
       "env_versions": [
-        "487ce2cf02f9067dc6be731a1cddc51ab99351898a19f7c36ca901327e806c20"
+        "f78eae639dfc5ee81ba2278d3c79412518e843098f3f09f9bd59af8ada01e539"
       ],
       "grader_task_versions": [
-        "43778c36e289d681e31b869dbb92fd8e6b9324c771378f3e10b8ee6a2307766a"
+        "1dc14fb20da324769f29fe2ddf9cf7c37513f85e639897c9092218bf77fa6bae"
       ],
       "records": 5,
       "trials": 4,
@@ -498,13 +498,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "92b04e551e64cc9b9c34b214eb4b30471f7c0fed07d48e308aba1b77b1dfe84e"
+        "c777671ae322c3bd4c9053d46fef171219a5c52feb8976d3aa7e25bb358f1598"
       ],
       "env_versions": [
-        "655841266184bad2bcae5f7fca12b4f77a090368f9697fb0cd660e9327f76453"
+        "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9"
       ],
       "grader_task_versions": [
-        "8e0236b3edaa1ee750d4009db0030b2e2326739c18f2342ba6e474b2c7699b15"
+        "718da033bc983069109d3469f6bf9818a4fe63ad7216e072eecf5d03a0684929"
       ],
       "records": 1,
       "trials": 0,
@@ -612,7 +612,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "9edfb411b7e31955fd56e2b84e709df07af2e7393098326099fa016a82030a05"
+    "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86"
   ],
   "replay": {
     "ran": false,

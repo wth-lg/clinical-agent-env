@@ -98,8 +98,32 @@ import type { Progress } from './progress.ts';
 // of the searched type lands between its pages (N1), and a failed call's reference never makes an
 // arrival's key a known record (N4). 21: the P21 freeze fix (builder-297, verifier-phase-P17i-G5-210-1
 // M1). boundHolds refuses a stopped page whose last row sorts at a non-finite instant (a date
-// Period with no start) instead of throwing; no grade on today's data moves.
-export const GRADER_VERSION = '21';
+// Period with no start) instead of throwing; no grade on today's data moves. 22: the R41 fix
+// (builder-304; final-1 crc-care-gap G6, G7). A window review is complete by exposure: when every
+// record of the reviewed kind for the patient inside the window was exposed before the decision
+// (exposure.ts windowTargets, windowExposed), by any searches, pages or reads; the page-run rules
+// stay as sufficient routes. T3 absenceShownAt, T2 windowSearchedAt and T6 coveredAt take the
+// earlier of the two, and their seen rules read the trial's states (check.ts SeenRule; attribute
+// passes them). The gate view gains EpisodeOfCare. Frozen tasks are regraded with disclosure
+// (results/tasks-final.json regrades); the world and every env_version stay. R41 addendum
+// (builder-305, verifier-phase-P17i-R41-216-1 F1, F2), still 22: the target set is evaluated as
+// of the decision step. A record a class B arrival replaced is judged by its initial status and
+// date up to the step that fired the arrival and by its final ones after it (a result withdrawn on
+// the decision write was still owed at the decision); a record that first arrives during the trial
+// is not a window target, its event gates grade it. No grade on today's data moves. R41 addendum 2
+// (builder-306, verifier-phase-P17i-R41-216-2-1 F1, F2), still 22: the target set is the set owed
+// at the decision step, which each gate passes to its seen rule (check.ts SeenRule `at`). A record
+// replaced by an arrival fired before the decision is owed in its final state, one replaced at or
+// after it in its initial state, and the review completes at the latest first exposure among the
+// owed records, so a withdrawal fired in an earlier turn no longer dates the review one step late,
+// and a correction that moves a never-shown record into the window before the decision makes it a
+// target. No grade on today's data moves. R41 addendum 3 (builder-307,
+// verifier-phase-P17i-R41-216-3-1 F1, F2), still 22: "owed at the decision" means owed at the start
+// of the decision's turn, so an arrival fired by a sibling call of that turn counts as after the
+// decision, as one the decision write fired; each gate that judges a seen rule at a decision write
+// records the step on the item's result (items.ts ItemResult.at), and attribution judges the rule
+// at the same step, so an item's label never contradicts its gate. No grade on today's data moves.
+export const GRADER_VERSION = '22';
 
 export interface CheckResult {
   id: string;
@@ -187,7 +211,7 @@ function view(resources: readonly Readonly<Resource>[]): StateView {
 }
 
 // The gate view of a state, projected on first use.
-function gateView(resources: readonly Readonly<Resource>[]): GateStateView {
+export function gateView(resources: readonly Readonly<Resource>[]): GateStateView {
   let projected: { list: GateResource[]; byKey: Map<string, GateResource> } | undefined;
   const p = () => {
     if (projected === undefined) {
@@ -375,7 +399,7 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
     checks: results,
     score: score(results),
     judge: judgeOf(judge, results, true),
-    attribution: attribute(outcome, gates, results, steps),
+    attribution: attribute(outcome, gates, results, steps, gateCtx),
     error: null,
   };
 }
