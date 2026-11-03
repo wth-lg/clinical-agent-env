@@ -27,7 +27,8 @@ import { TASKS, patientRefs, type WorldReader } from '../../../packages/env/over
 import { expected, hostPatients, LEVER_ITEMS, leverItems, POST_DISCHARGE_SENTENCE } from '../expected.ts';
 import { ARRIVAL, leverSpecs, SPECS } from '../events.ts';
 import { IDS, idOf } from '../ids.ts';
-import { HOSTS, LEVER } from '../lever.ts';
+import { LEVER } from '../lever.ts';
+import { HOSTS } from '../lever-keys.ts';
 import { leverHosts } from '../overlay.ts';
 import { derive } from '../policy.ts';
 

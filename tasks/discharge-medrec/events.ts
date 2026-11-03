@@ -65,7 +65,8 @@
 // the world before its trigger). kim-k2 replaces the addendum DocumentReference in place.
 import type { EventSpec } from '../../packages/env/events.ts';
 import { id, idOf } from './ids.ts';
-import { HOSTS, LEVER } from './lever.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS } from './lever-keys.ts';
 
 type Resource = EventSpec['resources'][number];
 

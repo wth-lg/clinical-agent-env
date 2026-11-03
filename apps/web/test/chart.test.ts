@@ -21,7 +21,9 @@ const REPO = join(import.meta.dirname, '../../..');
 describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {
-    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
+    // T1: its slots and the Patients its overlay adds (W5-E: the lever patients, from the registry).
+    const t1Added = Object.entries(TASK_IDS.T1).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);
+    expect(taskPatients(world, 'renal-dose-review')).toEqual([...TASKS.T1.slots.map((p) => `Patient/${p}`), ...t1Added].sort());
     // T4: its four slots and the Patients its overlay adds (W5-E: the A host in every LEVER state, the
     // B and reserve hosts while their item is active), derived from the registry, not pinned.
     const t4Added = Object.entries(TASK_IDS.T4).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);

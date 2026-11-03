@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "47bc0b973bf2c5d47b0e60c516a2b4a79cec4dd0d6b6891802d1905a282c4ea5",
-  "env_version": "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751",
-  "grader_task_version": "bdd77f8812edfae2df691ea136bcbe38a38807161c42ad3b8821328edf9dc124",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "d3767abafe1313c182ac3e2844043055d70fce80c05d517a529ee581b88c4e21",
+  "env_version": "ab7d0a4ae695eae4f3d4c4587ef88c6778d5439652d7ad23f23a8caa0ea3dc4a",
+  "grader_task_version": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
+  "fixture_hash": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "52d2875a0ddac4c04a0b1da43ae1825b86296d90c35252db836a91ad36d0f6f9",
-    "replay_final": "52d2875a0ddac4c04a0b1da43ae1825b86296d90c35252db836a91ad36d0f6f9"
+    "initial": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
+    "final": "2cf8bea2ce687ec20c4d81b90ef47fb897201f90ee0d5212eb9b6ba34a1cd996",
+    "replay_final": "2cf8bea2ce687ec20c4d81b90ef47fb897201f90ee0d5212eb9b6ba34a1cd996"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:35:32.000Z",
+  "started": "2026-10-23T13:35:48.000Z",
   "turns": 8,
   "tool_calls": 42,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Reconciled the three post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:37:49.000Z",
+  "ended": "2026-10-23T13:38:05.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",

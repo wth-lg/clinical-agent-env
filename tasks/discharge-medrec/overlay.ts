@@ -35,8 +35,9 @@
 // so has a record of its own, which its flag to the PCP links (R15).
 //
 // W5-E (plan-amendment-w5 "T4 discharge-medrec", record-integrity defects; lever.ts LEVER and
-// HOSTS): three list patients the overlay adds (pt-t4-*, numbered after the cohort's last Patient,
-// so no existing id moves), hand-written charts with no Synthea seed (leverHosts):
+// HOSTS): three list patients the overlay adds (pt-t4-*, each at a fixed slot of T4's added-Patient
+// range, pt-0067 to pt-0069, so no existing id moves and no toggle moves an id), hand-written
+// charts with no Synthea seed (leverHosts):
 //   lever    key              patient                 the item and where its deciding record is
 //   A        pt-t4-whitcomb   Gerald Whitcomb, 71     lisinopril held for AKI, 'Resume home 20 mg
 //            (in every state)                         daily when SCr < 1.5 on post-discharge labs';
@@ -64,7 +65,8 @@
 // host always is, so A toggles with its event alone.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { HOSTS, LEVER } from './lever.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS, SLOT } from './lever-keys.ts';
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -797,6 +799,9 @@ function seconds(value: unknown, at: string): unknown {
 
 const overlay: Overlay = {
   task: 'T4',
+  // The fixed slot of each host in T4's added range (TASKS added, pt-0067 on; lever-keys.ts SLOT),
+  // present in a build or not: a toggle moves no id (the T1 gate's F3, the central W5 slots).
+  added: Object.fromEntries((Object.keys(HOSTS) as Array<keyof typeof HOSTS>).map((id) => [HOSTS[id], SLOT[id]])),
   names: {
     'org-t4-northgate': 'org-northgate',
     'pr-t4-boateng': 'pr-boateng',
@@ -810,6 +815,9 @@ const overlay: Overlay = {
     return {
       put: [BOATENG, MENSAH, FITZGERALD, HADDAD, OUTSIDE_LAB, ...parts.flatMap((p) => p.put), ...leverHosts(world, lever)].map((r) => seconds(r, `${r.resourceType}/${r.id}`) as Resource),
       remove: parts.flatMap((p) => p.remove).map((r) => ({ resourceType: r.resourceType, id: r.id! })),
+      // Every key a LEVER toggle can add: each host and every record of their charts, present in
+      // this build or not (OverlayEdits.lever; scripts/test/lever-invariant.test.ts).
+      lever: [...gerald(world).put, ...lorraine(world).put, ...victor(world).put].map((r) => r.id!),
       lint: {
         thresholds: [
           { quantity: 'scr', threshold: 1.5, value: 1.32, label: 'creatinine in the Kim outside lab report' },

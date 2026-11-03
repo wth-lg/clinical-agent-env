@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:4",
   "task_id": "crc-care-gap",
-  "task_version": "bf07043444a04944279a1f5088e5c4ea3e56e075488a370f350a232cd2775d79",
-  "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "ab38fbcd413fd3dd0ab137b27b58a893ea5032e9db20e374f42769e8e51058a9",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "ae658b7476ead7346b15d75e8edc84ce81d2c3d776b8062d3c200da68cd71176",
+  "env_version": "8bdb1e91beebe3293017347b3cde1b9c0031e888a8a72bc928612d3442067249",
+  "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
+  "fixture_hash": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "d4d1744f7d832500789b8b256720b68cc62d50d5999025fdf023bfe4f9dec80b",
-    "replay_final": "d4d1744f7d832500789b8b256720b68cc62d50d5999025fdf023bfe4f9dec80b"
+    "initial": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
+    "final": "9063793e084c88150cb760a48fa1261d7374c32e62807f9b10d1e02b2c3c81a2",
+    "replay_final": "9063793e084c88150cb760a48fa1261d7374c32e62807f9b10d1e02b2c3c81a2"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -17,8 +17,8 @@
   "effort": "high",
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:46:44.000Z",
-  "turns": 15,
-  "tool_calls": 52,
+  "turns": 18,
+  "tool_calls": 54,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,9 +43,9 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 3 FIT kits ordered and 3 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:49:43.000Z",
+  "ended": "2026-10-23T12:49:59.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -253,33 +253,33 @@
         "seen": [
           {
             "patient": "Patient/pt-0009",
-            "first_order": 46,
+            "first_order": 48,
             "exposed": [
               {
                 "id": "Patient/pt-0009",
-                "step": 12
+                "step": 41
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 48,
+            "first_order": 50,
             "exposed": [
               {
                 "id": "Patient/pt-0022",
-                "step": 14
+                "step": 13
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 50,
+            "first_order": 52,
             "exposed": [
               {
                 "id": "Patient/pt-0024",
-                "step": 15
+                "step": 14
               }
             ],
             "missing_kinds": []

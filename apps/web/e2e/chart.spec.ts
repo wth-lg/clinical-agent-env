@@ -11,6 +11,8 @@ import { CHART_TYPES, taskPatients } from '../src/tasks/chart.ts';
 import { chartIds, world } from './fixtures/chart-oracle.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 import { id } from '../../../tasks/message-queue/ids.ts';
+import { TASK_IDS } from '../../../fixtures/ids.ts';
+import { TASKS } from '../../../packages/env/overlay.ts';
 
 async function openChart(page: Page, task: string) {
   await browse(page, new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -32,7 +34,8 @@ test('renal-dose-review: the Chart tab names the store as its source and lists e
   await expect(page.getByTestId('chart-source')).toContainText('Source: FHIR R4 store');
   await expect(page.getByTestId('chart-heading')).toContainText('Walter Kowalczyk');
   const patients = taskPatients(world, 'renal-dose-review');
-  expect(patients).toHaveLength(9);
+  // T1's slots plus the Patients its overlay adds (W5-E: the lever patients), from the data.
+  expect(patients).toHaveLength(TASKS.T1.slots.length + Object.keys(TASK_IDS.T1).filter((k) => k.startsWith('pt-')).length);
   expect(await page.getByTestId('chart-patient').locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value))).toEqual(patients);
   await expectRowsEqualStore(page, 'Patient/pt-0001');
 });

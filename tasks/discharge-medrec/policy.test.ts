@@ -12,7 +12,8 @@ import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected, type Item } from './expected.ts';
 import { derive } from './policy.ts';
 import { id, idOf, ref } from './ids.ts';
-import { HOSTS, LEVER } from './lever.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS } from './lever-keys.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:10",
   "task_id": "renal-dose-review",
-  "task_version": "b2171cdf92854024786e4dd8b54f4df8b7595e319dcdfced64185fe8c13379e7",
-  "env_version": "f78eae639dfc5ee81ba2278d3c79412518e843098f3f09f9bd59af8ada01e539",
-  "grader_task_version": "d44d5f2eedb65c42c0a7f3c6442df5d4b7703c9c901e62db977ef8e902c94deb",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "47ab0f8c5e066c5bc739cde362f483e108a705d3ee535f65e559e84297972fcc",
+  "env_version": "b7594ad4ba2495b1981005b2a21b92803ee0fadd0ee4236a4f6de1ab1e341ded",
+  "grader_task_version": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
+  "fixture_hash": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "3b9029bcefaddbf3a1aa4a20025fae0a1f2418e4353bf41ff3cefa42d9bbef2a",
-    "replay_final": "3b9029bcefaddbf3a1aa4a20025fae0a1f2418e4353bf41ff3cefa42d9bbef2a"
+    "initial": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
+    "final": "c386878750a4866b1b57743ed288452d8c8246e747319500610e1696899856b1",
+    "replay_final": "c386878750a4866b1b57743ed288452d8c8246e747319500610e1696899856b1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:57:33.000Z",
-  "turns": 22,
-  "tool_calls": 54,
+  "started": "2026-10-23T15:07:09.000Z",
+  "turns": 27,
+  "tool_calls": 70,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,12 +40,12 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reviewed the 5 patients on the DOAC dose review list under RBC-PHARM-07, and the results and messages that arrived during the review. Changed: Delgado rivaroxaban 20 -> 15 mg daily (outside SCr 1.81, CrCl 44); Duquette apixaban 5 -> 2.5 mg BID (itraconazole); Moravec rivaroxaban 15 -> 20 mg daily (CrCl 56 on actual weight); Vance apixaban 2.5 -> 5 mg BID (one criterion). Pellegrino unchanged (CrCl 59). Each change and correction documented in a progress note on that chart.",
+  "summary": "Reviewed the 7 patients on the DOAC dose review list under RBC-PHARM-07, and the results and messages that arrived during the review. Changed: Castellano apixaban 2.5 -> 5 mg BID (no criterion; the itraconazole course ended 8/14, the ID letter says she no longer takes it); Delgado rivaroxaban 20 -> 15 mg daily (outside SCr 1.81, CrCl 44); Duquette apixaban 5 -> 2.5 mg BID (itraconazole); Moravec rivaroxaban 15 -> 20 mg daily (CrCl 56 on actual weight); Vance apixaban 2.5 -> 5 mg BID (one criterion). Fairweather unchanged (one criterion); Pellegrino unchanged (CrCl 59). Each change and correction documented in a progress note on that chart.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:01:14.000Z",
+  "ended": "2026-10-23T15:11:46.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -63,6 +63,34 @@
       },
       "ids": [],
       "items": [
+        {
+          "item": "Patient/pt-0061",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-61003",
+            "Observation/obs-61004",
+            "Patient/pt-0061",
+            "DocumentReference/doc-61002"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0001"
+            ],
+            "drug": "apixaban",
+            "mg": 5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0001"
+          ]
+        },
         {
           "item": "Patient/pt-0003",
           "met": true,
@@ -83,7 +111,7 @@
           ],
           "evidence": {
             "active": [
-              "MedicationRequest/mr-t0003"
+              "MedicationRequest/mr-t0005"
             ],
             "drug": "apixaban",
             "mg": 2.5,
@@ -97,8 +125,19 @@
             }
           },
           "ids": [
-            "MedicationRequest/mr-t0003"
+            "MedicationRequest/mr-t0005"
           ]
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-62003",
+            "Observation/obs-62004"
+          ],
+          "evidence": {
+            "deferred_to": "fairweather-scr-batch"
+          }
         },
         {
           "item": "Patient/pt-0038",
@@ -110,7 +149,7 @@
           ],
           "evidence": {
             "active": [
-              "MedicationRequest/mr-t0005"
+              "MedicationRequest/mr-t0007"
             ],
             "drug": "rivaroxaban",
             "mg": 20,
@@ -124,7 +163,7 @@
             }
           },
           "ids": [
-            "MedicationRequest/mr-t0005"
+            "MedicationRequest/mr-t0007"
           ]
         },
         {
@@ -166,6 +205,17 @@
       "ids": [],
       "items": [
         {
+          "item": "Patient/pt-0061",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-61003",
+            "Observation/obs-61004",
+            "Patient/pt-0061",
+            "DocumentReference/doc-61002"
+          ],
+          "evidence": {}
+        },
+        {
           "item": "Patient/pt-0003",
           "met": true,
           "decisive_ids": [
@@ -180,6 +230,15 @@
           "met": true,
           "decisive_ids": [
             "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-62003",
+            "Observation/obs-62004"
           ],
           "evidence": {}
         },
@@ -228,6 +287,12 @@
       "ids": [],
       "items": [
         {
+          "item": "Patient/pt-0061",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
           "item": "Patient/pt-0003",
           "met": true,
           "decisive_ids": [],
@@ -235,6 +300,12 @@
         },
         {
           "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0062",
           "met": true,
           "decisive_ids": [],
           "evidence": {}
@@ -279,6 +350,17 @@
       "ids": [],
       "items": [
         {
+          "item": "Patient/pt-0061",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-61003",
+            "Observation/obs-61004",
+            "Patient/pt-0061",
+            "DocumentReference/doc-61002"
+          ],
+          "evidence": {}
+        },
+        {
           "item": "Patient/pt-0003",
           "met": true,
           "decisive_ids": [
@@ -293,6 +375,15 @@
           "met": true,
           "decisive_ids": [
             "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-62003",
+            "Observation/obs-62004"
           ],
           "evidence": {}
         },
@@ -390,6 +481,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04004"
+          ],
+          "evidence": {
+            "fired": [
+              "fairweather-scr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -456,6 +560,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04004"
+          ],
+          "evidence": {
+            "fired": [
+              "fairweather-scr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -476,7 +593,7 @@
         {
           "item": "Patient/pt-0043",
           "met": false,
-          "why": "event pellegrino-scr-new arrived at step 30 and was never read before finish",
+          "why": "event pellegrino-scr-new arrived at step 43 and was never read before finish",
           "decisive_ids": [
             "Observation/obs-04001"
           ],
@@ -488,7 +605,7 @@
             "failed": [
               "pellegrino-scr-new"
             ],
-            "arrived_at": 30
+            "arrived_at": 43
           },
           "event": "pellegrino-scr-new"
         },
@@ -530,6 +647,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04004"
+          ],
+          "evidence": {
+            "fired": [
+              "fairweather-scr-batch"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -546,14 +676,14 @@
         ]
       },
       "ids": [
-        "MedicationRequest/mr-t0011"
+        "MedicationRequest/mr-t0013"
       ],
       "process": true,
       "items": [
         {
           "item": "Patient/pt-0043",
           "met": false,
-          "why": "MedicationRequest/mr-t0011 was written before event pellegrino-scr-new was seen",
+          "why": "MedicationRequest/mr-t0013 was written before event pellegrino-scr-new was seen",
           "decisive_ids": [
             "Observation/obs-04001"
           ],
@@ -567,11 +697,11 @@
             ],
             "seen_at": null,
             "early": [
-              "MedicationRequest/mr-t0011"
+              "MedicationRequest/mr-t0013"
             ]
           },
           "ids": [
-            "MedicationRequest/mr-t0011"
+            "MedicationRequest/mr-t0013"
           ],
           "process": true,
           "event": "pellegrino-scr-new"
@@ -598,6 +728,19 @@
           "evidence": {
             "fired": [
               "vance-itraconazole"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0062",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04004"
+          ],
+          "evidence": {
+            "fired": [
+              "fairweather-scr-batch"
             ],
             "not_fired": []
           }
@@ -640,6 +783,7 @@
       "met": true,
       "evidence": {
         "changed": [
+          "Patient/pt-0061",
           "Patient/pt-0041",
           "Patient/pt-0038",
           "Patient/pt-0043"
@@ -673,7 +817,7 @@
   "attribution": {
     "auto": "retrieval",
     "first_failed": "event_seen",
-    "decisive_step": 54,
+    "decisive_step": 70,
     "exposure": [
       {
         "id": "Observation/obs-04001",

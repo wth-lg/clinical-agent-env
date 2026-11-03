@@ -15,7 +15,8 @@
 import type { Script, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE, ARRIVAL, SPECS } from '../events.ts';
 import { id, idOf, ref, refOf } from '../ids.ts';
-import { HOSTS, LEVER } from '../lever.ts';
+import { LEVER } from '../lever.ts';
+import { HOSTS } from '../lever-keys.ts';
 
 export const PT = { kim: 'pt-0005', stark: 'pt-0004', roberts: 'pt-0044', whitcomb: idOf(HOSTS.A), pruitt: idOf(HOSTS.B), salazar: idOf(HOSTS.reserve) } as const;
 export type Who = keyof typeof PT;

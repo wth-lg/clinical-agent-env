@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 import type { GateCheck, GateCtx } from '../../packages/grader/check.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
 import { TASKS } from '../../packages/env/overlay.ts';
-import { CLASSES, expected } from './expected.ts';
+import { CLASSES, expected, LEVER_ITEMS } from './expected.ts';
+import { leverOn } from './lever-keys.ts';
 import { EVENT_GATE_IDS } from '../../packages/grader/events.ts';
 import { checks } from './tests/grader.ts';
 
@@ -19,16 +20,20 @@ const empty = { has: () => false, status: () => null, get: () => undefined, all:
 const NOTHING: GateCtx = { initial: empty, final: empty, diff: { created: [], updated: [], deleted: [] } as never, steps: [], exposedAt: () => null, writes: () => [] };
 
 describe('T1 worklist probe: expected.items', () => {
-  it('holds exactly one instance of each kept class and one filler', () => {
+  it('holds exactly one instance of each kept class, the fillers (Pellegrino and lever item A) and the lever items that are on', () => {
     const count = (c: string) => expected.items.filter((x) => x.class === c).length;
     expect(CLASSES).toEqual(['cg_crcl_weight_rule', 'apixaban_two_of_three', 'outside_scr_umol', 'pgp_cyp3a4_inhibitor']);
     for (const c of CLASSES) expect(count(c), c).toBe(1);
-    expect(count('filler')).toBe(1);
-    expect(expected.items).toHaveLength(5);
+    expect(count('filler')).toBe(2);
+    expect(count('inhibitor_stopped')).toBe(leverOn('B') ? 1 : 0);
+    expect(count('inhibitor_at_reduced_dose')).toBe(leverOn('reserve') ? 1 : 0);
+    expect(expected.items).toHaveLength(6 + (leverOn('B') ? 1 : 0) + (leverOn('reserve') ? 1 : 0));
+    // Pharmacy's order: alphabetical by family name.
+    expect(expected.items.map((x) => x.name.split(' ').at(-1))).toEqual([...expected.items.map((x) => x.name.split(' ').at(-1))].sort());
   });
 
-  it('puts every item on one of the task\'s own slot patients, each patient once', () => {
-    const slots = TASKS.T1.slots.map((p) => `Patient/${p}`);
+  it("puts every item on one of the task's own slot patients or the patients its overlay adds, each patient once", () => {
+    const slots = [...TASKS.T1.slots.map((p) => `Patient/${p}`), ...LEVER_ITEMS.map((i) => i.item)];
     expect(new Set(PATIENTS).size).toBe(PATIENTS.length);
     for (const p of PATIENTS) expect(slots).toContain(p);
   });

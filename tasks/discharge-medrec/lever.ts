@@ -1,7 +1,8 @@
 // T4's lever toggles (plan-amendment-w5 "T4 discharge-medrec", G1; W5-E). One literal list, which
 // packages/core/tasks.ts leverOf reads from this file's text into env_version (expected.ts
 // re-exports it on a line of its own), and which overlay.ts, events.ts and policy.ts read as a
-// module. No imports: the overlay runs before the id registry it needs exists.
+// module. No imports and nothing else exported: scripts/test/lever-invariant.test.ts mocks this
+// file as { LEVER } per state. The hosts' keys and slots are in lever-keys.ts.
 //
 //   A        whitcomb-lisinopril: the A event whitcomb-a1 (events.ts), an outside potassium batch
 //            after the resume, the stale 5.4 notified and the newer 4.6 filed silently. The host,
@@ -20,6 +21,3 @@
 // (`pnpm cli oracle --task discharge-medrec --live-judge --misses-only`). tests/lever.test.ts checks
 // each of these against LEVER.
 export const LEVER = ['A', 'B'];
-// The hosts' Patient registry keys (overlay.ts leverHosts; fixtures:build numbers each after the
-// cohort's last Patient, so no existing id moves).
-export const HOSTS = { A: 'pt-t4-whitcomb', B: 'pt-t4-pruitt', reserve: 'pt-t4-salazar' } as const;

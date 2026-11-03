@@ -30,7 +30,7 @@ export const G1_RUN = { date_ge: '2017-01-01', sort: '-date', count: 50 } as con
 // file pins its patients' encounters of that day in the world build (scripts/fixtures-lib.ts
 // literalDatesByTask) and would move the world. G1_LAST_SHOWN is the cut page's last row's day;
 // G1_OLDEST_CUT is where an oldest-first page of hers is cut.
-const isoDay = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+export const isoDay = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 export const G1_LAST_SHOWN = isoDay(2026, 1, 6);
 export const G1_OLDEST_CUT = isoDay(2025, 12, 16);
 export const g1Review = (calls: readonly ScriptCall[]): ScriptTurn[] => [...withoutG1Stool(reads()), ...calls.map((c) => ({ calls: [c] })), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }];
@@ -40,6 +40,52 @@ export const G1_NARROWED: ScriptTurn[] = g1Review([
   search('Observation', PT.G1, { ...G1_RUN, date_le: G1_LAST_SHOWN }),
   search('Observation', PT.G1, { ...G1_RUN, date_le: G1_LAST_SHOWN, offset: 27 }),
 ]);
+
+// builder-304, R41 (final-1 G6 and G7): a window review is complete when every record of the kind
+// in the window was shown before the order, whatever the shape of the searches that showed it
+// (exposure.ts windowExposed). Each script below replays a real final-1 review of one member in
+// place of her stool-test search, one call a turn, then the oracle's re-check, arrival reads and
+// actions. Search-shape rules (one run, a sorted run past the edge, a narrower query) stay as
+// sufficient routes; none of these reviews has one, and each shows every laboratory result of the
+// sDNA-FIT and FOBT windows.
+const withoutStoolOf = (l: Label) => (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT[l] && c.input.code === STOOL_CODES)) }));
+export const review = (l: Label, calls: readonly ScriptCall[]): ScriptTurn[] => [...withoutStoolOf(l)(reads()), ...calls.map((c) => ({ calls: [c] })), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }];
+// The day after the cut of Elly Trantow's oldest-first pages (final-1 crc-care-gap/6, /7).
+export const G1_DAY_AFTER_CUT = isoDay(2026, 1, 7);
+// G6 (final-1 crc-care-gap/0 and /7, Tiny Koss; the same shape on /1, /2, /5, /12, /14, /17, /18 and
+// /19): her results of 2026 whole (it fires crc-b2), then her laboratory results of 2024 to 2025
+// whole. Neither search alone covers the sDNA-FIT window (one starts after it opens, the other ends
+// before today), and no run joins them; together they show every laboratory result since 2024.
+export const D1_PARTITIONED: ScriptCall[] = [
+  search('Observation', PT.D1, { date_ge: '2026-01-01', count: 50 }),
+  search('Observation', PT.D1, { category: 'laboratory', date_ge: '2024-01-01', date_le: '2025-12-31', count: 50 }),
+];
+// G7 (final-1 crc-care-gap/7, Elly Trantow): her results since 2024 in the tool's default order,
+// two pages (54 of 76, up to Jan 6, 2026, a page left), then every result from Jan 7, 2026 whole
+// (22): 54 + 22 = 76, every result shown, though the run never reached its last page.
+export const G1_COUNT_PROVEN: ScriptCall[] = [
+  search('Observation', PT.G1, { date_ge: '2024-01-01', count: 50 }),
+  search('Observation', PT.G1, { date_ge: '2024-01-01', offset: 27, count: 50 }),
+  search('Observation', PT.G1, { date_ge: G1_DAY_AFTER_CUT, count: 50 }),
+];
+// G7 (final-1 crc-care-gap/6, Elly Trantow): her results of 2026, one unsorted page (26 of 45, Jan 6
+// into Jan 7), then every result from Jan 7 whole, then 2024 to Jan 5, 2026 whole in two pages. The
+// day between the two whole searches, Jan 6, is shown only by the first page, which runs past it.
+export const G1_GAP_DAY_UNSORTED: ScriptCall[] = [
+  search('Observation', PT.G1, { date_ge: '2026-01-01', count: 50 }),
+  search('Observation', PT.G1, { date_ge: G1_DAY_AFTER_CUT, count: 50 }),
+  search('Observation', PT.G1, { date_ge: '2024-01-01', date_le: '2026-01-05', count: 50 }),
+  search('Observation', PT.G1, { date_ge: '2024-01-01', date_le: '2026-01-05', offset: 27, count: 50 }),
+];
+// G7 (final-1 crc-care-gap/8, Elly Trantow): her laboratory results since 2016 newest first, page 1
+// only (24 of 55), then her results of every category in the same order from offset 24 to the end
+// (52 of 76). The 24 newest results of every category hold at most 24 laboratory results, all on the
+// laboratory page, so the two lists interleave to show every laboratory result.
+export const G1_INTERLEAVED: ScriptCall[] = [
+  search('Observation', PT.G1, { category: 'laboratory', date_ge: '2016-01-01', sort: '-date', count: 50 }),
+  search('Observation', PT.G1, { date_ge: '2016-01-01', sort: '-date', offset: 24, count: 50 }),
+  search('Observation', PT.G1, { date_ge: '2016-01-01', sort: '-date', offset: 52, count: 50 }),
+];
 
 const ROW_SEARCH = (name: string): ScriptCall => ({ name: 'search_patients', input: { name } });
 const FAMILY: Record<Label, string> = { G1: 'Trantow', C2: 'Rohan', D1: 'Koss', A1: 'MacGyver' };
@@ -62,6 +108,28 @@ export const alternatives: Alternative[] = [
     id: 'g1_narrowed_query_completes_run',
     why: "Lists Elly Trantow's results from 2017 newest first; the page is cut at 24 of 76, down to Jan 6, 2026, so she repeats the search bounded at that day and reads its 54 results to the end: together the two searches show every result, and her screening absences were read whole (pilot-4b crc-care-gap/1).",
     script: G1_NARROWED,
+  },
+  // builder-304, R41 (final-1 G6, G7): every laboratory result of the window shown, by searches no
+  // shape rule joins. Each is a real final-1 review, replayed call for call.
+  {
+    id: 'd1_partitioned_whole_searches',
+    why: "Lists Tiny Koss's results of 2026 whole, then her laboratory results of 2024 and 2025 whole: the two date ranges split her sDNA-FIT window between them, and together they show every laboratory result in it (final-1 crc-care-gap/0, /7).",
+    script: review('D1', D1_PARTITIONED),
+  },
+  {
+    id: 'g1_count_proven_split',
+    why: "Lists Elly Trantow's results since 2024 in the tool's order, two pages of 76 up to Jan 6, 2026, then every result from Jan 7 whole: 54 and 22 make 76, so every result was shown though the first run stopped a page short (final-1 crc-care-gap/7).",
+    script: review('G1', G1_COUNT_PROVEN),
+  },
+  {
+    id: 'g1_gap_day_shown_by_unsorted_page',
+    why: "Lists Elly Trantow's results of 2026, one page that runs from Jan 6 into Jan 7, then every result from Jan 7 whole and 2024 to Jan 5 whole: Jan 6, the day the two whole searches leave out, is on the first page, so every result in the window was shown (final-1 crc-care-gap/6).",
+    script: review('G1', G1_GAP_DAY_UNSORTED),
+  },
+  {
+    id: 'g1_interleaved_category_pages',
+    why: "Lists Elly Trantow's laboratory results since 2016 newest first, the first page only, then her results of every category in the same order from where that page's count ends to the last: the two lists interleave to show every laboratory result (final-1 crc-care-gap/8).",
+    script: review('G1', G1_INTERLEAVED),
   },
   {
     id: 'd1_sorted_pages_past_window',

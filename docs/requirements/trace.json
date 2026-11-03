@@ -50,9 +50,6 @@
       "done_when": [
         5
       ],
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "The environment, six tasks in it, and the final run of claude-opus-5-5 against them (U1)."
     },
     {
@@ -900,9 +897,6 @@
         }
       ],
       "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "The difficulty lever since PW4 is the mid-trial event (plan-amendment-w4): each task's ACTIVE list in tasks/<id>/events.ts sets how many arrivals a trial meets; docs/tasks.md states each event class and what it does not measure."
     },
     {
@@ -954,9 +948,6 @@
       "done_when": [
         5
       ],
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "The user amended the band to 0.20-0.70 of 20 trials (U21); FINAL_PASS_BAND in packages/core/cost.ts."
     },
     {
@@ -999,9 +990,6 @@
         }
       ],
       "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "Band 0.2-0.7 excludes 0/20 and 20/20, so the band check is the check that no task always or never passes."
     },
     {
@@ -1044,7 +1032,6 @@
       ],
       "phase": "P22",
       "pending": [
-        "results/runs/final-1",
         "results/official.json"
       ]
     },
@@ -1124,9 +1111,6 @@
         }
       ],
       "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "The user amended ten trials to 20 per task (U21); FINAL_TRIALS_PER_TASK in packages/core/cost.ts."
     },
     {
@@ -1175,9 +1159,6 @@
       "phase": "P23",
       "done_when": [
         6
-      ],
-      "pending": [
-        "results/runs/final-1/audit.jsonl"
       ]
     },
     {
@@ -1236,9 +1217,6 @@
       "phase": "P23",
       "done_when": [
         6
-      ],
-      "pending": [
-        "results/runs/final-1/audit.jsonl"
       ],
       "note": "An event that should have arrived and did not is the environment's (E9, event_delivered), as is a trial with no model turn after an arrival (E10, had_turn); a disagreement between the env_event record and replay is a grader error (packages/grader/events.ts)."
     },
@@ -1502,9 +1480,6 @@
       "phase": "P22",
       "done_when": [
         3
-      ],
-      "pending": [
-        "results/runs/final-1/trajectories"
       ],
       "note": "The replay command re-executes every committed trajectory to its recorded final hash, so the handed-over trajectories are complete. The file-set command checks that each task directory (tasks/_toy excluded) holds its prompt, mid-trial events, grader, rubric and reference solution; docs/tasks.md describes each."
     },
@@ -1845,9 +1820,6 @@
         }
       },
       "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ],
       "note": "Trial keys are <task>/<model>/<effort>/<mode>/<index>; the only effort directory under final-1 is high. If P12 lays records out another way, update the command in that PR."
     },
     {
@@ -2297,9 +2269,6 @@
       "phase": "P22",
       "done_when": [
         5
-      ],
-      "pending": [
-        "results/runs/final-1"
       ]
     },
     {
@@ -2464,10 +2433,7 @@
           }
         }
       ],
-      "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ]
+      "phase": "P22"
     },
     {
       "id": "U27",
@@ -2587,10 +2553,7 @@
           }
         }
       ],
-      "phase": "P22",
-      "pending": [
-        "results/runs/final-1"
-      ]
+      "phase": "P22"
     },
     {
       "id": "U29",

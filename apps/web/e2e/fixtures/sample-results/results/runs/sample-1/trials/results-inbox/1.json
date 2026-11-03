@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:1",
   "task_id": "results-inbox",
-  "task_version": "668c38967bb98f51d2f0d962b8bc83727a25076c7bdc82b1014310144b5be295",
-  "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
-  "grader_task_version": "d6803083454c75a433843d55426b4d2e0e341b033fe69e6aea5adb81283bd7fb",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "ba4c8ece703dbf859cd558063b469475d0b84fb1674bd47dca34ab8c356413b9",
+  "env_version": "8b6e5a5bc0d091145db72f0c1282f964a9f8397691165486c0248edcdda107e4",
+  "grader_task_version": "718da033bc983069109d3469f6bf9818a4fe63ad7216e072eecf5d03a0684929",
+  "fixture_hash": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "e7cca463ee2514877900b1952b1c6f718d86b80912fef927369e28f71211b276",
-    "replay_final": "e7cca463ee2514877900b1952b1c6f718d86b80912fef927369e28f71211b276"
+    "initial": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
+    "final": "b209c970868e079ef3a98871a94efaa6ced98b83d32dac3e6379d4405a3f017c",
+    "replay_final": "b209c970868e079ef3a98871a94efaa6ced98b83d32dac3e6379d4405a3f017c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:11:41.000Z",
+  "started": "2026-10-23T15:24:05.000Z",
   "turns": 21,
   "tool_calls": 57,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:15:38.000Z",
+  "ended": "2026-10-23T15:28:02.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "20",
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

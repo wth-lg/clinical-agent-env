@@ -1,5 +1,6 @@
 import { ref, refOf } from './ids.ts';
-import { HOSTS, LEVER } from './lever.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS } from './lever-keys.ts';
 export { LEVER } from './lever.ts';
 // T4's expected end state (plan-amendment-worklist W1, T4 probe; cut to 8 items in PW4-E3,
 // plan-amendment-w4; W5-E lever items added, plan-amendment-w5), written by hand: the patients of

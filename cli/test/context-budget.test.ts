@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { CONTEXT_WINDOW_TOKENS, PER_TRIAL_BUDGET_USD, RERUN_FACTOR } from '../../packages/core/cost.ts';
 import { MAX_WALL_MS } from '../../packages/core/run.ts';
 import { expected as crcExpected } from '../../tasks/crc-care-gap/expected.ts';
-import { tempDir } from '../../scripts/test/helpers.ts';
+import { tempDir, write } from '../../scripts/test/helpers.ts';
 import { budgetBreaks, type Deps, main, type Projection } from '../context-budget.ts';
 import { quadCost, writeQuadRun, type QuadTrial } from './fixtures/context-budget/make-run.ts';
 
@@ -36,6 +36,20 @@ interface Out {
 const ITEMS: Record<string, number> = { 'crc-care-gap': 14, 'results-inbox': 8 };
 const taskItems: Deps['taskItems'] = async (id) => ITEMS[id] ?? null;
 const sameEnv: Partial<Deps> = { checkoutEnv: async (id) => `ev-${id}`, taskItems };
+
+// The projection correction counts the final run's trials under RESULTS_ROOT (results/runs/final-1,
+// as spend --final-reserve does). Tests point RESULTS_ROOT at their own root, so the checkout's
+// committed final run never moves them.
+async function withResultsRoot<T>(root: string, f: () => Promise<T>): Promise<T> {
+  const was = process.env.RESULTS_ROOT;
+  process.env.RESULTS_ROOT = root;
+  try {
+    return await f();
+  } finally {
+    if (was === undefined) delete process.env.RESULTS_ROOT;
+    else process.env.RESULTS_ROOT = was;
+  }
+}
 
 async function run(args: string[], deps: Partial<Deps> = sameEnv): Promise<{ code: number; json: Out | null; lines: string[] }> {
   const lines: string[] = [];
@@ -258,12 +272,33 @@ describe('pnpm cli context-budget <run> --project --items <n>', () => {
     const dir = fixture('correction');
     // The fallback is the nearest-rank p90 of the three crc trials: the T = 30 trial.
     const fallback = quadCost(CRC[2]!);
-    const over = await run([dir, '--task', 'crc-care-gap', '--project', '--items', '36', '--json']);
-    const p90 = over.json!.tasks['crc-care-gap']!.projection!.p90_usd;
-    expect(over.json!.correction_usd).toBeCloseTo(20 * RERUN_FACTOR * (p90 - fallback), 9);
-    expect(over.lines).toContainEqual(expect.stringMatching(/^projection correction \+\$\d+\.\d\d: add to the dry-run value/));
-    const under = await run([dir, '--task', 'crc-care-gap', '--project', '--items', '10', '--json']);
-    expect(under.json!.correction_usd).toBe(0);
+    // The fixture root holds no results/runs/final-1, so all 20 final trials remain.
+    await withResultsRoot(dir, async () => {
+      const over = await run([dir, '--task', 'crc-care-gap', '--project', '--items', '36', '--json']);
+      const p90 = over.json!.tasks['crc-care-gap']!.projection!.p90_usd;
+      expect(over.json!.correction_usd).toBeCloseTo(20 * RERUN_FACTOR * (p90 - fallback), 9);
+      expect(over.lines).toContainEqual(expect.stringMatching(/^projection correction \+\$\d+\.\d\d: add to the dry-run value/));
+      const under = await run([dir, '--task', 'crc-care-gap', '--project', '--items', '10', '--json']);
+      expect(under.json!.correction_usd).toBe(0);
+    });
+  });
+
+  it('counts the valid trials of results/runs/final-1 under RESULTS_ROOT as already run: 12 valid of 13 leave 8, 20 leave none', async () => {
+    const dir = fixture('correction-final');
+    const fallback = quadCost(CRC[2]!);
+    const root = tempDir('context-budget-results-root');
+    const trial = (i: number, outcome: string, over: Record<string, unknown> = {}) => write(root, `results/runs/final-1/trials/crc-care-gap/${i}.json`, JSON.stringify({ task_id: 'crc-care-gap', outcome, ...over }));
+    // 11 recorded passes or fails, one FAIL regraded PASS (still valid), one ENV_ERROR (not valid).
+    for (let i = 0; i < 11; i++) trial(i, i % 2 === 0 ? 'PASS' : 'FAIL');
+    trial(11, 'FAIL', { regrades: [{ outcome: 'PASS', valid: true }] });
+    trial(12, 'ENV_ERROR');
+    const partial = await withResultsRoot(root, () => run([dir, '--task', 'crc-care-gap', '--project', '--items', '36', '--json']));
+    const p90 = partial.json!.tasks['crc-care-gap']!.projection!.p90_usd;
+    expect(partial.json!.correction_usd).toBeCloseTo(8 * RERUN_FACTOR * (p90 - fallback), 9);
+    for (let i = 13; i < 21; i++) trial(i, 'PASS');
+    const done = await withResultsRoot(root, () => run([dir, '--task', 'crc-care-gap', '--project', '--items', '36', '--json']));
+    expect(done.json!.correction_usd).toBe(0);
+    expect(done.lines).toContainEqual(expect.stringMatching(/^projection correction \+\$0\.00: add to the dry-run value/));
   });
 
   it('usage errors exit 2; a missing run exits 1', async () => {

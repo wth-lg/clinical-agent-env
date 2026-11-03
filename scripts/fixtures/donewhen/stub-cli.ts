@@ -1,5 +1,7 @@
 // Stands in for `node cli/index.ts` in the donewhen self-tests.
-// DONEWHEN_STUB maps a command name to a file in outputs/ ({exit, stdout}).
+// DONEWHEN_STUB maps a command name, or a whole command line ("summary <run> --require ..."), to a
+// file in outputs/ ({exit, stdout}); the whole line wins, so two calls of one command with
+// different arguments can answer differently.
 // An unmapped command behaves like the real dispatcher for a command that is not built: exit 127.
 import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -8,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const [command = '', ...args] = process.argv.slice(2);
 if (process.env.DONEWHEN_STUB_LOG) appendFileSync(process.env.DONEWHEN_STUB_LOG, `${[command, ...args].join(' ')}\n`);
 const map = JSON.parse(process.env.DONEWHEN_STUB ?? '{}') as Record<string, string>;
-const name = map[command];
+const name = map[[command, ...args].join(' ')] ?? map[command];
 if (!name) {
   process.stderr.write(`unknown command: ${command}\n`);
   process.exit(127);
