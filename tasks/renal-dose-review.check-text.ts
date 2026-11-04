@@ -4,6 +4,7 @@
 // covers it: rewording it regrades nothing.
 import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './renal-dose-review/expected.ts';
+import { leverOn } from './renal-dose-review/lever-keys.ts';
 
 // A list member as a reader knows them: 'Patient/pt-0040 (Dorothy Ashworth)'.
 const who = (p: unknown) => {
@@ -61,6 +62,17 @@ export const checkText: CheckText = {
       return step === null || step === undefined ? `${show(late)} was not read before ${at}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, f.first_write)} ${at}`;
     },
   },
+  // The reserve's gate (tests/grader.ts), present while LEVER names the reserve.
+  ...(leverOn('reserve') ? { prescriber_told: {
+    requires: "for a patient on the list who takes a combined P-gp and strong CYP3A4 inhibitor and whose criteria dose is already 2.5 mg twice daily, a note on their chart that records the combination (it cites the inhibitor's order) and a message to the prescriber of the DOAC order, or a task for them, about the patient (RBC-PHARM-07 §2)",
+    found: (ev) => {
+      const f = fields(ev.first);
+      const note = items(f.note);
+      const told = items(f.told);
+      const what = note.length === 0 && told.length === 0 ? 'neither a note recording the combination nor a message to' : note.length === 0 ? 'a message but no note recording the combination for' : 'a note but no message to';
+      return `${who(f.patient)} takes an inhibitor at 2.5 mg; the trial wrote ${what} ${show(f.tell)}, the prescriber of the DOAC order`;
+    },
+  } } : {}),
   event_delivered: {
     requires: 'each result, correction or message the review is set to receive arrives in the chart and the queue once its trigger holds (the environment, not the agent)',
     found: (ev) => failedOn(ev, 'had an arrival due that is not in the final chart'),

@@ -1,4 +1,4 @@
-// pnpm cli summary <run> [--require <spec>] [--task all|<id,...>] [--allow-mock] [--json] [--write]
+// pnpm cli summary <run> [--require <spec>] [--task all|<id,...> | --tasks <id,...>] [--allow-mock] [--json] [--write]
 // Summarizes a run (packages/core/summary.ts): per task pass k/n over its valid trials with a
 // Wilson 95% interval, every figure at each record's current grade (its last cli regrade, else
 // its recorded outcome; a task with regraded records also prints its recorded k/n, as disclosure), ENV_ERROR counted raw over settled and re-queued attempts, ENV_LIMIT over the same, the models seen,
@@ -6,7 +6,9 @@
 // validated against the schema first; without it, it only prints, so a summary of a committed run
 // leaves its file alone (verifier-phase-P17i-JG8a-1 P-1). --require checks the run:
 //   valid=N          every task has exactly N valid trials (donewhen: trials=N)
-//   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b)
+//   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b), or,
+//                    with a decimal point (band=0.2-0.7, the final run's FINAL_PASS_BAND), a
+//                    proportion of its valid trials, k/N inclusive (P21)
 //   env_error_raw=N  at most N ENV_ERROR attempts in the run, re-queued ones included
 //   env_limit=N      at most N attempts whose current grade is ENV_LIMIT (a stop at the context
 //                    window, or at a turn, cost or time cap that rule P-L does not find looping:
@@ -25,7 +27,11 @@
 //   mode=M           the manifest's mode is M (mode=live)
 // With any requirement, every task the run must hold has records: those of --task (all, or a
 // comma list), else the manifest's task_versions; and a run that is not live is a violation
-// unless --allow-mock is given. Each task line names the env_versions its records ran at and the
+// unless --allow-mock is given. --tasks <id,...> (P21) holds the per-task requirements, valid
+// and band, to those tasks alone, each of which must have records: the final run directory
+// collects each task's trials as that task is frozen, so the frozen ones are checked without
+// reading the rest. The run-wide requirements (env_error_raw, env_limit, grader_error, model,
+// replay, mode) stay run-wide. --task and --tasks do not combine. Each task line names the env_versions its records ran at and the
 // grader_task_versions of their current grades (packages/core/tasks.ts), first 12 characters.
 // Under each task line, the metrics beside k/n (packages/core/summary.ts header), each with its
 // denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm,
@@ -59,7 +65,7 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...>] [--allow-mock] [--json] [--write]';
+const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...> | --tasks <id,...>] [--allow-mock] [--json] [--write]';
 
 // A record as cli regrade leaves it: its regrades[] entries appended.
 // A run-one record has no index: summary names it by its trajectory, as replay does (trialName).
@@ -99,6 +105,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   let allowMock = false;
   let write = false;
   let taskArg: string | undefined;
+  let tasksArg: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--json') json = true;
@@ -106,6 +113,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     else if (a === '--write') write = true;
     else if (a === '--require' && args[i + 1] !== undefined) spec = args[++i] as string;
     else if (a === '--task' && args[i + 1] !== undefined) taskArg = args[++i] as string;
+    else if (a === '--tasks' && args[i + 1] !== undefined) tasksArg = args[++i] as string;
     else if (!a.startsWith('--') && dir === undefined) dir = a;
     else {
       deps.err(`summary: unexpected argument ${a}\n${USAGE}`);
@@ -114,6 +122,15 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   }
   if (dir === undefined) {
     deps.err(`summary: a run directory is required\n${USAGE}`);
+    return 2;
+  }
+  if (taskArg !== undefined && tasksArg !== undefined) {
+    deps.err(`summary: --task and --tasks do not combine\n${USAGE}`);
+    return 2;
+  }
+  const held = tasksArg === undefined ? undefined : tasksArg.split(',').map((t) => t.trim()).filter((t) => t !== '');
+  if (held !== undefined && held.length === 0) {
+    deps.err(`summary: --tasks needs at least one task id\n${USAGE}`);
     return 2;
   }
   let req: Requirements;
@@ -128,9 +145,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     return 1;
   }
   if (allowMock) req.allow_mock = true;
+  if (held !== undefined) req.tasks = held;
   const manifest = readManifest(dir);
   let expected: { tasks: string[]; from: string } | undefined;
-  if (taskArg !== undefined) {
+  if (held !== undefined) expected = { tasks: held, from: '--tasks' };
+  else if (taskArg !== undefined) {
     try {
       const tasks = taskArg === 'all' ? (await (deps.tasks ?? nodeTaskSource({ testMode: false })).all()).map((t) => t.id) : taskArg.split(',').map((t) => t.trim()).filter((t) => t !== '');
       expected = { tasks, from: '--task' };

@@ -46,7 +46,7 @@
 //                     (instruction.md:<n>) or a policy (<policy id>, optionally ' §<section>'
 //                     found in its text)
 //   oracle final hash the oracle's final state hash equals MatrixOptions.oracleFinalHash when
-//                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
+//                     one is given (cli/matrix.ts reads it from results/tasks-final.json, which
 //                     P21's freeze writes), and a pinned hash fails when the oracle case does not
 //                     run; without one the hash is printed, not checked
 //   events            (a task with active mid-trial event specs, MatrixTask.events) checked
@@ -725,10 +725,10 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     const hash = oracle.record.state_hash.final;
     const want = opts.oracleFinalHash;
     if (want === undefined) lines.push(`oracle final hash: ${hash ?? 'none'} (no expected hash)`);
-    else if (hash === want) lines.push(`oracle final hash: ${hash} matches results/tasks-v1.json`);
+    else if (hash === want) lines.push(`oracle final hash: ${hash} matches results/tasks-final.json`);
     else {
-      lines.push(`oracle final hash: ${hash ?? 'none'} DIFFERS from results/tasks-v1.json ${want}`);
-      fail(`oracle final hash of task ${task.id} is ${hash ?? 'none'}, results/tasks-v1.json pins ${want}`);
+      lines.push(`oracle final hash: ${hash ?? 'none'} DIFFERS from results/tasks-final.json ${want}`);
+      fail(`oracle final hash of task ${task.id} is ${hash ?? 'none'}, results/tasks-final.json pins ${want}`);
     }
   }
 

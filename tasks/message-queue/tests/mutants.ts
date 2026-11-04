@@ -170,14 +170,18 @@ export const mutants: Mutant[] = [
   // R20 (verifier-W1T-190-r2-falsepass N4): a bound is the instant fhir_search reads.
   skipped('m12_date_ge_offset_hole', 'collection_date', 'm12', "Searches Marcus Webb's potassium from 10/22/2025 23:00 at UTC-14, which starts 9 hours into the 12-month window, and gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { code: '2823-3,6298-4', date_ge: '2025-10-22T23:00-14:00' })]]] }),
   // R36 (builder-273): a list newest first counts only once a page reaches before the window's first
-  // day; his first page of 4 ends in 09/2026, so a result from 10/23/2025 on may sit on the pages not read.
-  skipped('m12_sorted_first_page_only', 'collection_date', 'm12', "Reads only the first page of 4 of Marcus Webb's observations newest first, which ends in 09/2026, short of the 12-month window, and gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date' })]]] }),
+  // day. R41 (builder-304): the window is also reviewed once every valid result of his in it was shown,
+  // and his eGFR and HbA1c lists show two of its three (09/28/2026), so a first page that shows the
+  // third, his creatinine of 09/28/2026, completes the review (alternatives.ts
+  // m12_newest_page_shows_window). These pages stop before it: the two results of 10/14/2026, both
+  // entered in error, fill a page of 2, and the creatinine is never shown.
+  skipped('m12_sorted_first_page_only', 'collection_date', 'm12', "Reads only the first page of 2 of Marcus Webb's observations newest first, the two of 10/14/2026 entered in error: his creatinine of 09/28/2026 and anything older in the 12-month window are never shown, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 2, sort: '-date' })]]] }),
   // builder-294, G5: a narrower search finishes a stopped run only when it holds every result the run
-  // did not show and is complete itself (R27, R36). His first page of 4 ends on 09/28/2026 with a
-  // third result of that day not shown: a bound of the day before leaves it out; a bounded search of 2 a
-  // page stopped at its first page (both of 09/28/2026) never reaches the window's first day.
-  skipped('m12_narrowed_query_gap', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then searches only up to the day before: a result of 09/28/2026 the first page did not show is never read, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01', date_le: WEBB_DAY_BEFORE })]]] }),
-  skipped('m12_narrowed_query_stops_short', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then the search up to 09/28/2026 two at a time, and stops at its first page, short of the 12-month window, and gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01', date_le: '2026-09-28' })]]] }),
+  // did not show and is complete itself (R27, R36). His first page of 2 ends on 10/14/2026: a bound at
+  // 09/27/2026 skips 09/28 to 10/13, where his creatinine of 09/28/2026 sits; a bounded search of 2 a
+  // page stopped at its first page (the same two of 10/14/2026) never reaches it either.
+  skipped('m12_narrowed_query_gap', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 2 a page, down to 10/14/2026, then searches only up to 09/27/2026: his results of 09/28/2026 the first page did not show, his creatinine among them, are never read, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01', date_le: WEBB_DAY_BEFORE })]]] }),
+  skipped('m12_narrowed_query_stops_short', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 2 a page, down to 10/14/2026, then the search up to 10/14/2026 two at a time, and stops at its first page, the same two results: his creatinine of 09/28/2026 and the rest of the 12-month window are never shown, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01', date_le: '2026-10-14' })]]] }),
   // R31: the newest panel, before the window, read on its own is a lure.
   lureOnly('m12_panel_only', 'collection_date', 'm12', "Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.", { reads: [[WEBB_K, [search('DiagnosticReport', PT.webb, { code: '51990-0', sort: '-date' })]]] }),
       ]),

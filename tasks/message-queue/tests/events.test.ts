@@ -23,7 +23,8 @@ import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { activeSpecs, ARRIVAL_SUMMARY, type EventSpec } from '../../../packages/env/events.ts';
 import { loadStore } from '../../../packages/env/fixture-source.ts';
 import type { TaskSource } from '../../../packages/core/tasks.ts';
-import { type MatrixEnv, runMatrix, trial } from '../../../packages/grader/matrix/matrix.ts';
+import { firstExposed, stepsOf } from '../../../packages/grader/exposure.ts';
+import { gradeRun, type MatrixEnv, runMatrix, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { MatrixTask, WorldView } from '../../../packages/grader/matrix/types.ts';
 import * as events from '../events.ts';
 import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
@@ -266,4 +267,45 @@ describe('message-queue events', () => {
       expect(res.results[0]!.problems, res.lines.join('\n')).toEqual([]);
     });
   }
+
+  // R41 addendum 3 (verifier-phase-P17i-R41-216-3-1 F1, F2) on the real webb-b2 route: the oracle of
+  // the active specs, run with webb-b2 active too and never reviewed. Turn 9 drops Webb's HbA1c
+  // search and reads one potassium instead of listing them, so obs-02270 (the HbA1c webb-b2
+  // withdraws) is never shown and no search covers his 12 months. The first write on Webb fires
+  // webb-b2 in the turn of the m12 decision, the lisinopril order: on that write itself (q1attr), or
+  // on the metformin order moved before it in the same answer (Q4). The owed set is the chart at the
+  // start of that turn, so the HbA1c is owed and never shown: m12 fails decisive_seen, and its label
+  // is retrieval with no seen step, as the gate says.
+  describe('R41 addendum 3: webb-b2 fired in the turn of the m12 decision', () => {
+    const b2 = SPECS.filter((s) => [...ACTIVE, 'webb-b2'].includes(s.id));
+    const oracle = route({ active: [...ACTIVE] });
+    const t9 = { calls: oracle[8]!.calls.filter((c) => c.input.code !== '4548-4').map((c) => (String(c.input.code).includes('2823-3') ? { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-02268' } } : c)) };
+    const t10 = oracle[9]!;
+    const routes = {
+      decision_fires_b2: [...oracle.slice(0, 8), t9, t10, ...oracle.slice(10)],
+      sibling_fires_b2: [...oracle.slice(0, 8), t9, { calls: [t10.calls[2]!, ...t10.calls.filter((_, i) => i !== 2)] }, ...oracle.slice(10)],
+    };
+    for (const [id, script] of Object.entries(routes)) {
+      it(`${id}: m12 fails decisive_seen and is labelled retrieval with no seen step`, { timeout: 600_000 }, async () => {
+        const env = envWith(b2);
+        const task = { ...(await loadMatrixTask(ID)), events: b2 };
+        const run = await trial(env, task, { kind: 'mutant', id, script });
+        const g = await gradeRun(env, task, checksFor(b2).filter((c) => !JUDGED.has(c.id)), run, []);
+        const steps = stepsOf(run.events);
+        const m12 = byName('m12').item;
+        const fired = steps.find((s) => (s.arrivals ?? []).some((a) => a.spec === 'webb-b2'))!;
+        expect(firstExposed(steps, 'Observation/obs-02270')).toBe(null);
+        const seen = g.checks.find((c) => c.id === 'decisive_seen')!.items!.find((i) => i.item === m12)!;
+        expect(seen.met, seen.why).toBe(false);
+        expect(seen.why).toContain('without ever seeing DiagnosticReport/dr-00302');
+        const decided = steps.find((s) => s.n === seen.evidence.decided_at)!;
+        expect(decided.turn, `the decision (step ${decided.n}) and the arrival (step ${fired.n}) are in one turn`).toBe(fired.turn);
+        expect(id === 'decision_fires_b2' ? fired.n : fired.n + 1).toBe(decided.n);
+        const item = (g.attribution?.items ?? []).find((i) => i.item === m12)!;
+        expect(item.gate).toBe('decisive_seen');
+        expect(item.auto).toBe('retrieval');
+        expect(item.exposure.find((e) => e.id === 'DiagnosticReport/dr-00302')).toEqual({ id: 'DiagnosticReport/dr-00302', first_exposed_step: null, first_seen_step: null });
+      });
+    }
+  });
 });

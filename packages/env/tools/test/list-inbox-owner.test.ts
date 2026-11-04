@@ -1,7 +1,7 @@
 // list_inbox shows and filters by owner (P17j JT1, pre-audit S10). Before the fix a results item
 // reassigned to the on-call pool stayed in the signed-in user's queue with nothing to say it had
 // left it (evidence/pre-audit-tasks/list-inbox-after-reassign.out.txt: 8 rows, no owner). The
-// shared world holds T2's eight results items, all owned by the signed-in user.
+// shared world holds T2's results items, the list's owned by the signed-in user.
 import { readFileSync } from 'node:fs';
 import type { Bundle } from '@medplum/fhirtypes';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -15,7 +15,7 @@ import { callTool, definitions, type ToolResult } from '../registry.ts';
 import { USER as WRITE_USER } from '../write/context.ts';
 import { newSession, TOOLS, type WriteContext } from '../write/index.ts';
 import { id, IDS, ref } from '../../../../tasks/results-inbox/ids.ts';
-import { expected } from '../../../../tasks/results-inbox/expected.ts';
+import { expected, LEVER, leverItems } from '../../../../tasks/results-inbox/expected.ts';
 
 const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
@@ -53,8 +53,11 @@ describe('list_inbox owner', () => {
     const c = fresh();
     expect(t2(c, { owner: 'Practitioner/pr-okafor' })).toEqual(t2(c, {}));
     expect(new Set(t2(c, {}).map((r) => r.task))).toEqual(T2_LIST);
-    expect(T2_ITEMS.size).toBe(13); // the W1 T2 worklist: 13 results on 8 patients, 7 of them on the list
+    // The W1 T2 worklist: 13 results on 8 patients, 7 of them on the list; W5-E adds one list item
+    // per active lever item, on a patient of its own (expected.ts leverItems).
     const off = t2(c, { owner: 'Practitioner/pr-reyes' }).map((r) => String(r.task));
+    expect(T2_LIST.size).toBe(7 + leverItems(LEVER).length);
+    expect(T2_ITEMS.size).toBe(T2_LIST.size + off.length);
     expect(new Set(off)).toEqual(new Set([...T2_ITEMS].filter((t) => !T2_LIST.has(t))));
     expect(t2(c, { owner: 'Practitioner/pr-lin' })).toEqual([]);
   });

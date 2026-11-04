@@ -544,6 +544,9 @@ const overlay: Overlay = {
     'org-t6-harbor': 'org-harbor-lab',
     'org-t6-brigid-lab': 'org-st-brigid-lab',
   },
+  // The hosts' fixed slots (packages/env/overlay.ts TASKS T6 added: pt-0070 Kaplan, pt-0071 Mercer),
+  // the same in every LEVER state, so a toggle moves no other id.
+  added: { [LEVER_HOSTS.B]: 0, [LEVER_HOSTS.reserve]: 1 },
   build(world: WorldReader) {
     const dropped = new Set(DROP_ENCOUNTERS.map((id) => `Encounter/${id}`));
     const slots = new Set(Object.values(PT) as string[]);
@@ -689,6 +692,10 @@ const overlay: Overlay = {
     return {
       put,
       remove: unique,
+      // Every key a LEVER toggle adds: each host and every record of its chart, present in this
+      // build or not (the central lever-invariant test checks that no state adds a key this list
+      // lacks; item A, webb-a1, adds nothing to the world, its records arrive in the trial).
+      lever: leverHosts(world, ['B', 'reserve']).map((r) => r.id!),
       lint: {
         thresholds: [
           // Ruling R7: each value an item turns on, the trap values included (the hemolyzed potassium,

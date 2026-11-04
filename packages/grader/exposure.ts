@@ -30,10 +30,10 @@
 // a gate comparing the two on such a record compares two rules. Before TOOLS_VERSION 3 no
 // snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
-import { search, sortStart } from '../env/search.ts';
+import { dateRangeOf, search, sortStart } from '../env/search.ts';
 import type { Resource } from '../env/store.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
-import type { Step, StepNotes, StepSearch } from './check.ts';
+import type { SeenWorld, Step, StepNotes, StepSearch } from './check.ts';
 
 const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status', 'sort'] as const;
 
@@ -213,6 +213,9 @@ export function continuesRun(steps: readonly Step[], first: Step, later: Step, a
 // on a one-row probe, so the bound's precision and offset are read as the tool reads them. A value
 // the search rejects matches nothing.
 function boundHolds(key: 'date_le' | 'date_ge', value: string, t: number): boolean {
+  // A row whose date Period has no start sorts at -Infinity (env search.ts sortStart): no bound
+  // reaches it, and new Date(t) would throw (verifier-phase-P17i-G5-210-1 M1).
+  if (!Number.isFinite(t)) return false;
   const row = { resourceType: 'Observation', id: 'edge', status: 'final', code: {}, effectiveDateTime: new Date(t).toISOString() } as unknown as Resource;
   try {
     return search<Resource>([row], 'Observation', { date: `${key === 'date_le' ? 'le' : 'ge'}${value}` }).total === 1;
@@ -261,6 +264,129 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
     }
   }
   return best;
+}
+
+// Window completeness by exposure (ruling R41 and its addenda, builder-304 to builder-307; final-1
+// crc-care-gap G6 and G7; verifier-phase-P17i-R41-216-1 F1, F2, verifier-phase-P17i-R41-216-2-1 F1,
+// F2 and verifier-phase-P17i-R41-216-3-1 F1, F2). A window review (R27, R31, R36) is complete when every
+// record of the reviewed kind for the patient inside the window was exposed before the decision, by
+// any combination of searches, pages or reads. The page-run rules above (one run, a sorted run past
+// the edge, a narrower query) stay as sufficient routes; a gate takes the earlier of the two. A
+// stop-short, a gap or a narrowed filter that leaves a target record unshown completes nothing here,
+// because that record was never exposed.
+//
+// The target set (windowTargets) holds the initial world's records (SeenWorld.initial) of the
+// kind's type for the patient, each judged by its state before and after the one arrival that may
+// have replaced it. A record qualifies when it carries one of the kind's categories (when it names
+// any) and one of its statuses (when it names any), is not entered in error, and is dated inside
+// the window: the range the record is dated by on its type's date parameter (env search.ts
+// dateRangeOf, what date_ge, date_le and _sort read) overlaps [opens, closes], so a Period that
+// began before the window and runs into it counts, as a hospice episode counts for the year; with
+// no window start (opens null) every record of the kind counts, undated ones too. The kind names
+// no codes: the review has to show every record a qualifying one could be among (every
+// laboratory result, every procedure), which is what a code-filtered covering search also lists
+// in full. A record no arrival touched keeps its initial state throughout (no write tool changes a
+// record of a reviewed kind). A record a class B arrival replaced in place (Step.arrivals names its
+// key; `replaced` is the step whose call fired it, and the arrival lands after that call) has its
+// initial state (`before`) and its final one (`after`). A record that first arrives during the
+// trial (the initial world lacks it) is never a window target: its event gates (R38 event_seen,
+// amended) grade it, so it is not counted twice (addendum, probe P-b). A record neither state
+// holds is not in the delivered chart and is not a target.
+//
+// The set owed is evaluated as of the decision step d (addendum 2, windowExposed's `at`): a record
+// replaced at a step r < d is owed in its replaced state (`after`), one replaced at r >= d in its
+// initial state (`before`), since the arrival lands after the call that fired it. So a result
+// withdrawn by an arrival the decision write fired was still owed at the decision (probe P-a), one
+// withdrawn by a write of an earlier turn is not (P-c2, P-c2b: the review is complete at the
+// targets shown earlier, not one step after the withdrawal), and a correction that moves a
+// never-shown record into the window before the decision makes it a target, whether or not every
+// other target had been shown before the correction landed (P-d, P-d2). "Owed at the decision"
+// means owed at the start of the decision's turn (addendum 3): the calls of one answer run in order
+// but their results reach the model together, so an arrival fired by any call of that turn, the
+// decision write among them, lands after the chart the agent decided on and counts as r >= d. A
+// withdrawal fired by a sibling call of the decision's turn leaves the result owed and unshown
+// (probe Q4, as P-a), and a correction fired by one is not owed at that decision (Q2): the agent had
+// no turn to see it. Without a decision step the set is judged at the trial's end, every arrival
+// landed: what a check that asks whether a record was ever seen by finish reads. Attribution
+// judges each failed item at the step its gate did (items.ts ItemResult.at), so a label never
+// contradicts its gate (attribution.ts exposureOf).
+//
+// The review (windowExposed) is complete at the latest first exposure among the records owed at d:
+// the first step by which every one of them had been exposed by a successful call. Exposure is by
+// id, any version: a record exposed before a correction replaced it counts as exposed (the
+// correction itself is the amended gate's). A step exposes a target when its exposed_ids name it
+// (R2 places; a fhir_search row of an Observation or Procedure shows what a clinician acts on, a
+// note is exposed by a read or an uncut snippet). The caller compares the step with the decision
+// write by turn (seenBefore). A set that owes nothing completes nothing: nothing shown is not a
+// review (R31), and the shape routes remain for a chart that holds no record of the kind.
+export interface WindowKind {
+  type: string;
+  // 'Patient/<id>'.
+  patient: string;
+  // 'system|code' each; empty for a kind that carries no category.
+  categories: readonly string[];
+  // Bare statuses the policy counts; empty for a kind counted in any status.
+  statuses: readonly string[];
+  // Epoch ms; opens null for a kind with no window start.
+  opens: number | null;
+  closes: number;
+}
+export interface WindowTarget {
+  // '<Type>/<id>'.
+  id: string;
+  // The step whose call fired the class B arrival that replaced the record, or null when no
+  // arrival touched it (then before and after agree).
+  replaced: number | null;
+  // Whether the record is owed in its initial state: at a decision step in the turn of `replaced`
+  // or an earlier one.
+  before: boolean;
+  // Whether it is owed in its final state: at a decision step of a later turn than `replaced`.
+  after: boolean;
+}
+type Coded = { resourceType: string; id: string; status?: string; category?: Array<{ coding?: Array<{ system?: string; code?: string }> }>; subject?: { reference?: string }; patient?: { reference?: string } };
+const carries = (r: Coded, categories: readonly string[]) => (r.category ?? []).some((c) => (c.coding ?? []).some((x) => categories.includes(`${x.system ?? ''}|${x.code ?? ''}`)));
+// Whether record r, in the state given, is one of the kind inside its window.
+function qualifies(r: Coded | undefined, kind: WindowKind): boolean {
+  if (r === undefined || (r.subject?.reference ?? r.patient?.reference) !== kind.patient || r.status === 'entered-in-error') return false;
+  if (kind.statuses.length > 0 && !kind.statuses.includes(r.status ?? '')) return false;
+  if (kind.categories.length > 0 && !carries(r, kind.categories)) return false;
+  if (kind.opens === null) return true;
+  let range: readonly [number, number] | undefined;
+  try {
+    range = dateRangeOf(r as unknown as Resource);
+  } catch {
+    range = undefined;
+  }
+  return range !== undefined && range[1] >= kind.opens && range[0] <= kind.closes;
+}
+export function windowTargets(world: SeenWorld, steps: readonly Step[], kind: WindowKind): WindowTarget[] {
+  const replacedAt = (key: string): number | null => steps.find((s) => (s.arrivals ?? []).some((a) => a.keys.includes(key)))?.n ?? null;
+  const out: WindowTarget[] = [];
+  for (const r of world.initial.all(kind.type) as readonly Coded[]) {
+    const before = qualifies(r, kind);
+    const replaced = replacedAt(`${r.resourceType}/${r.id}`);
+    const after = replaced === null ? before : qualifies(world.final.get(kind.type, r.id) as Coded | undefined, kind);
+    if (before || after) out.push({ id: `${r.resourceType}/${r.id}`, replaced, before, after });
+  }
+  return out;
+}
+// Whether target t is owed at decision step `at`: its final state once the arrival that replaced it
+// was fired in an earlier turn than that step (it landed before the turn's chart was returned), else
+// its initial one (addendum 3: fired by a call of the decision's own turn, it counts as after it).
+const owedAt = (steps: readonly Step[], t: WindowTarget, at: number): boolean => (t.replaced !== null && turnOf(steps, t.replaced) < turnOf(steps, at) ? t.after : t.before);
+// The step at which the review of `targets`, judged at decision step `at` (the trial's end when
+// omitted), was complete: the latest first exposure among the targets owed at `at`; null when one
+// of them was never exposed, or none is owed.
+export function windowExposed(steps: readonly Step[], targets: readonly WindowTarget[], at: number = Infinity): number | null {
+  const owed = targets.filter((t) => owedAt(steps, t, at));
+  if (owed.length === 0) return null;
+  let last = 0;
+  for (const t of owed) {
+    const n = steps.find((s) => !s.is_error && s.exposed_ids.some((k) => sameId(k, t.id)))?.n ?? null;
+    if (n === null) return null;
+    if (n > last) last = n;
+  }
+  return last;
 }
 
 // Whether <Type>/<id> names `id`, given bare or typed.

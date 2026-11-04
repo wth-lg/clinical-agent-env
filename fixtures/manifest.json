@@ -2,27 +2,27 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "22df090ebcedfbd16f21e16b0dc572eef069ed6195d8dec4158e2738bf819cad",
-    "ndjson_sha256": "4adda7db40cfe9acb227b63e18ce3c79e502461d7d99899d14e72f46936d0216",
-    "resources": 7452,
+    "state_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
+    "ndjson_sha256": "4811f808c10a807162e4fbaebf587002f04554c1d1ab6231c23fb1057f88dc55",
+    "resources": 7510,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
-      "Communication": 14,
-      "Condition": 890,
+      "Communication": 13,
+      "Condition": 904,
       "DiagnosticReport": 486,
-      "DocumentReference": 216,
-      "Encounter": 409,
+      "DocumentReference": 222,
+      "Encounter": 421,
       "EpisodeOfCare": 2,
       "Group": 5,
-      "MedicationRequest": 425,
-      "Observation": 3579,
+      "MedicationRequest": 441,
+      "Observation": 3584,
       "Organization": 10,
-      "Patient": 61,
+      "Patient": 65,
       "Practitioner": 20,
       "Procedure": 1251,
       "ServiceRequest": 3,
-      "Task": 27
+      "Task": 29
     }
   },
   "base": {
@@ -74,17 +74,17 @@
     "packages/env/canonical.ts": "2189f1d04b2e80df6b919fe23165924869cab63f1c7b9408c0b1c8d10e2d6284",
     "packages/env/clock.ts": "bdef746b541cde158dd8f574b03e0f45b04fa94579a983d69e2b6a02dca9ff80",
     "packages/env/mrn.ts": "4278f853e9f2d50dc83e1f15ae9ae35fb3e5f39dfdb1b6fea3a4ab2996cb232b",
-    "packages/env/overlay.ts": "096883403f89b58267c4e2f9089181be500371e309db5fce776fc1b36fbdf660",
+    "packages/env/overlay.ts": "44694808f913770d6406940b0f4c91ff6690a8a1ac7c097ef1099f5154378a62",
     "packages/env/profile.ts": "1ea4a9a54fca6cd422292762a255ef39885610871c95bd014c92d9e60b3599ca",
-    "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
+    "packages/env/renumber.ts": "4181cb663e1e3529c9cb4e46a93ffa45a18b3baef626dd1beb25601113527b8e",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
     "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
-    "tasks/message-queue/overlay.ts": "5dda0d05aa3a7080b697727c40b98e4b9883c848b9796267e19fe7c6dad05e54",
-    "tasks/renal-dose-review/overlay.ts": "634fa927a66ea136a0a8094906eac5282f74d0b6e20c87b47df97f84b86c47e5",
-    "tasks/results-inbox/overlay.ts": "8091851412792e2f1096db877410f38449941aa3fbaf3e38f815843e11682c3c"
+    "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
+    "tasks/renal-dose-review/overlay.ts": "4c975e7110edadbc1e354f07ec149a7c5ffce4e76535d48d8133d2122c8f0e73",
+    "tasks/results-inbox/overlay.ts": "686fc9e71a7897c1ccb7efedde5bea056e7901c1018c78d83c3557d6859216d6"
   },
   "definitions": {
     "file": "fixtures/definitions-pruned.json",
@@ -113,7 +113,7 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "32e7c0f8deeff054035bbe28ebaf3a11732fe87d4eb8b230e9bded641ba700af",
+    "sha256": "818a34f20f6ab991ddf17e69c1a8af7ebdbad6cce455d0c6235c011f9af09a10",
     "synthea_file": "fixtures/synthea-ids.ts",
     "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }

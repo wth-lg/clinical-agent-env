@@ -36,10 +36,18 @@ import { seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
 import { trial } from '../../../packages/grader/matrix/matrix.ts';
 import { activeSpecs } from '../../../packages/env/events.ts';
 import { ACTIVE, SPECS } from '../events.ts';
-import { expected } from '../expected.ts';
+import { DECISIVE_ATOMS, expected, LEVER_ITEMS } from '../expected.ts';
+import { leverOn } from '../lever-keys.ts';
 import { oracle } from '../solution/solve.ts';
 import { ref } from '../ids.ts';
-import { firstSeenBy } from './grader.ts';
+import { firstSeenBy, holdsAtoms } from './grader.ts';
+
+// W5 (builder-299): item B's ID letter decides by its assessment line (expected.ts DECISIVE_ATOMS),
+// so it is a trap-deciding record; a broad search shows it only when a page-1 row shows the letter
+// whole or a snippet that holds its atoms (R22: a row that names the letter, or a snippet of its
+// medication block, is not exposure). Item A's chart holds plain inputs only (its trap arrives).
+const lref = (reference: string): string => ref(reference as Parameters<typeof ref>[0]);
+const LETTER = leverOn('B') ? lref('DocumentReference/doc-t1-cas-id-0910') : null;
 
 const world = await loadStore(matrixEnv().world);
 const ctx: ReadContext = { world, clock, policies: [], catalog: [] };
@@ -51,7 +59,7 @@ const listObs = (code: string) => ([...world.resources()] as ReadonlyArray<Obs>)
   .map((o) => `Observation/${o.id}`);
 // The trap-deciding records: every outside creatinine on a list patient's chart and the inhibitor
 // order.
-const TRAP_DECIDING = new Set([...listObs('14682-9'), ref('MedicationRequest/mr-t1-1703')]);
+const TRAP_DECIDING = new Set([...listObs('14682-9'), ref('MedicationRequest/mr-t1-1703'), ...(LETTER === null ? [] : [LETTER])]);
 // The lures (rulings R19): every reported weight on a list patient's chart (none on the five), and
 // the records that hold a superseded or non-§1 value. None is decisive.
 const LURE_RECORDS = [ref('DocumentReference/doc-t1-1401'), ref('DocumentReference/doc-t1-dc-0212'), ref('Observation/obs-t1-wt-0210')];
@@ -59,6 +67,18 @@ const LURES = new Set([...listObs('3142-7'), ...LURE_RECORDS]);
 const page1 = (name: string, input: object) => {
   const r = callTool(READ_TOOLS, name, input, ctx);
   return [...r.exposed_ids, ...r.referenced_ids];
+};
+// The trap-deciding records page 1 shows: a record exposed or referenced, except a letter with
+// atoms, which counts only when exposed whole or when a notes snippet holds its atoms (R22, R29).
+const page1Shows = (name: string, input: object): string[] => {
+  const r = callTool(READ_TOOLS, name, input, ctx);
+  const rows = name === 'search_notes' ? ((typeof r.content === 'string' ? JSON.parse(r.content) : r.content) as { entries?: Array<{ note: string; snippet: string }> }).entries ?? [] : [];
+  return [...r.exposed_ids, ...r.referenced_ids].filter((k) => {
+    if (!TRAP_DECIDING.has(k)) return false;
+    const atoms = DECISIVE_ATOMS[k];
+    if (atoms === undefined) return true;
+    return r.exposed_ids.includes(k) || rows.some((row) => row.note === k && holdsAtoms(row.snippet.replace(/…/g, ' '), atoms));
+  });
 };
 
 // The stand-in first broad searches: the list and the clinic's active orders and newest notes,
@@ -82,8 +102,9 @@ export const FIRST_BROAD_SEARCHES: ReadonlyArray<[string, object]> = [
 ];
 
 describe('T1 worklist probe: discoverability', () => {
-  it('knows the trap-deciding records: the outside creatinine and the inhibitor order', () => {
-    expect([...TRAP_DECIDING].sort()).toEqual([ref('Observation/obs-t1-1302'), ref('MedicationRequest/mr-t1-1703')].sort());
+  it("knows the trap-deciding records: the outside creatinine, the inhibitor order and item B's letter", () => {
+    expect([...TRAP_DECIDING].sort()).toEqual([ref('Observation/obs-t1-1302'), ref('MedicationRequest/mr-t1-1703'), ...(LETTER === null ? [] : [LETTER])].sort());
+    expect(Object.keys(DECISIVE_ATOMS)).toEqual(LETTER === null ? [] : [LETTER]);
   });
 
   it('knows the lures apart, and no lure decides an item (rulings R19): the ideal-weight note, the superseded discharge values', () => {
@@ -92,7 +113,14 @@ describe('T1 worklist probe: discoverability', () => {
   });
 
   it.each(FIRST_BROAD_SEARCHES.map(([name, input]) => [`${name} ${JSON.stringify(input)}`, name, input] as const))('%s shows no trap-deciding record on page 1', (_label, name, input) => {
-    expect(page1(name, input).filter((k) => TRAP_DECIDING.has(k))).toEqual([]);
+    expect(page1Shows(name, input)).toEqual([]);
+  });
+
+  // The rows that name item B's letter without its deciding line, recorded (R22).
+  it("records the broad searches whose page 1 names item B's letter without showing its assessment (R22: not exposure)", () => {
+    if (LETTER === null) return;
+    const rows = FIRST_BROAD_SEARCHES.filter(([name, input]) => page1(name, input).includes(LETTER)).map(([name, input]) => `${name} ${JSON.stringify(input)}`);
+    expect(rows).toEqual(['search_notes {"query":"apixaban"}']);
   });
 
   it("the oracle's trajectory exposes every patient's decisive records before that patient's DOAC write (the filler's before finish)", async () => {
@@ -123,6 +151,13 @@ describe('T1 worklist probe: discoverability', () => {
   it('records the targeted searches that reach the class-deciding records on page 1 (the routes the policy implies)', () => {
     expect(page1('fhir_search', { resource_type: 'Observation', code: '14682-9', sort: '-date' })).toEqual(expect.arrayContaining([ref('Observation/obs-t1-1302')]));
     expect(page1('fhir_search', { resource_type: 'MedicationRequest', patient: 'pt-0041', status: 'active' })).toContain(ref('MedicationRequest/mr-t1-1703'));
+    if (LETTER !== null) {
+      const cas = LEVER_ITEMS.find((i) => i.id === 'B')!.patient;
+      // The letter's row, from the notes route §1 implies (outside letters of the last 90 days).
+      expect(page1('fhir_search', { resource_type: 'DocumentReference', patient: cas, date_ge: '2026-07-25', sort: '-date' })).toContain(LETTER);
+      // A notes search for the course's end shows the assessment's atoms in its snippet (R12, R29).
+      expect(page1Shows('search_notes', { query: 'completed', patient: cas })).toEqual([LETTER]);
+    }
   });
 
   it('(5) no arrival is in the world, and none shows in any step of the oracle before the step that delivers it', async () => {

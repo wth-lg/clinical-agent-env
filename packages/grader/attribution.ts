@@ -38,7 +38,7 @@
 // labelled over_action keeps that label: its forbidden write is already committed, something the
 // model did rather than did not finish (verifier-phase-P17i-W1-1-2 M2).
 import type { CheckResult } from './grade.ts';
-import type { GateCheck, Step } from './check.ts';
+import type { GateCheck, SeenWorld, Step } from './check.ts';
 import type { ItemResult } from './items.ts';
 import { firstExposed, firstShown, lastWrite } from './exposure.ts';
 import type { Outcome } from './outcome.ts';
@@ -86,7 +86,9 @@ export function firstFailedGate<R extends { kind?: string; met: unknown }>(resul
   return results.find((r) => r.kind === 'gate' && r.met === false);
 }
 
-export function attribute(outcome: Outcome, gates: readonly GateCheck[], results: readonly CheckResult[], steps: readonly Step[]): Attribution | null {
+// `world` is the trial's states for the seen rules that read the chart (check.ts SeenRule, R41);
+// without it those rules answer by their search-shape routes alone.
+export function attribute(outcome: Outcome, gates: readonly GateCheck[], results: readonly CheckResult[], steps: readonly Step[], world?: SeenWorld): Attribution | null {
   if (outcome !== 'FAIL' && outcome !== 'LIMIT') return null;
   const byId = new Map(results.map((r) => [r.id, r]));
   // The gates' results in gate order, kind and category as the gates declare them; a gate without
@@ -96,11 +98,11 @@ export function attribute(outcome: Outcome, gates: readonly GateCheck[], results
   const failed = decisive === undefined ? undefined : gates.find((g) => g.id === decisive.id);
   const first = gates.find((g) => g.id === firstFailedGate(ordered)?.id);
   const last = steps.at(-1)?.n ?? null;
-  const exposure = exposureGates(failed, first, byId).map(({ id, gate }) => exposureOf(steps, gate, id));
+  const exposure = exposureGates(failed, first, byId).map(({ id, gate, at }) => exposureOf(steps, gate, id, world, at));
   const decisive_step = failed === undefined ? last : (lastWrite(steps, byId.get(failed.id)!.ids ?? []) ?? last);
   // A LIMIT trial never reached its failed items' decisions: each carries the trial's label, except
   // an over_action item, whose forbidden write the trial already committed.
-  const items = itemLabels(gates, byId, steps).map((i) => (outcome === 'LIMIT' && i.auto !== 'over_action' ? { ...i, auto: 'did_not_finish' as const } : i));
+  const items = itemLabels(gates, byId, steps, world).map((i) => (outcome === 'LIMIT' && i.auto !== 'over_action' ? { ...i, auto: 'did_not_finish' as const } : i));
   const base = { first_failed: failed?.id ?? null, decisive_step, exposure, ...(items.length > 0 ? { items } : {}) };
   if (outcome === 'LIMIT') return { auto: 'did_not_finish', ...base };
   // A FAIL always has a failed gate.
@@ -121,19 +123,23 @@ function label(gate: GateCheck, marks: { omission?: boolean; action_form?: boole
 }
 
 // When decisive id `id` of `gate` was first exposed, and, as the gate declares, first shown or seen.
-function exposureOf(steps: readonly Step[], gate: GateCheck, id: string): Exposure {
+// The seen rule is judged at `at`, the decision step the gate judged it at (items.ts ItemResult.at,
+// R41 addendum 3), so first_seen_step is what the gate read and the label agrees with it; without
+// one (a gate that judges at the trial's end, or names no decision) at the trial's end, every
+// arrival landed (check.ts SeenRule without `at`).
+function exposureOf(steps: readonly Step[], gate: GateCheck, id: string, world?: SeenWorld, at?: number): Exposure {
   const phrase = gate.decisive_phrases?.[id];
   const seenAt = gate.seen_at?.[id];
   return {
     id,
     first_exposed_step: firstExposed(steps, id),
     ...(phrase === undefined ? {} : { first_shown_step: firstShown(steps, id, phrase) }),
-    ...(seenAt === undefined ? {} : { first_seen_step: seenAt(steps) }),
+    ...(seenAt === undefined ? {} : { first_seen_step: seenAt(steps, world, at) }),
   };
 }
 
 // Each failed item of every failed gate that records items, labelled (see the header).
-function itemLabels(gates: readonly GateCheck[], byId: ReadonlyMap<string, CheckResult>, steps: readonly Step[]): ItemAttribution[] {
+function itemLabels(gates: readonly GateCheck[], byId: ReadonlyMap<string, CheckResult>, steps: readonly Step[], world?: SeenWorld): ItemAttribution[] {
   const byItem = new Map<string, Array<{ gate: GateCheck; r: ItemResult }>>();
   for (const gate of gates) {
     const res = byId.get(gate.id);
@@ -142,20 +148,23 @@ function itemLabels(gates: readonly GateCheck[], byId: ReadonlyMap<string, Check
   }
   return [...byItem].map(([item, entries]) => {
     const pick = decisiveGate(entries.map((e) => ({ ...e.r, kind: 'gate', category: e.gate.category, e })))!.e;
-    const exposure = pick.r.decisive_ids.map((id) => exposureOf(steps, pick.gate, id));
+    const exposure = pick.r.decisive_ids.map((id) => exposureOf(steps, pick.gate, id, world, pick.r.at));
     return { item, gate: pick.gate.id, auto: label(pick.gate, pick.r, exposure, byId), exposure };
   });
 }
 
 // The decisive ids the exposure reads, each with the gate that names it: the decisive gate's, then
 // the first failed gate's that the decisive gate does not name. A gate that records items names its
-// failed items' decisive ids.
-function exposureGates(decisive: GateCheck | undefined, first: GateCheck | undefined, byId: ReadonlyMap<string, CheckResult>): Array<{ id: string; gate: GateCheck }> {
-  const idsOf = (g: GateCheck): readonly string[] => {
+// failed items' decisive ids, each with the decision step of the first failed item that names it.
+function exposureGates(decisive: GateCheck | undefined, first: GateCheck | undefined, byId: ReadonlyMap<string, CheckResult>): Array<{ id: string; gate: GateCheck; at?: number }> {
+  const idsOf = (g: GateCheck): Array<{ id: string; at?: number }> => {
     const items = byId.get(g.id)?.items;
-    return items === undefined ? g.decisive_ids : [...new Set(items.filter((r) => !r.met).flatMap((r) => r.decisive_ids))];
+    if (items === undefined) return g.decisive_ids.map((id) => ({ id }));
+    const out = new Map<string, { id: string; at?: number }>();
+    for (const r of items) if (!r.met) for (const id of r.decisive_ids) if (!out.has(id)) out.set(id, { id, ...(r.at === undefined ? {} : { at: r.at }) });
+    return [...out.values()];
   };
-  const named = (decisive === undefined ? [] : idsOf(decisive)).map((id) => ({ id, gate: decisive! }));
+  const named = (decisive === undefined ? [] : idsOf(decisive)).map((e) => ({ ...e, gate: decisive! }));
   if (first === undefined || first === decisive) return named;
-  return [...named, ...idsOf(first).filter((id) => !named.some((n) => n.id === id)).map((id) => ({ id, gate: first }))];
+  return [...named, ...idsOf(first).filter((e) => !named.some((n) => n.id === e.id)).map((e) => ({ ...e, gate: first }))];
 }

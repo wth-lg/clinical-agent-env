@@ -1,0 +1,37 @@
+{
+  "env_git_sha": "1b120e8bbd380e48ba9f82094bf393b408c8efbf",
+  "env_dirty": false,
+  "run_id": "final-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "api_version": "2026-10-21",
+  "trials": 20,
+  "task_versions": {
+    "crc-care-gap": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
+    "contrast-ct-prep": "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc"
+  },
+  "env_versions": {
+    "crc-care-gap": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
+    "contrast-ct-prep": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
+  },
+  "grader_task_versions": {
+    "crc-care-gap": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
+    "contrast-ct-prep": "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca"
+  },
+  "batches": [
+    {
+      "batch_id": "fb524a47-454a-43db-92b3-868640dcc154",
+      "started": "2026-11-03T10:30:17.754Z",
+      "ended": "2026-11-03T11:09:34.181Z",
+      "projection": 106.41480059999998,
+      "remaining": 40,
+      "settled": 40,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "1b120e8bbd380e48ba9f82094bf393b408c8efbf"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import { run } from '../../../packages/core/run.ts';
 import { toJsonl } from '../../../packages/core/trajectory.ts';
 import type { TaskFiles, TaskSource } from '../../../packages/core/tasks.ts';
 import { scenarioTransport } from '../src/harness/scenarios.ts';
+import { LEVER, LEVER_ITEMS } from '../../../tasks/results-inbox/expected.ts';
 
 const viteModule = (path: string) => import(/* @vite-ignore */ path);
 const BROWSER = '../src/adapters/tasks-browser.ts';
@@ -48,7 +49,8 @@ describe('browserTaskSource', () => {
     // events.ts order (results-inbox's ACTIVE).
     const inbox = browserTaskDirs().find((d) => d.id === 'results-inbox')!;
     expect((await browserTaskSource({ testMode: true }).get('results-inbox')).events.map((s) => s.id)).toEqual([...(inbox.events?.ACTIVE ?? [])]);
-    expect(inbox.events?.ACTIVE).toHaveLength(4);
+    // The W4 four, plus the event of each active A lever item (W5-E, expected.ts LEVER_ITEMS).
+    expect(inbox.events?.ACTIVE).toHaveLength(4 + LEVER_ITEMS.filter((i) => i.kind === 'A' && LEVER.includes(i.id)).length);
   });
 });
 

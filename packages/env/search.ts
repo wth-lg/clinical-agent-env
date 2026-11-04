@@ -284,9 +284,16 @@ export function checkDates(resource: Resource): void {
 // The instant a resource sorts by on _sort=date: the start of its first date value, or
 // undefined when it has none or its type has no date parameter.
 export function sortStart(resource: Readonly<Resource>): number | undefined {
+  return dateRangeOf(resource)?.[0];
+}
+
+// The range a resource is dated by on its type's date parameter, [lo, hi] in epoch ms, both
+// inclusive (a Period open on a side is infinite there): what date_ge and date_le test and _sort
+// orders by. Undefined when it has no date value or its type has no date parameter.
+export function dateRangeOf(resource: Readonly<Resource>): Range | undefined {
   const params = Object.hasOwn(PARAMS, resource.resourceType) ? PARAMS[resource.resourceType]! : {};
   const def = Object.hasOwn(params, 'date') ? params.date! : undefined;
-  return def ? rangesOf(paramValues(resource as unknown as Json, def))[0]?.[0] : undefined;
+  return def ? rangesOf(paramValues(resource as unknown as Json, def))[0] : undefined;
 }
 
 // ---- references ----

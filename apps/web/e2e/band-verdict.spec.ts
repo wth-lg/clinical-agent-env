@@ -65,7 +65,8 @@ for (const size of SIZES) {
       const cells = history.locator(`[data-testid="history-row"][data-task="${id}"] [data-testid="history-cell"]`);
       const p = PILOT[id]!;
       const o = OFFICIAL[id]!;
-      await expect(cells.nth(0)).toHaveText(`${p.passes}/${p.trials} ${bandVerdict(p.passes, p.trials)}`);
+      // A pilot's 8 trials are short of the final sample, so its verdict is provisional (UIBAND-219 N1).
+      await expect(cells.nth(0)).toHaveText(`${p.passes}/${p.trials} ${bandVerdict(p.passes, p.trials)}, provisional (${p.trials} of 20 valid trials)`);
       await expect(cells.nth(1)).toHaveText(`${o.passes}/${o.trials} ${WANT[id]}`);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

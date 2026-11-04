@@ -14,8 +14,12 @@ import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { Evidence } from '../../../packages/core/explain.ts';
 import { checkText } from '../../renal-dose-review.check-text.ts';
-import { expected } from '../expected.ts';
+import { expected, LEVER_ITEMS } from '../expected.ts';
 import { ref } from '../ids.ts';
+import { leverOn } from '../lever-keys.ts';
+
+const lref = (reference: string): string => ref(reference as Parameters<typeof ref>[0]);
+const leverPatient = (lever: 'A' | 'B' | 'reserve') => LEVER_ITEMS.find((i) => i.id === lever)!.item;
 import { alternatives } from './alternatives.ts';
 import { mutants } from './mutants.ts';
 
@@ -40,6 +44,12 @@ describe('T1 decisive ids are the records that decide each item', () => {
       'Patient/pt-0038': [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405'), 'Patient/pt-0038'],
       'Patient/pt-0043': [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802'), 'Patient/pt-0043'],
       'Patient/pt-0002': [ref('Observation/obs-t1-wt-1020'), ref('Observation/obs-t1-scr-1020')],
+      // W5 lever items: A's 5 mg by one criterion (the criteria not met, as Vance's); B's 5 mg by
+      // no criterion, and the ID letter that decides whether an inhibitor applies (R14); the
+      // reserve's 2.5 mg by two criteria, kept with the inhibitor's order.
+      [leverPatient('A')]: [lref('Observation/obs-t1-fw-wt'), lref('Observation/obs-t1-fw-scr')],
+      ...(leverOn('B') ? { [leverPatient('B')]: [lref('Observation/obs-t1-cas-wt'), lref('Observation/obs-t1-cas-scr'), leverPatient('B'), lref('DocumentReference/doc-t1-cas-id-0910')] } : {}),
+      ...(leverOn('reserve') ? { [leverPatient('reserve')]: [lref('Observation/obs-t1-wh-wt'), leverPatient('reserve'), lref('MedicationRequest/mr-t1-wh-itra')] } : {}),
     });
   });
 
@@ -54,6 +64,12 @@ describe('T1 decisive ids are the records that decide each item', () => {
     ['delgado_age_never_seen', 'Patient/pt-0003'],
     ['moravec_age_never_seen', 'Patient/pt-0038'],
     ['pellegrino_age_never_seen', 'Patient/pt-0043'],
+    // W5: item A's patient never reviewed, or his weight never seen (his arrival never fires).
+    ['fairweather_not_reviewed', leverPatient('A')],
+    ['fairweather_weight_never_seen', leverPatient('A')],
+    // W5 item B: the dose raised without the ID letter (R14), and after a notes snippet that shows
+    // the letter's medication block but not its assessment (R29).
+    ...(leverOn('B') ? [['castellano_raised_without_letter', leverPatient('B')], ['castellano_letter_snippet_block_only', leverPatient('B')]] : []),
   ])('R14: the expected action reached without the deciding record fails as retrieval on that item alone (%s)', async (id, patient) => {
     const { grade, items } = await graded('mutant', id);
     expect(grade.outcome).toBe('FAIL');
@@ -76,6 +92,7 @@ describe('T1 decisive ids are the records that decide each item', () => {
     ['v2', 'duquette_inhibitor_seen_no_labs', 'Patient/pt-0041'],
     ['the outside creatinine seen and set aside', 'delgado_outside_creatinine_discarded', 'Patient/pt-0003'],
     ['reads the deciding records', 'vance_criteria_misread', 'Patient/pt-0002'],
+    ...(leverOn('B') ? [["W5 item B: the ID letter read and its copied-forward block believed", 'castellano_letter_block_believed', leverPatient('B')]] : []),
   ])('%s: the deciding record in view and the dose wrong is reasoning on that item alone (%s)', async (_v, id, patient) => {
     const { grade, items } = await graded('mutant', id);
     expect(grade.outcome).toBe('FAIL');
