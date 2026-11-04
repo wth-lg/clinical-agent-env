@@ -50,7 +50,7 @@ describe('discharge-medrec worklist', () => {
   // below 1.5 would resume it, one at or above would not.
   it.runIf(LEVER.includes('B'))('Lorraine Pruitt: no result after discharge defers the resume with a Task when the BMP is expected; a post-discharge creatinine decides it', () => {
     const stay = ref('Observation/obs-t4-pruitt-scr-1021' as Parameters<typeof ref>[0]);
-    expect(item(world, 'pruitt-metformin')).toMatchObject({ kind: 'defer', cls: 'conditional', due: { from: '2026-10-23', to: '2026-10-25' }, decisive: [ref('DocumentReference/doc-t4-pruitt-dc' as Parameters<typeof ref>[0]), stay], review: { id: stay, since: '2026-10-21' } });
+    expect(item(world, 'pruitt-metformin')).toMatchObject({ kind: 'defer', cls: 'conditional', due: { from: '2026-10-23', to: '2026-10-25' }, decisive: [ref('DocumentReference/doc-t4-pruitt-dc' as Parameters<typeof ref>[0]), stay], review: { id: stay, since: '2026-10-21T13:49:54-04:00' } });
     const after = (value: number) => view([...all, { ...all.find((r) => r.resourceType === 'Observation' && r.id === id('obs-t4-pruitt-scr-1021' as Parameters<typeof id>[0]))!, id: 'obs-probe', encounter: undefined, effectiveDateTime: '2026-10-24T09:00:00-04:00', issued: '2026-10-24T13:00:00-04:00', valueQuantity: { value, unit: 'mg/dL', system: 'http://unitsofmeasure.org', code: 'mg/dL' } } as unknown as (typeof all)[number]]);
     expect(item(after(1.1), 'pruitt-metformin')).toMatchObject({ kind: 'resume', daily_mg: 1000, per_day: 1 });
     expect(item(after(1.6), 'pruitt-metformin')?.kind).not.toBe('resume');

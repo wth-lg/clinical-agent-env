@@ -55,7 +55,7 @@ export const checkText: CheckText = {
     found: (ev) => `${show(items(ev.failed_items)[0])}: an arrival came in the model's last turn`,
   },
   event_seen: {
-    requires: "each arrival read after it came in, before finish: the record opened, or a search snippet showing its deciding line (a repeat panel's potassium, an addendum's correction, a draft's dose); an inbox row alone does not show it; a potassium batch filed together is seen only when every result of it was shown, the notified one and the one filed with no inbox item",
+    requires: "each arrival read after it came in, before finish: the record opened, or a search snippet showing its deciding line (a repeat panel's potassium, an addendum's correction, a draft's dose); an inbox row alone does not show it; a potassium batch filed together is seen when the result filed with no inbox item was shown, the inbox row having named the notified one",
     found: (ev) => `the arrival for ${show(items(ev.failed_items)[0])} was never read`,
   },
   amended: {

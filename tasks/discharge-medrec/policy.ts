@@ -207,7 +207,7 @@ export function derive(world: WorldView): Json {
           // or one at or above the limit): keep the order held and create a Task due when the line
           // says the result is expected (the window: a day either side). With no result after
           // discharge the decision rests on the line and on the review of the patient's results after
-          // discharge (from the discharge day), which the stay's last creatinine stands for
+          // discharge (from the discharge instant), which the stay's last creatinine stands for
           // (tests/grader.ts: seen only by a complete search); with one, on the line and that result.
           const expectedIn = EXPECTED_IN.exec(ruling);
           if (!expectedIn) throw new Error(`${given} ${family}: ${drug}'s resume condition is not met and its line does not say when the result is expected`);
@@ -221,7 +221,7 @@ export function derive(world: WorldView): Json {
             .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === SCR) && Date.parse(o.effectiveDateTime ?? '') <= discharged)
             .sort((a, b) => Date.parse(b.effectiveDateTime ?? '') - Date.parse(a.effectiveDateTime ?? ''))[0];
           if (!stayScr) throw new Error(`${given} ${family}: no creatinine from the stay to stand for the post-discharge review`);
-          own.push({ ...item, decisive: [on, ref(stayScr)], atoms: { [on]: lineAtoms }, review: { id: ref(stayScr), since: clinicDate(stay!.period!.end!) } });
+          own.push({ ...item, decisive: [on, ref(stayScr)], atoms: { [on]: lineAtoms }, review: { id: ref(stayScr), since: stay!.period!.end! } });
         } else if (met && !held) {
           // R14, R21: the creatinine is any result after discharge below the limit and newer than
           // every one at or above it. It is named by the first such record the item does not

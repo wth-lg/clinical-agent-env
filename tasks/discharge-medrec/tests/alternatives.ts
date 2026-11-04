@@ -13,7 +13,7 @@
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { LEVER } from '../lever.ts';
-import { AMEND, arrivalReads as arrivalReadsOf, bmp, change, decisions, DOC, exceptWho, finish, firstWritesExcept, message, modify, MR, note, notesFor, order, PRUITT_TASK_TEXT, reads, recheck, RX, script, searchNotes, task, W } from '../solution/steps.ts';
+import { AMEND, arrivalReads as arrivalReadsOf, bmp, change, decisions, DOC, exceptWho, finish, firstWritesExcept, message, modify, MR, note, notesFor, order, PRUITT_TASK_TEXT, PT, reads, recheck, RX, script, searchNotes, task, W } from '../solution/steps.ts';
 import { eventAlternatives } from './event-cases.ts';
 
 const arrivalReads = arrivalReadsOf(ACTIVE);
@@ -257,6 +257,20 @@ function leverAlternatives(): Alternative[] {
         id: 'pruitt_task_day_after',
         why: 'Creates the Task due 10/25, the day after the BMP is expected, inside the window §2 allows (a day either side).',
         script: script({ over: { pruittTask: [task('pruitt', '2026-10-25', PRUITT_TASK_TEXT, `MedicationRequest/${MR.pruittMetformin}`)] } }),
+      },
+      // verifier-phase-P17i-W5E-T4-222-1 B2: the review of her results since discharge bounded in
+      // clinic time, from the discharge day's midnight and from the discharge instant itself (the
+      // stay Encounter's period.end as the chart shows it): each covers every post-discharge result
+      // (tests/grader.ts reviewCovers, the window opening at that instant).
+      {
+        id: 'pruitt_review_from_clinic_midnight',
+        why: "Lists Lorraine Pruitt's results from the discharge day's midnight, clinic time (date_ge 2026-10-21T00:00:00-04:00, newest first), instead of from 10/01: a complete review of everything since discharge.",
+        script: script({ noResults: ['pruitt'], also: [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.pruitt, date_ge: '2026-10-21T00:00:00-04:00', sort: '-date' } }] }),
+      },
+      {
+        id: 'pruitt_review_from_discharge_instant',
+        why: "Lists Lorraine Pruitt's results from the discharge instant on her admission Encounter (date_ge 2026-10-21T13:49:54-04:00, newest first): a complete review of everything after discharge.",
+        script: script({ noResults: ['pruitt'], also: [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.pruitt, date_ge: '2026-10-21T13:49:54-04:00', sort: '-date' } }] }),
       },
     );
   }

@@ -128,6 +128,16 @@ describe('discharge-medrec lever toggles (W5-E)', () => {
     expect(task.instruction.startsWith(`${count} of my patients`)).toBe(true);
   });
 
+  // verifier-phase-P17i-W5E-T4-222-1 B1: the request sentence (the task, the policy, the flags the
+  // rubric reads) must follow the names in every LEVER state; a state switch that rewrites the names
+  // must leave it. The whole instruction, so nothing else can slip in or out.
+  it('instruction.md is the list of names followed by the request sentence, and the sign-off', () => {
+    const names = expected.patients.map((p) => p.name);
+    const count = ['Three', 'Four', 'Five', 'Six'][names.length - 3]!;
+    const list = `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+    expect(task.instruction).toBe(`${count} of my patients came home from St. Brigid this past week: ${list}. Please reconcile each one's outpatient medication list per RBC-TOC-02 and flag anything you can't resolve to me.\n\n— Dr. Okafor\n`);
+  });
+
   it('RBC-TOC-02 §2 holds the post-discharge sentence once, and it names no item (R11)', () => {
     const text = task.policies.find((p) => p.id === 'RBC-TOC-02')!.text.replace(/\s+/g, ' ');
     expect(text.split(POST_DISCHARGE_SENTENCE).length - 1).toBe(1);
