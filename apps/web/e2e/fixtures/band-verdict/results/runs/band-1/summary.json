@@ -6,10 +6,10 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "0ad26a1805da6f90011b3797092b13f84e02ee40c102f95024c2fabd05c0fc65"
+        "0c9ee43ddeaaef0e56465e2c494ea65b342133e1ceac2cab785a7e11fcc4c0fe"
       ],
       "env_versions": [
-        "f28e3d742cfcb190ed2919339a339b8361b0f412411d2d63d3346cd730f33a81"
+        "17171bb91089b95d75ecd92cbc75d1a74ced6c8a81ed4f71cdcf31cabcf01e79"
       ],
       "grader_task_versions": [
         "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
@@ -105,10 +105,10 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "1e0757e22477c32557347132d8bf47cbffbe515176e739491a7fe58d086554be"
+        "4f41e6401370ee585258825f30f9ebea8a012c401027af5ca9d4ff0fdbcd2ca2"
       ],
       "env_versions": [
-        "f848d76c73bd8c5ad340d298a86b2b7e5e5ed794ea39565eada1bd23258894c0"
+        "94024373800b574c152857e262108321cc2975be989a6c87ce8429f6d6d8569c"
       ],
       "grader_task_versions": [
         "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371"
@@ -202,10 +202,10 @@
     },
     "message-queue": {
       "task_versions": [
-        "de55ca684b92a2bde232362b39b08f12f7cc21e1fc6c98506b0fbfb36cb93e9b"
+        "bbe38c3a09a1abb251ef7e7bb8cddb3ef3f8713c8b0bddf12457bdde0197ddc5"
       ],
       "env_versions": [
-        "32ddbb06d8938958814859c0d3709a0e0d879f8ad1361e88069ecbe4756a91f5"
+        "f31c00057ffd980f67ea67d4cabf893ba649b75274444f03f2ec642dafa614cd"
       ],
       "grader_task_versions": [
         "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd"
@@ -311,7 +311,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "dccbc96967702dac24fbb0068025b4841641b9698fa3e16348f59f23b6950904"
+    "e14c4886dcb576b8c8fd60c22de84e2b1023200f48072789a045bb239cf81025"
   ],
   "replay": {
     "ran": false,
