@@ -84,10 +84,9 @@ export interface Item {
   atoms: Record<string, string[]>;
   // R21: other records that establish the same fact as a decisive record, any one of them enough.
   also?: Record<string, Source[]>;
-  // 'defer': the decisive record that stands for the review of the patient's results after
-  // discharge (the stay's last creatinine): seen only by a complete search of the patient's
-  // creatinines that covers from `since` (the discharge instant, the stay Encounter's period.end)
-  // to now (R27, R31, R36), never by being read or shown on a narrower search.
+  // 'defer': the record standing for the review of the patient's results after discharge (the
+  // stay's last creatinine): seen only by a complete creatinine search covering from `since` (the
+  // discharge instant) to now (R27, R31, R36), never by being read or shown on a narrower search.
   review?: { id: string; since: string };
 }
 
@@ -113,11 +112,9 @@ const OBS = {
   pruittStayScr: refOf('Observation/obs-t4-pruitt-scr-1021'),
 };
 const MR_OF = (key: string) => refOf(`MedicationRequest/${key}`);
-// The B host's discharge instant, her admission Encounter's period.end as the built world holds it
-// (overlay.ts enc-t4-pruitt-adm writes 13:20; fixtures:build's profile pass moves the time, so this
-// copies the built record, as policy.ts derives it from the world): the window her post-discharge
-// review must cover opens here (verifier-phase-P17i-W5E-T4-222-1 B2: a search bounded at the
-// discharge day's clinic midnight or at this instant covers every post-discharge result).
+// The B host's discharge instant: her admission Encounter's period.end as built (overlay.ts writes
+// 13:20; the build moves the time, and policy.ts derives from the world). Her post-discharge review
+// must cover from here (W5E-T4-222 B2).
 export const PRUITT_DISCHARGED = '2026-10-21T13:49:54-04:00';
 
 // The lever hosts' list entries and items (lever.ts): the A host in every state, the others while
