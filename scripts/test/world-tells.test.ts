@@ -29,6 +29,7 @@ import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
 import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../tasks/renal-dose-review/expected.ts';
+import { expected as T2_EXPECTED, LEVER_ITEMS as T2_LEVER_ITEMS } from '../../tasks/results-inbox/expected.ts';
 import { expected as T4_EXPECTED, LEVER_ITEMS as T4_LEVER_ITEMS } from '../../tasks/discharge-medrec/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
@@ -407,12 +408,14 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // by hand, so every LEVER state passes: each added Patient (TASK_IDS pt- keys) with its lever item's
 // class from the task's expected list (an inactive item's patient is off the list: 'off the list'),
 // and its chart's planted-only types computed, every record of the chart being planted (the test
-// below asserts that). T1's lever patients: pt-0061 Castellano (B), pt-0062 Fairweather (A),
-// pt-0063 Whitcombe (the reserve). T4's (builder-301): pt-0067 Pruitt (B), pt-0068 Salazar (the
-// reserve), pt-0069 Whitcomb (A, on the list in every state); its LEVER_ITEMS name the patient as a
-// Patient reference and its list items carry `cls`. A later task's lever items join LEVER_TABLES.
-const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [
-  { items: T1_LEVER_ITEMS, list: T1_EXPECTED.items },
+// below asserts that). T1's lever patients: pt-0061 Cipriani (B), pt-0062 Fairweather (A),
+// pt-0063 Whitcombe (the reserve); T2's: pt-0064 Marchetti (A), pt-0065 Nowicki (B), pt-0066 Cipriani (the reserve).
+// T2's (builder-300): its three hosts are in the world in every state (a toggle moves only the
+// host's inbox item's owner), so an inactive item's host reads 'off the list' here.
+const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }, { items: T2_LEVER_ITEMS, list: T2_EXPECTED.items },
+  // T4's (builder-301): pt-0067 Pruitt (B), pt-0068 Salazar (the reserve), pt-0069 Whitcomb (A, on the
+  // list in every state); its LEVER_ITEMS name the patient as a Patient reference and its list items
+  // carry `cls`.
   { items: T4_LEVER_ITEMS.map((i) => ({ item: i.item, patient: i.patient.replace('Patient/', '') })), list: T4_EXPECTED.items.map((x) => ({ patient: x.patient, class: x.cls })) },
 ];
 const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(

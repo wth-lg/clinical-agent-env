@@ -7,3 +7,13 @@ import { planted } from '../../packages/env/planted.ts';
 export const IDS = TASK_IDS.T2;
 
 export const { id, ref } = planted(IDS);
+
+// W5-E (plan-amendment-w5 G1): a lever host's resources are in the registry only while its item is
+// in expected.ts LEVER. These take any T2 key and resolve it when the registry holds it; a key the
+// registry lacks (an inactive host's) comes back as itself, which no script, gate or test names.
+const LOOSE = IDS as Readonly<Record<string, string>>;
+export const idOf = (key: string): string => LOOSE[key] ?? key;
+export const refOf = (reference: `${string}/${string}`): string => {
+  const slash = reference.indexOf('/');
+  return `${reference.slice(0, slash)}/${idOf(reference.slice(slash + 1))}`;
+};

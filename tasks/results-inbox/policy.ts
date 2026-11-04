@@ -23,8 +23,17 @@ const TSH = '3016-3';
 const VALID = ['final', 'corrected', 'amended'];
 const CORRECTED = ['corrected', 'amended'];
 
-// One item of each probe class (PW4-E3, plan-amendment-w4: n = 7), class by class.
+// One item of each probe class (PW4-E3, plan-amendment-w4: n = 7), class by class; then the W5-E
+// lever items (plan-amendment-w5), each present only while its patient is in the world (expected.ts
+// LEVER, overlay.ts LEVER_HOSTS): the derivation never reads LEVER, it classifies what the queue holds.
 const ORDER = ['nodule_scheduled', 'hemolyzed_note', 'corrected_down', 'eie_baseline', 'prelim_negative', 'aki_48h', 'normal_tsh'];
+const LEVER_ORDER = ['marchetti_cr_ed', 'nowicki_fax', 'cipriani_k_exception'];
+// RBC-LAB-03 §2's exception (the reserve's sentence, expected.ts RESERVE_SENTENCE): a hemolyzed
+// potassium on a patient whose most recent eGFR is below 30, or who takes a potassium-raising drug,
+// is graded under §1. The rule is applied whether or not the sentence is in the policy file; while
+// the reserve is inactive no list patient meets it (tests/lever.test.ts, the whole-list scan).
+const EGFR = ['98979-8', '33914-3', '62238-1'];
+const K_RAISING = /\b(lisinopril|enalapril|ramipril|benazepril|captopril|quinapril|losartan|valsartan|irbesartan|candesartan|olmesartan|telmisartan|spironolactone|eplerenone|finerenone|potassium chloride|potassium citrate)\b/i;
 // The clinician whose inbox the task works: the signed-in user (list_inbox lists the items they own).
 const USER = 'Practitioner/pr-okafor';
 
@@ -34,6 +43,8 @@ type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string
 type Item = R & { status?: string; code?: Coded; focus?: Ref; for?: Ref; owner?: Ref };
 type Obs = R & { status?: string; code?: Coded; subject?: Ref; effectiveDateTime?: string; valueQuantity?: { value?: number }; valueCodeableConcept?: Coded; interpretation?: Coded[]; note?: Array<{ text?: string }> };
 type Report = R & { status?: string; code?: Coded; subject?: Ref; effectiveDateTime?: string; issued?: string; result?: Ref[]; conclusion?: string };
+type Patient = R & { birthDate?: string; identifier?: Array<{ system?: string; value?: string }> };
+type MedRequest = R & { status?: string; subject?: Ref; medicationCodeableConcept?: { text?: string } & Coded };
 
 const key = (r: R) => `${r.resourceType}/${r.id}`;
 const hasCode = (c: Coded | undefined, ...codes: string[]) => (c?.coding ?? []).some((x) => x.system === LOINC && codes.includes(x.code ?? ''));
@@ -112,6 +123,21 @@ function baselineOf(world: WorldView, patient: string, at: string): { id: string
   return { id: key(low), from: new Date(t - 24 * 7 * HOUR).toISOString(), to: new Date(t).toISOString() };
 }
 
+// RESERVE_SENTENCE's conditions at the potassium's collection: the patient's most recent eGFR
+// (any eGFR code, valid, before the draw) below 30, or an active order of a potassium-raising drug.
+// Returns the records that make the sentence apply (any-of, R21), or undefined.
+function hemolysisException(world: WorldView, patient: string, at: string): { drug?: string; egfr?: string } | undefined {
+  const egfr = (world.all('Observation') as readonly Obs[])
+    .filter((o) => o.subject?.reference === patient && hasCode(o.code, ...EGFR) && VALID.includes(o.status ?? '') && o.valueQuantity?.value !== undefined && (o.effectiveDateTime ?? '') <= at)
+    .sort((a, b) => (b.effectiveDateTime ?? '').localeCompare(a.effectiveDateTime ?? '') || (a.id! < b.id! ? -1 : 1))[0];
+  const drug = (world.all('MedicationRequest') as readonly MedRequest[])
+    .filter((m) => m.subject?.reference === patient && m.status === 'active' && K_RAISING.test(m.medicationCodeableConcept?.text ?? ''))
+    .sort((a, b) => (a.id! < b.id! ? -1 : 1))[0];
+  const low = egfr !== undefined && egfr.valueQuantity!.value! < 30;
+  if (!low && drug === undefined) return undefined;
+  return { ...(drug ? { drug: key(drug) } : {}), ...(low ? { egfr: key(egfr) } : {}) };
+}
+
 export function derive(world: WorldView): Json {
   const tasks = (world.all('Task') as readonly Item[]).filter((t) => t.status === 'requested' && t.owner?.reference === USER && (t.code?.coding ?? []).some((c) => c.system === INBOX && c.code === 'results'));
   const out: Record<string, Json> = {};
@@ -133,9 +159,36 @@ export function derive(world: WorldView): Json {
         put('eie_result', { class: 'entered_in_error', ...base, sources: [key(o)], withdrawn: key(o), forbid: 'gi', action: 'close' });
       } else if (hasCode(o.code, K) && CORRECTED.includes(o.status ?? '')) {
         corrected(o, base);
+      } else if (hasCode(o.code, K) && (o.valueQuantity?.value ?? 0) >= 6 && /hemoly/i.test(notes(o))) {
+        // A potassium filed on its own, flagged hemolyzed on the result (W5-E's reserve host).
+        const exception = hemolysisException(world, patient, o.effectiveDateTime!);
+        if (!exception) throw new Error(`${key(o)}: a hemolyzed potassium filed on its own without the exception is not in this probe`);
+        put('cipriani_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(o), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: o.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
       } else if (hasCode(o.code, TSH) && normal(o)) {
         put('normal_tsh', { class: 'filler', ...base, sources: [key(o)], action: 'close' });
       } else throw new Error(`${key(t)}: result not classified`);
+      continue;
+    }
+    if (focus.resourceType === 'DocumentReference') {
+      // RBC-INBOX-01 §1: an outside record whose header names a date of birth and MRN that are
+      // not the patient's was filed to the wrong chart (R33: the Patient record decides).
+      const words = noteText(focus as never) ?? '';
+      const header = /\bDOB (\d{4}-\d{2}-\d{2})\b.*\bMRN (\S+)/.exec(words);
+      const p = get(world, patient) as Patient | undefined;
+      const mrn = (p?.identifier ?? []).find((i) => i.system === 'urn:riverbend:mrn')?.value;
+      if (!header || !p || (header[1] === p.birthDate && header[2] === mrn)) throw new Error(`${key(focus)}: outside document not classified`);
+      // The interval the document recommends, timed from its exam date (RBC-RAD-05 §1), window
+      // plus or minus 1 month: the order the misfiled fax would tempt.
+      const exam = /Exam date: (\d{4}-\d{2}-\d{2})/.exec(words);
+      const interval = /\bLDCT in (\d+) months\b/.exec(words);
+      if (!exam || !interval) throw new Error(`${key(focus)}: outside document names no exam date and interval`);
+      const due = plusMonths(exam[1]!, Number(interval[1]));
+      // Her own next screening study, on her last screening report's schedule (RBC-RAD-05 §1):
+      // nothing may start before its window opens (verifier 220 F1).
+      const screen = screening(world, patient);
+      if (!screen) throw new Error(`${patient}: a misfiled screening record on a patient outside lung cancer screening is not in this probe`);
+      const own = plusMonths(plusMonths(screen.index, screen.months), -1);
+      put('nowicki_fax', { class: 'misfiled', ...base, sources: [key(focus), patient], document: key(focus), header: { birthDate: header[1]!, mrn: header[2]! }, window: { start: plusMonths(due, -1), end: plusMonths(due, 1) }, own: { start: own }, action: 'close' });
       continue;
     }
     if (focus.resourceType !== 'DiagnosticReport') throw new Error(`${key(t)}: focus ${key(focus)} not classified`);
@@ -195,6 +248,11 @@ export function derive(world: WorldView): Json {
       const onResult = /hemoly/i.test(notes(k));
       const onReport = /hemoly/i.test(report.conclusion ?? '');
       if (!onResult && !onReport) throw new Error(`${key(k)}: a potassium of 6.0 or higher that is not hemolyzed is not in this probe`);
+      const exception = hemolysisException(world, patient, k.effectiveDateTime!);
+      if (exception) {
+        put('cipriani_k_exception', { class: 'hemolyzed_exception', ...base, sources: [key(k), ...(exception.drug ? [exception.drug] : []), ...(exception.egfr ? [exception.egfr] : [])], k: k.valueQuantity!.value!, by: NOW_DATE, drug: exception.drug ?? '', egfr: exception.egfr ?? '', action: 'order' });
+        continue;
+      }
       put(onResult ? 'hemolyzed_note' : 'hemolyzed_report', { class: 'hemolyzed', ...base, sources: onResult ? [key(k)] : [key(report), key(k)], k: k.valueQuantity!.value!, by: nextBusinessDay(NOW_DATE), action: 'order' });
     } else if (cr) {
       const value = cr.valueQuantity!.value!;
@@ -204,9 +262,15 @@ export function derive(world: WorldView): Json {
       } else {
         // §2(b): a withdrawn value that would have met the rule.
         const void_ = akiRule(world, patient, cr.effectiveDateTime!, value, true);
-        if (!void_) throw new Error(`${key(cr)}: creatinine not classified`);
-        const baseline = baselineOf(world, patient, cr.effectiveDateTime!);
-        put('eie_baseline', { class: 'entered_in_error', ...base, sources: [key(cr), key(void_.obs), baseline.id], withdrawn: key(void_.obs), forbid: 'creatinine', action: 'close', baseline });
+        if (void_) {
+          const baseline = baselineOf(world, patient, cr.effectiveDateTime!);
+          put('eie_baseline', { class: 'entered_in_error', ...base, sources: [key(cr), key(void_.obs), baseline.id], withdrawn: key(void_.obs), forbid: 'creatinine', action: 'close', baseline });
+          continue;
+        }
+        // Neither half met, nothing withdrawn, and no creatinine in the 7 days before it (W5-E's A
+        // host; a window with a value in it would need the window review of eie_baseline, R31).
+        if (priorCreatinines(world, patient, cr.effectiveDateTime!, false, 24 * 7).length > 0) throw new Error(`${key(cr)}: creatinine not classified`);
+        put('marchetti_cr_ed', { class: 'creatinine_no_aki', ...base, sources: [key(cr)], creatinine: value, action: 'close' });
       }
     } else throw new Error(`${key(t)}: panel not classified`);
   }
@@ -225,6 +289,7 @@ export function derive(world: WorldView): Json {
 
   const missing = ORDER.filter((k) => !(k in out));
   if (missing.length > 0) throw new Error(`no item classified ${missing.join(', ')}`);
-  if (Object.keys(out).length !== ORDER.length) throw new Error(`items outside the probe: ${Object.keys(out).filter((k) => !ORDER.includes(k)).join(', ')}`);
-  return { queue: 'results', items: ORDER.map((k) => out[k]!) };
+  const outside = Object.keys(out).filter((k) => !ORDER.includes(k) && !LEVER_ORDER.includes(k));
+  if (outside.length > 0) throw new Error(`items outside the probe: ${outside.join(', ')}`);
+  return { queue: 'results', items: [...ORDER, ...LEVER_ORDER].filter((k) => k in out).map((k) => out[k]!) };
 }
