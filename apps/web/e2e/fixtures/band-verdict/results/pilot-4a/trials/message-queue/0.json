@@ -1,14 +1,14 @@
 {
   "trial_id": "run:pilot-4a:message-queue/0",
   "task_id": "message-queue",
-  "task_version": "64f91f1322531f6528f72ffb790f7d7363b2f2bd99caa9b63c9b3025017aff43",
-  "env_version": "661d410b4462fe6c641410d5d7d820b7fd2872293231a8c149240c2e9dd7c63f",
-  "grader_task_version": "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd",
-  "fixture_hash": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
+  "task_version": "ca94998a32ac68b5837c62f3b885fb500d39654577be074b36e40ecd006bce85",
+  "env_version": "9b3c4895a0d5482db83a6ec9f8671f46b210df8d5394b94ff5d2dd16b985ea0e",
+  "grader_task_version": "b468a10eaf5ec22819c4c10018435b701211a2ae5bc078892a2f64c5f482b8ab",
+  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
-    "initial": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
-    "final": "bbaf92afdff62a7e846a7ef7be29243ccd11f2d96d3c48abb64a75ac3663725d",
-    "replay_final": "bbaf92afdff62a7e846a7ef7be29243ccd11f2d96d3c48abb64a75ac3663725d"
+    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+    "final": "6fcb96ce22af0402d6e956c102b3a423750772bb9409fa292e1c336a3879265e",
+    "replay_final": "6fcb96ce22af0402d6e956c102b3a423750772bb9409fa292e1c336a3879265e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -17,8 +17,8 @@
   "effort": "high",
   "api_version": "2026-10-21",
   "started": "2026-10-23T13:49:16.000Z",
-  "turns": 14,
-  "tool_calls": 54,
+  "turns": 16,
+  "tool_calls": 62,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8), Price (corrected creatinine, 35% rise) and Webb (potassium 5.8), each with a task to Dr. Okafor and the earlier order cancelled; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
+  "summary": "Cleared the 7 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8) and Price (corrected creatinine, 35% rise) and Kaplan (creatinine 46% above the value before the dose increase), each with a task to Dr. Okafor and any earlier order cancelled; Webb's lisinopril renewed for 90 days once his redrawn panel came in; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:52:32.000Z",
+  "ended": "2026-10-23T13:52:59.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
@@ -138,6 +138,15 @@
               }
             ]
           }
+        },
+        {
+          "item": "Task/task-70001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-70022",
+            "Observation/obs-70004"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -207,6 +216,15 @@
             "Observation/obs-02270"
           ],
           "evidence": {}
+        },
+        {
+          "item": "Task/task-70001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-70022",
+            "Observation/obs-70004"
+          ],
+          "evidence": {}
         }
       ]
     },
@@ -274,6 +292,15 @@
           "decisive_ids": [
             "Observation/obs-02269",
             "Observation/obs-02270"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Task/task-70001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-70022",
+            "Observation/obs-70004"
           ],
           "evidence": {}
         }
@@ -347,6 +374,15 @@
           "evidence": {}
         },
         {
+          "item": "Task/task-70001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-70022",
+            "Observation/obs-70004"
+          ],
+          "evidence": {}
+        },
+        {
           "item": "outside",
           "met": true,
           "decisive_ids": [],
@@ -399,6 +435,12 @@
         },
         {
           "item": "Task/task-00024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Task/task-70001",
           "met": true,
           "decisive_ids": [],
           "evidence": {}
@@ -460,11 +502,12 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-06001"
+            "Observation/obs-06011",
+            "DiagnosticReport/dr-00602"
           ],
           "evidence": {
             "fired": [
-              "webb-c1"
+              "webb-a1"
             ],
             "not_fired": []
           }
@@ -526,11 +569,12 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-06001"
+            "Observation/obs-06011",
+            "DiagnosticReport/dr-00602"
           ],
           "evidence": {
             "fired": [
-              "webb-c1"
+              "webb-a1"
             ],
             "not_fired": []
           }
@@ -592,11 +636,12 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-06001"
+            "Observation/obs-06011",
+            "DiagnosticReport/dr-00602"
           ],
           "evidence": {
             "fired": [
-              "webb-c1"
+              "webb-a1"
             ],
             "not_fired": []
           }
@@ -645,11 +690,12 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-06001"
+            "Observation/obs-06011",
+            "DiagnosticReport/dr-00602"
           ],
           "evidence": {
             "fired": [
-              "webb-c1"
+              "webb-a1"
             ],
             "not_fired": []
           }
@@ -705,31 +751,33 @@
         "recipient": "Patient/pt-0027",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
+        "cache_key": "037d27ab2d904fd51060a0806c58de1732e999e058b3e0f99505cd0351091c2e",
         "recipients": [
           "Patient/pt-0027 false",
           "Patient/pt-0030 false",
-          "Patient/pt-0031 false"
+          "Patient/pt-0031 false",
+          "Patient/pt-0070 false"
         ]
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 3,
+    "calls": 4,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
-      "c4300ad45741ee26dbbe4c4a0e0d69ef9f3ebd025a828e22aafbe138bd1f4569",
-      "fa003dfcd7f0bd6162d7d8f6e4833952c263748c0e3381ba8552ac85e6104424"
+      "037d27ab2d904fd51060a0806c58de1732e999e058b3e0f99505cd0351091c2e",
+      "d0a7f495d2849f3cf99259a137e043f07ec65ef88787187f3006d4e5ccbcea7c",
+      "485bf44b875b1f9aa46bfa2ac97094e85e94268d71be5529e43977fe9783acfe",
+      "5df9d9e0cbd5cc61f109bc6f3d4575715dc7752e3f0f8b92700104320b267f9e"
     ],
     "cache": [
       {
-        "key": "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
+        "key": "037d27ab2d904fd51060a0806c58de1732e999e058b3e0f99505cd0351091c2e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -743,11 +791,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:56.886Z"
+          "at": "2026-11-03T10:12:58.312Z"
         }
       },
       {
-        "key": "c4300ad45741ee26dbbe4c4a0e0d69ef9f3ebd025a828e22aafbe138bd1f4569",
+        "key": "d0a7f495d2849f3cf99259a137e043f07ec65ef88787187f3006d4e5ccbcea7c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -761,11 +809,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:56.886Z"
+          "at": "2026-11-03T10:12:58.312Z"
         }
       },
       {
-        "key": "fa003dfcd7f0bd6162d7d8f6e4833952c263748c0e3381ba8552ac85e6104424",
+        "key": "485bf44b875b1f9aa46bfa2ac97094e85e94268d71be5529e43977fe9783acfe",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -779,7 +827,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T13:38:56.886Z"
+          "at": "2026-11-03T10:12:58.312Z"
+        }
+      },
+      {
+        "key": "5df9d9e0cbd5cc61f109bc6f3d4575715dc7752e3f0f8b92700104320b267f9e",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-03T10:12:58.312Z"
         }
       }
     ]

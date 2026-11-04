@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:0",
   "task_id": "renal-dose-review",
-  "task_version": "61ec2ce40bc39def15a77306d26619d23870f3e51f66c1c74c0062872b2dfd7e",
-  "env_version": "550bb29fc4e7aed36edc61cbc4b39345d2db794546af1b8e2bf6f550027ea69c",
+  "task_version": "c6d1cd72efc0c84a3f209ca44335d25554b10d017c876cdf912999777a6c3ba6",
+  "env_version": "32aa59082bd2b2420d22fad7f4660cf96a7d29ffe1901409e4cfdd5813e99c7c",
   "grader_task_version": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
-  "fixture_hash": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
+  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
-    "initial": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
-    "final": "31e8aee33428a5261a122bdf4832c258b4b4b78bfa330eecc017ddd4befd0fcd",
-    "replay_final": "31e8aee33428a5261a122bdf4832c258b4b4b78bfa330eecc017ddd4befd0fcd"
+    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+    "final": "d27653d7670b8a4333acc93271d978ea2646dda9fd9ef3256e04a53e69b8d551",
+    "replay_final": "d27653d7670b8a4333acc93271d978ea2646dda9fd9ef3256e04a53e69b8d551"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:32:09.000Z",
+  "started": "2026-10-23T14:38:00.000Z",
   "turns": 26,
   "tool_calls": 69,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed the 7 patients on the DOAC dose review list under RBC-PHARM-07, and the results and messages that arrived during the review. Changed: Castellano apixaban 2.5 -> 5 mg BID (no criterion; the itraconazole course ended 8/14, the ID letter says she no longer takes it); Delgado rivaroxaban 20 -> 15 mg daily (outside SCr 1.81, CrCl 44); Duquette apixaban 5 -> 2.5 mg BID (itraconazole); Moravec rivaroxaban 15 -> 20 mg daily (CrCl 56 on actual weight); Vance apixaban 2.5 -> 5 mg BID (one criterion). Fairweather unchanged (one criterion); Pellegrino unchanged (CrCl 59). Each change and correction documented in a progress note on that chart.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:36:38.000Z",
+  "ended": "2026-10-23T14:42:29.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",

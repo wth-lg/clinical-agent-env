@@ -18,12 +18,6 @@ import { LEVER as T4_LEVER } from '../../../tasks/discharge-medrec/lever.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
 
-// A task's patients: its slots (packages/env/overlay.ts TASKS) and the Patients its overlay adds
-// (its registry's pt- keys, fixtures/ids.ts), which follow the task's lever state (W5-E), each as a
-// reference, in id order.
-const patientsOf = (task: keyof typeof TASKS): string[] =>
-  [...TASKS[task].slots, ...Object.entries(TASK_IDS[task] as Record<string, string>).filter(([k]) => k.startsWith('pt-')).map(([, v]) => v)].sort().map((p) => `Patient/${p}`);
-
 describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {

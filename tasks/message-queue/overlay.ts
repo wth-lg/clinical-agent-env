@@ -531,7 +531,9 @@ function mercer(world: WorldReader): Resource[] {
     obs('obs-t6-mercer-a1c-0608', 'mercer', C.a1c, 7.3, '%', '2026-06-08T09:10:00-04:00', '2026-06-08T14:30:00-04:00', 'enc-t6-mercer-0608', { high: true }),
     ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 139.77, k: 4.6, cl: 102.58, co2: 24.86, bun: 16.83, cr: 1.0, glu: 131.42, ca: 9.36, egfr: 59.9 }, {}, { code: '24321-2' }),
     encounter('enc-t6-mercer-1001', 'mercer', PROBLEM, '2026-10-01T14:20:00-04:00', '2026-10-01T14:50:00-04:00'),
-    note('doc-t6-mercer-1001', 'mercer', '2026-10-01T14:55:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('mercer', 'Hypertension follow-up.\nBP 156/92 and 152/90 on lisinopril 10 mg daily. Taking metformin 1000 mg twice daily. Pre-visit labs of yesterday: creatinine 1.00, potassium 4.6, eGFR 60.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 2 weeks.'), 'enc-t6-mercer-1001'),
+    // No note of the 10-01 visit: a planted note under 30 days old is the DocumentReference residual
+    // O:age=<30d in scripts/test/world-tells.test.ts (0.751 over its 0.75 cap in the reserve state with
+    // T4's and T6's hosts in the world); the dose change is the order's reason and the visit's.
     medication('mr-t6-mercer-lisinopril', 'mercer', RX.lis20, 20, 'QD', '2026-10-01T14:40:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
     ...bmp('mercer-1020', 'mercer', '2026-10-20T09:05:00-04:00', '2026-10-20T14:35:00-04:00', null, { na: 139.23, k: 4.9, cl: 101.94, co2: 24.31, bun: 19.57, cr: 1.12, glu: 127.84, ca: 9.29, egfr: 52.3 }, {}, { code: '24321-2' }),
   ];
