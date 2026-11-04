@@ -594,10 +594,8 @@ function patient(world: WorldReader, template: string, id: string, family: strin
 }
 const MALE_TEMPLATE = 'pt-0004';
 const FEMALE_TEMPLATE = 'pt-0042';
-const CAP: [string, string] = ['385093006', 'Community acquired pneumonia'];
 const HTN: [string, string] = ['59621000', 'Essential hypertension'];
 const HLD: [string, string] = ['55822004', 'Hyperlipidemia'];
-const AKI: [string, string] = ['14669001', 'Acute kidney injury'];
 const HELD_FOR_AKI = { status: 'on-hold' as const, statusReason: { text: 'Held during the St. Brigid Regional admission for acute kidney injury (10/2026)' } };
 
 // ---- Gerald Whitcomb, the A host (in every LEVER state). Pneumonia with prerenal AKI, lisinopril
@@ -641,10 +639,15 @@ Grace Mensah, MD`;
   const put: Resource[] = [
     patient(world, MALE_TEMPLATE, PT, 'Whitcomb', ['Gerald', 'Thomas'], '1955-03-14', 'male', '555-0142', '27 Orchard Hill Road', 'Amherst', '01002', ['M', 'Married'], 'Edith Larkin', 'Worcester', [42.3732, -72.5199]),
     c.encounter('enc-t4-whitcomb-adm', 'IMP', ADMISSION, '2026-10-15T16:35:00-04:00', '2026-10-19T12:40:00-04:00', HOSPITAL, refTo(MENSAH)),
-    c.condition('cond-t4-whitcomb-htn', HTN, '2012-05-08T10:00:00-04:00'),
-    c.condition('cond-t4-whitcomb-hld', HLD, '2015-09-15T10:00:00-04:00'),
-    c.condition('cond-t4-whitcomb-cap', CAP, '2026-10-15T16:35:00-04:00'),
-    c.condition('cond-t4-whitcomb-aki', AKI, '2026-10-15T18:00:00-04:00'),
+    // The hosts' problem lists hold their chronic problems only, recorded at afternoon visits over
+    // the years; the stay's diagnoses are in the summaries. (scripts/test/world-tells.test.ts holds
+    // the Condition tells, a morning onset, one under 30 days old, or one among the chart's last
+    // three, under their caps; a host whose only problems are recent, or fewer than four, tips them.)
+    c.condition('cond-t4-whitcomb-rhinitis', ['367498001', 'Seasonal allergic rhinitis'], '2003-04-09T14:35:00-04:00'),
+    c.condition('cond-t4-whitcomb-gerd', ['235595009', 'Gastroesophageal reflux disease'], '2008-03-18T14:35:00-04:00'),
+    c.condition('cond-t4-whitcomb-gout', ['90560007', 'Gout'], '2010-07-22T14:35:00-04:00'),
+    c.condition('cond-t4-whitcomb-htn', HTN, '2012-05-08T14:35:00-04:00'),
+    c.condition('cond-t4-whitcomb-hld', HLD, '2015-09-15T14:35:00-04:00'),
     // Northgate's post-discharge panel, interfaced (no scanned report): both normal.
     c.lab('obs-t4-whitcomb-k-1021', K, '2026-10-21T08:15:00-04:00', '2026-10-21T12:30:00-04:00', 4.4, 'mmol/L', [3.5, 5.1], null, NORTHGATE),
     c.lab('obs-t4-whitcomb-scr-1021', SCR, '2026-10-21T08:15:00-04:00', '2026-10-21T12:30:00-04:00', 1.12, 'mg/dL', [0.74, 1.35], null, NORTHGATE),
@@ -697,11 +700,13 @@ Omar Haddad, MD`;
   const put: Resource[] = [
     patient(world, FEMALE_TEMPLATE, PT, 'Pruitt', ['Lorraine', 'Esther'], '1960-07-22', 'female', '555-0158', '114 Pine Street Apt 3', 'Hadley', '01035', ['D', 'Divorced'], 'Margaret Coyle', 'Pittsfield', [42.3417, -72.5884]),
     c.encounter('enc-t4-pruitt-adm', 'IMP', ADMISSION, '2026-10-18T02:15:00-04:00', '2026-10-21T13:20:00-04:00', HOSPITAL, refTo(HADDAD)),
-    c.condition('cond-t4-pruitt-t2d', ['44054006', 'Type 2 diabetes mellitus'], '2014-11-03T10:00:00-05:00'),
-    c.condition('cond-t4-pruitt-htn', HTN, '2016-06-21T10:00:00-04:00'),
-    c.condition('cond-t4-pruitt-hld', HLD, '2018-03-12T10:00:00-04:00'),
-    c.condition('cond-t4-pruitt-gastro', ['25374005', 'Gastroenteritis'], '2026-10-18T02:15:00-04:00'),
-    c.condition('cond-t4-pruitt-aki', AKI, '2026-10-18T03:30:00-04:00'),
+    // Chronic problems only, at afternoon visits (see the A host's note).
+    c.condition('cond-t4-pruitt-diverticular', ['80182007', 'Diverticular disease'], '2006-02-16T14:35:00-05:00'),
+    c.condition('cond-t4-pruitt-oa', ['396275006', 'Osteoarthritis'], '2009-05-14T14:35:00-04:00'),
+    c.condition('cond-t4-pruitt-gerd', ['235595009', 'Gastroesophageal reflux disease'], '2011-08-30T14:35:00-04:00'),
+    c.condition('cond-t4-pruitt-t2d', ['44054006', 'Type 2 diabetes mellitus'], '2014-11-03T14:35:00-05:00'),
+    c.condition('cond-t4-pruitt-htn', HTN, '2016-06-21T14:35:00-04:00'),
+    c.condition('cond-t4-pruitt-hld', HLD, '2018-03-12T14:35:00-04:00'),
     // The stay's filed creatinine: the morning of discharge (the lure). The admission value is in
     // the summary's text only: no October creatinine of these hosts may sort before 10/19 on a
     // clinic-wide month search, which the frozen contrast-ct-prep discover test pins (its row
@@ -722,7 +727,7 @@ Omar Haddad, MD`;
 // so it is in the claims-network query, whose header prints the network's 180-day proportion of
 // days covered (60%, below 80%) for a drug first filled 07/02 and refilled on time ever since:
 // §5(b) counts the days from the first fill (100%), so the dose change applies. His chart is kept
-// small (one order, one outside fill history, two problems with afternoon onsets) and carries one
+// small (one order, one outside fill history, one problem with an afternoon onset) and carries one
 // older clinic visit with its note, and his documents name their period: with his chart in the
 // world, scripts/test/world-tells.test.ts's classifier (document age, document period) must stay
 // under its caps.
@@ -766,7 +771,6 @@ Adherence summary (claims network): amlodipine, proportion of days covered (180-
     c.encounter('enc-t4-salazar-visit', 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2024-03-11T14:35:00-04:00', '2024-03-11T15:05:00-04:00', CLINIC, OKAFOR),
     c.encounter('enc-t4-salazar-adm', 'IMP', ADMISSION, '2026-10-18T19:10:00-04:00', '2026-10-20T11:30:00-04:00', HOSPITAL, refTo(BOATENG)),
     c.condition('cond-t4-salazar-htn', HTN, '2024-03-11T14:35:00-04:00'),
-    c.condition('cond-t4-salazar-urgency', ['706882009', 'Hypertensive urgency'], '2026-10-18T19:10:00-04:00'),
     c.medication('mr-t4-salazar-amlodipine', ['197361', 'amlodipine 5 MG Oral Tablet'], [5, 'mg'], 'QD', '2026-06-30T14:35:00-04:00', 'Essential hypertension'),
     c.summary('doc-t4-salazar-dc', '2026-10-20T11:05:00-04:00', 'enc-t4-salazar-adm', BOATENG, SUMMARY, { context: { encounter: [{ reference: 'Encounter/enc-t4-salazar-adm' }], period: { start: '2026-10-18T19:10:00-04:00', end: '2026-10-20T11:30:00-04:00' } } }),
     { ...c.fills('doc-t4-salazar-outfills', '2026-10-21T10:44:00-04:00', OUTSIDE_FILLS, true), context: { period: { start: '2025-12-01T00:00:00-05:00', end: '2026-10-21T10:44:00-04:00' } } } as Resource,

@@ -8,9 +8,9 @@
 //      record it amends differs from it), and its inbox Task says nothing that decides it (R29).
 //   3. Delivered double derivation: policy.ts applied to the world with the arrival added gives the
 //      action tests/grader.ts grades as delivered (R16), and for a lure the item it gave before (R19).
-//   4. Each spec alone, active: its event mutants fail only its item under their label and its
-//      alternatives pass (the matrix's own case verdicts), and its trigger fires on every passing
-//      alternative.
+//   4. Each spec alone, active (the A event and its twin only while A is in LEVER): its event
+//      mutants fail only its item under their label and its alternatives pass (the matrix's own
+//      case verdicts), and its trigger fires on every passing alternative.
 //   5. Every passing route fires every trigger (brief addendum 2): the oracle and each matrix
 //      alternative, run with all 9 specs active, fire all 9.
 //   6. The null agent passes no item (R32), and a reviewer who skips a patient fires none of that
@@ -126,7 +126,11 @@ describe('discharge-medrec events', () => {
 
   describe('each spec alone, active', () => {
     for (const s of SPECS) {
-      it(`${s.id} (${s.class}, ${s.item}): its event mutants fail only its item under their label, its alternatives pass and fire it`, { timeout: 600_000 }, async () => {
+      // The A event and its twin are on the A host's item, which is on the clinician's list only
+      // while A is in LEVER (G1: an inactive item's event is absent, and the matrix refuses one that
+      // is active); with A off, neither can run alone.
+      const inactiveLeverSpec = s.item === 'whitcomb-lisinopril' && !LEVER.includes('A');
+      it.skipIf(inactiveLeverSpec)(`${s.id} (${s.class}, ${s.item}): its event mutants fail only its item under their label, its alternatives pass and fire it`, { timeout: 600_000 }, async () => {
         const loaded = await loadMatrixTask(ID);
         const muts = eventMutants(s.id, [s.id]).map((m) => ({ ...m, loses: m.loses.filter((l) => !JUDGED.has(l)) }));
         const alts = eventAlternatives(s.id, [s.id]);

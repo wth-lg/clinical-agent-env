@@ -1,14 +1,14 @@
 {
   "trial_id": "run:pilot-4a:contrast-ct-prep/2",
   "task_id": "contrast-ct-prep",
-  "task_version": "f21d1377fa64ed7751fb7dbc0127c677777ecb0c7cab6bb4a12820a44c29d6af",
-  "env_version": "d2b350dff5099ea6f71520a792dda4461029673ad045bc5dc6546a2b8ec54f7d",
+  "task_version": "1208d6bf787ded1f4a877556daeea70acf279041505a2f716a783f77e6e0ce21",
+  "env_version": "99a8b6300f60a44871e6de88f06c1970f4e3a9711a7cf78d73853a5a276c07eb",
   "grader_task_version": "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528",
-  "fixture_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
+  "fixture_hash": "84f67d3030a64d53b4eb9e5a651caa82ce314ffd760d20f71305c26f878cbc0c",
   "state_hash": {
-    "initial": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
-    "final": "b044efc7205f81f6972851d1d3f3d7b72d0de2711b034353eb8441eca2f0a021",
-    "replay_final": "b044efc7205f81f6972851d1d3f3d7b72d0de2711b034353eb8441eca2f0a021"
+    "initial": "84f67d3030a64d53b4eb9e5a651caa82ce314ffd760d20f71305c26f878cbc0c",
+    "final": "30f9df2d43c475d3a1d5e74f82223297c4872dda9c07501730603d66de75608a",
+    "replay_final": "30f9df2d43c475d3a1d5e74f82223297c4872dda9c07501730603d66de75608a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [

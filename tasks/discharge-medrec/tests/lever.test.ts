@@ -31,6 +31,7 @@ import { LEVER } from '../lever.ts';
 import { HOSTS } from '../lever-keys.ts';
 import { leverHosts } from '../overlay.ts';
 import { derive } from '../policy.ts';
+import { isPlanted } from '../../planted.ts';
 
 const STATES: ReadonlyArray<readonly string[]> = [['A', 'B'], ['A'], ['B'], ['A', 'B', 'reserve']];
 const LEVER_IDS = Object.keys(HOSTS) as Array<keyof typeof HOSTS>;
@@ -87,7 +88,10 @@ describe('discharge-medrec lever toggles (W5-E)', () => {
     const hosts = hostsIn(LEVER);
     expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).sort()).toEqual([...hosts].sort());
     const ids = hosts.map((h) => idOf(h));
-    const last = Math.max(...all.filter((r) => r.resourceType === 'Patient' && !ids.includes(r.id!)).map((r) => Number(r.id!.slice(3))));
+    // The cohort's last Patient is the last one no task's registry names (tasks/planted.ts), so the
+    // bound holds with another task's hosts in the world too (the central slots, packages/env/overlay.ts
+    // TASKS, number T4's after T1's and T2's; a bound over every other Patient would fail for them).
+    const last = Math.max(...all.filter((r) => r.resourceType === 'Patient' && !isPlanted(r.id)).map((r) => Number(r.id!.slice(3))));
     for (const h of ids) expect(Number(h.slice(3)) > last, h).toBe(true);
     const frozen = new Set<string>([...TASKS.T3.slots, ...TASKS.T5.slots]);
     const own = new Set([...T4_SLOTS, ...ids]);

@@ -1,14 +1,14 @@
 {
   "trial_id": "run:pilot-4a:message-queue/7",
   "task_id": "message-queue",
-  "task_version": "b2a2efd0f2d388cca08ee56f0170983452ac0df3577c97f77e3ae17c7ae25398",
-  "env_version": "f4e20379f1e5ce41d08d130905e03d267a31a2323556d4f918e7ecea11437565",
+  "task_version": "d3492106d16ca818c8701942cebaeecb9af1b1a1ffacc8e5f8569c0d6df19f95",
+  "env_version": "69a3b32af3fee6e6dfdd2b5a5cc00506c78c2ca20279a89766bab3bd5eba9a7b",
   "grader_task_version": "e3853e54b98202d0bcfdf844554da4d117b0ad44c3114b949dd879e9d1c935fd",
-  "fixture_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
+  "fixture_hash": "84f67d3030a64d53b4eb9e5a651caa82ce314ffd760d20f71305c26f878cbc0c",
   "state_hash": {
-    "initial": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
-    "final": "00aaf9a5ce44ce4dd52b52033c2d4f62e8b5f24d5d60c077ed2362347df30e91",
-    "replay_final": "00aaf9a5ce44ce4dd52b52033c2d4f62e8b5f24d5d60c077ed2362347df30e91"
+    "initial": "84f67d3030a64d53b4eb9e5a651caa82ce314ffd760d20f71305c26f878cbc0c",
+    "final": "5099d2c7dc35593e733bb6aac386d388fe1babb8e17ea114de6d0a535a23dbb7",
+    "replay_final": "5099d2c7dc35593e733bb6aac386d388fe1babb8e17ea114de6d0a535a23dbb7"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:40:23.000Z",
+  "started": "2026-10-23T13:49:16.000Z",
   "turns": 14,
   "tool_calls": 54,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8), Price (corrected creatinine, 35% rise) and Webb (potassium 5.8), each with a task to Dr. Okafor and the earlier order cancelled; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:43:39.000Z",
+  "ended": "2026-10-23T13:52:32.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
