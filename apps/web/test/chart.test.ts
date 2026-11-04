@@ -14,6 +14,7 @@ import { id as t5 } from '../../../tasks/contrast-ct-prep/ids.ts';
 import { id as t6 } from '../../../tasks/message-queue/ids.ts';
 import { TASK_IDS } from '../../../fixtures/ids.ts';
 import { TASKS } from '../../../packages/env/overlay.ts';
+import { LEVER as T4_LEVER } from '../../../tasks/discharge-medrec/lever.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -23,7 +24,11 @@ describe('taskPatients', () => {
     // T1: its slots and the Patients its overlay adds (W5-E: the lever patients, from the registry).
     const t1Added = Object.entries(TASK_IDS.T1).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);
     expect(taskPatients(world, 'renal-dose-review')).toEqual([...TASKS.T1.slots.map((p) => `Patient/${p}`), ...t1Added].sort());
-    expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
+    // T4: its four slots and the Patients its overlay adds (W5-E: the A host in every LEVER state, the
+    // B and reserve hosts while their item is active), derived from the registry, not pinned.
+    const t4Added = Object.entries(TASK_IDS.T4).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);
+    expect(t4Added.length).toBe(1 + (T4_LEVER.includes('B') ? 1 : 0) + (T4_LEVER.includes('reserve') ? 1 : 0));
+    expect(taskPatients(world, 'discharge-medrec')).toEqual([...TASKS.T4.slots.map((p) => `Patient/${p}`), ...t4Added].sort());
     expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
   });
   it('finds every member of the panel task\'s group, and the patients of the inbox and queue tasks', () => {

@@ -6,9 +6,17 @@
 // (reasoning). A source read is skipped only where no other item rests on it. The event mutants
 // (tests/event-cases.ts) are those of each active spec. Each patient's first write stays a write on
 // that patient, so the arrivals come where the oracle's do.
+// W5-E (plan-amendment-w5 "T4 discharge-medrec" mutants): each lever item's near misses, present
+// while the item is active (leverMutants): A's are its event's (event-cases.ts) plus the
+// focus-only route (G3; the same script as tests/agents.ts lever.A.focus_only), B's the stay's
+// creatinine taken as meeting the condition, with and without the post-discharge review, the Task
+// forgotten or outside its window, the Task written before the review, and the resume on top of
+// the Task; the reserve's the printed figure taken for §5(b)'s coverage, and the modify made
+// without the fill history that holds it.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
-import { AMEND, arrivalRead, change, DOC, finish, inbox, note, firstWrites, FIRST, message, modify, MR, notesFor, order, reads, recheck, results, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
+import { LEVER } from '../lever.ts';
+import { AMEND, arrivalReads, change, DOC, exceptWho, finish, firstWritesExcept, inbox, note, message, modify, MR, notesFor, order, potassiums, PRUITT_TASK_TEXT, reads, recheck, results, RX, script, searchNotes, specReads, task, W, decisions } from '../solution/steps.ts';
 import { closeItem } from './alternatives.ts';
 import { eventMutants } from './event-cases.ts';
 
@@ -211,11 +219,11 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     items: { 'roberts-lisinopril': 'retrieval' },
     script: [
-      ...reads([], [], [], ['kim', 'stark']),
-      { calls: FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]) },
+      ...reads([], [], [], exceptWho('roberts')),
+      { calls: firstWritesExcept('robertsLisinopril') },
       { calls: recheck(ACTIVE.filter((s) => s !== 'roberts-r1')) },
-      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol] },
-      { calls: notesFor().slice(0, 2) },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, ...decisions().whitcombLisinoprilFix] },
+      { calls: notesFor().filter((n) => (n.input as { patient: string }).patient !== 'pt-0044') },
       { calls: [finish()] },
     ],
   },
@@ -231,10 +239,10 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     items: { 'roberts-lisinopril': 'retrieval' },
     script: [
-      ...reads([], [], [], ['kim', 'stark']),
-      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      ...reads([], [], [], exceptWho('roberts')),
+      { calls: [...firstWritesExcept('robertsLisinopril'), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
       { calls: recheck(ACTIVE.filter((s) => s !== 'roberts-r1')) },
-      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, AMEND.robertsR1[1]!] },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, ...decisions().whitcombLisinoprilFix, AMEND.robertsR1[1]!] },
       { calls: notesFor() },
       { calls: [finish()] },
     ],
@@ -247,7 +255,7 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'retrieval',
     items: { 'stark-carvedilol': 'retrieval' },
-    script: script({ skip: ['starkSummary'], recheck: [inbox, ...['kim-k1', 'kim-d2', 'roberts-r1'].map(arrivalRead)] }),
+    script: script({ skip: ['starkSummary'], recheck: [inbox, ...arrivalReads(ACTIVE, ['stark-s1'])] }),
   },
   // R38(b): a blind cancel of an arrival's inbox item is ungraded, but what it hides is not: the
   // repeat panel is never read, so kim-lisinopril fails event_seen (retrieval), and the resume made
@@ -260,7 +268,7 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'retrieval',
     items: { 'kim-lisinopril': 'retrieval' },
-    script: script({ over: { kimKcl: [W.kimKcl, closeItem(1, 'cancel')] }, recheck: [inbox, ...['kim-d2', 'stark-s1', 'roberts-r1'].map(arrivalRead)] }),
+    script: script({ over: { kimKcl: [W.kimKcl, closeItem(1, 'cancel')] }, recheck: [inbox, ...arrivalReads(ACTIVE, ['kim-k1'])] }),
   },
   {
     id: 'one_turn',
@@ -271,11 +279,143 @@ export const mutants: Mutant[] = [
     attribution: 'process',
     // Earnest Roberts' resume is in the one answer too: written before his records were shown, it is a
     // seen-late first decision though roberts-r1 later decides his item (R18, R38(e)).
-    items: { 'kim-kcl': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process', 'roberts-lisinopril': 'process' },
+    items: { 'kim-kcl': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process', 'roberts-lisinopril': 'process', 'whitcomb-lisinopril': 'process', ...(LEVER.includes('B') ? { 'pruitt-metformin': 'process' as const } : {}), ...(LEVER.includes('reserve') ? { 'salazar-amlodipine': 'process' as const } : {}) },
     script: (() => {
       const r = script();
       return [{ calls: r.slice(0, 4).flatMap((t) => t.calls) }, ...r.slice(4)];
     })(),
   },
+  ...leverMutants(),
   ...ACTIVE.flatMap((spec) => eventMutants(spec, ACTIVE)),
 ];
+
+// W5-E: the lever items' near misses (see the header), each present while its item is active.
+function leverMutants(): Mutant[] {
+  const out: Mutant[] = [];
+  if (ACTIVE.includes('whitcomb-a1')) {
+    // G3's focus-only route (tests/agents.ts lever.A.focus_only): the inbox item's focus read, the
+    // potassiums never listed again, the resume held on the stale value.
+    out.push({
+      id: 'whitcomb-a1_focus_only',
+      trap: 'batch_sibling_unread',
+      why: "Reads the batch's notified potassium of 5.4 from the inbox item and holds lisinopril on it with a recheck Task, never listing his potassiums again: the 4.6 repeat of 16:30, which decides under §7, is never shown.",
+      fails: ['event_seen', 'amended'],
+      loses: [],
+      attribution: 'retrieval',
+      items: { 'whitcomb-lisinopril': 'retrieval' },
+      script: focusOnly(),
+    });
+  }
+  if (LEVER.includes('B')) {
+    const resumed = change(MR.pruittMetformin, 'resume', 'Discharge summary: resume when SCr < 1.5; creatinine 1.21 on 10/21');
+    out.push(
+      {
+        id: 'pruitt_resumed_on_stay_creatinine',
+        trap: 'stay_result_as_post_discharge',
+        why: "Lists Lorraine Pruitt's results, sees the creatinine of 1.21 on 10/21, the morning of discharge, and resumes metformin on it; the condition names post-discharge labs and her chart holds no result after discharge (§2): a forbidden resume.",
+        fails: FORBIDDEN,
+        loses: [],
+        attribution: 'over_action',
+        items: { 'pruitt-metformin': 'over_action' },
+        script: script({ over: { pruittTask: [resumed] } }),
+      },
+      {
+        id: 'pruitt_resumed_without_review',
+        trap: 'stay_result_as_post_discharge',
+        why: "Never lists Lorraine Pruitt's results: resumes metformin on the summary's 'Creatinine 1.21 on the morning of discharge' alone, with the chart never searched for a result after discharge (R31: the review never made).",
+        fails: [...FORBIDDEN, 'decisive_seen'],
+        loses: [],
+        attribution: 'over_action',
+        items: { 'pruitt-metformin': 'over_action' },
+        script: script({ noResults: ['pruitt'], over: { pruittTask: [resumed] } }),
+      },
+      // R14, R32: the right decision reached without the review that decides it. Metformin left held
+      // with the Task, and her results never listed: the chart was never checked for a result after
+      // discharge, so the review the item rests on was never made (retrieval).
+      {
+        id: 'pruitt_deferred_without_review',
+        trap: 'pruitt-metformin',
+        why: "Leaves metformin held and creates the Task on the summary's line alone, never listing Lorraine Pruitt's results: the chart was never searched for a result after discharge (R31), so the decision rests on a review never made.",
+        fails: ['decisive_seen'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { 'pruitt-metformin': 'retrieval' },
+        script: script({ noResults: ['pruitt'] }),
+      },
+      {
+        id: 'pruitt_held_without_task',
+        trap: 'pruitt-metformin',
+        why: 'Leaves metformin held, rightly, and creates no Task for the expected result (§2: create a Task due when the result is expected).',
+        fails: ACTION,
+        loses: [],
+        attribution: 'reasoning',
+        items: { 'pruitt-metformin': 'reasoning' },
+        // Her first write is then the note alone (no event is hers).
+        script: script({ over: { pruittTask: [] } }),
+      },
+      {
+        id: 'pruitt_task_outside_window',
+        trap: 'pruitt-metformin',
+        why: 'Leaves metformin held and creates the Task for two weeks out, not when the BMP is expected (10/24, a day either side): the right decision in a form the policy does not name (R24).',
+        fails: ACTION,
+        loses: [],
+        attribution: 'action_form',
+        items: { 'pruitt-metformin': 'action_form' },
+        script: script({ over: { pruittTask: [task('pruitt', '2026-11-06', PRUITT_TASK_TEXT, `MedicationRequest/${MR.pruittMetformin}`)] } }),
+      },
+      {
+        id: 'pruitt_task_before_review',
+        trap: 'orders_before_reading',
+        why: "Creates Lorraine Pruitt's Task in the same answer that lists her results, so the Task came before the chart had been reviewed for a result after discharge (R18: process).",
+        fails: ['seen_before_change'],
+        loses: [],
+        attribution: 'process',
+        items: { 'pruitt-metformin': 'process' },
+        script: (() => {
+          const r = script({ noResults: ['pruitt'], over: { pruittTask: [] } });
+          // The Task and her results search in one answer, after the other first writes (turn 4).
+          return [...r.slice(0, 4), { calls: [results('pruitt'), W.pruittTask] }, ...r.slice(4)];
+        })(),
+      },
+    );
+  }
+  if (LEVER.includes('reserve')) {
+    out.push(
+      {
+        id: 'salazar_printed_coverage_taken',
+        trap: 'printed_coverage_taken',
+        why: "Reads the outside fill history's '60%, below 80%' as §5(b)'s coverage and leaves amlodipine at 5 mg with a message to the PCP; the policy counts the days from the first fill when it falls inside the window, 100% here, so the summary's 10 mg applies.",
+        fails: ACTION,
+        loses: [],
+        attribution: 'reasoning',
+        items: { 'salazar-amlodipine': 'reasoning' },
+        script: script({ over: { salazarAmlodipine: [message('Victor Salazar: amlodipine fills below 80%', "Victor Salazar's outside fill history reports amlodipine covering 60% of the 180 days before admission, below 80%. Per RBC-TOC-02 §5(b) I left the order at 5 mg; please address adherence before the increase to 10 mg.", [`MedicationRequest/${MR.salazarAmlodipine}`])] } }),
+      },
+      {
+        id: 'salazar_modified_without_fills',
+        trap: 'salazar-amlodipine',
+        why: "Never opens Victor Salazar's outside fill history and changes amlodipine to 10 mg on the summary's line alone: the right dose, reached without the fills §5(b) reads (R14).",
+        fails: ['decisive_seen'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { 'salazar-amlodipine': 'retrieval' },
+        script: script({ skip: ['salazarOutFills'] }),
+      },
+    );
+  }
+  return out;
+}
+
+// G3's focus-only route for the batch (tests/agents.ts lever.A.focus_only): the oracle's route,
+// except that after the arrival it reads only the inbox item's focus, the notified 5.4, and acts
+// on it (a hold with a recheck Task). The silent 4.6 is never shown: retrieval on
+// whitcomb-lisinopril alone.
+export function focusOnly(): Mutant['script'] {
+  return script({ recheck: [inbox, ...arrivalReads(ACTIVE, ['whitcomb-a1']), ...specReads('whitcomb-a1').slice(0, 1)], over: { whitcombLisinoprilFix: AMEND.whitcombHold } });
+}
+// G3's read-all-newest route: the oracle's (its re-check lists his potassiums again after the
+// notified value and acts on the newest, potassiums()).
+export function readAllNewest(): Mutant['script'] {
+  return script();
+}
+void potassiums;

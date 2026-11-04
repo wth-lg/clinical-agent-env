@@ -1,5 +1,6 @@
 # T4 (plan-amendment-worklist W1, T4 probe; PW4-E3 cut): Dr. Okafor's post-discharge worklist, three
-# patients back from St. Brigid (overlay.ts), each reconciled under RBC-TOC-02. 8 items (expected.ts):
+# patients back from St. Brigid (overlay.ts), each reconciled under RBC-TOC-02, plus the W5-E lever
+# hosts (lever.ts). 8 base items and one per lever item (expected.ts):
 # at least one instance of each probe class (source precedence, fill history as a document, formulary
 # substitution, brand and generic names, fill gaps under the 80% rule, a held or resumed ACE
 # inhibitor under the potassium rule) and the filler. Each item is graded on its own
@@ -16,7 +17,7 @@ max_turns = 120
 [[policy]]
 id = "RBC-TOC-02"
 title = "Medication reconciliation after hospital discharge"
-version = "5"
+version = "6"
 effective = "2026-01-01"
 source = "Clinic-local reconciliation rules (plan-amendment-worklist W1, T4 probe); each was read against its source on 2026-10-31. §1-§5 apply The Joint Commission NPSG.03.06.01 (National Patient Safety Goals effective January 2026, Ambulatory Health Care Program): EP 1 Note 3 'A good faith effort to obtain this information from the patient and/or other sources' (the pharmacy fill history of §5 is such a source) and EP 3 Note 'Discrepancies include omissions, duplications, contraindications, unclear information, and changes' (§4 duplication of a brand and its generic; §5a omissions). §1's precedence follows AHIMA, Amendments in the Electronic Health Record Toolkit (updated 2012): an addendum adds information 'in conjunction with a previous entry' and is 'electronically signed'; which source rules is the clinic's choice. §3 follows Wang, Fogerty and Horwitz, PLoS One 2017;12(10):e0186075: 'Medication reconciliation protocols should indicate which medications undergo therapeutic interchange at admission' and 'include a means of ensuring that this interchange is reversed at discharge'. §5b's 80% threshold is the proportion of days covered of the CMS Medicare 2026 Part C & D Star Ratings Technical Notes ('fill their prescription often enough to cover 80% or more of the time they are taking the medication'; PDC from 'the prescription fill date and days' supply'), counted over the time the patient is taking the drug, so a drug first filled inside the window is measured from that first fill; the 180-day window before admission is local. §7 is a conservative local rule, not a guideline mandate: its threshold is the 2022 AHA/ACC/HFSA heart-failure guideline's for starting a mineralocorticoid antagonist (§7.3.3: eGFR above 30 and serum potassium below 5.0 mEq/L). Holding an ACE-inhibitor resume is caution after acute kidney injury (Zestril US label, 2012 revision, Agents Increasing Serum Potassium: use with potassium-sparing diuretics or potassium supplements 'may lead to significant increases in serum potassium'). KDIGO 2024 CKD Practice Point 3.6.3 prefers lowering the potassium over reducing or stopping an ongoing RAS inhibitor, so §7's hold is the clinic's choice for a restart, not that guideline's."
 file = "rbc-toc-02.md"
@@ -144,6 +145,21 @@ code = "106892"
 system = "http://www.nlm.nih.gov/research/umls/rxnorm"
 display = "insulin isophane, human 70 UNT/ML / insulin, regular, human 30 UNT/ML Injectable Suspension [Humulin]"
 [[catalog]]
+kind = "medication"
+code = "197361"
+system = "http://www.nlm.nih.gov/research/umls/rxnorm"
+display = "amlodipine 5 MG Oral Tablet"
+[[catalog]]
+kind = "medication"
+code = "308135"
+system = "http://www.nlm.nih.gov/research/umls/rxnorm"
+display = "amlodipine 10 MG Oral Tablet"
+[[catalog]]
+kind = "medication"
+code = "860981"
+system = "http://www.nlm.nih.gov/research/umls/rxnorm"
+display = "24 HR metformin hydrochloride 1000 MG Extended Release Oral Tablet"
+[[catalog]]
 kind = "lab"
 code = "2160-0"
 system = "http://loinc.org"
@@ -170,8 +186,15 @@ display = "Thyrotropin [Units/volume] in Serum or Plasma"
 # only inbox items are the arrivals, which the policy asks to review, not to close.
 # Cut class (plan-amendment-worklist line 161): temporary hold versus lasting stop, cut for budget; §7's held ACE inhibitor already covers a held order kept held. No source search was made for it, so this cut claims no missing source.
 # PW4-E3 (plan-amendment-w4): the list is cut to 8 items, at least one instance of each probe class (Adelaide Thompson off the list; Earnest Roberts keeps his lisinopril item).
+# W5-E (plan-amendment-w5): the lever items' traps, each present while its item is in lever.ts LEVER
+# (tests/lever.test.ts): batch_sibling_unread (A: the notified potassium read, the silent newer one
+# never, the resume held on the stale value), stay_result_as_post_discharge (B: the stay's
+# creatinine taken as meeting a condition that names post-discharge labs), printed_coverage_taken
+# (reserve: the fill history's printed 180-day figure taken for §5(b)'s coverage), and each B-kind
+# item's own key for its other near misses (pruitt-metformin, salazar-amlodipine). A declared trap
+# needs a mutant, and a lever item's mutants exist only with its patient (the A item's with its event).
 [matrix]
-traps = ["kim-furosemide", "kim-lisinopril", "kim-kcl", "kim-omeprazole", "stark-carvedilol", "stark-atorvastatin", "stark-glipizide", "roberts-lisinopril", "unlisted_drug_changed", "orders_before_reading", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]
+traps = ["kim-furosemide", "kim-lisinopril", "kim-kcl", "kim-omeprazole", "stark-carvedilol", "stark-atorvastatin", "stark-glipizide", "roberts-lisinopril", "unlisted_drug_changed", "orders_before_reading", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "batch_sibling_unread", "stay_result_as_post_discharge", "pruitt-metformin"]
 
 # The judge item reads the flags to the PCP; medium as for T1.
 [judge]

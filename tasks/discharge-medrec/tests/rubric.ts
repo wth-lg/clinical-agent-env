@@ -11,10 +11,13 @@ type Made = { resourceType: string; id?: string; for?: { reference?: string }; o
 const textOf = (c: Sent) => [c.topic?.text, ...(c.payload ?? []).map((p) => p.contentString)].filter(Boolean).join('\n');
 const PCP = 'Practitioner/pr-okafor';
 const NAMES = new Map<string, string>(expected.patients.map((p) => [p.patient, p.name]));
-// The text of the trial's flags to the PCP: its messages to her and the descriptions of the Tasks it
-// gave her, in write order, each headed with the patient the chart links it to (a Task's for, a
-// message's about), as the PCP's inbox shows it, so a flag need not repeat the patient's name.
-const flagText = (ctx: RubricCtx) => {
+// The text of the trial's flags to the PCP about one patient: its messages to her and the
+// descriptions of the Tasks it gave her that the chart links to that patient (a Task's for, a
+// message's about), or to no patient, in write order, each headed with the patient as the PCP's
+// inbox shows it, so a flag need not repeat the patient's name. A judged item reads the flags about
+// its own patient: another patient's flags (W5-E: the lever hosts' Tasks, which toggle with LEVER)
+// never change what the judge is asked, so the cache serves every LEVER state.
+const flagTextFor = (patient: string) => (ctx: RubricCtx) => {
   // An arrival's inbox Task the trial closed is owned by Dr. Okafor (the signed-in user is the PCP)
   // but is no flag (R38(b)); arrivals are left out.
   const arrived = new Set(ctx.steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)));
@@ -31,15 +34,20 @@ const flagText = (ctx: RubricCtx) => {
     return null;
   };
   const head = (p: string | null) => (p === null ? '' : ` (patient: ${NAMES.get(p)})`);
+  const own = (p: string | null) => p === null || p === patient;
   const sent = ctx.final.all('Communication').map((c) => c as Sent).filter((c) => mine.has(`Communication/${c.id}`) && (c.recipient ?? []).some((r) => r.reference === PCP))
-    .map((c) => ({ k: `Communication/${c.id}`, text: `Message${head(patientOf((c.about ?? []).map((a) => a.reference ?? '')))}:\n${textOf(c)}` }));
+    .map((c) => ({ k: `Communication/${c.id}`, p: patientOf((c.about ?? []).map((a) => a.reference ?? '')), c })).filter(({ p }) => own(p))
+    .map(({ k, p, c }) => ({ k, text: `Message${head(p)}:\n${textOf(c)}` }));
   const tasks = ctx.final.all('Task').map((t) => t as Made).filter((t) => mine.has(`Task/${t.id}`) && !ctx.initial.has('Task', t.id!) && t.owner?.reference === PCP)
-    .map((t) => ({ k: `Task/${t.id}`, text: `Task${head(patientOf([t.for?.reference ?? '']))}:\n${t.description ?? ''}` }));
+    .map((t) => ({ k: `Task/${t.id}`, p: patientOf([t.for?.reference ?? '']), t })).filter(({ p }) => own(p))
+    .map(({ k, p, t }) => ({ k, text: `Task${head(p)}:\n${t.description ?? ''}` }));
   return [...sent, ...tasks].sort((a, b) => at(a.k) - at(b.k)).map((x) => x.text).join('\n\n');
 };
 // The records each patient's decisions rest on: per decisive id of their items, that record or any
 // other that shows the same fact (R21, Item.also), so a note citing any one of them cites the fact.
-const CITES = new Map(PATIENTS.map((p) => [p, [...new Map(expected.items.filter((x) => x.patient === p).flatMap((x) => x.decisive.map((d) => [d, [d, ...(x.also?.[d] ?? []).map((s) => s.id)]] as const))).values()]]));
+// A record that only stands for a review of the chart (Item.review, W5-E) is not a source a note
+// cites: the review finds nothing to cite.
+const CITES = new Map(PATIENTS.map((p) => [p, [...new Map(expected.items.filter((x) => x.patient === p).flatMap((x) => x.decisive.filter((d) => d !== x.review?.id).map((d) => [d, [d, ...(x.also?.[d] ?? []).map((s) => s.id)]] as const))).values()]]));
 
 export const rubric: Check[] = [
   item({
@@ -78,7 +86,7 @@ export const rubric: Check[] = [
     traces_to: 'RBC-TOC-02 §5',
     decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_fill').flatMap((x) => x.decisive))],
     criterion: 'The text tells the doctor, in any words, that Terence Stark fills glipizide, prescribed outside the clinic, and that it is not on his clinic medication list.',
-    text: flagText,
+    text: flagTextFor(expected.items.find((x) => x.key === 'stark-glipizide')!.patient),
   }),
   judged({
     id: 'flag_fill_gap',
@@ -89,6 +97,6 @@ export const rubric: Check[] = [
     traces_to: 'RBC-TOC-02 §5',
     decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_order').flatMap((x) => x.decisive))],
     criterion: "The text tells the doctor, in any words, that Terence Stark's atorvastatin fills cover well under 80% of the days before his admission (a gap in his fills).",
-    text: flagText,
+    text: flagTextFor(expected.items.find((x) => x.key === 'stark-atorvastatin')!.patient),
   }),
 ];

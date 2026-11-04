@@ -11,7 +11,9 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected, type Item } from './expected.ts';
 import { derive } from './policy.ts';
-import { id, ref } from './ids.ts';
+import { id, idOf, ref } from './ids.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS } from './lever-keys.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -30,13 +32,38 @@ describe('discharge-medrec worklist', () => {
     expect(derive(world)).toEqual(JSON.parse(JSON.stringify(expected)));
   });
 
-  it('holds 8 items, at least one of each probe class, on the three listed patients (PW4-E3 cut)', () => {
+  // W5-E adds the A host's resume in every state (a third potassium instance) and one item per
+  // active lever item B and reserve, each a class of its own (lever.ts).
+  const hosts = { whitcomb: `Patient/${idOf(HOSTS.A)}`, pruitt: `Patient/${idOf(HOSTS.B)}`, salazar: `Patient/${idOf(HOSTS.reserve)}` };
+  const n = 9 + (LEVER.includes('B') ? 1 : 0) + (LEVER.includes('reserve') ? 1 : 0);
+  it(`holds 8 base items, at least one of each probe class, on the three base patients (PW4-E3 cut), plus the lever items (n = ${n})`, () => {
     const count = (cls: string) => expected.items.filter((x) => x.cls === cls).length;
-    expect(['precedence', 'fill_history', 'formulary', 'brand', 'fill_gap', 'potassium', 'filler'].map(count)).toEqual([1, 1, 1, 1, 1, 2, 1]);
-    expect(expected.items).toHaveLength(8);
-    expect(new Set(expected.items.map((x) => x.patient))).toEqual(new Set(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0044']));
-    // The potassium class keeps both instances, a hold and a resume, on two patients.
-    expect(expected.items.filter((x) => x.cls === 'potassium').map((x) => [x.patient, x.kind])).toEqual([['Patient/pt-0005', 'hold'], ['Patient/pt-0044', 'resume']]);
+    expect(['precedence', 'fill_history', 'formulary', 'brand', 'fill_gap', 'potassium', 'filler', 'conditional', 'coverage_window'].map(count)).toEqual([1, 1, 1, 1, 1, 3, 1, LEVER.includes('B') ? 1 : 0, LEVER.includes('reserve') ? 1 : 0]);
+    expect(expected.items).toHaveLength(n);
+    expect(new Set(expected.items.map((x) => x.patient))).toEqual(new Set(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0044', hosts.whitcomb, ...(LEVER.includes('B') ? [hosts.pruitt] : []), ...(LEVER.includes('reserve') ? [hosts.salazar] : [])]));
+    // The potassium class keeps its hold and resume instances, and the A host's resume.
+    expect(expected.items.filter((x) => x.cls === 'potassium').map((x) => [x.patient, x.kind])).toEqual([['Patient/pt-0005', 'hold'], ['Patient/pt-0044', 'resume'], [hosts.whitcomb, 'resume']]);
+  });
+
+  // W5-E B (§2 with its post-discharge sentence): Lorraine Pruitt's only creatinines are from the
+  // stay, so her resume defers with a Task due 10/24 (a day either side); a result after discharge
+  // below 1.5 would resume it, one at or above would not.
+  it.runIf(LEVER.includes('B'))('Lorraine Pruitt: no result after discharge defers the resume with a Task when the BMP is expected; a post-discharge creatinine decides it', () => {
+    const stay = ref('Observation/obs-t4-pruitt-scr-1021' as Parameters<typeof ref>[0]);
+    expect(item(world, 'pruitt-metformin')).toMatchObject({ kind: 'defer', cls: 'conditional', due: { from: '2026-10-23', to: '2026-10-25' }, decisive: [ref('DocumentReference/doc-t4-pruitt-dc' as Parameters<typeof ref>[0]), stay], review: { id: stay, since: '2026-10-21T13:49:54-04:00' } });
+    const after = (value: number) => view([...all, { ...all.find((r) => r.resourceType === 'Observation' && r.id === id('obs-t4-pruitt-scr-1021' as Parameters<typeof id>[0]))!, id: 'obs-probe', encounter: undefined, effectiveDateTime: '2026-10-24T09:00:00-04:00', issued: '2026-10-24T13:00:00-04:00', valueQuantity: { value, unit: 'mg/dL', system: 'http://unitsofmeasure.org', code: 'mg/dL' } } as unknown as (typeof all)[number]]);
+    expect(item(after(1.1), 'pruitt-metformin')).toMatchObject({ kind: 'resume', daily_mg: 1000, per_day: 1 });
+    expect(item(after(1.6), 'pruitt-metformin')?.kind).not.toBe('resume');
+  });
+
+  // W5-E reserve (§5(b)): the outside fill history's printed 60% is over 180 days; counted from the
+  // first fill inside the window, amlodipine is covered 100%, so the dose line applies and the fill
+  // history is decisive. Fills that fall short would flag it instead.
+  it.runIf(LEVER.includes('reserve'))('Victor Salazar: the dose change applies over the printed coverage figure; short fills would flag it', () => {
+    const out = ref('DocumentReference/doc-t4-salazar-outfills' as Parameters<typeof ref>[0]);
+    expect(item(world, 'salazar-amlodipine')).toMatchObject({ kind: 'dose', cls: 'coverage_window', daily_mg: 10, per_day: 1, decisive: [ref('DocumentReference/doc-t4-salazar-dc' as Parameters<typeof ref>[0]), out] });
+    const short = edit('doc-t4-salazar-outfills' as Parameters<typeof id>[0], (t) => t.split('\n').filter((l) => !/^0[89]\/\d\d\/2026 +amlodipine/.test(l)).join('\n'));
+    expect(item(short, 'salazar-amlodipine')).toMatchObject({ kind: 'flag_order', cls: 'fill_gap' });
   });
 
   // §7 is a rule over the most recent potassium after discharge, not a text shape.
@@ -118,7 +145,8 @@ describe('discharge-medrec worklist', () => {
   it('names as decisive only the records that decide each item (R1)', () => {
     const kimAdd = ref('DocumentReference/doc-t4-kim-add');
     const kimLab = ref('DocumentReference/doc-t4-kim-lab');
-    expect(item(world, 'kim-furosemide')).toMatchObject({ decisive: [kimAdd] });
+    // W5-E: a dose line's drug the fill histories list is decided by its fills too (§5(b)).
+    expect(item(world, 'kim-furosemide')).toMatchObject({ decisive: [kimAdd, ref('DocumentReference/doc-t4-kim-fills')] });
     expect(item(world, 'kim-lisinopril')).toMatchObject({ decisive: [kimLab] });
     // The summary's own line cannot move these items.
     const kimLine = edit('doc-t4-kim-dc', (t) => t.replace('- Furosemide 40 mg by mouth daily (increased from 20 mg).', '- Furosemide 60 mg by mouth daily (increased from 20 mg).').replace('when SCr < 1.5', 'when SCr < 2.0'));
@@ -166,6 +194,8 @@ describe('discharge-medrec worklist', () => {
       return 2026 - Number(born.slice(0, 4)) - ('10-23' < born.slice(5) ? 1 : 0);
     };
     expect(['pt-0005', 'pt-0004', 'pt-0042', 'pt-0044'].map(age)).toEqual([74, 76, 32, 31]);
+    // The lever hosts' ages (W5-E), as their stories give them.
+    expect([idOf(HOSTS.A), ...(LEVER.includes('B') ? [idOf(HOSTS.B)] : []), ...(LEVER.includes('reserve') ? [idOf(HOSTS.reserve)] : [])].map(age)).toEqual([71, ...(LEVER.includes('B') ? [66] : []), ...(LEVER.includes('reserve') ? [63] : [])]);
   });
 
   // verifier-W1-probe-T4-clinical-2 N1 (R1, R2) and R29: an item a discharge-summary line decides
@@ -189,6 +219,9 @@ describe('discharge-medrec worklist', () => {
       ['kim-omeprazole', ['pantoprazole', 'in place of home']],
       ['stark-carvedilol', ['12.5 mg', 'twice daily']],
       ['roberts-lisinopril', ['Resume', 'SCr < 1.3']],
+      ['whitcomb-lisinopril', ['Resume', 'SCr < 1.5']],
+      ...(LEVER.includes('B') ? [['pruitt-metformin', ['Resume', 'SCr < 1.5']]] : []),
+      ...(LEVER.includes('reserve') ? [['salazar-amlodipine', ['10 mg']]] : []),
     ]);
     for (const [k, atoms, summary] of bySummary) expect(lines(summary).filter((l) => inOrder(l, atoms!)).length, k).toBe(1);
   });

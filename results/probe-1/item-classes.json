@@ -41,7 +41,8 @@
      "label": "Salvador Logan Brakus"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   },
   "crc-care-gap": {
    "items": [
@@ -111,7 +112,8 @@
      "label": "Fumiko Kati Pouros"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   },
   "discharge-medrec": {
    "items": [
@@ -181,7 +183,8 @@
      "label": "roberts-sertraline"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   },
   "message-queue": {
    "items": [
@@ -251,7 +254,8 @@
      "label": "m13"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   },
   "renal-dose-review": {
    "items": [

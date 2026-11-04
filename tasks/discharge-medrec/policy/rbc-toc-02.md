@@ -6,7 +6,7 @@ Applies when patients return from a hospital stay and each one's outpatient medi
 Reconcile against the discharge documentation of the hospital stay that just ended: the discharge summary and any addendum to it. Where a signed addendum and the summary differ, the latest signed addendum rules.
 
 §2 Conditional instructions
-Act on a conditional instruction when results already in the chart satisfy its condition: a result in the patient's results, or a laboratory report filed to the chart. Otherwise create a Task due when the result is expected.
+Act on a conditional instruction when results already in the chart satisfy its condition: a result in the patient's results, or a laboratory report filed to the chart. A condition that names post-discharge results is not satisfied by a result from the hospital stay. Otherwise create a Task due when the result is expected.
 
 §3 Formulary substitutions
 An inpatient formulary substitution marked as such reverts to the home drug: keep the home drug and do not order the substitute.
