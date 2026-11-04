@@ -274,7 +274,7 @@ const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = w
 // The world's records (fixtures:build places the 10/20 panel at MERCER_1020), with the corrected
 // value, status and note; issued is the arrival stamp. Built only while the reserve is in LEVER
 // (the resources name her world ids).
-const MERCER_1020 = '2026-10-20T09:35:15-04:00';
+const MERCER_1020 = '2026-10-20T09:49:28-04:00';
 const MERCER_ISSUED = '2026-10-20T14:34:35.938-04:00';
 const mercerCr: Resource = {
   resourceType: 'Observation',

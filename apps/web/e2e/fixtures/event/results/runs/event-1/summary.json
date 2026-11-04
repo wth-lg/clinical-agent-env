@@ -6,10 +6,10 @@
   "tasks": {
     "_toy": {
       "task_versions": [
-        "efa27fce0f0408414f547c7a50ca4d78971912f6a4fce0579072a19ce89af844"
+        "2e8e960356fc7deeec29e067609453a4d677aa6fe68f69cad5380266a6dda8c4"
       ],
       "env_versions": [
-        "50d08059fa33ccf92e872c50852d8955a29d5167a76cb62c3797b770e6f66870"
+        "09a741ea0fa77d1d5039c17c3705af4a65544155cc89fd4083fbdaaf32590fe1"
       ],
       "grader_task_versions": [
         "cc0a3275f8e9306302e245bbee916dad3a271ee0ff40495dc511b62d4c36d630"
@@ -113,7 +113,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "93031c3caf8975997d270e9f2429a570e7a1f0bb1e310f97def1cdbb517e84e5"
+    "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210"
   ],
   "replay": {
     "ran": false,

@@ -200,8 +200,11 @@ const egfr = (id: string, who: Who, value: number, at: string, issued: string, e
 // range is flagged where `more.high` names it.
 interface Bmp { na: number; k: number; cl: number; co2: number; bun: number; cr: number; glu: number; ca: number; egfr: number }
 // `more.code` files the panel under the clinic's other BMP code (24321-2) or as a comprehensive
-// panel (24323-8), which §1 counts as a BMP: the W5-E hosts' panels take those, as the generated
-// charts' mostly do (scripts/test/world-tells.test.ts caps the planted share of 51990-0).
+// panel (24323-8), which §1 counts as a BMP: the W5-E hosts' panels take 24321-2, as the generated
+// charts' mostly do (scripts/test/world-tells.test.ts caps the planted share of 51990-0). Not
+// 24323-8: no planted report carried it before, and a newly planted code leaves the generated
+// records of that code in the task charts without their occasional fields (profile.ts
+// profileRecords), which moved two cohort reports.
 const PANEL_CODES = { '51990-0': 'Basic metabolic panel - Blood', '24321-2': 'Basic metabolic 2000 panel - Serum or Plasma', '24323-8': 'Comprehensive metabolic 2000 panel - Serum or Plasma' } as const;
 function bmp(key: string, who: Who, at: string, issued: string, enc: string | null, v: Bmp, notes: { k?: Note[]; cr?: Note[] } = {}, more: { performer?: { reference: string }; high?: ReadonlyArray<'cr'>; code?: keyof typeof PANEL_CODES } = {}): Resource[] {
   const analytes: Array<[keyof Omit<Bmp, 'egfr'>, string]> = [['na', 'mmol/L'], ['k', 'mmol/L'], ['cl', 'mmol/L'], ['co2', 'mmol/L'], ['bun', 'mg/dL'], ['cr', 'mg/dL'], ['glu', 'mg/dL'], ['ca', 'mg/dL']];
@@ -506,7 +509,7 @@ function kaplan(world: WorldReader): Resource[] {
     note('doc-t6-kaplan-0928', 'kaplan', '2026-09-28T15:05:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('kaplan', 'Hypertension follow-up.\nBP 154/94 and 150/92 on lisinopril 10 mg daily; home readings 145 to 155 systolic. Pre-visit labs this morning: creatinine 1.00, potassium 4.5.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 3 weeks.'), 'enc-t6-kaplan-0928'),
     medication('mr-t6-kaplan-lisinopril', 'kaplan', RX.lis20, 20, 'QD', '2026-09-28T14:55:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
     encounter('enc-t6-kaplan-uc-0928', 'kaplan', PROBLEM, '2026-09-28T17:10:00-04:00', '2026-09-28T18:40:00-04:00', BRIGID_UC),
-    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.82, k: 4.3, cl: 99.63, co2: 22.94, bun: 18.72, cr: 1.24, glu: 103.47, ca: 9.18, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24323-8' }),
+    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.82, k: 4.3, cl: 99.63, co2: 22.94, bun: 18.72, cr: 1.24, glu: 103.47, ca: 9.18, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24321-2' }),
     note('doc-t6-kaplan-uc-0928', 'kaplan', '2026-09-28T18:40:00-04:00', 'progress', HOSPITAL, HOSPITAL, KAPLAN_UC, 'enc-t6-kaplan-uc-0928'),
     ...bmp('kaplan-1019', 'kaplan', '2026-10-19T16:05:00-04:00', '2026-10-19T20:40:00-04:00', null, { na: 138.91, k: 4.8, cl: 100.76, co2: 23.68, bun: 20.63, cr: 1.46, glu: 97.88, ca: 9.27, egfr: 54.7 }, {}, { high: ['cr'], code: '24321-2' }),
   ];

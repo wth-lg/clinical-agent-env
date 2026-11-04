@@ -251,7 +251,8 @@
      "label": "m13"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   },
   "renal-dose-review": {
    "items": [
