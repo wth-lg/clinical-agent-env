@@ -698,14 +698,17 @@ HIV: followed at St. Brigid infectious disease.
 Maya Okafor, MD`),
     ];
   },
+  // The hosts' problem-list onsets are afternoon ones (the generated charts' morning share is the
+  // Condition tell scripts/test/world-tells.test.ts reads with a problem under 30 days old; the
+  // clock-fix PR, as T4's hosts), the nail infection at its visit's hour.
   // W5-E item A (the lever's A patient): Norman Fairweather, 82, 71.0 kg, SCr 1.18 (9/30): one
   // criterion (age), apixaban 5 mg is right. The mid-trial outside batch is in events.ts.
   'pt-t1-fairweather': () => {
     const P = 'pt-t1-fairweather';
     return [
       ...lastYear(P, 'fw25', '2025-09-24', 1.12, 72.3, [RX.apixaban5, 5, 'BID']),
-      AF(P, 'cond-t1-fw-af', '2018-11-06T10:00:00-05:00'),
-      condition(P, 'cond-t1-fw-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2009-03-02T10:00:00-05:00'),
+      AF(P, 'cond-t1-fw-af', '2018-11-06T14:35:00-05:00'),
+      condition(P, 'cond-t1-fw-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2009-03-02T14:35:00-05:00'),
       encounter(P, 'enc-t1-fw-0930', 'AMB', CHECKUP, '2026-09-30T09:00:00-04:00', '2026-09-30T09:30:00-04:00', CLINIC),
       weight(P, 'obs-t1-fw-wt', '2026-09-30T09:05:00-04:00', 71.0, 'kg', 'enc-t1-fw-0930'),
       scr(P, 'obs-t1-fw-scr', '2026-09-30T09:15:00-04:00', '2026-09-30T13:30:00-04:00', 1.18, 'enc-t1-fw-0930'),
@@ -730,8 +733,8 @@ Maya Okafor, MD`),
     const P = 'pt-t1-castellano';
     return [
       ...lastYear(P, 'cas25', '2025-09-26', 0.98, 79.1, [RX.apixaban5, 5, 'BID']),
-      AF(P, 'cond-t1-cas-af', '2020-01-14T10:00:00-05:00'),
-      condition(P, 'cond-t1-cas-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2011-06-08T10:00:00-04:00'),
+      AF(P, 'cond-t1-cas-af', '2020-01-14T14:35:00-05:00'),
+      condition(P, 'cond-t1-cas-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2011-06-08T14:35:00-04:00'),
       condition(P, 'cond-t1-cas-histo', '12962009', 'Histoplasmosis (disorder)', '2026-05-18T14:00:00-04:00', '2026-09-10T15:30:00-04:00'),
       encounter(P, 'enc-t1-cas-0518', 'AMB', PROBLEM, '2026-05-18T14:00:00-04:00', '2026-05-18T14:40:00-04:00', HOSPITAL, VARGA),
       encounter(P, 'enc-t1-cas-0522', 'AMB', PROBLEM, '2026-05-22T10:20:00-04:00', '2026-05-22T10:50:00-04:00', CLINIC),
@@ -781,9 +784,9 @@ Infectious Disease`),
     const P = 'pt-t1-whitcombe';
     return [
       ...lastYear(P, 'wh25', '2025-10-02', 0.9, 57.8, [RX.apixaban2_5, 2.5, 'BID']),
-      AF(P, 'cond-t1-wh-af', '2016-08-23T10:00:00-04:00'),
-      condition(P, 'cond-t1-wh-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2008-05-13T10:00:00-04:00'),
-      condition(P, 'cond-t1-wh-onych', '414941008', 'Onychomycosis due to dermatophyte (disorder)', '2026-09-21T11:00:00-04:00'),
+      AF(P, 'cond-t1-wh-af', '2016-08-23T14:35:00-04:00'),
+      condition(P, 'cond-t1-wh-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2008-05-13T14:35:00-04:00'),
+      condition(P, 'cond-t1-wh-onych', '414941008', 'Onychomycosis due to dermatophyte (disorder)', '2026-09-21T11:20:00-04:00'),
       encounter(P, 'enc-t1-wh-visit', 'AMB', PROBLEM, '2026-09-21T11:00:00-04:00', '2026-09-21T11:30:00-04:00', CLINIC),
       weight(P, 'obs-t1-wh-wt', '2026-09-21T11:05:00-04:00', 56.5, 'kg', 'enc-t1-wh-visit'),
       scr(P, 'obs-t1-wh-scr', '2026-09-21T11:15:00-04:00', '2026-09-21T15:20:00-04:00', 0.88, 'enc-t1-wh-visit'),

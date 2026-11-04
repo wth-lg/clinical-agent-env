@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
-    "ndjson_sha256": "4811f808c10a807162e4fbaebf587002f04554c1d1ab6231c23fb1057f88dc55",
+    "state_hash": "93031c3caf8975997d270e9f2429a570e7a1f0bb1e310f97def1cdbb517e84e5",
+    "ndjson_sha256": "9622c5d7322e3d76c94d17b669351442abee213da5bacf9dcafe2d51534ddf7a",
     "resources": 7510,
     "by_type": {
       "AllergyIntolerance": 46,
@@ -75,7 +75,7 @@
     "packages/env/clock.ts": "bdef746b541cde158dd8f574b03e0f45b04fa94579a983d69e2b6a02dca9ff80",
     "packages/env/mrn.ts": "4278f853e9f2d50dc83e1f15ae9ae35fb3e5f39dfdb1b6fea3a4ab2996cb232b",
     "packages/env/overlay.ts": "44694808f913770d6406940b0f4c91ff6690a8a1ac7c097ef1099f5154378a62",
-    "packages/env/profile.ts": "1ea4a9a54fca6cd422292762a255ef39885610871c95bd014c92d9e60b3599ca",
+    "packages/env/profile.ts": "fe8c3b04bd36a0d816c0a2ba1cb0c5b2e7de1483bddfbdef9118b953c8f0db87",
     "packages/env/renumber.ts": "4181cb663e1e3529c9cb4e46a93ffa45a18b3baef626dd1beb25601113527b8e",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
@@ -83,7 +83,7 @@
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
     "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
     "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
-    "tasks/renal-dose-review/overlay.ts": "4c975e7110edadbc1e354f07ec149a7c5ffce4e76535d48d8133d2122c8f0e73",
+    "tasks/renal-dose-review/overlay.ts": "2210ced9d4442304f1b472039e72c2ffeffff39f234fba69c16fe1e58bbd67d9",
     "tasks/results-inbox/overlay.ts": "686fc9e71a7897c1ccb7efedde5bea056e7901c1018c78d83c3557d6859216d6"
   },
   "definitions": {
