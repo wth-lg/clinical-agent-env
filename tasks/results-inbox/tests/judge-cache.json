@@ -18,7 +18,7 @@
     }
   },
   {
-    "key": "1ce64fdd0ebdfb76d63ebe4ff23255d156c3f3f42923456c6ecd79a23e607167",
+    "key": "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -32,11 +32,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
-    "key": "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
+    "key": "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -50,7 +50,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -72,25 +72,7 @@
     }
   },
   {
-    "key": "4120a9b6d6728635f0ca5b5cb01834c437cb7d304f291bc065663cba7af5db2e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "One of your blood tests needs repeating because the sample was damaged."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
-    }
-  },
-  {
-    "key": "6766cce318dd318d2a842c19c6584003ead62fe1f09721635a27b1dba4682a9c",
+    "key": "4410f8baa29a59be1a8d14c305b0a646dd9df38141b2ea06fbfde8b951c51770",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -104,7 +86,79 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "48fa8c16cc0200bf47857e43a1b76bbe0f9cbd4f34d2df3534479a021fb7c011",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "4ebfd80f0cff19ddd184fdfce94f38fd53ee0bd7a97bddb4015358bbbe594bfb",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "under RBC-LAB-03 §2 the hemolysis rule does not apply and §1 does: on-call notified at stat priority, stat BMP ordered today, spironolactone held pending the repeat"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T23:06:40.218Z"
+    }
+  },
+  {
+    "key": "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "6927ba06f64fdced69d58ec46b5a544148d516cad5c1c12e1725d847f1a17a8c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -126,7 +180,7 @@
     }
   },
   {
-    "key": "6e2a70b893ef5efd4cd3acff954743d7d140433ecc2253d45d91c2e627ead60f",
+    "key": "70ec38ae17d4f220f4b4d5ba3508be65ccb39e811f4042e74cf84bb3af7ce8cd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -140,7 +194,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
@@ -150,15 +204,15 @@
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "unknown",
-      "quote": "Lakeshore screening LDCT of 2026-04-14, Lung-RADS 2, unchanged, annual LDCT recommended."
+      "verdict": "met",
+      "quote": "Lung-RADS 2, unchanged, annual LDCT recommended. Under RBC-RAD-05 §2 the next screening LDCT is ordered from that study, 2027-04-14 (window to 2027-05-14)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T07:58:30.273Z"
     }
   },
   {
@@ -180,7 +234,7 @@
     }
   },
   {
-    "key": "a83286a5a814b000d3864f8acee54c243b6c0b3a3ca6f62abf47780c4c7a35ff",
+    "key": "9c870870aa1ee0092171a91027257c7be6653faad0031e17dc63ab7f3592acb9",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -194,11 +248,29 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {
-    "key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
+    "key": "a4d0f552b54c6ac356ea57e93e4aed37aa7db9923cf3860b983aa4df33e2efc1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The screening program found a new 8 mm spot on your lung CT and recommends a repeat scan in 3 months."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
+    }
+  },
+  {
+    "key": "c92e160237941f7f0c7638715266d50db1f6331a67051ed48a5868c057f1d978",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -212,25 +284,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
-    }
-  },
-  {
-    "key": "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T13:38:08.318Z"
+      "at": "2026-11-03T23:06:40.218Z"
     }
   },
   {
@@ -267,6 +321,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-11-02T10:16:17.429Z"
+    }
+  },
+  {
+    "key": "eb76f7ab56539a72d4aa4e44518e004a4c80b92ca9d0874eaa3159d7b9fbc476",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-03T22:31:06.093Z"
     }
   },
   {

@@ -22,8 +22,8 @@ import type { Task, TaskSource } from '../../../packages/core/tasks.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/grader/matrix/matrix.ts';
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
-import { EVENTS, expected } from '../expected.ts';
-import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
+import { EVENTS, expected, LEVER } from '../expected.ts';
+import { ACTIVE, EXCLUSIVE, LEVER_SPECS, SPECS } from '../events.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
 import { mutantsFor } from './mutants.ts';
@@ -34,6 +34,13 @@ const world = await loadStore(base.world);
 const baseTask = await loadMatrixTask('results-inbox');
 const ITEMS = expected.items.map((x) => x.key);
 const itemOf = (key: string) => expected.items.find((x) => x.key === key)!;
+// A lever item's specs while the item is off (W5-E): its host's inbox item is filed off the list, so
+// its event and the event's lure have no list item to bear on and no route reads its patient; they
+// are never in ACTIVE (lever.test.ts) and the per-spec runs below skip them. The set is derived
+// from LEVER so that every state runs this file: each inactive lever id's specs and their
+// EXCLUSIVE partners, and nothing else may be off the list.
+const INERT = new Set(Object.entries(LEVER_SPECS).filter(([l]) => !LEVER.includes(l)).flatMap(([, ids]) => ids.flatMap((id) => [id, ...EXCLUSIVE.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []))])));
+const LIVE = SPECS.filter((s) => !INERT.has(s.id));
 
 // The task with exactly `ids` active: the run and replay read the specs from the source, the grade
 // from the checks built for them.
@@ -64,14 +71,17 @@ async function run(at: { env: MatrixEnv; task: MatrixTask }, kind: 'oracle' | 'a
 }
 
 describe('T2 event specs', () => {
-  it('authors e_max = 8 specs; ACTIVE is one class A, B and O amend and one class D lure', () => {
-    expect(SPECS).toHaveLength(8);
+  it('authors e_max = 8 specs plus the W5-E batch and its twin; ACTIVE is one class A, B and O amend and one class D lure, plus the batch while A is in LEVER', () => {
+    expect(SPECS).toHaveLength(10);
     const active = activeSpecs({ SPECS, ACTIVE });
-    expect(active.map((s) => s.class).sort()).toEqual(['A', 'B', 'D', 'O']);
+    expect(active.map((s) => s.class).sort()).toEqual(LEVER.includes('A') ? ['A', 'A', 'B', 'D', 'O'] : ['A', 'B', 'D', 'O']);
+    expect(ACTIVE.includes('marchetti-cr-batch')).toBe(LEVER.includes('A'));
+    expect(ACTIVE.includes('marchetti-cr-batch-twin')).toBe(false);
   });
 
   it('each spec bears on a list item; at most one amend event per item (a lure may be a second event)', () => {
-    for (const s of SPECS) expect(ITEMS, s.id).toContain(s.item);
+    expect(SPECS.filter((s) => !ITEMS.includes(s.item)).map((s) => s.id).sort()).toEqual([...INERT].sort());
+    for (const s of LIVE) expect(ITEMS, s.id).toContain(s.item);
     const amends = SPECS.filter((s) => AMEND_CLASSES.has(s.class)).map((s) => s.item);
     expect(new Set(amends).size).toBe(amends.length);
     const lures = SPECS.filter((s) => s.class === 'D').map((s) => s.item);
@@ -87,19 +97,25 @@ describe('T2 event specs', () => {
     }
   });
 
-  // R38(g): an arrival is seen only when its deciding atoms are. Every T2 arrival is one resource,
+  // R38(g), R39(b): an arrival is seen only when its deciding atoms are. A one-resource arrival is
   // its focus, which holds the deciding value; the seen rule (grader.ts seenRule) is exposure of it
   // after the arrival (a fhir_search row of a note or report is only referenced, a list_inbox row
-  // only points at it) or a snippet that shows its atoms (EVENT_ATOMS). A spec with a second
-  // resource needs a rule for the resource that holds its deciding value, and this test stops it.
-  it('R38(g): every arrival is one resource, its focus, which holds the deciding value', () => {
-    for (const s of SPECS) expect([s.id, s.resources.length]).toEqual([s.id, 1]);
+  // only points at it) or a snippet that shows its atoms (EVENT_ATOMS). An arrival of several
+  // resources (W5-E's batch) declares a seen rule for every one (seenBy), so the gates name each
+  // in decisive_ids, and the whole is seen only when the last of them is.
+  it('R38(g), R39(b): a one-resource arrival is its focus; a batch declares a seen rule per resource', () => {
+    for (const s of SPECS) {
+      const keys = s.resources.map((r) => `${r.resourceType}/${r.id}`);
+      if (keys.length === 1) continue;
+      const seen = checksFor([s]).find((c) => c.kind === 'gate' && c.id === 'event_seen')!;
+      expect([...seen.decisive_ids].sort(), s.id).toEqual([...keys].sort());
+    }
   });
 
   it("Addendum 2: every trigger is after_write on the item's own patient, whose inbox items every passing route completes", () => {
     for (const s of SPECS) {
       expect(s.trigger.kind, s.id).toBe('after_write');
-      if (s.trigger.kind === 'after_write') expect(`Patient/${s.trigger.patient}`, s.id).toBe(itemOf(s.item).patient);
+      if (s.trigger.kind === 'after_write' && !INERT.has(s.id)) expect(`Patient/${s.trigger.patient}`, s.id).toBe(itemOf(s.item).patient);
     }
   });
 
@@ -140,7 +156,7 @@ describe('T2 event specs', () => {
   });
 });
 
-describe.each(SPECS.map((s) => [s.id, s] as const))('event %s, active alone', (id, spec: EventSpec) => {
+describe.each(LIVE.map((s) => [s.id, s] as const))('event %s, active alone', (id, spec: EventSpec) => {
   const at = withActive([id]);
   const item = spec.item;
 

@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:discharge-medrec/17",
   "task_id": "discharge-medrec",
-  "task_version": "d3767abafe1313c182ac3e2844043055d70fce80c05d517a529ee581b88c4e21",
-  "env_version": "ab7d0a4ae695eae4f3d4c4587ef88c6778d5439652d7ad23f23a8caa0ea3dc4a",
+  "task_version": "625c9978af5120916fc810263c8cd22f360812b0ec5b1e10159fb615c6f3da6d",
+  "env_version": "21f4ada9998d49e60f8bce73cedbc30a92664c8ac26d009ad58d1a689afef1fd",
   "grader_task_version": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
-  "fixture_hash": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
+  "fixture_hash": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
   "state_hash": {
-    "initial": "15b408a79e3976370ff8166944bc9250ca6a0c558fb3d865f18e3f32a625955f",
-    "final": "f69af68f2cd4021f60d82f815f94f8a2e98a18bcd2428e565fafbac22fd2f4dc",
-    "replay_final": "f69af68f2cd4021f60d82f815f94f8a2e98a18bcd2428e565fafbac22fd2f4dc"
+    "initial": "52723a0917c9f4c3f7662af923ea77f942e28b728484fe8dcc8418b6588ef3a8",
+    "final": "c9223dc481967926a4864f3a704cec28a7fe2a3667ab5b76e8db02b3c863724f",
+    "replay_final": "c9223dc481967926a4864f3a704cec28a7fe2a3667ab5b76e8db02b3c863724f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [

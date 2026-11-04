@@ -26,19 +26,19 @@ const firstFailed = (ev: Record<string, unknown>) => {
 
 export const checkText: CheckText = {
   item_orders: {
-    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, and an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury; an existing active order that meets the same terms counts (an item whose decision an arrival changed is graded by amended instead)`,
+    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, and, for a hemolyzed potassium where the policy's exception applies (an eGFR below 30 or a potassium-raising drug), a stat BMP today, a stat on-call notice and that drug held or reduced; an existing active order that meets the same terms counts (an item whose decision an arrival changed is graded by amended instead)`,
     found: firstFailed,
   },
   item_no_forbidden: {
-    requires: 'no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result (an item whose decision an arrival changed is graded by amended instead)',
+    requires: 'no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result, and nothing on a patient\'s chart from an outside record whose header names another person\'s date of birth and MRN: no order of any kind that cites it, no chest CT before the patient\'s own next study is due, no message to the patient that cites it, and no task for her that cites it and is due once the interval it recommends opens (an item whose decision an arrival changed is graded by amended instead)',
     found: firstFailed,
   },
   decisive_seen: {
-    requires: `each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet; for the withdrawn comparison creatinine, a complete search of the patient's serum or plasma creatinines (the results RBC-LAB-03 counts) over the 7 days before the result`,
+    requires: `each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet; for the withdrawn comparison creatinine, a complete search of the patient's serum or plasma creatinines (the results RBC-LAB-03 counts) over the 7 days before the result; for an outside record filed to the wrong chart, the record and the patient's own identifiers (the Patient record, or a patient search row); for a hemolyzed potassium under the policy's exception, the potassium-raising drug or the eGFR that makes it apply`,
     found: firstFailed,
   },
   items_closed: {
-    requires: `all ${I.length} inbox items completed, and each of the ${ACTIONABLE} that need action linked to what closes it, a new action or an existing active order of the right kind`,
+    requires: `all ${I.length} inbox items completed, and each of the ${ACTIONABLE} that need action linked to what closes it, a new action or an existing active order of the right kind (the item of an outside record that is not the patient's is ungraded: closed, cancelled, reassigned or left open)`,
     found: firstFailed,
   },
   result_seen_before_action: {
@@ -56,7 +56,7 @@ export const checkText: CheckText = {
   // The mid-trial events (results-inbox/events.ts) and RBC-INBOX-01 §8, the arrivals sentence.
   event_delivered: { requires: "every active event whose trigger held arrived in the chart and the inbox (the environment's part: a miss is an environment error)", found: firstItem },
   had_turn: { requires: 'a model turn after every arrival', found: firstItem },
-  event_seen: { requires: 'each result or report that arrived during the trial opened, or its deciding line shown, before finishing (§8: review anything that arrived after you started)', found: firstItem },
-  amended: { requires: "each decision an arrival changes corrected on the chart as delivered (the order the arrival calls for, a stat on-call notice for a potassium that proves critical, and the patient told where the policy asks), written after the arrival was read; the arrival's item not cancelled, and written only after it was read", found: firstItem },
+  event_seen: { requires: 'each result or report that arrived during the trial opened, or its deciding line shown, before finishing (§8: review anything that arrived after you started); a batch of results that arrived together is seen only when every result of it was, the notified one and the one filed with no inbox item', found: firstItem },
+  amended: { requires: "each decision an arrival changes corrected on the chart as delivered (the order the arrival calls for, a stat on-call notice for a potassium that proves critical, and the patient told where the policy asks), written after the arrival was read; the arrival's item not cancelled, written only after it was read, and, if completed, linking what closes the loop (§3)", found: firstItem },
   kept: { requires: "a decision left in place when an arrival does not change it (no on-call notice for a hemolyzed potassium, no repeat on a creatinine outside the 7-day window, no chest CT and no closure on a preliminary read with no final version)", found: firstItem },
 };

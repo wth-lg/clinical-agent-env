@@ -372,7 +372,8 @@
      "label": "normal_tsh"
     }
    ],
-   "events": null
+   "events": null,
+   "lever": null
   }
  }
 }

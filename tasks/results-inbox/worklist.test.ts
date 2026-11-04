@@ -7,7 +7,7 @@ import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
 import { noteText } from '../../packages/env/tools/read/notes.ts';
-import { CLASSES, expected } from './expected.ts';
+import { CLASSES, expected, LEVER } from './expected.ts';
 import { IDS } from './ids.ts';
 
 const I = expected.items;
@@ -18,17 +18,28 @@ const texts: Array<[string, string]> = [['instruction.md', task.instruction], ..
 describe('results-inbox worklist', () => {
   // PW4-E3 (plan-amendment-w4): the list is cut to n = 7, one instance of each probe class, the
   // filler among them (results/probe-1/classes.md: every class 0/12).
-  it('holds exactly one item of each probe class, the filler among them (n = 7)', () => {
+  // W5-E adds one item per active lever item, each a class of its own (expected.ts leverItems).
+  const lever = { creatinine_no_aki: LEVER.includes('A') ? 1 : 0, misfiled: LEVER.includes('B') ? 1 : 0, hemolyzed_exception: LEVER.includes('reserve') ? 1 : 0 };
+  const n = 7 + lever.creatinine_no_aki + lever.misfiled + lever.hemolyzed_exception;
+  it(`holds exactly one item of each probe class, the filler among them, and the active lever items (n = ${n})`, () => {
     const count = (c: string) => I.filter((x) => x.class === c).length;
-    expect(Object.fromEntries(CLASSES.map((c) => [c, count(c)]))).toEqual({ nodule_screening: 1, hemolyzed: 1, corrected: 1, entered_in_error: 1, preliminary: 1, aki: 1, filler: 1 });
-    expect(new Set(I.map((x) => x.key)).size).toBe(7);
-    expect(new Set(I.map((x) => x.task)).size).toBe(7);
+    expect(Object.fromEntries(CLASSES.map((c) => [c, count(c)]))).toEqual({ nodule_screening: 1, hemolyzed: 1, corrected: 1, entered_in_error: 1, preliminary: 1, aki: 1, filler: 1, ...lever });
+    expect(new Set(I.map((x) => x.key)).size).toBe(n);
+    expect(new Set(I.map((x) => x.task)).size).toBe(n);
   });
 
-  it('puts every item on a T2 slot patient and adds no Patient', () => {
+  it('puts every base item on a T2 slot patient, and each active lever item on the Patient the overlay adds for it (overlay.ts LEVER_HOSTS; every host is in the registry, F3)', () => {
     const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0016', 'pt-0033'];
-    expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual(slots);
-    expect(Object.keys(IDS).filter((k) => k.startsWith('pt-'))).toEqual([]);
+    const HOSTS = { A: 'pt-t2-marchetti', B: 'pt-t2-nowicki', reserve: 'pt-t2-cipriani' } as const;
+    const hosts: string[] = (['A', 'B', 'reserve'] as const).filter((l) => LEVER.includes(l)).map((l) => (IDS as Readonly<Record<string, string>>)[HOSTS[l]]!);
+    expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual([...slots, ...hosts].sort());
+    expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).sort()).toEqual(Object.values(HOSTS).sort());
+    // Each host is numbered after the cohort's last Patient (packages/env/overlay.ts), so no base
+    // id moved. (The bound is computed: a literal base patient id in a task file pins that
+    // patient's visits in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask.)
+    const added: string[] = Object.values(HOSTS).map((k) => (IDS as Readonly<Record<string, string>>)[k]!);
+    const last = Math.max(...[...store.resources()].filter((r) => r.resourceType === 'Patient' && !added.includes(r.id!)).map((r) => Number(r.id!.slice(3))));
+    for (const h of added) expect(Number(h.slice(3)) > last, h).toBe(true);
   });
 
   // The shared sentence on arrivals (plan-amendment-w4, Event mechanism table, row "Policy
