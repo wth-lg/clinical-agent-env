@@ -30,6 +30,7 @@ import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
 import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../tasks/renal-dose-review/expected.ts';
 import { expected as T2_EXPECTED, LEVER_ITEMS as T2_LEVER_ITEMS } from '../../tasks/results-inbox/expected.ts';
+import { ITEMS as T6_ITEMS, LEVER_ITEMS as T6_LEVER_ITEMS } from '../../tasks/message-queue/expected.ts';
 import { expected as T4_EXPECTED, LEVER_ITEMS as T4_LEVER_ITEMS } from '../../tasks/discharge-medrec/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
@@ -417,23 +418,30 @@ const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient
   // list in every state); its LEVER_ITEMS name the patient as a Patient reference and its list items
   // carry `cls`.
   { items: T4_LEVER_ITEMS.map((i) => ({ item: i.item, patient: i.patient.replace('Patient/', '') })), list: T4_EXPECTED.items.map((x) => ({ patient: x.patient, class: x.cls })) },
+  // T6's (builder-302): pt-0070 Kaplan (B) and pt-0071 Mercer (the reserve), each in the world only
+  // while its item is on; its item A is on a cohort patient (Webb). Its LEVER_ITEMS name the patient
+  // as a Patient reference and its items (ITEMS) carry `klass`.
+  { items: T6_LEVER_ITEMS, list: T6_ITEMS.map((x) => ({ patient: x.patient, class: x.klass })) },
 ];
 const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
   [...ADDED_PATIENTS].sort().map((p) => {
-    const table = LEVER_TABLES.find((t) => t.items.some((i) => i.patient === p));
+    const table = LEVER_TABLES.find((t) => t.items.some((i) => i.patient.replace(/^Patient\//, '') === p));
     const cls = table?.list.find((x) => x.patient === `Patient/${p}`)?.class ?? (table ? 'off the list (inactive lever item)' : 'unknown');
     return [p, { class: cls, planted_only: plantedOnlyTypes(world, isPlanted, p, comparable) }];
   }),
 );
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {
   const pts = world.filter((r) => r.resourceType === 'Patient');
+  // An id above every Patient in the world, for the probes below.
+  const probeId = `pt-${String(Math.max(...pts.map((r) => Number(r.id.slice(3)))) + 1).padStart(4, '0')}`;
 
   it('has the shape and identifier forms of the other Patients', () => {
     expect(addedPatientTells(pts, ADDED_PATIENTS)).toEqual([]);
   });
 
-  it('is named as the id-range residual', () => {
-    expect([...ADDED_PATIENTS].sort()).toEqual(Object.keys(ADDED_PATIENT_RESIDUALS).sort());
+  it('is numbered after the cohort\'s last Patient, the id-range residual', () => {
+    const cohort = Math.max(...pts.filter((r) => !ADDED_PATIENTS.has(r.id)).map((r) => Number(r.id.slice(3))));
+    for (const p of ADDED_PATIENTS) expect(Number(p.slice(3)), p).toBeGreaterThan(cohort);
   });
 
   it('its planted-only chart is named beside its id, and every record of that chart is planted', () => {
@@ -446,20 +454,20 @@ describe('a Patient an overlay adds reads like a generated one, apart from its n
 
   it('the check finds an added Patient\'s chart that holds only planted records', () => {
     const base = world.find((r) => r.resourceType === 'Observation' && !isPlanted(r.id) && patientOf(r) === 'pt-0051')!;
-    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: 'Patient/pt-0070' } } as R];
+    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: `Patient/${probeId}` } } as R];
     const planted = (id: string) => isPlanted(id) || id === 'obs-t3-probe';
-    expect(plantedOnlyTypes(probe, planted, 'pt-0070', comparable)).toEqual(['Observation']);
+    expect(plantedOnlyTypes(probe, planted, probeId, comparable)).toEqual(['Observation']);
     expect(plantedOnlyTypes(world, isPlanted, 'pt-0051', comparable)).toEqual([]);
   });
 
   it('the check finds an overlay-written Patient that lacks the generated fields, or carries an identifier form no other Patient has', () => {
     const base = pts.find((r) => r.id === 'pt-0051')!;
-    const bare = { resourceType: 'Patient', id: 'pt-0070', name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
-    expect(addedPatientTells([...pts, bare], new Set(['pt-0070']))).toEqual(["Patient/pt-0070: its shape (fields, identifier systems, extensions) is no other Patient's"]);
-    const copied = { ...base, id: 'pt-0070' } as R;
-    expect(addedPatientTells([...pts, copied], new Set(['pt-0070']))).toEqual([]);
-    const oddMrn = { ...base, id: 'pt-0070', identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '100070' } : i)) } as R;
-    expect(addedPatientTells([...pts, oddMrn], new Set(['pt-0070']))).toEqual(['Patient/pt-0070: identifier urn:riverbend:mrn has the form 999999, which no other Patient\'s has']);
+    const bare = { resourceType: 'Patient', id: probeId, name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
+    expect(addedPatientTells([...pts, bare], new Set([probeId]))).toEqual([`Patient/${probeId}: its shape (fields, identifier systems, extensions) is no other Patient's`]);
+    const copied = { ...base, id: probeId } as R;
+    expect(addedPatientTells([...pts, copied], new Set([probeId]))).toEqual([]);
+    const oddMrn = { ...base, id: probeId, identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: `10${probeId.slice(3)}` } : i)) } as R;
+    expect(addedPatientTells([...pts, oddMrn], new Set([probeId]))).toEqual([`Patient/${probeId}: identifier urn:riverbend:mrn has the form 999999, which no other Patient's has`]);
   });
 });
 

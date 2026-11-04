@@ -19,8 +19,8 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import { firstShown, stepsOf } from '../../packages/grader/exposure.ts';
 import { trial } from '../../packages/grader/matrix/matrix.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
-import { expected, ITEMS } from './expected.ts';
-import { IDS, id, ref } from './ids.ts';
+import { expected, ITEMS, LEVER } from './expected.ts';
+import { IDS, id, idOf, ref } from './ids.ts';
 import { derive } from './policy.ts';
 
 const store = await loadStore(matrixEnv().world);
@@ -37,14 +37,15 @@ describe('message-queue', () => {
     expect(d).toEqual(expected);
   });
 
-  it('decides the 6 items as the worklist design does: 4 renewals, 1 thirty-day supply, 1 repeat request', () => {
+  // W5-E: the B item is a hold (m14) and the reserve's two are renewals at base (m15, m16).
+  it('decides the items as the worklist design does: 4 renewals, 1 thirty-day supply, 1 repeat request, plus the active lever items', () => {
     const by = (a: string) => d.items.filter((x) => x.action === a).length;
-    expect([by('renew'), by('bridge'), by('hold'), by('duplicate')]).toEqual([4, 1, 0, 1]);
+    expect([by('renew'), by('bridge'), by('hold'), by('duplicate')]).toEqual([4 + (LEVER.includes('reserve') ? 2 : 0), 1, LEVER.includes('B') ? 1 : 0, 1]);
     expect(d.items.filter((x) => x.lab === 'bmp')).toHaveLength(2);
     expect(d.items.filter((x) => x.lab === 'hba1c')).toHaveLength(0);
   });
 
-  it("Dr. Okafor's messages queue holds exactly the 6 T6 items, the 7 cut ones are Dr. Lin's, and she is each patient's PCP", () => {
+  it("Dr. Okafor's messages queue holds exactly the T6 items, the 7 cut ones are Dr. Lin's, and she is each patient's PCP", () => {
     const queue = rs.filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-okafor' && (r.code?.coding ?? []).some((c) => c.system === 'urn:riverbend:inbox-queue' && c.code === 'messages'));
     expect(queue.map((r) => `Task/${r.id}`).sort()).toEqual(ITEMS.map((x) => x.item).sort());
     const lin = rs.filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-lin' && (r.code?.coding ?? []).some((c) => c.code === 'messages'));
@@ -71,7 +72,7 @@ describe('message-queue', () => {
       for (const p of [...planted, ...SLOTS]) expect(t).not.toContain(p);
       expect(t).not.toMatch(/\b\d{4}-\d{2}-\d{2}\b|\b\d{2}\/\d{2}\/\d{4}\b/);
     }
-    const answers = ['6.1', '5.9', '1.62', '1.24', '1.36', '39', 'Harbor', 'Whitfield'];
+    const answers = ['6.1', '5.9', '1.62', '1.24', '1.36', '39', 'Harbor', 'Whitfield', '1.46', '4.6', '38', 'Kaplan', 'Mercer'];
     const findings = lintWorld(all, [{ source: 'message-queue', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : task.policies[i - 1]!.id, text })) } } }]);
     expect(findings).toEqual([]);
   });
@@ -133,18 +134,31 @@ describe('message-queue', () => {
   });
 
   it('places each dose increase inside the 4-week rule: the baseline creatinine before the new order, the next BMP within 28 days', () => {
-    for (const [order, before, after] of [
+    // W5-E: Kaplan's (B) and Mercer's (reserve) dose increases while their items are in LEVER.
+    const increases: Array<readonly [string, string, string]> = [
       ['mr-t6-brooks-lisinopril', 'obs-t6-brooks-0921-cr', 'obs-t6-brooks-1008-cr'],
       ['mr-t6-price-lisinopril', 'obs-t6-price-0918-cr', 'obs-t6-price-1006-cr'],
-    ] as const) {
-      const at = Date.parse((store.get('MedicationRequest', id(order)) as R).authoredOn!);
-      const b = store.get('Observation', id(before)) as R;
-      const a = store.get('Observation', id(after)) as R;
-      expect(Date.parse(b.effectiveDateTime!)).toBeLessThan(at);
-      expect(Date.parse(a.effectiveDateTime!) - at).toBeLessThan(28 * 86_400_000);
+      ...(LEVER.includes('B') ? [['mr-t6-kaplan-lisinopril', 'obs-t6-kaplan-0928-cr', 'obs-t6-kaplan-1019-cr'] as const] : []),
+      ...(LEVER.includes('reserve') ? [['mr-t6-mercer-lisinopril', 'obs-t6-mercer-0930-cr', 'obs-t6-mercer-1020-cr'] as const] : []),
+    ];
+    for (const [order, before, after] of increases) {
+      const at = Date.parse((store.get('MedicationRequest', idOf(order)) as R).authoredOn!);
+      const b = store.get('Observation', idOf(before)) as R;
+      const a = store.get('Observation', idOf(after)) as R;
+      expect(Date.parse(b.effectiveDateTime!), order).toBeLessThan(at);
+      expect(Date.parse(a.effectiveDateTime!) - at, order).toBeLessThan(28 * 86_400_000);
     }
-    const rise = (b: string, a: string) => (store.get('Observation', id(a as never)) as R).valueQuantity!.value! / (store.get('Observation', id(b as never)) as R).valueQuantity!.value! - 1;
+    const rise = (b: string, a: string) => (store.get('Observation', idOf(a)) as R).valueQuantity!.value! / (store.get('Observation', idOf(b)) as R).valueQuantity!.value! - 1;
     expect(rise('obs-t6-brooks-0921-cr', 'obs-t6-brooks-1008-cr')).toBeGreaterThan(0.35);
     expect(rise('obs-t6-price-0918-cr', 'obs-t6-price-1006-cr')).toBeLessThan(0.25);
+    if (LEVER.includes('B')) {
+      // The deciding comparison clears the line by the task's 5 points, as Brooks's; the lure
+      // (the evening value of the same day) stays under it by as much, as Price's.
+      expect(rise('obs-t6-kaplan-0928-cr', 'obs-t6-kaplan-1019-cr')).toBeGreaterThan(0.35);
+      expect(rise('obs-t6-kaplan-uc-0928-cr', 'obs-t6-kaplan-1019-cr')).toBeLessThan(0.25);
+      const at = Date.parse((store.get('MedicationRequest', idOf('mr-t6-kaplan-lisinopril')) as R).authoredOn!);
+      expect(Date.parse((store.get('Observation', idOf('obs-t6-kaplan-uc-0928-cr')) as R).effectiveDateTime!)).toBeGreaterThan(at);
+    }
+    if (LEVER.includes('reserve')) expect(rise('obs-t6-mercer-0930-cr', 'obs-t6-mercer-1020-cr')).toBeLessThan(0.25);
   });
 });

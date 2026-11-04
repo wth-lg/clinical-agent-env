@@ -27,8 +27,9 @@ import { firstExposed, stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, type MatrixEnv, runMatrix, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { MatrixTask, WorldView } from '../../../packages/grader/matrix/types.ts';
 import * as events from '../events.ts';
-import { ACTIVE, SPECS } from '../events.ts';
-import { byName, expected, ITEMS } from '../expected.ts';
+import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
+import { byName, expected, ITEMS, LEVER, LEVER_MARGINS } from '../expected.ts';
+import { MARGINS } from '../../../packages/env/lint/index.ts';
 import { derive } from '../policy.ts';
 import { route } from '../solution/steps.ts';
 import { alternatives } from './alternatives.ts';
@@ -53,30 +54,46 @@ type Answer = (typeof expected.items)[number];
 const POLICY_SENTENCE =
   'Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.';
 
+// W5-E: the specs beside the W4 six: webb-a1 always, mercer-b1 while the reserve is in LEVER; the
+// active set holds webb-a1 in place of webb-c1 while 'A' is (EXCLUSIVE), and mercer-b1 with the
+// reserve. The exclusive pair's inactive member is left out of the all-specs runs.
+const reserve = LEVER.includes('reserve');
+const ALL = SPECS.filter((s) => !EXCLUSIVE.some(([a, b]) => (s.id === a && ACTIVE.includes(b)) || (s.id === b && ACTIVE.includes(a))));
+const CORRECTIONS = new Set(['price-b1', 'price-b2', 'webb-b2', 'mercer-b1']);
+
 describe('message-queue events', () => {
-  it('6 specs; ACTIVE is 3 amend events, one of class O, and 1 lure, one event per item; each trigger is a write on its patient', () => {
-    expect(SPECS).toHaveLength(6);
+  it(`${SPECS.length} specs; ACTIVE is 3 amend events, one of class O, and 1 lure, plus the reserve's, one event per item; each trigger is a write on its patient`, () => {
+    expect(SPECS).toHaveLength(7 + (reserve ? 1 : 0));
     const active = activeSpecs(events);
-    expect(active.map((s) => s.id)).toEqual(['odum-o1', 'price-b1', 'price-d1', 'webb-c1']);
-    expect(active.filter((s) => s.class !== 'D')).toHaveLength(3);
+    expect(active.map((s) => s.id)).toEqual(['odum-o1', 'price-b1', 'price-d1', LEVER.includes('A') ? 'webb-a1' : 'webb-c1', ...(reserve ? ['mercer-b1'] : [])]);
+    expect(active.filter((s) => s.class !== 'D')).toHaveLength(3 + (reserve ? 1 : 0));
     expect(active.filter((s) => s.class === 'D')).toHaveLength(1);
     expect(active.some((s) => s.class === 'O')).toBe(true);
-    expect(new Set(active.map((s) => s.item)).size).toBe(4);
-    for (const item of new Set(SPECS.map((s) => s.item))) expect(SPECS.filter((s) => s.item === item && s.class !== 'D').length, item).toBeLessThanOrEqual(1);
+    expect(new Set(active.map((s) => s.item)).size).toBe(active.length);
+    // At most one amend event per item among the specs that can be active together (webb-c1 and
+    // webb-a1 are exclusive).
+    for (const item of new Set(ALL.map((s) => s.item))) expect(ALL.filter((s) => s.item === item && s.class !== 'D').length, item).toBeLessThanOrEqual(1);
     for (const s of SPECS) {
       const x = ITEMS.find((i) => i.item === s.item);
       expect(x, s.id).toBeDefined();
       expect(s.trigger, s.id).toEqual({ kind: 'after_write', patient: x!.patient.slice('Patient/'.length) });
     }
+    expect(EXCLUSIVE).toEqual([['webb-c1', 'webb-a1']]);
+  });
+
+  it('the lever arrivals clear their lines by the lint margin (R7)', () => {
+    for (const m of LEVER_MARGINS) expect(Math.abs(m.value - m.line), m.what).toBeGreaterThanOrEqual(MARGINS[m.quantity]);
   });
 
   it('no arrival is in the world before its trigger; a correction replaces its record with a changed one; every inbox summary is generic', () => {
-    const corrections = new Set(['price-b1', 'price-b2', 'webb-b2']);
+    const corrections = CORRECTIONS;
     for (const s of SPECS) {
+      // A correction replaces at least one world record; it may also file a new one (mercer-b1's
+      // recalculated eGFR), which is absent before the trigger like any other arrival.
+      if (corrections.has(s.id)) expect(s.resources.some((r) => store.get(r.resourceType, r.id!) !== undefined), s.id).toBe(true);
       for (const r of s.resources) {
         const there = store.get(r.resourceType, r.id!);
-        if (corrections.has(s.id)) {
-          expect(there, `${s.id}: ${r.resourceType}/${r.id}`).toBeDefined();
+        if (corrections.has(s.id) && there !== undefined) {
           expect(JSON.stringify(there)).not.toEqual(JSON.stringify(r));
           // A correction keeps every field of the world's record but the ones it corrects (the world's
           // jittered times, references and codes copied), so it is the same record, amended.
@@ -152,12 +169,33 @@ describe('message-queue events', () => {
       expect(resent?.action).toBe('duplicate');
       expect(resent?.duplicate_of).toBe(byName('m10').item);
     });
+    // W5-E A: the redrawn panel with its potassium normal is a valid BMP within 12 months: renew.
+    it('webb-a1: the redrawn panel (potassium 4.6, collected 10/22) renews lisinopril for 90 days with 1 refill (§1, §2)', () => {
+      const d = derived(spec('webb-a1'));
+      expect(pick(d.find((x) => x.item === byName('m12').item))).toEqual({ action: 'renew', daily_mg: 10, supply_days: 90, refills: 1, lab: null });
+      expect(others(spec('webb-a1'), d)).toEqual(unchanged(spec('webb-a1')));
+    });
+    // W5-E reserve: one correction holds both of her refills.
+    it.runIf(reserve)('mercer-b1: the corrected creatinine (1.46, 46% over 1.00) holds lisinopril and the recalculated eGFR (38) holds metformin (§1, §2, §3)', () => {
+      const d = derived(spec('mercer-b1'));
+      expect(pick(d.find((x) => x.item === byName('m16').item))).toEqual(hold);
+      expect(pick(d.find((x) => x.item === byName('m15').item))).toEqual(hold);
+      const rest = (xs: Answer[]) => xs.filter((x) => x.item !== byName('m15').item && x.item !== byName('m16').item && x.item.startsWith('Task/task-'));
+      expect(rest(d)).toEqual(rest([...expected.items]));
+    });
   });
+
+  // A spec run alone leaves the lever declarations out (W5-H: an active A lever item's event must be
+  // an active spec, and its agents must be its); the CLI matrix runs the lever cases.
+  const unlevered = (loaded: MatrixTask): MatrixTask => {
+    const { lever: _lever, ...rest } = loaded;
+    return { ...rest, agents: { ...loaded.agents, lever: {} } };
+  };
 
   describe('each spec alone, active', () => {
     for (const s of SPECS) {
       it(`${s.id} (${s.class}, ${s.item}): its event mutants fail only its item under their label, its alternatives pass and fire it`, { timeout: 600_000 }, async () => {
-        const loaded = await loadMatrixTask(ID);
+        const loaded = unlevered(await loadMatrixTask(ID));
         const muts = eventMutants(s.id, [s.id]);
         const alts = eventAlternatives(s.id, [s.id]);
         const task: MatrixTask = {
@@ -180,13 +218,13 @@ describe('message-queue events', () => {
     }
   });
 
-  it('the oracle and every matrix alternative fire all 6 triggers', { timeout: 600_000 }, async () => {
-    const env = envWith(SPECS);
+  it(`the oracle and every matrix alternative fire all ${ALL.length} triggers (every spec but the exclusive pair's inactive member)`, { timeout: 600_000 }, async () => {
+    const env = envWith(ALL);
     const task = await loadMatrixTask(ID);
-    for (const c of [{ id: 'oracle', script: route({ active: SPECS.map((s) => s.id) }) }, ...alternatives]) {
-      const run = await trial(env, { ...task, events: SPECS }, { kind: 'alternative', id: c.id, script: c.script });
+    for (const c of [{ id: 'oracle', script: route({ active: ALL.map((s) => s.id) }) }, ...alternatives]) {
+      const run = await trial(env, { ...task, events: ALL }, { kind: 'alternative', id: c.id, script: c.script });
       const fired = run.events.flatMap((e) => (e.type === 'env_event' ? [(e as unknown as { spec: string }).spec] : []));
-      expect(new Set(fired), c.id).toEqual(new Set(SPECS.map((x) => x.id)));
+      expect(new Set(fired), c.id).toEqual(new Set(ALL.map((x) => x.id)));
     }
   });
 
@@ -198,7 +236,7 @@ describe('message-queue events', () => {
     const delivered = skipped.grade.checks.find((c) => c.id === 'event_delivered')!.items!.find((i) => i.item === byName('m12').item)!;
     expect(delivered.evidence.fired).toEqual([]);
     expect(mutants.some((m) => m.id === 'patient_skipped_webb')).toBe(true);
-    expect(ACTIVE).toContain('webb-c1');
+    expect(ACTIVE.some((s) => s === 'webb-c1' || s === 'webb-a1')).toBe(true);
   });
 
   // R38 (coordinator, after the #200 gate): (a) a blind write that fires an amend never excuses the
@@ -215,11 +253,12 @@ describe('message-queue events', () => {
   });
 
   // R38(g) (coordinator, from the T5 gate): a multi-resource arrival is seen only when the resource
-  // holding its deciding value is shown, not the panel beside it.
-  for (const id of ['price-b1', 'webb-c1']) {
+  // holding its deciding value is shown, not the panel beside it. W5-E: webb-a1's potassium and
+  // mercer-b1's creatinine and eGFR are such values (the panel beside them shows neither).
+  for (const id of ['price-b1', 'webb-c1', 'webb-a1', ...(reserve ? ['mercer-b1'] : [])]) {
     it(`R38(g): ${id} opened only through its panel report is not seen (retrieval)`, { timeout: 600_000 }, async () => {
       const s = spec(id);
-      const loaded = await loadMatrixTask(ID);
+      const loaded = unlevered(await loadMatrixTask(ID));
       const m = panelOnlyMutant(id, [id])!;
       const muts = [m, ...eventMutants(id, [id])];
       const task: MatrixTask = { ...loaded, events: [s], checks: checksFor([s]).filter((c) => !JUDGED.has(c.id)), oracle: route({ active: [id] }), alternatives: eventAlternatives(id, [id]), mutants: muts, declares: { ...loaded.declares, traps: [...new Set(muts.map((x) => x.trap))] } };
@@ -236,8 +275,11 @@ describe('message-queue events', () => {
   // webb-b2 in the turn of the m12 decision, the lisinopril order: on that write itself (q1attr), or
   // on the metformin order moved before it in the same answer (Q4). The owed set is the chart at the
   // start of that turn, so the HbA1c is owed and never shown: m12 fails decisive_seen, and its label
-  // is retrieval with no seen step, as the gate says.
-  describe('R41 addendum 3: webb-b2 fired in the turn of the m12 decision', () => {
+  // is retrieval with no seen step, as the gate says. The route it edits is the committed one, with
+  // webb-c1 on Webb (turn 9 his reads, the potassium list and the HbA1c search); with the lever
+  // item A on, webb-a1 replaces webb-c1 and the oracle's Webb turn reads the arrival's panel too,
+  // which shows the HbA1c, so the edit has no bite: the case runs in the webb-c1 states.
+  describe.runIf(ACTIVE.includes('webb-c1'))('R41 addendum 3: webb-b2 fired in the turn of the m12 decision', () => {
     const b2 = SPECS.filter((s) => [...ACTIVE, 'webb-b2'].includes(s.id));
     const oracle = route({ active: [...ACTIVE] });
     const t9 = { calls: oracle[8]!.calls.filter((c) => c.input.code !== '4548-4').map((c) => (String(c.input.code).includes('2823-3') ? { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-02268' } } : c)) };
@@ -268,5 +310,18 @@ describe('message-queue events', () => {
         expect(item.exposure.find((e) => e.id === 'DiagnosticReport/dr-00302')).toEqual({ id: 'DiagnosticReport/dr-00302', first_exposed_step: null, first_seen_step: null });
       });
     }
+  });
+  // R41's owed-set rule (a record a class B arrival replaced is owed in its final state when the
+  // arrival fired before the decision, in its initial state when the decision write fired it) bears
+  // on an absence item's window: m12's, Webb's 12 months. The lever items' events: webb-a1 (A) is
+  // class A, its records first arrive in the trial and are never window targets; mercer-b1 (the
+  // reserve) is class B on Mercer, whose items m15 and m16 carry no absence. So no LEVER state puts
+  // a class B arrival on an absence item's patient, and the addendum-3 case above is the only one
+  // the rule needs here; a class B event on an absence item's patient must get its own.
+  it("no active class B event replaces a record on an absence item's patient (R41 owed set)", () => {
+    const absences = ITEMS.filter((i) => i.absence !== undefined).map((i) => i.patient);
+    const classB = activeSpecs({ SPECS, ACTIVE }).filter((s) => s.class === 'B');
+    expect(classB.map((s) => s.id)).toEqual(LEVER.includes('reserve') ? ['price-b1', 'mercer-b1'] : ['price-b1']);
+    for (const s of classB) expect(absences, `${s.id} replaces a record of ${s.trigger.kind === 'after_write' ? s.trigger.patient : '?'}`).not.toContain(s.trigger.kind === 'after_write' ? s.trigger.patient : '?');
   });
 });

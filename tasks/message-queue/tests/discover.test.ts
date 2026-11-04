@@ -43,9 +43,9 @@ import { firstExposed, seenBefore, stepsOf } from '../../../packages/grader/expo
 import type { Step } from '../../../packages/grader/check.ts';
 import { trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
-import { ITEMS, type Item } from '../expected.ts';
+import { ITEMS, LEVER, type Item } from '../expected.ts';
 import { firstSeenBy, seenStep } from './grader.ts';
-import { ref } from '../ids.ts';
+import { ref, refOf } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
 import { SPECS } from '../events.ts';
 
@@ -82,6 +82,12 @@ export const TRAP: Record<string, { ids: string[]; hard: 'retrieval' | 'reasonin
   m11: { ids: [ref('Communication/comm-t6-m10')], hard: 'reasoning', why: 'the first message is in the queue the task hands over' },
   m12: { ids: [], hard: 'reasoning', why: 'an absence item (R20, R31): no BMP was collected in the 12-month window; the out-of-window panel and its potassium are lures, and the hard step is reading the collection date, not the issued date' },
   m13: { ids: [], hard: 'reasoning', why: 'the eGFR entered in error cannot decide the item (R1), so it is a lure; the hard step is not trusting it' },
+  // W5-E (plan-amendment-w5): B's deciding record is the morning creatinine of the day the dose was
+  // raised; a creatinine list shows it beside the evening one on page 1 (both rows, R6), and the
+  // hard step is the time of day against the order's time. The reserve's items hold no trap in the
+  // world: their correction is an arrival, graded by the event gates.
+  ...(LEVER.includes('B') ? { m14: { ids: [refOf('Observation/obs-t6-kaplan-0928-cr')], hard: 'reasoning' as const, why: 'the creatinine list shows both creatinines of the day the dose was raised with their times; the hard step is which of them is "the last creatinine before that change", against the order\'s time' } } : {}),
+  ...(LEVER.includes('reserve') ? { m15: { ids: [], hard: 'reasoning' as const, why: 'the item\'s trap is its correction, an arrival (events.ts mercer-b1), graded by the event gates' }, m16: { ids: [], hard: 'reasoning' as const, why: 'the item\'s trap is its correction, an arrival (events.ts mercer-b1), graded by the event gates' } } : {}),
 };
 
 // R19: lures, each with the wrong action it tempts. None decides its item, so none is decisive.
@@ -94,6 +100,9 @@ export const LURES: Record<string, { id: string; tempts: string }> = {
   // R19, R31: it shows the panel's collection date but not whether a BMP was drawn since; never decisive.
   webb_bmp_potassium: { id: ref('Observation/obs-t6-webb-1020-k'), tempts: 'm12: the potassium 4.3 issued 10/27/2025, inside 12 months by its issued date, tempts a 90-day renewal' },
   webb_error_egfr: { id: ref('Observation/obs-t6-webb-egfr-1014'), tempts: 'm13: the eGFR 39 entered in error, the newest by date, tempts a metformin hold' },
+  // W5-E B: the urgent-care creatinine of the evening the dose was raised, after the order, which a
+  // newest-first list shows first for that day: against it the 10-19 value is 18% up, under 30%.
+  ...(LEVER.includes('B') ? { kaplan_evening_creatinine: { id: refOf('Observation/obs-t6-kaplan-uc-0928-cr'), tempts: 'm14: the 1.24 of 09/28 17:30, drawn after the 14:55 order, tempts a 90/1 renewal (18% to 1.46)' } } : {}),
 };
 
 const task = await loadMatrixTask('message-queue');
@@ -112,7 +121,7 @@ describe('message-queue discoverability', () => {
   it.each([...BROAD, ...TARGETED, ...TESTS].map((c) => [JSON.stringify({ [c.name]: c.input }), c] as const))('arrivals are absent before their trigger: %s shows none in its arrived form', async (_label, c) => {
     const steps = await run('broad', [{ calls: [c] }, { calls: [call('finish', { summary: 'searched' })] }]);
     expect(steps.flatMap((st) => st.arrivals ?? [])).toEqual([]);
-    const fresh = ARRIVAL_KEYS.filter((a) => !['price-b1', 'price-b2', 'webb-b2'].includes(a.spec));
+    const fresh = ARRIVAL_KEYS.filter((a) => !['price-b1', 'price-b2', 'webb-b2', 'mercer-b1'].includes(a.spec));
     expect(fresh.filter((a) => steps.some((st) => st.exposed_ids.includes(a.key) || st.referenced_ids.includes(a.key))).map((a) => a.key)).toEqual([]);
   });
 

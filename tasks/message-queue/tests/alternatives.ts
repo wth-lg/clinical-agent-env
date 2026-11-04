@@ -11,8 +11,9 @@ import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { BMP_CODES } from '../expected.ts';
 import { ref } from '../ids.ts';
+import { LEVER } from '../lever.ts';
 import {
-  bmpOrder, call, cancel, close, HOLD_TASK, inbox, lab, ODUM_REPORT, odumBmp, odumRenew, order, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read, readDoc, recheck, resultsInbox, route, type RouteOpts, RX, search, voided, WEBB_READS, webbBmp,
+  bmpOrder, call, cancel, change, close, HOLD_TASK, inbox, KAPLAN_LOOK, kaplanHold, lab, MR, ODUM_REPORT, odumBmp, odumRenew, order, PCP, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read, readDoc, recheck, resultsInbox, route, type RouteOpts, RX, search, task, voided, WEBB_READS, webbBmp,
   webbBridge, webbMetformin,
 } from '../solution/steps.ts';
 import { eventAlternatives } from './event-cases.ts';
@@ -27,8 +28,12 @@ const inWindow = (code: string) => search('Observation', PT.webb, { code, date_g
 // A day written out in a task file pins its patients' encounters of that day in the world build
 // (scripts/fixtures-lib.ts literalDatesByTask), so a day no other file names is built from parts.
 const JULY_FIRST = `2026-${String(7).padStart(2, '0')}-${String(1).padStart(2, '0')}`;
-// R27 (gate 3 F1): the clinic's BMP panel reports under every code that counts as a BMP (expected.ts BMP_CODES).
-const CLINIC_PANELS = call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 50, sort: '-date' });
+// R27 (gate 3 F1): the clinic's BMP panel reports under every code that counts as a BMP (expected.ts
+// BMP_CODES), 10 a page so the page cut is by count, not the tool's size cap (W5-E: the B host adds
+// three panels to the window, which moved the cap's cut; the run reads six pages, 51 panels at most,
+// and a page past the end is empty).
+const CLINIC_PANELS = call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 10, sort: '-date' });
+const CLINIC_PANEL_PAGES = [0, 10, 20, 30, 40, 50].map((offset) => (offset === 0 ? CLINIC_PANELS : { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset } }));
 // A write the tools reject: the dose matches no whole or half tablet of the product.
 const rejected = (patient: string, rxnorm_code: string, frequency: string) => order(patient, rxnorm_code, 3, frequency, 90, 1, 'refill');
 const PRICE_FIRST = (lis = [priceLisinopril], met = [priceMetformin], c11 = [close(11, 'Same request as his message of 10/20; answered there.')]) => [...lis, ...met, close(9), close(10), ...c11];
@@ -94,7 +99,7 @@ export const alternatives: Alternative[] = [
   { id: 'm12_window_search', why: "Searches Marcus Webb's potassium (both codes) and eGFR from 10/23/2025 on: no potassium in 12 months, so 30 days and a BMP.", script: r({ reads: [[WEBB_K, [inWindow('2823-3,6298-4')]], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
   // R27: a complete clinic-wide search over the window counts for every patient it would show; the
   // page is cut by the tool's size cap, so the run takes two pages with one sort.
-  { id: 'm12_clinic_panels', why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, finds none for Marcus Webb, and gives 30 days and a BMP.', script: r({ reads: [[WEBB_K, [CLINIC_PANELS, { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset: 26 } }]], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
+  { id: 'm12_clinic_panels', why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, 10 a page, finds none for Marcus Webb, and gives 30 days and a BMP.', script: r({ reads: [[WEBB_K, CLINIC_PANEL_PAGES], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
   // R36 (builder-273): his whole Observation list newest first, read from offset 0 to a page whose
   // oldest result is before the window's first day, not to the last page.
   // verifier-phase-P17i-S0-208-1 M2 (as T3's G2, builder-292): page 1 dates from 1900, page 2 drops
@@ -169,4 +174,26 @@ export const alternatives: Alternative[] = [
     script: r({ recheck: [call('list_inbox', { queue: 'results' }), call('list_inbox', { queue: 'messages' }), ...recheck(ACTIVE).filter((c) => c !== resultsInbox && c !== inbox)] }),
   },
   ...ACTIVE.flatMap((spec) => eventAlternatives(spec, ACTIVE)),
+  ...leverAlternatives(),
 ];
+
+// W5-E B (plan-amendment-w5 "T6 message-queue" alternatives), present while 'B' is in LEVER: the
+// current order held or stopped as well as the Task (§2 allows both); the Task's priority is
+// ungraded; the creatinines seen in a list from 09/28 on, or in his whole result list, instead of
+// the creatinine list; the morning value read on its own. The A and reserve alternatives are the
+// event's (tests/event-cases.ts).
+function leverAlternatives(): Alternative[] {
+  if (!LEVER.includes('B')) return [];
+  const CR = KAPLAN_LOOK.calls[0]!;
+  const holdWhy = 'Creatinine 1.46 on 10/19/2026, 46% above 1.00 before the dose increase of 09/28, pending prescriber review (RBC-RX-05 §2)';
+  return [
+    { id: 'm14_order_held', why: "Also holds Leonard Kaplan's current lisinopril order, which RBC-RX-05 §2 allows, with the Task to the PCP.", script: r({ first: { kaplan: [kaplanHold, change(MR.kaplanLis, 'hold', holdWhy), close(14)] } }) },
+    { id: 'm14_order_stopped', why: "Stops Leonard Kaplan's current lisinopril order (§2 allows it) with the Task to the PCP.", script: r({ first: { kaplan: [kaplanHold, change(MR.kaplanLis, 'stop', holdWhy), close(14)] } }) },
+    { id: 'm14_routine_task', why: 'Writes the Task to the PCP at routine priority, due in a week: the priority is not graded.', script: r({ first: { kaplan: [task(PT.kaplan, holdWhy, MR.kaplanLis, PCP, 'routine', '2026-10-30'), close(14)] } }) },
+    // His 27 laboratory results from 09/28 on fill three pages of 10 (the tool's size cap cuts a
+    // longer page), read in one run.
+    { id: 'm14_baseline_by_date_list', why: "Lists Leonard Kaplan's results from 09/28 on with no code filter, 10 a page to the last page: the three creatinines with their times, and holds as the oracle does.", script: r({ reads: [[CR, [0, 10, 20].map((offset) => search('Observation', PT.kaplan, { date_ge: '2026-09-28', sort: '-date', count: 10, ...(offset ? { offset } : {}) }))]] }) },
+    { id: 'm14_whole_list', why: "Lists every result of Leonard Kaplan's, newest first, 10 a page to the last page, in place of the creatinine list, and holds as the oracle does.", script: r({ reads: [[CR, [0, 10, 20].map((offset) => search('Observation', PT.kaplan, { sort: '-date', count: 10, ...(offset ? { offset } : {}) }))]] }) },
+    { id: 'm14_morning_value_read', why: "Lists Leonard Kaplan's creatinine from 10/01 on (the 1.46 alone), then reads the 09/28 08:40 result by id after the progress note names it, and holds.", script: r({ reads: [[CR, [search('Observation', PT.kaplan, { code: '2160-0', date_ge: '2026-10-01', sort: '-date' }), search('DocumentReference', PT.kaplan, { sort: '-date' }), read('DocumentReference', ref('DocumentReference/doc-t6-kaplan-0928' as never)), read('Observation', ref('Observation/obs-t6-kaplan-0928-cr' as never))]]] }) },
+  ];
+}

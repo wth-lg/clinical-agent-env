@@ -1,12 +1,16 @@
+import type { Quantity } from '../../packages/env/lint/index.ts';
 import { syntheaRef } from '../../packages/env/synthea-ids.ts';
-import { ref } from './ids.ts';
+import { idOf, ref, refOf } from './ids.ts';
+import { LEVER } from './lever.ts';
+export { LEVER } from './lever.ts';
 // T6's expected end state, written by hand from the worklist design (overlay.ts header): for each
-// of the 6 messages in Dr. Okafor's queue (cut from the probe's 13 in plan-amendment-w4 PW4-E3, one
-// instance of each item class), the request RBC-RX-05 decides and the decision on the chart as it
-// stands when the trial starts. policy.ts computes the same from the initial world, and the matrix
-// fails when the two differ. The grader reads its targets from here; ITEMS adds each item's class
-// and the records that decide it. A mid-trial event (events.ts) can change an item's decision; the
-// grader grades such an item on the chart as delivered (tests/grader.ts DELIVERED).
+// of the messages in Dr. Okafor's queue (cut from the probe's 13 in plan-amendment-w4 PW4-E3, one
+// instance of each item class, plus the W5-E lever items below), the request RBC-RX-05 decides and
+// the decision on the chart as it stands when the trial starts. policy.ts computes the same from
+// the initial world, and the matrix fails when the two differ. The grader reads its targets from
+// here; ITEMS adds each item's class and the records that decide it. A mid-trial event (events.ts)
+// can change an item's decision; the grader grades such an item on the chart as delivered
+// (tests/grader.ts DELIVERED).
 //
 //   m3  Odum    lisinopril 10  outside K 5.9 hemolyzed; K 4.5 on 2026-01-20       renew 90/1 + BMP
 //   m9  Price   lisinopril 20  raised 09-18; creatinine 1.10 -> 1.36 (+24%), K 5.2 renew 90/1
@@ -14,6 +18,27 @@ import { ref } from './ids.ts';
 //   m11 Price   metformin 1000 the pharmacy's request for it (§5)                 no second order
 //   m12 Webb    lisinopril 10  BMP collected 2025-10-20, issued 10-27            30/0 + BMP
 //   m13 Webb    metformin 500  eGFR 39 entered in error; eGFR 92 on 2026-09-28    renew 90/1
+//
+// W5-E (plan-amendment-w5 "T6 message-queue", G1): three lever items, each a toggle in lever.ts
+// LEVER (re-exported above; the task loader hashes it into env_version). An inactive item's
+// patient, messages, event and trap are all absent.
+//   A        webb-a1 (events.ts) in place of the W4 event webb-c1 on m12: Marcus Webb's redrawn
+//            panel arrives with only its potassium notified (4.6, normal); the panel report and
+//            the other analytes file silently. RBC-RX-05 §2: a valid BMP within 12 months and the
+//            most recent valid potassium below 5.5, so the 30-day supply sent before it is
+//            corrected to 90 days with 1 refill (§7). A reader of the focus alone takes it for "a
+//            potassium measured on its own", not a BMP, and keeps 30/0. Toggles with no rebuild.
+//   B        m14 Leonard Kaplan (overlay.ts): lisinopril raised 2026-09-28 at 14:55; a creatinine
+//            of 1.00 drawn at 08:40 that morning (before) and 1.24 at urgent care at 17:30 (after);
+//            the 10-19 BMP's 1.46 is 46% above 1.00, over §2's 30%: hold, a Task to the PCP. A
+//            newest-first list shows the 1.24 first for 09-28; against it the rise is 18% and the
+//            wrong answer is a 90/1 renewal. A world rebuild to toggle.
+//   reserve  m15, m16 Rosalind Mercer (overlay.ts, events.ts mercer-b1), inactive: lisinopril
+//            raised 10-01 and metformin, both renewed at base (creatinine 1.12, 12% up; eGFR 52).
+//            The event corrects the 10-20 creatinine to 1.46 (46% up: lisinopril held), withdraws
+//            the eGFR of 52 and files the recalculated one, 38, as a new result (below 45:
+//            metformin held). Its item is m16, whose deciding atom is the new eGFR; m15 is graded
+//            on the chart as delivered by the base gates.
 export type Action = 'renew' | 'bridge' | 'hold' | 'duplicate';
 export type Lab = 'bmp' | 'hba1c' | null;
 
@@ -34,7 +59,7 @@ export interface Answer {
   duplicate_of: string | null;
 }
 
-export type Klass = 'hemolyzed_potassium' | 'amended_or_error' | 'collection_date' | 'metformin_two_series' | 'same_patient' | 'creatinine_rise' | 'filler';
+export type Klass = 'hemolyzed_potassium' | 'amended_or_error' | 'collection_date' | 'metformin_two_series' | 'same_patient' | 'creatinine_rise' | 'same_day_baseline' | 'corrected_egfr' | 'filler';
 
 export interface Item extends Answer {
   name: string;
@@ -81,6 +106,9 @@ export interface Item extends Answer {
 
 const T = (n: number) => ref(`Task/task-t6-m${n}` as `Task/${'task-t6-m1'}`);
 const MSG = (n: number) => ref(`Communication/comm-t6-m${n}` as `Communication/${'comm-t6-m1'}`);
+// A lever item's records resolve only on a world built in a state that holds its patient
+// (fixtures/ids.ts); refOf returns the key itself otherwise (ids.ts), so the table stays importable.
+const TL = (n: number) => refOf(`Task/task-t6-m${n}`);
 // The panel codes that count as a BMP, for an order (tests/grader.ts LAB_CODES) and for the absence
 // search alike: the BMP 51990-0, the clinic's other BMP code 24321-2, and the comprehensive panel
 // 24323-8, which carries a potassium (§1: a CMP contains a BMP and counts as one).
@@ -98,12 +126,16 @@ const BMP_SEARCHES = [
   { type: 'DiagnosticReport', codes: BMP_CODES.map((c) => `${LOINC}|${c}`), category: LAB.report },
 ];
 const P = { odum: 'Patient/pt-0027', price: 'Patient/pt-0030', webb: 'Patient/pt-0031' } as const;
+// The lever hosts (overlay.ts LEVER_HOSTS), by their world ids while their items are in LEVER.
+export const HOST_KEYS = { kaplan: 'pt-t6-kaplan', mercer: 'pt-t6-mercer' } as const;
+const host = (who: keyof typeof HOST_KEYS) => `Patient/${idOf(HOST_KEYS[who])}`;
 
 const renew = (daily_mg: number, lab: Lab = null) => ({ action: 'renew' as const, daily_mg, supply_days: 90, refills: 1, lab, duplicate_of: null });
 const bridge = (daily_mg: number, lab: Lab) => ({ action: 'bridge' as const, daily_mg, supply_days: 30, refills: 0, lab, duplicate_of: null });
+const hold = () => ({ action: 'hold' as const, daily_mg: null, supply_days: null, refills: null, lab: null, duplicate_of: null });
 const duplicate = (of: number) => ({ action: 'duplicate' as const, daily_mg: null, supply_days: null, refills: null, lab: null, duplicate_of: T(of) });
 
-export const ITEMS: Item[] = [
+const BASE_ITEMS: Item[] = [
   {
     name: 'm3', klass: 'hemolyzed_potassium', item: T(3), patient: P.odum, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-odum-lisinopril'), ...renew(10, 'bmp'),
     decisive: [ref('DocumentReference/doc-t6-odum-0827'), ref('Observation/obs-t6-odum-0120-k')], atoms: { [ref('DocumentReference/doc-t6-odum-0827')]: [['hemolyzed'], ['hemolysis']] }, also: {},
@@ -134,6 +166,60 @@ export const ITEMS: Item[] = [
     name: 'm13', klass: 'amended_or_error', item: T(13), patient: P.webb, drug: 'metformin', request: ref('MedicationRequest/mr-t6-webb-metformin'), ...renew(1000),
     decisive: [ref('Observation/obs-t6-webb-egfr-0928'), ref('Observation/obs-t6-webb-a1c-0928')], atoms: {}, also: {},
   },
+];
+
+// The lever items (overlay.ts LEVER_HOSTS), each on the queue while its id is in `lever`. A adds no
+// item: it re-specifies m12's event (events.ts).
+export function leverItems(lever: readonly string[]): Item[] {
+  const out: Item[] = [];
+  if (lever.includes('B')) {
+    // RBC-RX-05 §2's 30% rule against "the last creatinine before that change": the 1.00 of 09-28
+    // 08:40, before the 14:55 order, not the 1.24 of 17:30 after it; 1.46 on 10-19 is 46% above
+    // it. The 1.24 cannot decide (R1: against it the rise is 18%, and it is not "before").
+    out.push({
+      name: 'm14', klass: 'same_day_baseline', item: TL(14), patient: host('kaplan'), drug: 'lisinopril', request: refOf('MedicationRequest/mr-t6-kaplan-lisinopril'), ...hold(),
+      decisive: [refOf('Observation/obs-t6-kaplan-1019-cr'), refOf('Observation/obs-t6-kaplan-0928-cr')], atoms: {}, also: {},
+    });
+  }
+  if (lever.includes('reserve')) {
+    // At base both renew: the 10-20 creatinine 1.12 is 12% above the 1.00 before the 10-01 increase
+    // and the potassium 4.9 is below 5.5 (m15); the eGFR 52 is at least 45 and the HbA1c of 06-08 is
+    // inside 6 months (m16). mercer-b1 (events.ts) corrects the creatinine and the eGFR.
+    out.push(
+      {
+        name: 'm15', klass: 'corrected_egfr', item: TL(15), patient: host('mercer'), drug: 'lisinopril', request: refOf('MedicationRequest/mr-t6-mercer-lisinopril'), ...renew(20),
+        decisive: [refOf('Observation/obs-t6-mercer-1020-cr'), refOf('Observation/obs-t6-mercer-0930-cr'), refOf('Observation/obs-t6-mercer-1020-k')], atoms: {}, also: {},
+      },
+      {
+        name: 'm16', klass: 'corrected_egfr', item: TL(16), patient: host('mercer'), drug: 'metformin', request: refOf('MedicationRequest/mr-t6-mercer-metformin'), ...renew(2000),
+        decisive: [refOf('Observation/obs-t6-mercer-1020-egfr'), refOf('Observation/obs-t6-mercer-a1c-0608')], atoms: {}, also: {},
+      },
+    );
+  }
+  return out;
+}
+export const ITEMS: Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
+
+// W5-H's declaration of the lever items (packages/grader/matrix/types.ts LeverItem): the queue
+// item each bears on (its Task, as the gates name items), an event item's spec (`spec`, and `event`
+// for the earlier draft of the interface), the sibling records cli classes reports as exposed or
+// not, and the gates whose failure on the item is the lever's. A: the panel report that shows the
+// notified potassium is a BMP member (R39(c)). B: the morning creatinine, the baseline the evening
+// one hides. reserve: the recalculated eGFR, which the corrected creatinine's focus does not show.
+export const LEVER_ITEMS = [
+  { id: 'A', kind: 'A', item: T(12), patient: P.webb, spec: 'webb-a1', event: 'webb-a1', sibling: ['DiagnosticReport/dr-00602'], gates: ['event_seen', 'amended'] },
+  { id: 'B', kind: 'B', item: TL(14), patient: host('kaplan'), sibling: [refOf('Observation/obs-t6-kaplan-0928-cr')] },
+  { id: 'reserve', kind: 'A', item: TL(16), patient: host('mercer'), spec: 'mercer-b1', event: 'mercer-b1', sibling: ['Observation/obs-06021'], gates: ['event_seen', 'amended'], reserve: true },
+] as const;
+
+// The margins the lever items' arrivals turn on (R7), checked by tests/lever.test.ts against the
+// lint's (packages/env/lint MARGINS); the static B values are in the overlay's lint thresholds.
+export const LEVER_MARGINS: ReadonlyArray<{ what: string; quantity: Quantity; value: number; line: number }> = [
+  { what: 'webb-a1: the panel potassium against the 5.5 hold line', quantity: 'potassium', value: 4.6, line: 5.5 },
+  { what: 'mercer-b1: the corrected creatinine against 30% over the 1.00 before the dose was raised', quantity: 'scr', value: 1.46, line: 1.3 },
+  { what: 'mercer-b1: the creatinine as first reported against the same line', quantity: 'scr', value: 1.12, line: 1.3 },
+  { what: 'mercer-b1: the recalculated eGFR against 45', quantity: 'egfr', value: 38, line: 45 },
+  { what: 'mercer-b1: the eGFR as first reported against 45', quantity: 'egfr', value: 52, line: 45 },
 ];
 
 export const byName = (name: string): Item => ITEMS.find((x) => x.name === name)!;

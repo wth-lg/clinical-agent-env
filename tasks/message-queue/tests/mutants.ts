@@ -17,8 +17,9 @@
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { ref } from '../ids.ts';
+import { LEVER } from '../lever.ts';
 import {
-  a1cOrder, arrivalRead, call, close, closeResent, lab, labs, ODUM_LOOK, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
+  a1cOrder, arrivalRead, call, close, closeResent, HOLD_TASK, KAPLAN_LOOK, kaplanHold, lab, labs, mercerLisinopril, mercerMetformin, ODUM_LOOK, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, voided, WEBB_READS, webbBmp, webbBridge, webbMetformin, webbRenew,
 } from '../solution/steps.ts';
 import { BMP_CODES, byName } from '../expected.ts';
 import { blindWriteMutant, eventMutants, panelOnlyMutant, resentLeftOpenMutant } from './event-cases.ts';
@@ -121,7 +122,7 @@ export const mutants: Mutant[] = [
     items: { [item('m11')]: 'over_action' },
   },
   skipped('m11_own_message_unread', 'same_patient', 'm11', "Closes the pharmacy's metformin request for Samuel Price without having read his own message about it.", { reads: [[START[1]!.calls[2]!, []]] }),
-  ...(on('webb-c1')
+  ...(on('webb-c1') || on('webb-a1')
     ? []
     : [{
         id: 'm12_issued_date_counted',
@@ -133,6 +134,24 @@ export const mutants: Mutant[] = [
         attribution: 'reasoning' as const,
         items: { [item('m12')]: 'reasoning' as const },
       }]),
+  // W5-E: while webb-a1 is active the redrawn panel alone decides m12 on the chart as delivered (a
+  // valid BMP within 12 months with its potassium below 5.5; R38(d)), so the base window review
+  // is not also required at finish and the window-search mutants below pass. They run while
+  // webb-c1 (a hold, which still needs the window search) or no event is active; webb-a1 keeps the
+  // collection-date trap as the 90-day renewal written at base on the issued date, right at finish
+  // but written before the panel that decides it arrived (R18, R38(e)(ii): process).
+  ...(on('webb-a1')
+    ? [{
+        id: 'm12_issued_date_counted_before_redraw',
+        why: "Counts Marcus Webb's BMP by the date it was issued, not collected, and renews the lisinopril for 90 days before the redrawn panel arrives; the renewal is right once it has, but was written before it.",
+        trap: 'collection_date',
+        script: r({ first: { webb: WEBB_FIRST([order(PT.webb, RX.lis10, 10, 'QD', 90, 1, 'BMP 10/27/2025, potassium 4.3')], []) }, amend: { 'webb-a1': () => [] } }),
+        fails: ['amended'],
+        loses: [],
+        attribution: 'process' as const,
+        items: { [item('m12')]: 'process' as const },
+      }]
+    : [
   skipped('m12_bmp_unread', 'collection_date', 'm12', "Gives Marcus Webb's lisinopril 30 days and a BMP without having read his potassium results or any result of his last BMP.", webbK()),
   // R27: a filter that leaves out a code or status the policy counts can hide a qualifying result.
   skipped('m12_window_one_code', 'collection_date', 'm12', "Searches Marcus Webb's potassium over 12 months under one of its two codes only, and gives 30 days and a BMP.", webbK(since(PT.webb, '2823-3', '2025-10-23'))),
@@ -165,6 +184,7 @@ export const mutants: Mutant[] = [
   skipped('m12_narrowed_query_stops_short', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 2 a page, down to 10/14/2026, then the search up to 10/14/2026 two at a time, and stops at its first page, the same two results: his creatinine of 09/28/2026 and the rest of the 12-month window are never shown, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01', date_le: '2026-10-14' })]]] }),
   // R31: the newest panel, before the window, read on its own is a lure.
   lureOnly('m12_panel_only', 'collection_date', 'm12', "Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.", { reads: [[WEBB_K, [search('DiagnosticReport', PT.webb, { code: '51990-0', sort: '-date' })]]] }),
+      ]),
   {
     id: 'm13_error_egfr_trusted',
     why: "Takes Marcus Webb's entered-in-error eGFR of 39 as his newest and holds the metformin with a task to the PCP.",
@@ -203,7 +223,7 @@ export const mutants: Mutant[] = [
     id: 'patient_skipped_webb',
     why: "Reads Marcus Webb's chart but writes nothing for him: no order, no reply, both messages left open.",
     trap: 'patient_skipped',
-    script: r({ first: { webb: [] }, recheck: recheck(ACTIVE, ['webb-c1', 'webb-b2']), amend: { 'webb-c1': () => [], 'webb-b2': () => [] }, replies: route().at(-2)!.calls.filter((c) => (c.input as { recipient?: string }).recipient !== `Patient/${PT.webb}`) }),
+    script: r({ first: { webb: [] }, recheck: recheck(ACTIVE, ['webb-c1', 'webb-a1', 'webb-b2']), amend: { 'webb-c1': () => [], 'webb-a1': () => [], 'webb-b2': () => [] }, replies: route().at(-2)!.calls.filter((c) => (c.input as { recipient?: string }).recipient !== `Patient/${PT.webb}`) }),
     fails: ['refill_decision', 'all_cleared'],
     loses: ['reply_each_patient'],
     attribution: 'reasoning',
@@ -240,6 +260,108 @@ export const mutants: Mutant[] = [
   ...(on('odum-o1') ? [blindWriteMutant(ACTIVE)] : []),
   ...(on('price-d1') ? [resentLeftOpenMutant(ACTIVE)] : []),
   // R38(g): a multi-resource arrival opened only through its panel report, its deciding result never shown.
-  ...(['price-b1', 'webb-c1'] as const).flatMap((spec) => panelOnlyMutant(spec, ACTIVE) ?? []),
+  ...(['price-b1', 'webb-c1', 'webb-a1', 'mercer-b1'] as const).flatMap((spec) => panelOnlyMutant(spec, ACTIVE) ?? []),
   ...ACTIVE.flatMap((spec) => eventMutants(spec, ACTIVE)),
+  ...leverMutants(),
 ];
+
+// W5-E (plan-amendment-w5 "T6 message-queue" mutants), each present while its lever item is in
+// LEVER. A (webb-a1): the focus-only route (G3's agent, also a mutant: the potassium read, the panel
+// never, 30/0 kept; retrieval) and the renewal sent beside the 30-day supply left live (§5; the
+// arrival read, so reasoning). The generic event mutants cover the panel read and 30/0 kept
+// (reasoning), the arrival never opened (retrieval) and the renewal written before it was read
+// (process). B (m14): a renewal on the evening baseline, a hold on the flag with the morning value
+// never seen, and a hold written before the creatinine list was read. The reserve (mercer-b1): the
+// focus-only route (the creatinine read, lisinopril held, the eGFR never listed, metformin left),
+// the eGFR read and metformin left (reasoning), and lisinopril left renewed with metformin held
+// (m15's delivered decision, reasoning).
+function leverMutants(): Mutant[] {
+  const out: Mutant[] = [];
+  if (ACTIVE.includes('webb-a1')) {
+    out.push(
+      {
+        id: 'webb-a1_focus_only',
+        trap: 'panel_member_unread',
+        why: "Opens the potassium the inbox item points at, takes it for a potassium measured on its own (not a BMP, §2), and keeps Marcus Webb's 30-day supply: the panel report that shows it is a BMP member is never read.",
+        script: r({ recheck: recheck(ACTIVE, [], ['webb-a1']), amend: { 'webb-a1': () => [] } }),
+        fails: ['event_seen', 'amended'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { [item('m12')]: 'retrieval' },
+      },
+      {
+        id: 'webb-a1_bridge_left_live',
+        trap: 'arrival_not_acted_on',
+        why: "Reads the panel and sends Marcus Webb's 90-day renewal, but leaves the 30-day supply sent before it live as well: two live orders for one request (§5).",
+        script: r({ amend: { 'webb-a1': () => [webbRenew] } }),
+        fails: ['amended'],
+        loses: [],
+        attribution: 'reasoning',
+        items: { [item('m12')]: 'reasoning' },
+      },
+    );
+  }
+  if (LEVER.includes('B')) {
+    const CR = KAPLAN_LOOK.calls[0]!;
+    out.push(
+      {
+        id: 'm14_evening_baseline',
+        trap: 'same_day_baseline',
+        why: "Takes the creatinine of 09/28 17:30 (1.24, urgent care), the first row for that day in Leonard Kaplan's list, as the value before the dose increase: 1.46 is 18% above it, so he renews for 90 days. The order was written at 14:55; the last creatinine before it is the 1.00 of 08:40, and 1.46 is 46% above that (§2).",
+        script: r({ first: { kaplan: [order(PT.kaplan, RX.lis20, 20, 'QD', 90, 1, 'RBC-RX-05 §2: potassium 4.8; creatinine 1.46 on 10/19/2026, 18% above 1.24 on 09/28/2026'), close(14)] } }),
+        fails: ['refill_decision', 'no_forbidden_order'],
+        loses: [],
+        attribution: 'over_action',
+        items: { [item('m14')]: 'over_action' },
+      },
+      // R14: the right action with the deciding record never seen.
+      skipped('m14_held_on_flag_unread', 'same_day_baseline', 'm14', "Lists Leonard Kaplan's creatinine from 10/01 on, sees only the flagged 1.46, and holds the lisinopril on the flag without ever seeing the 1.00 of 09/28 it is compared with.", { reads: [[CR, [search('Observation', PT.kaplan, { code: '2160-0', date_ge: '2026-10-01', sort: '-date' })]]] }),
+      // R18: the deciding records read only after the decision was written: seen_before_change, process.
+      {
+        id: 'm14_baseline_read_late',
+        trap: 'same_day_baseline',
+        why: "Holds Leonard Kaplan's lisinopril on the flagged 1.46 and lists his creatinine results only afterwards, in a later answer.",
+        script: r({ reads: [[CR, []]], first: { kaplan: [kaplanHold, close(14)] }, before: () => [CR] }),
+        fails: ['seen_before_change'],
+        loses: [],
+        attribution: 'process',
+        items: { [item('m14')]: 'process' },
+      },
+    );
+  }
+  if (ACTIVE.includes('mercer-b1')) {
+    out.push(
+      {
+        id: 'mercer-b1_focus_only',
+        trap: 'corrected_egfr_unread',
+        why: "Opens the corrected creatinine the inbox item points at, holds Rosalind Mercer's lisinopril on the 46% rise, and leaves the metformin renewed: her eGFR, recalculated to 38 in a separate result, is never listed.",
+        script: r({ recheck: recheck(ACTIVE, [], ['mercer-b1']), amend: { 'mercer-b1': (m) => [voided(m, mercerLisinopril), HOLD_TASK.mercerLis] } }),
+        fails: ['event_seen', 'amended'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { [item('m16')]: 'retrieval' },
+      },
+      {
+        id: 'mercer-b1_egfr_read_metformin_kept',
+        trap: 'arrival_not_acted_on',
+        why: "Reads the corrected creatinine and the recalculated eGFR of 38, holds the lisinopril, and leaves Rosalind Mercer's metformin renewed (§3: below 45, do not refill).",
+        script: r({ amend: { 'mercer-b1': (m) => [voided(m, mercerLisinopril), HOLD_TASK.mercerLis] } }),
+        fails: ['amended'],
+        loses: [],
+        attribution: 'reasoning',
+        items: { [item('m16')]: 'reasoning' },
+      },
+      {
+        id: 'mercer-b1_lisinopril_left_renewed',
+        trap: 'arrival_not_acted_on',
+        why: "Reads the correction, holds the metformin on the eGFR of 38, and leaves Rosalind Mercer's lisinopril renewed: the corrected creatinine is 46% above the one before the dose increase (§2).",
+        script: r({ amend: { 'mercer-b1': (m) => [voided(m, mercerMetformin), HOLD_TASK.mercerMet] } }),
+        fails: ['refill_decision'],
+        loses: [],
+        attribution: 'reasoning',
+        items: { [item('m15')]: 'reasoning' },
+      },
+    );
+  }
+  return out;
+}

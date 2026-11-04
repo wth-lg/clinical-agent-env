@@ -20,6 +20,22 @@
 // (DROPPED): list_inbox shows the signed-in user's items, so they are off Dr. Okafor's queue and no
 // planted id is removed or renumbered. The six patients' charts below keep every scenario record.
 // Mid-trial events (events.ts) add results, corrections and a resent request for Odum, Price and Webb.
+//
+// W5-E (plan-amendment-w5 "T6 message-queue", record-integrity defects; lever.ts LEVER): two queue
+// patients the overlay adds (LEVER_HOSTS, pt-t6-*, numbered after the cohort's last Patient, so no
+// existing id moves), each present only while its lever item is in LEVER. Toggling either is a
+// world rebuild (fixtures:verify, which rebuilds, catches a stale world); the A item is an arrival
+// (events.ts webb-a1) and adds nothing here.
+//   same-day baseline        m14 Kaplan  B        lisinopril raised 09-28 at 14:55; creatinine 1.00
+//                                                 drawn 08:40 that morning (the last before the
+//                                                 change) and 1.24 at St. Brigid Urgent Care at
+//                                                 17:30 (after it); the 10-19 BMP's 1.46 is 46%
+//                                                 above 1.00: hold. Against the 1.24 a newest-first
+//                                                 list shows first for 09-28, the rise is 18%
+//   corrected eGFR           m15, m16    reserve  lisinopril raised 10-01; the 10-20 BMP (creatinine
+//                            Mercer      (inactive) 1.12, 12% up; eGFR 52) and an HbA1c of 06-08 renew
+//                                                 both at base; the event mercer-b1 corrects the
+//                                                 creatinine to 1.46 and the eGFR to 38
 // Each patient keeps the Synthea chart that fits, with the name and (Lena Park) the sex patched,
 // and Dr. Okafor as PCP. The overlay removes what would contradict a scenario or start a question
 // it does not ask: every Synthea note and its report (they name the old patients); the Synthea
@@ -39,10 +55,16 @@
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
 import { patientRefs } from '../../packages/env/overlay.ts';
+import { LEVER } from './lever.ts';
 
 const PT = { hayes: 'pt-0026', odum: 'pt-0027', park: 'pt-0028', brooks: 'pt-0029', price: 'pt-0030', webb: 'pt-0031' } as const;
-type Who = keyof typeof PT;
-const subject = (who: Who) => ({ reference: `Patient/${PT[who]}` });
+// The W5-E lever hosts, Patients the overlay adds (registry keys; fixtures:build numbers them after
+// the cohort's last Patient), each in the world only while its lever item is in lever.ts LEVER.
+export const LEVER_HOSTS = { B: 'pt-t6-kaplan', reserve: 'pt-t6-mercer' } as const;
+const HOST = { kaplan: LEVER_HOSTS.B, mercer: LEVER_HOSTS.reserve } as const;
+type Slot = keyof typeof PT;
+type Who = Slot | keyof typeof HOST;
+const subject = (who: Who) => ({ reference: `Patient/${who in PT ? PT[who as Slot] : HOST[who as keyof typeof HOST]}` });
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const LIN = { reference: 'Practitioner/pr-lin' };
 const REYES = { reference: 'Practitioner/pr-reyes' };
@@ -70,6 +92,8 @@ const NAMES: Record<Who, { given: string; family: string; prefix: string; gender
   brooks: { given: 'Evelyn', family: 'Brooks', prefix: 'Ms.' },
   price: { given: 'Samuel', family: 'Price', prefix: 'Mr.' },
   webb: { given: 'Marcus', family: 'Webb', prefix: 'Mr.' },
+  kaplan: { given: 'Leonard', family: 'Kaplan', prefix: 'Mr.' },
+  mercer: { given: 'Rosalind', family: 'Mercer', prefix: 'Ms.', gender: 'female' },
 };
 
 // Base resources that contradict a scenario. Encounters listed in DROP_ENCOUNTERS take every
@@ -108,16 +132,17 @@ const ORGANIZATIONS: Resource[] = [
   { resourceType: 'Organization', id: 'org-t6-brigid-lab', active: true, name: 'St. Brigid Regional Laboratory', partOf: HOSPITAL },
 ];
 
-const encounter = (id: string, who: Who, type: [string, string], start: string, end: string): Resource => ({
+// A visit at the clinic with Dr. Okafor, or (at) elsewhere: an urgent care visit at St. Brigid.
+const encounter = (id: string, who: Who, type: [string, string], start: string, end: string, at: { provider: { reference: string }; participant?: { reference: string } } = { provider: CLINIC, participant: OKAFOR }): Resource => ({
   resourceType: 'Encounter',
   id,
   status: 'finished',
   class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'AMB' },
   type: [{ coding: [{ system: SNOMED, code: type[0], display: type[1] }], text: type[1] }],
   subject: subject(who),
-  participant: [{ individual: OKAFOR }],
+  ...(at.participant ? { participant: [{ individual: at.participant }] } : {}),
   period: { start, end },
-  serviceProvider: CLINIC,
+  serviceProvider: at.provider,
 });
 const VISIT: [string, string] = ['185349003', 'Encounter for check up (procedure)'];
 const PROBLEM: [string, string] = ['185347001', 'Encounter for problem (procedure)'];
@@ -139,7 +164,7 @@ const T2DM: [string, string] = ['44054006', 'Diabetes mellitus type 2 (disorder)
 const LAB = [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'laboratory', display: 'Laboratory' }] }];
 const q = (value: number, unit: string, code = unit) => ({ value, unit, system: UCUM, code });
 type Note = { time: string; text: string };
-const obs = (id: string, who: Who, code: [string, string], value: number, unit: string, at: string, issued: string, enc: string | null, more: { status?: string; note?: Note[]; ucum?: string; high?: boolean } = {}): Resource =>
+const obs = (id: string, who: Who, code: [string, string], value: number, unit: string, at: string, issued: string, enc: string | null, more: { status?: string; note?: Note[]; ucum?: string; high?: boolean; performer?: { reference: string } } = {}): Resource =>
   ({
     resourceType: 'Observation',
     id,
@@ -150,7 +175,7 @@ const obs = (id: string, who: Who, code: [string, string], value: number, unit: 
     ...(enc ? { encounter: { reference: `Encounter/${enc}` } } : {}),
     effectiveDateTime: at,
     issued,
-    performer: [CLINIC],
+    performer: [more.performer ?? CLINIC],
     valueQuantity: q(value, unit, more.ucum ?? unit),
     ...(more.high ? { interpretation: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation', code: 'H', display: 'High' }] }] } : {}),
     ...(more.note ? { note: more.note } : {}),
@@ -170,12 +195,23 @@ const C = {
 const EGFR_UNIT = ['mL/min/1.73m2', 'mL/min/{1.73_m2}'] as const;
 const egfr = (id: string, who: Who, value: number, at: string, issued: string, enc: string | null, more: { status?: string; note?: Note[] } = {}) => obs(id, who, C.egfr, value, EGFR_UNIT[0], at, issued, enc, { ...more, ucum: EGFR_UNIT[1] });
 
-// A BMP drawn in the clinic: the panel report, its eight results (ids <key>-<analyte>) and an eGFR.
+// A BMP drawn in the clinic (or, with `more.performer`, filed from St. Brigid's results interface):
+// the panel report, its eight results (ids <key>-<analyte>) and an eGFR. A creatinine above the
+// range is flagged where `more.high` names it.
 interface Bmp { na: number; k: number; cl: number; co2: number; bun: number; cr: number; glu: number; ca: number; egfr: number }
-function bmp(key: string, who: Who, at: string, issued: string, enc: string | null, v: Bmp, notes: { k?: Note[]; cr?: Note[] } = {}): Resource[] {
+// `more.code` files the panel under the clinic's other BMP code (24321-2) or as a comprehensive
+// panel (24323-8), which §1 counts as a BMP: the W5-E hosts' panels take 24321-2, as the generated
+// charts' mostly do (scripts/test/world-tells.test.ts caps the planted share of 51990-0). Not
+// 24323-8: no planted report carried it before, and a newly planted code leaves the generated
+// records of that code in the task charts without their occasional fields (profile.ts
+// profileRecords), which moved two cohort reports.
+const PANEL_CODES = { '51990-0': 'Basic metabolic panel - Blood', '24321-2': 'Basic metabolic 2000 panel - Serum or Plasma', '24323-8': 'Comprehensive metabolic 2000 panel - Serum or Plasma' } as const;
+function bmp(key: string, who: Who, at: string, issued: string, enc: string | null, v: Bmp, notes: { k?: Note[]; cr?: Note[] } = {}, more: { performer?: { reference: string }; high?: ReadonlyArray<'cr'>; code?: keyof typeof PANEL_CODES } = {}): Resource[] {
   const analytes: Array<[keyof Omit<Bmp, 'egfr'>, string]> = [['na', 'mmol/L'], ['k', 'mmol/L'], ['cl', 'mmol/L'], ['co2', 'mmol/L'], ['bun', 'mg/dL'], ['cr', 'mg/dL'], ['glu', 'mg/dL'], ['ca', 'mg/dL']];
+  const performer = more.performer ?? CLINIC;
+  const panelCode = more.code ?? '51990-0';
   const results = analytes.map(([a, unit]) =>
-    obs(`obs-t6-${key}-${a}`, who, C[a], v[a], unit, at, issued, enc, { ...(notes[a as 'k' | 'cr'] ? { note: notes[a as 'k' | 'cr'] } : {}), high: (a === 'k' && v.k > 5.1) || (a === 'glu' && v.glu > 99) }),
+    obs(`obs-t6-${key}-${a}`, who, C[a], v[a], unit, at, issued, enc, { ...(notes[a as 'k' | 'cr'] ? { note: notes[a as 'k' | 'cr'] } : {}), high: (a === 'k' && v.k > 5.1) || (a === 'glu' && v.glu > 99) || (a === 'cr' && (more.high ?? []).includes('cr')), performer }),
   );
   return [
     {
@@ -183,16 +219,16 @@ function bmp(key: string, who: Who, at: string, issued: string, enc: string | nu
       id: `dr-t6-${key}`,
       status: 'final',
       category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
-      code: { coding: [{ system: LOINC, code: '51990-0', display: 'Basic metabolic panel - Blood' }], text: 'Basic metabolic panel - Blood' },
+      code: { coding: [{ system: LOINC, code: panelCode, display: PANEL_CODES[panelCode] }], text: PANEL_CODES[panelCode] },
       subject: subject(who),
       ...(enc ? { encounter: { reference: `Encounter/${enc}` } } : {}),
       effectiveDateTime: at,
       issued,
-      performer: [CLINIC],
+      performer: [performer],
       result: results.map((r) => ({ reference: `Observation/${r.id}` })),
     } as Resource,
     ...results,
-    egfr(`obs-t6-${key}-egfr`, who, v.egfr, at, issued, enc),
+    obs(`obs-t6-${key}-egfr`, who, C.egfr, v.egfr, EGFR_UNIT[0], at, issued, enc, { ucum: EGFR_UNIT[1], performer }),
   ];
 }
 
@@ -310,6 +346,14 @@ export const ITEMS: Item[] = [
   { n: 2, who: 'hayes', from: fromPatient('hayes'), sent: '2026-10-22T07:55:00-04:00', subject: 'Following up', body: 'Following up on my message from Monday about the lisinopril. I have two pills left, can it go to the pharmacy today? Gloria Hayes' },
   { n: 8, who: 'brooks', from: PHARMACY, sent: '2026-10-22T10:20:00-04:00', subject: 'Refill request: metformin', body: pharmacyBody('Evelyn Brooks', '07/01/1978', 'metformin hydrochloride 1000 mg tablet', '1 tablet by mouth twice daily', 180) },
   { n: 11, who: 'price', from: PHARMACY, sent: '2026-10-22T11:05:00-04:00', subject: 'Refill request: metformin', body: pharmacyBody('Samuel Price', '01/25/1979', 'metformin hydrochloride 1000 mg tablet', '1 tablet by mouth twice daily', 180) },
+  // The W5-E lever hosts' messages, each on the queue while its item is in LEVER.
+  ...(LEVER.includes('reserve')
+    ? [
+        { n: 15, who: 'mercer' as const, from: fromPatient('mercer'), sent: '2026-10-20T19:05:00-04:00', subject: 'Refills', body: 'Hello, the lisinopril 20 mg Dr. Okafor started me on this month is almost gone. Could you send a refill to the pharmacy? Rosalind Mercer' },
+        { n: 16, who: 'mercer' as const, from: fromPatient('mercer'), sent: '2026-10-20T19:08:00-04:00', subject: 'Refills', body: 'And could you also refill my metformin 1000 mg? Thank you, Rosalind Mercer' },
+      ]
+    : []),
+  ...(LEVER.includes('B') ? [{ n: 14, who: 'kaplan' as const, from: fromPatient('kaplan'), sent: '2026-10-21T17:45:00-04:00', subject: 'Refill', body: 'The lisinopril 20 mg from last month is nearly finished. Could you send a refill to the pharmacy? Leonard Kaplan' }] : []),
 ];
 
 const message = (i: Item): Resource => ({
@@ -395,6 +439,111 @@ const AMENDED_EGFR: Note[] = [{ time: '2026-07-24T10:30:00-04:00', text: 'Correc
 const MISLABELLED: Note[] = [{ time: '2026-10-15T09:20:00-04:00', text: 'Entered in error: specimen mislabelled, belongs to another patient.' }];
 const LATE: Note[] = [{ time: '2025-10-27T10:15:00-04:00', text: 'Repeat analysis after an analyzer fault; reported late.' }];
 
+// ---- the W5-E lever hosts (plan-amendment-w5 "T6 message-queue"; LEVER_HOSTS) ----
+// Two patients the overlay adds, each with a hand-written chart (no Synthea seed: the registry
+// numbers them after the cohort's last Patient, so no existing id moves), each in the world only
+// while its lever item is in LEVER. A Patient with the shape of the generated ones
+// (scripts/test/world-tells.test.ts addedPatientTells): the fields, extensions and identifier forms
+// of a base Patient of the same sex, which the overlay reads as its template, with this patient's
+// own identity, home and birthplace. No identifier: fixtures:build assigns the rule's MRN
+// (packages/env/mrn.ts).
+type Pt = Extract<Resource, { resourceType: 'Patient' }>;
+const patient = (world: WorldReader, template: string, id: string, who: Who, birthDate: string, phone: string, line: string, city: string, postalCode: string, marital: ['M' | 'S' | 'W' | 'D', string], mother: string, born: string, geo: [number, number]): Resource => {
+  const t = world.get('Patient', template) as Pt;
+  const { identifier: _mrn, ...rest } = t;
+  const n = NAMES[who];
+  const gender = n.gender ?? 'male';
+  const ext = (t.extension ?? []).map((e) => {
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName') return { ...e, valueString: mother };
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace') return { ...e, valueAddress: { ...e.valueAddress, city: born } };
+    if (e.url === 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex') return { ...e, valueCode: gender === 'female' ? 'F' : 'M' };
+    return e;
+  });
+  const home = t.address?.[0];
+  return {
+    ...rest,
+    id,
+    extension: ext,
+    name: [{ use: 'official', family: n.family, given: [n.given], prefix: [n.prefix] }],
+    telecom: [{ system: 'phone', value: phone, use: 'home' }],
+    gender,
+    birthDate,
+    address: [{ ...home, extension: (home?.extension ?? []).map((e) => (e.url === 'http://hl7.org/fhir/StructureDefinition/geolocation' ? { ...e, extension: [{ url: 'latitude', valueDecimal: geo[0] }, { url: 'longitude', valueDecimal: geo[1] }] } : e)), line: [line], city, state: 'MA', postalCode, country: 'US' }],
+    maritalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus', code: marital[0], display: marital[1] }], text: marital[1] },
+    generalPractitioner: [OKAFOR],
+  };
+};
+const BRIGID_UC = { provider: HOSPITAL };
+// St. Brigid's urgent care note, as its results interface files it with the visit's panel.
+const KAPLAN_UC = `St. Brigid Regional - Urgent Care Note
+Patient: Leonard Kaplan   DOB 1966-07-19
+Date: 2026-09-28   Arrived 17:10
+
+Chief complaint: nausea, vomiting and diarrhea since early afternoon after a restaurant lunch; light-headed on standing. No fever, no abdominal pain, no blood in the stool.
+Medications: lisinopril (dose recently changed by primary care); no others. Allergies: none known.
+Exam: HR 98, BP 118/74 sitting and 104/68 standing, dry mucous membranes; abdomen soft, nontender.
+Labs: basic metabolic panel drawn at 17:30: creatinine 1.24, potassium 4.3, bicarbonate 23, glucose 104.
+Treatment: 1 litre of intravenous fluids, ondansetron 4 mg. Tolerating oral fluids before discharge.
+Assessment: acute gastroenteritis with mild dehydration.
+Disposition: home at 18:40. Oral rehydration; return if unable to keep fluids down or dizziness persists. Follow up with primary care as planned.
+
+St. Brigid Regional Urgent Care`;
+
+// ---- Leonard Kaplan (B): m14, the same-day creatinines ----
+// Lisinopril 10 mg raised to 20 mg at a problem visit on 09-28 (the order written at 14:55); a
+// creatinine of 1.00 drawn at 08:40 that morning for the visit, and a St. Brigid Urgent Care panel at
+// 17:30 that evening (1.24, with mild dehydration); the follow-up BMP of 10-19: creatinine 1.46,
+// potassium 4.8. RBC-RX-05 §2's 30% rule reads "the last creatinine before that change": the 1.00.
+function kaplan(world: WorldReader): Resource[] {
+  return [
+    patient(world, PT.webb, HOST.kaplan, 'kaplan', '1966-07-19', '555-0142', '14 Orchard Lane', 'Amherst', '01002', ['M', 'Married'], 'Ruth Feld', 'Worcester', [42.3732, -72.5199]),
+    // The hosts' problem-list onsets are afternoon ones, as T1's and T4's hosts' are (the Condition
+    // residual TH:onsetDateTime=am in scripts/test/world-tells.test.ts, capped at 0.81).
+    condition('cond-t6-kaplan-htn', 'kaplan', HTN[0], HTN[1], '2019-02-11T14:35:00-05:00'),
+    medication('mr-t6-kaplan-lisinopril10', 'kaplan', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
+    // The hosts' panels carry the generated charts' value forms (two decimal places on the analytes
+    // that are not the item's lines, as most of Synthea's values; one on a potassium and an eGFR,
+    // as the texts cite them) and codes (scripts/test/world-tells.test.ts, the probe2 classifier).
+    ...bmp('kaplan-0928', 'kaplan', '2026-09-28T08:40:00-04:00', '2026-09-28T12:55:00-04:00', null, { na: 139.43, k: 4.5, cl: 101.68, co2: 24.57, bun: 14.21, cr: 1.0, glu: 96.34, ca: 9.41, egfr: 86.2 }, {}, { code: '24321-2' }),
+    encounter('enc-t6-kaplan-0928', 'kaplan', PROBLEM, '2026-09-28T14:30:00-04:00', '2026-09-28T15:00:00-04:00'),
+    note('doc-t6-kaplan-0928', 'kaplan', '2026-09-28T15:05:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('kaplan', 'Hypertension follow-up.\nBP 154/94 and 150/92 on lisinopril 10 mg daily; home readings 145 to 155 systolic. Pre-visit labs this morning: creatinine 1.00, potassium 4.5.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 3 weeks.'), 'enc-t6-kaplan-0928'),
+    medication('mr-t6-kaplan-lisinopril', 'kaplan', RX.lis20, 20, 'QD', '2026-09-28T14:55:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
+    encounter('enc-t6-kaplan-uc-0928', 'kaplan', PROBLEM, '2026-09-28T17:10:00-04:00', '2026-09-28T18:40:00-04:00', BRIGID_UC),
+    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.82, k: 4.3, cl: 99.63, co2: 22.94, bun: 18.72, cr: 1.24, glu: 103.47, ca: 9.18, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24321-2' }),
+    note('doc-t6-kaplan-uc-0928', 'kaplan', '2026-09-28T18:40:00-04:00', 'progress', HOSPITAL, HOSPITAL, KAPLAN_UC, 'enc-t6-kaplan-uc-0928'),
+    ...bmp('kaplan-1019', 'kaplan', '2026-10-19T16:05:00-04:00', '2026-10-19T20:40:00-04:00', null, { na: 138.91, k: 4.8, cl: 100.76, co2: 23.68, bun: 20.63, cr: 1.46, glu: 97.88, ca: 9.27, egfr: 54.7 }, {}, { high: ['cr'], code: '24321-2' }),
+  ];
+}
+
+// ---- Rosalind Mercer (reserve, inactive): m15, m16, the corrected creatinine and eGFR ----
+// Hypertension and type 2 diabetes; lisinopril 10 mg raised to 20 mg on 10-01 (the order at 14:40)
+// after a pre-visit creatinine of 1.00 on 09-30; the follow-up BMP of 10-20: creatinine 1.12 (12%
+// up), potassium 4.9, eGFR 52; HbA1c 7.3 on 06-08. Both refills renew at base; events.ts mercer-b1
+// corrects the 10-20 creatinine to 1.46 and the eGFR to 38.
+function mercer(world: WorldReader): Resource[] {
+  return [
+    patient(world, PT.hayes, HOST.mercer, 'mercer', '1954-04-09', '555-0168', '9 Linden Court', 'Greenfield', '01301', ['W', 'Widowed'], 'Margaret Doyle', 'Pittsfield', [42.5876, -72.5995]),
+    condition('cond-t6-mercer-htn', 'mercer', HTN[0], HTN[1], '2019-02-11T14:35:00-05:00'),
+    condition('cond-t6-mercer-t2dm', 'mercer', T2DM[0], T2DM[1], '2023-05-22T14:35:00-04:00'),
+    medication('mr-t6-mercer-lisinopril10', 'mercer', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
+    medication('mr-t6-mercer-metformin', 'mercer', RX.met1000, 1000, 'BID', '2025-10-27T09:15:00-04:00', 'Type 2 diabetes mellitus', YEAR_BID),
+    encounter('enc-t6-mercer-0608', 'mercer', VISIT, '2026-06-08T09:00:00-04:00', '2026-06-08T09:30:00-04:00'),
+    obs('obs-t6-mercer-a1c-0608', 'mercer', C.a1c, 7.3, '%', '2026-06-08T09:10:00-04:00', '2026-06-08T14:30:00-04:00', 'enc-t6-mercer-0608', { high: true }),
+    ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 139.77, k: 4.6, cl: 102.58, co2: 24.86, bun: 16.83, cr: 1.0, glu: 131.42, ca: 9.36, egfr: 59.9 }, {}, { code: '24321-2' }),
+    encounter('enc-t6-mercer-1001', 'mercer', PROBLEM, '2026-10-01T14:20:00-04:00', '2026-10-01T14:50:00-04:00'),
+    // No note of the 10-01 visit: a planted note under 30 days old is the DocumentReference residual
+    // O:age=<30d in scripts/test/world-tells.test.ts (0.751 over its 0.75 cap in the reserve state with
+    // T4's and T6's hosts in the world); the dose change is the order's reason and the visit's.
+    medication('mr-t6-mercer-lisinopril', 'mercer', RX.lis20, 20, 'QD', '2026-10-01T14:40:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
+    ...bmp('mercer-1020', 'mercer', '2026-10-20T09:05:00-04:00', '2026-10-20T14:35:00-04:00', null, { na: 139.23, k: 4.9, cl: 101.94, co2: 24.31, bun: 19.57, cr: 1.12, glu: 127.84, ca: 9.29, egfr: 52.3 }, {}, { code: '24321-2' }),
+  ];
+}
+// The hosts' messages (MSGS, each on the queue while its item is in LEVER): m14 Kaplan (B), m15 and
+// m16 Mercer (the reserve); their Communication and inbox Task keys are lever keys too.
+const LEVER_MESSAGES = [14, 15, 16] as const;
+// The hosts of the active static lever items (overlay isolation: a Patient the overlay adds is its own).
+const leverHosts = (world: WorldReader, lever: readonly string[]): Resource[] => [...(lever.includes('B') ? kaplan(world) : []), ...(lever.includes('reserve') ? mercer(world) : [])];
+
 const overlay: Overlay = {
   task: 'T6',
   names: {
@@ -402,6 +551,9 @@ const overlay: Overlay = {
     'org-t6-harbor': 'org-harbor-lab',
     'org-t6-brigid-lab': 'org-st-brigid-lab',
   },
+  // The hosts' fixed slots (packages/env/overlay.ts TASKS T6 added: pt-0070 Kaplan, pt-0071 Mercer),
+  // the same in every LEVER state, so a toggle moves no other id.
+  added: { [LEVER_HOSTS.B]: 0, [LEVER_HOSTS.reserve]: 1 },
   build(world: WorldReader) {
     const dropped = new Set(DROP_ENCOUNTERS.map((id) => `Encounter/${id}`));
     const slots = new Set(Object.values(PT) as string[]);
@@ -430,7 +582,7 @@ const overlay: Overlay = {
     ];
     const unique = [...new Map(remove.map((r) => [`${r.resourceType}/${r.id}`, r])).values()];
 
-    const patients = (Object.keys(PT) as Who[]).map((who): Resource => {
+    const patients = (Object.keys(PT) as Slot[]).map((who): Resource => {
       const p = world.get('Patient', PT[who]) as Extract<Resource, { resourceType: 'Patient' }>;
       const n = NAMES[who];
       return { ...p, name: [{ use: 'official', family: n.family, given: [n.given], prefix: [n.prefix] }], ...(n.gender ? { gender: n.gender } : {}), generalPractitioner: [OKAFOR] };
@@ -540,14 +692,41 @@ const overlay: Overlay = {
         recordedDate: '2019-03-04T10:00:00-05:00',
         recorder: OKAFOR,
       },
+
+      // The W5-E lever hosts, each present while its item is in LEVER.
+      ...leverHosts(world, LEVER),
     ];
     return {
       put,
       remove: unique,
+      // Every key a LEVER toggle adds: each host and every record of its chart, present in this
+      // build or not (the central lever-invariant test checks that no state adds a key this list
+      // lacks; item A, webb-a1, adds nothing to the world, its records arrive in the trial).
+      lever: [...leverHosts(world, ['B', 'reserve']).map((r) => r.id!), ...LEVER_MESSAGES.flatMap((n) => [`comm-t6-m${n}`, `task-t6-m${n}`])],
       lint: {
         thresholds: [
           // Ruling R7: each value an item turns on, the trap values included (the hemolyzed potassium,
           // the eGFR entered in error), clears its threshold by the lint margin.
+          // W5-E B: the 10-19 creatinine against 30% over the morning baseline (the deciding line)
+          // and over the evening value (the lure's line); the reserve's creatinine as first reported
+          // and its eGFRs (the correction's values are in expected.ts LEVER_MARGINS).
+          ...(LEVER.includes('B')
+            ? [
+                { quantity: 'scr' as const, threshold: 1.3, observation: 'obs-t6-kaplan-1019-cr', label: 'B: 30% over the 1.00 drawn before the dose was raised' },
+                { quantity: 'scr' as const, threshold: 1.612, observation: 'obs-t6-kaplan-1019-cr', label: 'B: 30% over the 1.24 of that evening, the lure' },
+                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-kaplan-1019-k' },
+                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-kaplan-0928-k' },
+                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-kaplan-uc-0928-k' },
+              ]
+            : []),
+          ...(LEVER.includes('reserve')
+            ? [
+                { quantity: 'scr' as const, threshold: 1.3, observation: 'obs-t6-mercer-1020-cr', label: 'reserve: 30% over the 1.00 before the dose was raised, as first reported' },
+                { quantity: 'egfr' as const, threshold: 45, observation: 'obs-t6-mercer-1020-egfr' },
+                { quantity: 'egfr' as const, threshold: 45, observation: 'obs-t6-mercer-0930-egfr' },
+                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-mercer-1020-k' },
+              ]
+            : []),
           { quantity: 'potassium', threshold: 5.5, observation: 'obs-t6-hayes-1005-k' },
           { quantity: 'potassium', threshold: 5.5, observation: 'obs-t6-hayes-0414-k' },
           { quantity: 'potassium', threshold: 5.5, observation: 'obs-t6-odum-0120-k' },
@@ -563,18 +742,20 @@ const overlay: Overlay = {
           {
             name: 'BMP within 12 months (collection date)',
             boundary: { months: 12 },
-            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-park-0421-k', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k'],
+            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-park-0421-k', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k', ...(LEVER.includes('B') ? ['obs-t6-kaplan-1019-k'] : []), ...(LEVER.includes('reserve') ? ['obs-t6-mercer-1020-k'] : [])],
             traps: { 'doc-t6-park-1002': 'filed inside the window, collected outside it', 'obs-t6-webb-1020-k': 'collected outside the window, issued inside it' },
           },
-          { name: 'Visit within 15 months', boundary: { months: 15 }, resources: ['enc-t6-park-0720', 'enc-t6-webb-0928', 'enc-t6-odum-0120'] },
+          { name: 'Visit within 15 months', boundary: { months: 15 }, resources: ['enc-t6-park-0720', 'enc-t6-webb-0928', 'enc-t6-odum-0120', ...(LEVER.includes('B') ? ['enc-t6-kaplan-0928'] : []), ...(LEVER.includes('reserve') ? ['enc-t6-mercer-1001'] : [])] },
           {
             name: 'HbA1c within 6 months (collection date)',
             boundary: { months: 6 },
-            resources: ['obs-t6-park-a1c-0720', 'obs-t6-brooks-a1c-0112', 'doc-t6-brooks-0412', 'obs-t6-price-a1c-0330', 'doc-t6-price-0819', 'obs-t6-webb-a1c-0928'],
+            resources: ['obs-t6-park-a1c-0720', 'obs-t6-brooks-a1c-0112', 'doc-t6-brooks-0412', 'obs-t6-price-a1c-0330', 'doc-t6-price-0819', 'obs-t6-webb-a1c-0928', ...(LEVER.includes('reserve') ? ['obs-t6-mercer-a1c-0608'] : [])],
             traps: { 'doc-t6-brooks-0412': 'filed inside the window, collected outside it', 'obs-t6-price-a1c-0330': 'the in-house HbA1c just outside the window' },
           },
         ],
-        leakage: { answers: ['1.62', '39'], distractors: [] },
+        // W5-E: the B lure (the evening creatinine) and the reserve's values are distractor or answer
+        // tokens the policy and instruction must not carry.
+        leakage: { answers: ['1.62', '39', '1.46', '1.24', '38'], distractors: [...(LEVER.includes('B') ? ['obs-t6-kaplan-uc-0928-cr'] : [])] },
       },
     };
   },

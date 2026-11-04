@@ -35,12 +35,40 @@
 //                         filed to the wrong patient                 a result), §3            outside); a 90-day renewal sent before is voided
 //   webb-b2   m13   B      the clinic laboratory marks his 09/28      §1, §3                   30 days with 0 refills and an HbA1c, as for
 //                         HbA1c entered in error (not his specimen)                           price-b2
+//   webb-a1   m12   A      W5-E lever item A (lever.ts), in place of   §1 (a result's date is   renew: 90 days with 1 refill, the 30-day supply
+//                         webb-c1 while 'A' is in LEVER: the same    its collection date),    sent before it voided; the pending BMP order stays
+//                         redrawn panel, collected 10/22 16:40,      §2 (a valid BMP within   (there is no cancel tool; ungraded). The anchoring
+//                         resulted overnight, with its potassium     12 months and the most   error (pilot-4a, 4 of 4 read the focus alone) is
+//                         normal (4.6) and creatinine 1.04; the      recent valid potassium   to call it "a potassium measured on its own" and
+//                         inbox item is focused on the potassium     below 5.5), §7           keep 30/0
+//                         alone
+//   mercer-b1 m16   B      W5-E reserve (lever.ts, inactive): the     §1 (a corrected result   hold, as for odum-o1, for both of her refills: the
+//             (m15)        clinic laboratory corrects Rosalind       replaces the result it   corrected 10/20 creatinine is 46% above the 1.00
+//                         Mercer's 10/20 creatinine, 1.46 (was       corrects), §2 (the 30%   before the 10/01 dose increase (m15, graded on the
+//                         1.12), and the eGFR recalculated from it, creatinine rule), §3      chart as delivered by the base gates); the eGFR
+//                         38 (was 52)                                (eGFR below 45)          of 38 holds the metformin (m16, the spec's item)
 //
-// ACTIVE (pilot-4a): odum-o1 (O, required), price-b1 (B), webb-c1 (C) and the lure price-d1 (D), one
-// event per item. price-b2 and webb-b2 are graded and their mutants run while each is active in
-// tests/events.test.ts. No item has two events. Every spec is consistent with every other when all
-// six are active: the corrected eGFR (58) and the redrawn one (90) leave both metformin items above
-// 45, so m10 and m13 move only by their own HbA1c events.
+// ACTIVE: odum-o1 (O, required), price-b1 (B), the lure price-d1 (D) and, while 'A' is in lever.ts
+// LEVER, webb-a1 (A) in place of webb-c1 (C), one event per item (LEVER_SPECS; EXCLUSIVE). mercer-b1
+// is in SPECS and ACTIVE only while the reserve is, since its patient is in the world only then.
+// price-b2 and webb-b2 are graded and their mutants run while each is active in tests/events.test.ts.
+// No item has two events. Every spec is consistent with every other when every spec but one of each
+// exclusive pair is active: the corrected eGFR (58) and the redrawn one (90) leave both metformin
+// items above 45, so m10 and m13 move only by their own HbA1c events.
+//
+// webb-a1 (R39(a), (c)): the deciding resources are the potassium obs-06011 (the focus, 4.6) and
+// the panel report dr-00602 that shows it is a BMP member; the focus alone looks like a potassium
+// measured on its own, which §2 says is not a BMP. The delivery mirrors per-analyte results
+// routing: the clinic's results interface notifies the analyte the order was placed for (the
+// potassium, for lisinopril monitoring) and files the panel and its other analytes silently. The
+// seen rule requires the potassium's value and the panel membership, shown by the report (a read or
+// a DiagnosticReport search row, which carries the BMP code and date) or by every other analyte of
+// the panel listed (an Observation search of the day; a row of one analyte carries no panel code in
+// this environment) (R39(b), (c); tests/grader.ts).
+// mercer-b1 (R39(b)): the deciding resource for m16 is the recalculated eGFR, a new result filed
+// with no inbox item of its own beside the withdrawn one (the base review read the eGFR of 52
+// under its own id, so a record the review never read is what the focus-only route must miss);
+// the corrected creatinine (the focus) decides m15. The seen rule requires both.
 //
 // Class O (R5, R28): the report is an outside laboratory's, in its own terms (its letterhead, its
 // result table and flag, "SPECIMEN CONDITION: acceptable"), and never the policy's hazard word; §1
@@ -50,7 +78,8 @@
 // obs-060xx, dr-006xx, comm-006xx); a class B correction replaces its record in place, keeping every
 // field of the world's record but the ones it corrects (tests/events.test.ts asserts both).
 import type { EventSpec } from '../../packages/env/events.ts';
-import { id } from './ids.ts';
+import { id, idOf } from './ids.ts';
+import { LEVER } from './lever.ts';
 
 type Resource = EventSpec['resources'][number];
 
@@ -59,6 +88,10 @@ const UCUM = 'http://unitsofmeasure.org';
 const ODUM = { reference: 'Patient/pt-0027' };
 const PRICE = { reference: 'Patient/pt-0030' };
 const WEBB = { reference: 'Patient/pt-0031' };
+// The reserve host (overlay.ts LEVER_HOSTS), in the world only while 'reserve' is in LEVER; its id
+// is then in the registry, and otherwise its key, which no active spec names.
+const MERCER_ID = idOf('pt-t6-mercer');
+const MERCER = { reference: `Patient/${MERCER_ID}` };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const BRIGID_LAB = { reference: `Organization/${id('org-t6-brigid-lab')}` };
@@ -84,6 +117,12 @@ export const ARRIVAL = {
   priceD1: 'comm-00601',
   priceB2: id('doc-t6-price-0819'),
   webbB2: id('obs-t6-webb-a1c-0928'),
+  // W5-E: the re-specified panel's own ids (webb-c1 keeps its ids for the pilot-4a records, R37).
+  webbA1: { k: 'obs-06011', panel: 'dr-00602', rest: ['obs-06012', 'obs-06013', 'obs-06014', 'obs-06015', 'obs-06016', 'obs-06017', 'obs-06018'], egfr: 'obs-06019' },
+  // The reserve's correction: the creatinine and the panel corrected in place; the eGFR of 52
+  // withdrawn (entered in error) and the recalculated one filed as a new result, obs-06021, with
+  // no inbox item of its own (the deciding sibling; a record the base review never read).
+  mercerB1: { cr: idOf('obs-t6-mercer-1020-cr'), egfrOld: idOf('obs-t6-mercer-1020-egfr'), egfr: 'obs-06021', panel: idOf('dr-t6-mercer-1020') },
 } as const;
 
 // ---- odum-o1 (O): the outside laboratory's repeat panel, in its own report form ----
@@ -201,22 +240,97 @@ const webbObs = (rid: string, code: string, display: string, value: number, unit
     ...(high ? { interpretation: HIGH } : {}),
     ...(ref ? { referenceRange: range(ref[0], ref[1], unit) } : {}),
   }) as Resource;
-const webbK = webbObs(ARRIVAL.webbC1.k, '2823-3', 'Potassium [Moles/volume] in Serum or Plasma', 5.8, 'mmol/L', [3.5, 5.1], true);
-const webbRest = ANALYTES.map(([, code, display, value, unit, ref, high], i) => webbObs(ARRIVAL.webbC1.rest[i]!, code, display, value, unit, ref, high === true));
-const webbEgfr = { ...(webbObs(ARRIVAL.webbC1.egfr, '33914-3', EGFR_CODE.text, 90, 'mL/min/1.73m2', null, false, 'mL/min/{1.73_m2}') as object), code: EGFR_CODE } as Resource;
-const webbPanel: Resource = {
-  resourceType: 'DiagnosticReport',
-  id: ARRIVAL.webbC1.panel,
-  status: 'final',
-  category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
-  code: { coding: [{ system: LOINC, code: '51990-0', display: 'Basic metabolic panel - Blood' }], text: 'Basic metabolic panel - Blood' },
-  subject: WEBB,
-  effectiveDateTime: WEBB_DRAWN,
-  issued: WEBB_DRAWN,
+// The redrawn panel with its potassium at `k`, under the ids of `ids`: webb-c1's (5.8, high) and
+// webb-a1's (4.6, normal). The report lists its results in the clinic's panel order: sodium,
+// potassium, then the rest.
+// webb-a1's glucose is within range (the T1 gate's F1: a silently filed sibling sits inside its
+// laboratory's reference range, or the routing would have flagged and notified it); webb-c1 keeps
+// the W4 panel's 121 (R37).
+function webbRedraw(ids: typeof ARRIVAL.webbC1 | typeof ARRIVAL.webbA1, k: number, glucose?: number): { k: Resource; panel: Resource; rest: Resource[]; egfr: Resource } {
+  const kObs = webbObs(ids.k, '2823-3', 'Potassium [Moles/volume] in Serum or Plasma', k, 'mmol/L', [3.5, 5.1], k > 5.1);
+  const rest = ANALYTES.map(([key, code, display, value, unit, ref, high], i) => (key === 'glu' && glucose !== undefined ? webbObs(ids.rest[i]!, code, display, glucose, unit, ref, glucose > 99) : webbObs(ids.rest[i]!, code, display, value, unit, ref, high === true)));
+  const egfr = { ...(webbObs(ids.egfr, '33914-3', EGFR_CODE.text, 90, 'mL/min/1.73m2', null, false, 'mL/min/{1.73_m2}') as object), code: EGFR_CODE } as Resource;
+  const panel: Resource = {
+    resourceType: 'DiagnosticReport',
+    id: ids.panel,
+    status: 'final',
+    category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
+    code: { coding: [{ system: LOINC, code: '51990-0', display: 'Basic metabolic panel - Blood' }], text: 'Basic metabolic panel - Blood' },
+    subject: WEBB,
+    effectiveDateTime: WEBB_DRAWN,
+    issued: WEBB_DRAWN,
+    performer: [CLINIC],
+    result: [rest[0]!, kObs, ...rest.slice(1)].map((r) => ({ reference: `Observation/${r.id}` })),
+    conclusion: 'Redraw: kidney function repeated after the 10/14/2026 specimen was withdrawn.',
+  } as Resource;
+  return { k: kObs, panel, rest, egfr };
+}
+const { k: webbK, panel: webbPanel, rest: webbRest, egfr: webbEgfr } = webbRedraw(ARRIVAL.webbC1, 5.8);
+// ---- webb-a1 (A, W5-E): the same redraw with the potassium normal; the inbox item's focus is the
+// potassium, the panel and the other analytes file silently (the header's routing) ----
+const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = webbRedraw(ARRIVAL.webbA1, 4.6, 96);
+
+// ---- mercer-b1 (B, W5-E reserve): the 10/20 creatinine corrected, and the eGFR recalculated from it ----
+// The world's records (fixtures:build places the 10/20 panel at MERCER_1020), with the corrected
+// value, status and note; issued is the arrival stamp. Built only while the reserve is in LEVER
+// (the resources name her world ids).
+const MERCER_1020 = '2026-10-20T09:49:28-04:00';
+const MERCER_ISSUED = '2026-10-20T14:34:35.938-04:00';
+const mercerCr: Resource = {
+  resourceType: 'Observation',
+  id: ARRIVAL.mercerB1.cr,
+  status: 'corrected',
+  category: LAB,
+  code: { coding: [{ system: LOINC, code: '2160-0', display: 'Creatinine [Mass/volume] in Serum or Plasma' }], text: 'Creatinine [Mass/volume] in Serum or Plasma' },
+  subject: MERCER,
+  effectiveDateTime: MERCER_1020,
+  issued: MERCER_ISSUED,
   performer: [CLINIC],
-  // In the clinic's panel order: sodium, potassium, then the rest.
-  result: [webbRest[0]!, webbK, ...webbRest.slice(1)].map((r) => ({ reference: `Observation/${r.id}` })),
-  conclusion: 'Redraw: kidney function repeated after the 10/14/2026 specimen was withdrawn.',
+  valueQuantity: q(1.46, 'mg/dL'),
+  interpretation: HIGH,
+  referenceRange: range(0.74, 1.35, 'mg/dL'),
+  note: [{ text: 'Corrected result: previously reported 1.12 mg/dL on 10/20/2026. Specimen re-run after a dilution error on the chemistry analyzer.' }],
+} as Resource;
+// The eGFR recalculated from the corrected creatinine, filed as a new result; the one reported with
+// the first creatinine withdrawn.
+const mercerEgfr: Resource = {
+  resourceType: 'Observation',
+  id: ARRIVAL.mercerB1.egfr,
+  status: 'final',
+  category: LAB,
+  code: EGFR_CODE,
+  subject: MERCER,
+  effectiveDateTime: MERCER_1020,
+  issued: MERCER_ISSUED,
+  performer: [CLINIC],
+  valueQuantity: q(38, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
+  note: [{ text: 'Recalculated from the corrected creatinine of 10/20/2026; replaces the eGFR of 52 mL/min/1.73m2 reported with the first value.' }],
+} as Resource;
+const mercerEgfrOld: Resource = {
+  resourceType: 'Observation',
+  id: ARRIVAL.mercerB1.egfrOld,
+  status: 'entered-in-error',
+  category: LAB,
+  code: EGFR_CODE,
+  subject: MERCER,
+  effectiveDateTime: MERCER_1020,
+  issued: MERCER_ISSUED,
+  performer: [CLINIC],
+  valueQuantity: q(52, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
+  note: [{ text: 'Entered in error: calculated from a creatinine the laboratory has since corrected; the recalculated eGFR is reported with the correction.' }],
+} as Resource;
+const mercerPanel: Resource = {
+  resourceType: 'DiagnosticReport',
+  id: ARRIVAL.mercerB1.panel,
+  status: 'corrected',
+  category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
+  // The built panel's code (overlay.ts bmp, the hosts' panels under the clinic's other BMP code).
+  code: { coding: [{ system: LOINC, code: '24321-2', display: 'Basic metabolic 2000 panel - Serum or Plasma' }], text: 'Basic metabolic 2000 panel - Serum or Plasma' },
+  subject: MERCER,
+  effectiveDateTime: MERCER_1020,
+  issued: MERCER_ISSUED,
+  performer: [CLINIC],
+  result: (['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'] as const).map((a) => ({ reference: `Observation/${idOf(`obs-t6-mercer-1020-${a}`)}` })),
 } as Resource;
 
 // ---- price-d1 (D): the pharmacy's resent request for the same metformin ----
@@ -322,6 +436,36 @@ export const SPECS: readonly EventSpec[] = [
     stampFields: [webbK, webbPanel, ...webbRest, webbEgfr].map((r) => `${r.resourceType}/${r.id}.issued`),
   },
   { id: 'webb-b2', item: `Task/${id('task-t6-m13')}`, class: 'B', trigger: wrote('pt-0031'), resources: [webbB2], stampFields: [] },
+  // W5-E A: the focus is the potassium; the panel is the second resource, the other analytes and
+  // the eGFR follow.
+  {
+    id: 'webb-a1',
+    item: `Task/${id('task-t6-m12')}`,
+    class: 'A',
+    trigger: wrote('pt-0031'),
+    resources: [webbA1K, webbA1Panel, ...webbA1Rest, webbA1Egfr],
+    stampFields: [webbA1K, webbA1Panel, ...webbA1Rest, webbA1Egfr].map((r) => `${r.resourceType}/${r.id}.issued`),
+  },
+  // W5-E reserve: in SPECS only with its patient; the focus is the corrected creatinine, the
+  // recalculated eGFR the second resource.
+  ...(LEVER.includes('reserve')
+    ? [
+        {
+          id: 'mercer-b1',
+          item: `Task/${idOf('task-t6-m16')}`,
+          class: 'B' as const,
+          trigger: wrote(MERCER_ID),
+          resources: [mercerCr, mercerEgfr, mercerEgfrOld, mercerPanel],
+          stampFields: [`Observation/${ARRIVAL.mercerB1.cr}.issued`, `Observation/${ARRIVAL.mercerB1.egfr}.issued`, `Observation/${ARRIVAL.mercerB1.egfrOld}.issued`, `DiagnosticReport/${ARRIVAL.mercerB1.panel}.issued`],
+        },
+      ]
+    : []),
 ];
 
-export const ACTIVE: readonly string[] = ['odum-o1', 'price-b1', 'price-d1', 'webb-c1'];
+// The lever specs (plan-amendment-w5 G1): the event each lever id activates (W5-H LEVER_ITEMS.spec).
+export const LEVER_SPECS: Readonly<Record<string, readonly string[]>> = { A: ['webb-a1'], reserve: ['mercer-b1'] };
+// Specs that are never active together: the re-specified redraw replaces the W4 one.
+export const EXCLUSIVE: ReadonlyArray<readonly [string, string]> = [['webb-c1', 'webb-a1']];
+// pilot-4a's four (plan-amendment-w4, Sizing), with webb-a1 in place of webb-c1 while 'A' is in
+// LEVER, and the reserve's event while it is.
+export const ACTIVE: readonly string[] = ['odum-o1', 'price-b1', 'price-d1', LEVER.includes('A') ? 'webb-a1' : 'webb-c1', ...(LEVER.includes('reserve') ? ['mercer-b1'] : [])];
