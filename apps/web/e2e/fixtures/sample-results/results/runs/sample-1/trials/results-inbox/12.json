@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:12",
   "task_id": "results-inbox",
-  "task_version": "173f637c971b428cde903a0258a72f26ff2a49ac157e207dd6fa939eb3776968",
+  "task_version": "cf5a2ea27d4a8c79cb79e3914586a95352e0561cd0a5a9f18252565d3092b27d",
   "env_version": "359bb51cd6417d68900ef32a78cbf2bdb8a3e3b1c7c346be418806a5dc0692dd",
-  "grader_task_version": "7b4b529e55f34e22615791846ecab15d3a71448735135b56ab4ec1a0218d9755",
+  "grader_task_version": "b8cf3e9edc0e713bef9f38c348ceabc6f9bfd39befb4030a33a208b310a48208",
   "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
     "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",

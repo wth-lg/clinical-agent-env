@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:discharge-medrec/17",
   "task_id": "discharge-medrec",
-  "task_version": "ffb60b0387295551239afced2c95123ba9bc089209729ab06e158bb1209d31a8",
+  "task_version": "1bbcb0b8fd31de8c65072152c98741aaa12375823076bea8bc494a1cf408f711",
   "env_version": "aceb38ca22128e59def31fc16da5024d1fbae413bca99ee588f2448ef2669994",
-  "grader_task_version": "96bfe6bcc98504e9ea343f27dbf05c0cdf945efdd625b240d83772a77d5f2587",
+  "grader_task_version": "1f9cb1dfb1f6be1244603c75525d95f4c16756b6f010691cbd5da0b224fe0aa5",
   "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
     "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
@@ -996,7 +996,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:15:06.641Z"
+          "at": "2026-11-04T20:37:27.941Z"
         }
       },
       {
@@ -1014,7 +1014,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:15:06.641Z"
+          "at": "2026-11-04T20:37:27.941Z"
         }
       }
     ]

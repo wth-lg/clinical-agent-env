@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:message-queue/19",
   "task_id": "message-queue",
-  "task_version": "81acb7dd9fbbc1b28281433b9d5f4bde72a55e8c7ea20ae2fc47b15739fe0ca7",
+  "task_version": "b759f5a29688c70f08c1c656b61f1911ceb12f5766a95a3d1cda3386872cb3c6",
   "env_version": "970fe35aef67cb5b8f64480d109647c728333b63f3e5704e863064cb576c93d4",
-  "grader_task_version": "15e97fdc9546ab377b7557aaa1fa136dfa35c06dbfb0caf25e4060db8eb6dc7b",
+  "grader_task_version": "076ed39cad117c8640a4b78f507ab9e173b89d94419af6cd9ed5ed7a9ca9df70",
   "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
     "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
@@ -791,7 +791,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T17:59:46.972Z"
+          "at": "2026-11-04T20:39:23.460Z"
         }
       },
       {
@@ -809,7 +809,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T17:59:46.972Z"
+          "at": "2026-11-04T20:39:23.460Z"
         }
       },
       {
@@ -827,7 +827,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T17:59:46.972Z"
+          "at": "2026-11-04T20:39:23.460Z"
         }
       },
       {
@@ -845,7 +845,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T17:59:46.972Z"
+          "at": "2026-11-04T20:39:23.460Z"
         }
       }
     ]
