@@ -1480,6 +1480,22 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
         fixed.add(sec(t.v));
       }
     }
+    // A chart with no generated record (a Patient an overlay adds, packages/env/overlay.ts TASKS
+    // added; W5, builder-302) has no clock of its own, and without one every planted time there
+    // would draw its own second, so the chart would read as planted through its clock alone
+    // (scripts/test/tells.ts CMODE). It gets a clock as Synthea's charts have: one minute-and-second
+    // for its starts and one for its ends, drawn from the patient's id, so its records share them
+    // and a toggle of another chart moves none of them. A chart with generated records is untouched.
+    // The id is hashed on its own first: FNV-1a mixes the varying last characters of consecutive
+    // ids poorly modulo 60, so pt-0061, pt-0062 and pt-0063 took minutes 06, 07 and 08.
+    const seeded = clock.size === 0;
+    if (seeded) {
+      const mmss = (salt: string) => `${String(fnv(`chart-clock-m:${salt}:${fnv(p)}`) % 60).padStart(2, '0')}:${String(1 + (fnv(`chart-clock-s:${salt}:${fnv(p)}`) % 59)).padStart(2, '0')}`;
+      clock.set('effectiveDateTime', new Map([[mmss('start'), 3]]));
+      clock.set('period.end', new Map([[mmss('end'), 3]]));
+      // Issue times (UNTIMED paths) are left to the fill, as a generated report's are (profileWorld
+      // draws them); a seeded issue clock measured no gain and lifted T6's DiagnosticReport pair.
+    }
     const everyTime = () => mine.flatMap((r) => stamps(r).filter((t) => !( !planted.has(key(r)) && UNTIMED.test(t.path))).map((t) => ({ r, ...t, s: sec(t.v) })));
 
     // At the visit's start: the planted records of a visit recorded within its first hour, as far
@@ -1561,10 +1577,17 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
         const left = ss.length - i - 1;
         const top = hi - left;
         const counts = new Map<string, number>();
-        for (const typed of pathsAt.get(s0) ?? []) {
+        // On a seeded chart, an instant that is both a start and an end (a visit starting as the last
+        // one ends, a zero-length participant period) is a start: its end paths draw from the start
+        // pool with it, not from the ends'. A chart with a generated clock keeps its merged pools, so
+        // the cohort's planted records (T3's and T1's visit-end orders among them) stay where they are.
+        const paths = [...(pathsAt.get(s0) ?? [])];
+        const hasStart = seeded && paths.some((typed) => START.test(typed.slice(typed.indexOf(':') + 1)));
+        for (const typed of paths) {
           // The same type's times at the path; where the chart's generated records of the type seldom
           // carry it, any type's; and failing those, the chart's starts, or its ends.
           const path = typed.slice(typed.indexOf(':') + 1);
+          if (hasStart && END.test(path)) continue;
           const kind = START.test(path) ? START : END.test(path) ? END : undefined;
           const enough = (x: Array<[string, number]>) => x.reduce((m, [, c]) => m + c, 0) >= 3;
           const own = [...(clock.get(typed) ?? [])];
