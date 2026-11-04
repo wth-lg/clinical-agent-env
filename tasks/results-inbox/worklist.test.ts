@@ -9,6 +9,7 @@ import { loadStore } from '../../packages/env/fixture-source.ts';
 import { noteText } from '../../packages/env/tools/read/notes.ts';
 import { CLASSES, expected, LEVER } from './expected.ts';
 import { IDS } from './ids.ts';
+import { isPlanted } from '../planted.ts';
 
 const I = expected.items;
 const store = await loadStore(matrixEnv().world);
@@ -36,9 +37,12 @@ describe('results-inbox worklist', () => {
     expect(Object.keys(IDS).filter((k) => k.startsWith('pt-')).sort()).toEqual(Object.values(HOSTS).sort());
     // Each host is numbered after the cohort's last Patient (packages/env/overlay.ts), so no base
     // id moved. (The bound is computed: a literal base patient id in a task file pins that
-    // patient's visits in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask.)
+    // patient's visits in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask.) The
+    // cohort's last Patient is the last one no task's registry names (tasks/planted.ts): the
+    // central slots number T4's hosts after T2's, so a bound over every Patient but T2's own
+    // fails once T4's are in the world (builder-301, the second merge turn).
     const added: string[] = Object.values(HOSTS).map((k) => (IDS as Readonly<Record<string, string>>)[k]!);
-    const last = Math.max(...[...store.resources()].filter((r) => r.resourceType === 'Patient' && !added.includes(r.id!)).map((r) => Number(r.id!.slice(3))));
+    const last = Math.max(...[...store.resources()].filter((r) => r.resourceType === 'Patient' && !isPlanted(r.id)).map((r) => Number(r.id!.slice(3))));
     for (const h of added) expect(Number(h.slice(3)) > last, h).toBe(true);
   });
 
