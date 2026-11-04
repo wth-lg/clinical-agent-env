@@ -102,8 +102,8 @@ export const kaplanHold = task(
 
 // ---- Rosalind Mercer (W5-E reserve): m15, m16 ----
 export const MERCER_LOOK: ScriptTurn = { calls: [labs(PT.mercer, '2160-0'), labs(PT.mercer, '2823-3'), search('MedicationRequest', PT.mercer, { status: 'active,stopped' }), labs(PT.mercer, '4548-4'), labs(PT.mercer, '33914-3')] };
-export const mercerLisinopril = order(PT.mercer, RX.lis20, 20, 'QD', 90, 1, 'RBC-RX-05 §2: potassium 4.9, creatinine 1.12 on 10/15/2026 (12% above 1.00 before the dose increase)');
-export const mercerMetformin = order(PT.mercer, RX.met1000, 1000, 'BID', 90, 1, 'RBC-RX-05 §3: eGFR 52 on 10/15/2026; HbA1c 7.3% on 06/08/2026');
+export const mercerLisinopril = order(PT.mercer, RX.lis20, 20, 'QD', 90, 1, 'RBC-RX-05 §2: potassium 4.9, creatinine 1.12 on 10/20/2026 (12% above 1.00 before the dose increase)');
+export const mercerMetformin = order(PT.mercer, RX.met1000, 1000, 'BID', 90, 1, 'RBC-RX-05 §3: eGFR 52 on 10/20/2026; HbA1c 7.3% on 06/08/2026');
 
 // Each patient's decisions on the chart as it stands at the start, each message closed: the first
 // writes (FIRST order). A case replaces one patient's list through RouteOpts.first.
@@ -164,8 +164,8 @@ export const HOLD_TASK = {
   odum: task(PT.odum, 'Lisinopril 10 mg refill request, not refilled (RBC-RX-05 §2): potassium 5.8 on the St. Brigid repeat panel collected 10/20/2026, after the hemolyzed one of 08/27. The 90-day renewal sent this morning was cancelled. Please review.', MR.odum, PCP, 'urgent', '2026-10-26'),
   price: task(PT.price, 'Lisinopril 20 mg refill request, not refilled (RBC-RX-05 §2): the 10/06/2026 creatinine was corrected today to 1.49, 35% above 1.10 on 09/18/2026, 18 days after the dose was raised. Potassium 5.2. The 90-day renewal sent this morning was cancelled. Please review.', MR.priceLis, PCP, 'urgent', '2026-10-26'),
   webb: task(PT.webb, 'Lisinopril 10 mg refill request, not refilled (RBC-RX-05 §2): potassium 5.8 on the panel collected 10/22/2026. The 30-day supply sent this morning was cancelled. Please review.', MR.webbLis, PCP, 'urgent', '2026-10-26'),
-  mercerLis: task(PT.mercer, 'Lisinopril 20 mg refill request, not refilled (RBC-RX-05 §2): the 10/15/2026 creatinine was corrected today to 1.46, 46% above 1.00 on 09/30/2026, 14 days after the dose was raised. The 90-day renewal sent this morning was cancelled. Please review.', MR.mercerLis, PCP, 'urgent', '2026-10-26'),
-  mercerMet: task(PT.mercer, 'Metformin 1000 mg refill request, not refilled (RBC-RX-05 §3): the eGFR of 10/15/2026 was recalculated today to 38 from the corrected creatinine. The 90-day renewal sent this morning was cancelled. Please review.', MR.mercerMet, PCP, 'urgent', '2026-10-26'),
+  mercerLis: task(PT.mercer, 'Lisinopril 20 mg refill request, not refilled (RBC-RX-05 §2): the 10/20/2026 creatinine was corrected today to 1.46, 46% above 1.00 on 09/30/2026, 14 days after the dose was raised. The 90-day renewal sent this morning was cancelled. Please review.', MR.mercerLis, PCP, 'urgent', '2026-10-26'),
+  mercerMet: task(PT.mercer, 'Metformin 1000 mg refill request, not refilled (RBC-RX-05 §3): the eGFR of 10/20/2026 was recalculated today to 38 from the corrected creatinine. The 90-day renewal sent this morning was cancelled. Please review.', MR.mercerMet, PCP, 'urgent', '2026-10-26'),
 } as const;
 export const priceBridge = order(PT.price, RX.met1000, 1000, 'BID', 30, 0, 'RBC-RX-05 §3: eGFR 58; the 08/19/2026 outside HbA1c is entered in error, none valid in 6 months (last 03/30/2026)');
 export const priceA1c = a1cOrder(PT.price, 'RBC-RX-05 §3: HbA1c for metformin, none valid in 6 months');

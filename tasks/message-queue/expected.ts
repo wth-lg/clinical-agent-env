@@ -35,7 +35,7 @@ export { LEVER } from './lever.ts';
 //            wrong answer is a 90/1 renewal. A world rebuild to toggle.
 //   reserve  m15, m16 Rosalind Mercer (overlay.ts, events.ts mercer-b1), inactive: lisinopril
 //            raised 10-01 and metformin, both renewed at base (creatinine 1.12, 12% up; eGFR 52).
-//            The event corrects the 10-15 creatinine to 1.46 (46% up: lisinopril held), withdraws
+//            The event corrects the 10-20 creatinine to 1.46 (46% up: lisinopril held), withdraws
 //            the eGFR of 52 and files the recalculated one, 38, as a new result (below 45:
 //            metformin held). Its item is m16, whose deciding atom is the new eGFR; m15 is graded
 //            on the chart as delivered by the base gates.
@@ -182,17 +182,17 @@ export function leverItems(lever: readonly string[]): Item[] {
     });
   }
   if (lever.includes('reserve')) {
-    // At base both renew: the 10-15 creatinine 1.12 is 12% above the 1.00 before the 10-01 increase
+    // At base both renew: the 10-20 creatinine 1.12 is 12% above the 1.00 before the 10-01 increase
     // and the potassium 4.9 is below 5.5 (m15); the eGFR 52 is at least 45 and the HbA1c of 06-08 is
     // inside 6 months (m16). mercer-b1 (events.ts) corrects the creatinine and the eGFR.
     out.push(
       {
         name: 'm15', klass: 'corrected_egfr', item: TL(15), patient: host('mercer'), drug: 'lisinopril', request: refOf('MedicationRequest/mr-t6-mercer-lisinopril'), ...renew(20),
-        decisive: [refOf('Observation/obs-t6-mercer-1015-cr'), refOf('Observation/obs-t6-mercer-0930-cr'), refOf('Observation/obs-t6-mercer-1015-k')], atoms: {}, also: {},
+        decisive: [refOf('Observation/obs-t6-mercer-1020-cr'), refOf('Observation/obs-t6-mercer-0930-cr'), refOf('Observation/obs-t6-mercer-1020-k')], atoms: {}, also: {},
       },
       {
         name: 'm16', klass: 'corrected_egfr', item: TL(16), patient: host('mercer'), drug: 'metformin', request: refOf('MedicationRequest/mr-t6-mercer-metformin'), ...renew(2000),
-        decisive: [refOf('Observation/obs-t6-mercer-1015-egfr'), refOf('Observation/obs-t6-mercer-a1c-0608')], atoms: {}, also: {},
+        decisive: [refOf('Observation/obs-t6-mercer-1020-egfr'), refOf('Observation/obs-t6-mercer-a1c-0608')], atoms: {}, also: {},
       },
     );
   }

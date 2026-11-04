@@ -43,8 +43,8 @@
 //                         inbox item is focused on the potassium     below 5.5), §7           keep 30/0
 //                         alone
 //   mercer-b1 m16   B      W5-E reserve (lever.ts, inactive): the     §1 (a corrected result   hold, as for odum-o1, for both of her refills: the
-//             (m15)        clinic laboratory corrects Rosalind       replaces the result it   corrected 10/15 creatinine is 46% above the 1.00
-//                         Mercer's 10/15 creatinine, 1.46 (was       corrects), §2 (the 30%   before the 10/01 dose increase (m15, graded on the
+//             (m15)        clinic laboratory corrects Rosalind       replaces the result it   corrected 10/20 creatinine is 46% above the 1.00
+//                         Mercer's 10/20 creatinine, 1.46 (was       corrects), §2 (the 30%   before the 10/01 dose increase (m15, graded on the
 //                         1.12), and the eGFR recalculated from it, creatinine rule), §3      chart as delivered by the base gates); the eGFR
 //                         38 (was 52)                                (eGFR below 45)          of 38 holds the metformin (m16, the spec's item)
 //
@@ -122,7 +122,7 @@ export const ARRIVAL = {
   // The reserve's correction: the creatinine and the panel corrected in place; the eGFR of 52
   // withdrawn (entered in error) and the recalculated one filed as a new result, obs-06021, with
   // no inbox item of its own (the deciding sibling; a record the base review never read).
-  mercerB1: { cr: idOf('obs-t6-mercer-1015-cr'), egfrOld: idOf('obs-t6-mercer-1015-egfr'), egfr: 'obs-06021', panel: idOf('dr-t6-mercer-1015') },
+  mercerB1: { cr: idOf('obs-t6-mercer-1020-cr'), egfrOld: idOf('obs-t6-mercer-1020-egfr'), egfr: 'obs-06021', panel: idOf('dr-t6-mercer-1020') },
 } as const;
 
 // ---- odum-o1 (O): the outside laboratory's repeat panel, in its own report form ----
@@ -270,12 +270,12 @@ const { k: webbK, panel: webbPanel, rest: webbRest, egfr: webbEgfr } = webbRedra
 // potassium, the panel and the other analytes file silently (the header's routing) ----
 const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = webbRedraw(ARRIVAL.webbA1, 4.6, 96);
 
-// ---- mercer-b1 (B, W5-E reserve): the 10/15 creatinine corrected, and the eGFR recalculated from it ----
-// The world's records (fixtures:build places the 10/15 panel at MERCER_1015), with the corrected
+// ---- mercer-b1 (B, W5-E reserve): the 10/20 creatinine corrected, and the eGFR recalculated from it ----
+// The world's records (fixtures:build places the 10/20 panel at MERCER_1020), with the corrected
 // value, status and note; issued is the arrival stamp. Built only while the reserve is in LEVER
 // (the resources name her world ids).
-const MERCER_1015 = '2026-10-15T09:09:37-04:00';
-const MERCER_ISSUED = '2026-10-15T14:26:35.966-04:00';
+const MERCER_1020 = '2026-10-20T09:35:15-04:00';
+const MERCER_ISSUED = '2026-10-20T14:34:35.938-04:00';
 const mercerCr: Resource = {
   resourceType: 'Observation',
   id: ARRIVAL.mercerB1.cr,
@@ -283,13 +283,13 @@ const mercerCr: Resource = {
   category: LAB,
   code: { coding: [{ system: LOINC, code: '2160-0', display: 'Creatinine [Mass/volume] in Serum or Plasma' }], text: 'Creatinine [Mass/volume] in Serum or Plasma' },
   subject: MERCER,
-  effectiveDateTime: MERCER_1015,
+  effectiveDateTime: MERCER_1020,
   issued: MERCER_ISSUED,
   performer: [CLINIC],
   valueQuantity: q(1.46, 'mg/dL'),
   interpretation: HIGH,
   referenceRange: range(0.74, 1.35, 'mg/dL'),
-  note: [{ text: 'Corrected result: previously reported 1.12 mg/dL on 10/15/2026. Specimen re-run after a dilution error on the chemistry analyzer.' }],
+  note: [{ text: 'Corrected result: previously reported 1.12 mg/dL on 10/20/2026. Specimen re-run after a dilution error on the chemistry analyzer.' }],
 } as Resource;
 // The eGFR recalculated from the corrected creatinine, filed as a new result; the one reported with
 // the first creatinine withdrawn.
@@ -300,11 +300,11 @@ const mercerEgfr: Resource = {
   category: LAB,
   code: EGFR_CODE,
   subject: MERCER,
-  effectiveDateTime: MERCER_1015,
+  effectiveDateTime: MERCER_1020,
   issued: MERCER_ISSUED,
   performer: [CLINIC],
   valueQuantity: q(38, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
-  note: [{ text: 'Recalculated from the corrected creatinine of 10/15/2026; replaces the eGFR of 52 mL/min/1.73m2 reported with the first value.' }],
+  note: [{ text: 'Recalculated from the corrected creatinine of 10/20/2026; replaces the eGFR of 52 mL/min/1.73m2 reported with the first value.' }],
 } as Resource;
 const mercerEgfrOld: Resource = {
   resourceType: 'Observation',
@@ -313,7 +313,7 @@ const mercerEgfrOld: Resource = {
   category: LAB,
   code: EGFR_CODE,
   subject: MERCER,
-  effectiveDateTime: MERCER_1015,
+  effectiveDateTime: MERCER_1020,
   issued: MERCER_ISSUED,
   performer: [CLINIC],
   valueQuantity: q(52, 'mL/min/1.73m2', 'mL/min/{1.73_m2}'),
@@ -324,12 +324,13 @@ const mercerPanel: Resource = {
   id: ARRIVAL.mercerB1.panel,
   status: 'corrected',
   category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
-  code: { coding: [{ system: LOINC, code: '51990-0', display: 'Basic metabolic panel - Blood' }], text: 'Basic metabolic panel - Blood' },
+  // The built panel's code (overlay.ts bmp, the hosts' panels under the clinic's other BMP code).
+  code: { coding: [{ system: LOINC, code: '24321-2', display: 'Basic metabolic 2000 panel - Serum or Plasma' }], text: 'Basic metabolic 2000 panel - Serum or Plasma' },
   subject: MERCER,
-  effectiveDateTime: MERCER_1015,
+  effectiveDateTime: MERCER_1020,
   issued: MERCER_ISSUED,
   performer: [CLINIC],
-  result: (['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'] as const).map((a) => ({ reference: `Observation/${idOf(`obs-t6-mercer-1015-${a}`)}` })),
+  result: (['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'] as const).map((a) => ({ reference: `Observation/${idOf(`obs-t6-mercer-1020-${a}`)}` })),
 } as Resource;
 
 // ---- price-d1 (D): the pharmacy's resent request for the same metformin ----

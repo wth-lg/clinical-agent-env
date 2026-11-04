@@ -275,8 +275,11 @@ describe('message-queue events', () => {
   // webb-b2 in the turn of the m12 decision, the lisinopril order: on that write itself (q1attr), or
   // on the metformin order moved before it in the same answer (Q4). The owed set is the chart at the
   // start of that turn, so the HbA1c is owed and never shown: m12 fails decisive_seen, and its label
-  // is retrieval with no seen step, as the gate says.
-  describe('R41 addendum 3: webb-b2 fired in the turn of the m12 decision', () => {
+  // is retrieval with no seen step, as the gate says. The route it edits is the committed one, with
+  // webb-c1 on Webb (turn 9 his reads, the potassium list and the HbA1c search); with the lever
+  // item A on, webb-a1 replaces webb-c1 and the oracle's Webb turn reads the arrival's panel too,
+  // which shows the HbA1c, so the edit has no bite: the case runs in the webb-c1 states.
+  describe.runIf(ACTIVE.includes('webb-c1'))('R41 addendum 3: webb-b2 fired in the turn of the m12 decision', () => {
     const b2 = SPECS.filter((s) => [...ACTIVE, 'webb-b2'].includes(s.id));
     const oracle = route({ active: [...ACTIVE] });
     const t9 = { calls: oracle[8]!.calls.filter((c) => c.input.code !== '4548-4').map((c) => (String(c.input.code).includes('2823-3') ? { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-02268' } } : c)) };
@@ -307,5 +310,18 @@ describe('message-queue events', () => {
         expect(item.exposure.find((e) => e.id === 'DiagnosticReport/dr-00302')).toEqual({ id: 'DiagnosticReport/dr-00302', first_exposed_step: null, first_seen_step: null });
       });
     }
+  });
+  // R41's owed-set rule (a record a class B arrival replaced is owed in its final state when the
+  // arrival fired before the decision, in its initial state when the decision write fired it) bears
+  // on an absence item's window: m12's, Webb's 12 months. The lever items' events: webb-a1 (A) is
+  // class A, its records first arrive in the trial and are never window targets; mercer-b1 (the
+  // reserve) is class B on Mercer, whose items m15 and m16 carry no absence. So no LEVER state puts
+  // a class B arrival on an absence item's patient, and the addendum-3 case above is the only one
+  // the rule needs here; a class B event on an absence item's patient must get its own.
+  it("no active class B event replaces a record on an absence item's patient (R41 owed set)", () => {
+    const absences = ITEMS.filter((i) => i.absence !== undefined).map((i) => i.patient);
+    const classB = activeSpecs({ SPECS, ACTIVE }).filter((s) => s.class === 'B');
+    expect(classB.map((s) => s.id)).toEqual(LEVER.includes('reserve') ? ['price-b1', 'mercer-b1'] : ['price-b1']);
+    for (const s of classB) expect(absences, `${s.id} replaces a record of ${s.trigger.kind === 'after_write' ? s.trigger.patient : '?'}`).not.toContain(s.trigger.kind === 'after_write' ? s.trigger.patient : '?');
   });
 });

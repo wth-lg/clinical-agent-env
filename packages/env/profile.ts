@@ -1480,6 +1480,17 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
         fixed.add(sec(t.v));
       }
     }
+    // A chart with no generated record (a Patient an overlay adds, packages/env/overlay.ts TASKS
+    // added; W5, builder-302) has no clock of its own, and without one every planted time there
+    // would draw its own second, so the chart would read as planted through its clock alone
+    // (scripts/test/tells.ts CMODE). It gets a clock as Synthea's charts have: one minute-and-second
+    // for its starts and one for its ends, drawn from the patient's id, so its records share them
+    // and a toggle of another chart moves none of them. A chart with generated records is untouched.
+    if (clock.size === 0) {
+      const mmss = (salt: string) => `${String(fnv(`chart-clock-m:${salt}:${p}`) % 60).padStart(2, '0')}:${String(1 + (fnv(`chart-clock-s:${salt}:${p}`) % 59)).padStart(2, '0')}`;
+      clock.set('effectiveDateTime', new Map([[mmss('start'), 3]]));
+      clock.set('period.end', new Map([[mmss('end'), 3]]));
+    }
     const everyTime = () => mine.flatMap((r) => stamps(r).filter((t) => !( !planted.has(key(r)) && UNTIMED.test(t.path))).map((t) => ({ r, ...t, s: sec(t.v) })));
 
     // At the visit's start: the planted records of a visit recorded within its first hour, as far

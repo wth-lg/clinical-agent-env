@@ -32,7 +32,7 @@
 //                                                 17:30 (after it); the 10-19 BMP's 1.46 is 46%
 //                                                 above 1.00: hold. Against the 1.24 a newest-first
 //                                                 list shows first for 09-28, the rise is 18%
-//   corrected eGFR           m15, m16    reserve  lisinopril raised 10-01; the 10-15 BMP (creatinine
+//   corrected eGFR           m15, m16    reserve  lisinopril raised 10-01; the 10-20 BMP (creatinine
 //                            Mercer      (inactive) 1.12, 12% up; eGFR 52) and an HbA1c of 06-08 renew
 //                                                 both at base; the event mercer-b1 corrects the
 //                                                 creatinine to 1.46 and the eGFR to 38
@@ -495,45 +495,45 @@ function kaplan(world: WorldReader): Resource[] {
   return [
     patient(world, PT.webb, HOST.kaplan, 'kaplan', '1966-07-19', '555-0142', '14 Orchard Lane', 'Amherst', '01002', ['M', 'Married'], 'Ruth Feld', 'Worcester', [42.3732, -72.5199]),
     condition('cond-t6-kaplan-htn', 'kaplan', HTN[0], HTN[1], '2019-02-11T10:00:00-05:00'),
-    medication('mr-t6-kaplan-lisinopril-24', 'kaplan', RX.lis10, 10, 'QD', '2024-10-28T15:40:00-04:00', 'Essential hypertension', YEAR, 'completed', LIN),
     medication('mr-t6-kaplan-lisinopril10', 'kaplan', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
-    // The hosts' panels carry the generated charts' value forms (a decimal place on the analytes
-    // that are not the item's lines) and codes (scripts/test/world-tells.test.ts).
-    ...bmp('kaplan-0928', 'kaplan', '2026-09-28T08:40:00-04:00', '2026-09-28T12:55:00-04:00', null, { na: 139.4, k: 4.5, cl: 101.7, co2: 24.6, bun: 14.2, cr: 1.0, glu: 96.3, ca: 9.4, egfr: 86.2 }, {}, { code: '24321-2' }),
+    // The hosts' panels carry the generated charts' value forms (two decimal places on the analytes
+    // that are not the item's lines, as most of Synthea's values; one on a potassium and an eGFR,
+    // as the texts cite them) and codes (scripts/test/world-tells.test.ts, the probe2 classifier).
+    ...bmp('kaplan-0928', 'kaplan', '2026-09-28T08:40:00-04:00', '2026-09-28T12:55:00-04:00', null, { na: 139.43, k: 4.5, cl: 101.68, co2: 24.57, bun: 14.21, cr: 1.0, glu: 96.34, ca: 9.41, egfr: 86.2 }, {}, { code: '24321-2' }),
     encounter('enc-t6-kaplan-0928', 'kaplan', PROBLEM, '2026-09-28T14:30:00-04:00', '2026-09-28T15:00:00-04:00'),
     note('doc-t6-kaplan-0928', 'kaplan', '2026-09-28T15:05:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('kaplan', 'Hypertension follow-up.\nBP 154/94 and 150/92 on lisinopril 10 mg daily; home readings 145 to 155 systolic. Pre-visit labs this morning: creatinine 1.00, potassium 4.5.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 3 weeks.'), 'enc-t6-kaplan-0928'),
     medication('mr-t6-kaplan-lisinopril', 'kaplan', RX.lis20, 20, 'QD', '2026-09-28T14:55:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
     encounter('enc-t6-kaplan-uc-0928', 'kaplan', PROBLEM, '2026-09-28T17:10:00-04:00', '2026-09-28T18:40:00-04:00', BRIGID_UC),
-    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.8, k: 4.3, cl: 99.6, co2: 22.9, bun: 18.7, cr: 1.24, glu: 103.5, ca: 9.2, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24323-8' }),
+    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.82, k: 4.3, cl: 99.63, co2: 22.94, bun: 18.72, cr: 1.24, glu: 103.47, ca: 9.18, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24323-8' }),
     note('doc-t6-kaplan-uc-0928', 'kaplan', '2026-09-28T18:40:00-04:00', 'progress', HOSPITAL, HOSPITAL, KAPLAN_UC, 'enc-t6-kaplan-uc-0928'),
-    ...bmp('kaplan-1019', 'kaplan', '2026-10-19T09:20:00-04:00', '2026-10-19T14:50:00-04:00', null, { na: 138.9, k: 4.8, cl: 100.8, co2: 23.7, bun: 20.6, cr: 1.46, glu: 97.9, ca: 9.3, egfr: 54.7 }, {}, { high: ['cr'], code: '24321-2' }),
+    ...bmp('kaplan-1019', 'kaplan', '2026-10-19T16:05:00-04:00', '2026-10-19T20:40:00-04:00', null, { na: 138.91, k: 4.8, cl: 100.76, co2: 23.68, bun: 20.63, cr: 1.46, glu: 97.88, ca: 9.27, egfr: 54.7 }, {}, { high: ['cr'], code: '24321-2' }),
   ];
 }
 
 // ---- Rosalind Mercer (reserve, inactive): m15, m16, the corrected creatinine and eGFR ----
 // Hypertension and type 2 diabetes; lisinopril 10 mg raised to 20 mg on 10-01 (the order at 14:40)
-// after a pre-visit creatinine of 1.00 on 09-30; the follow-up BMP of 10-15: creatinine 1.12 (12%
+// after a pre-visit creatinine of 1.00 on 09-30; the follow-up BMP of 10-20: creatinine 1.12 (12%
 // up), potassium 4.9, eGFR 52; HbA1c 7.3 on 06-08. Both refills renew at base; events.ts mercer-b1
-// corrects the 10-15 creatinine to 1.46 and the eGFR to 38.
+// corrects the 10-20 creatinine to 1.46 and the eGFR to 38.
 function mercer(world: WorldReader): Resource[] {
   return [
     patient(world, PT.hayes, HOST.mercer, 'mercer', '1954-04-09', '555-0168', '9 Linden Court', 'Greenfield', '01301', ['W', 'Widowed'], 'Margaret Doyle', 'Pittsfield', [42.5876, -72.5995]),
     condition('cond-t6-mercer-htn', 'mercer', HTN[0], HTN[1], '2019-02-11T10:00:00-05:00'),
     condition('cond-t6-mercer-t2dm', 'mercer', T2DM[0], T2DM[1], '2023-05-22T10:00:00-04:00'),
-    medication('mr-t6-mercer-lisinopril-24', 'mercer', RX.lis10, 10, 'QD', '2024-10-21T10:05:00-04:00', 'Essential hypertension', YEAR, 'completed', LIN),
-    medication('mr-t6-mercer-metformin-24', 'mercer', RX.met1000, 1000, 'BID', '2024-10-21T10:05:00-04:00', 'Type 2 diabetes mellitus', YEAR_BID, 'completed', LIN),
     medication('mr-t6-mercer-lisinopril10', 'mercer', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
     medication('mr-t6-mercer-metformin', 'mercer', RX.met1000, 1000, 'BID', '2025-10-27T09:15:00-04:00', 'Type 2 diabetes mellitus', YEAR_BID),
     encounter('enc-t6-mercer-0608', 'mercer', VISIT, '2026-06-08T09:00:00-04:00', '2026-06-08T09:30:00-04:00'),
     obs('obs-t6-mercer-a1c-0608', 'mercer', C.a1c, 7.3, '%', '2026-06-08T09:10:00-04:00', '2026-06-08T14:30:00-04:00', 'enc-t6-mercer-0608', { high: true }),
-    note('doc-t6-mercer-0608', 'mercer', '2026-06-08T09:35:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('mercer', 'Diabetes and hypertension follow-up.\nBP 138/84 on lisinopril 10 mg daily. Taking metformin 1000 mg twice daily. HbA1c 7.3% today.\nPlan: continue both. Recheck in 4 months.'), 'enc-t6-mercer-0608'),
-    ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 139.8, k: 4.6, cl: 102.6, co2: 24.9, bun: 16.8, cr: 1.0, glu: 131.4, ca: 9.4, egfr: 59.9 }, {}, { code: '24321-2' }),
+    ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 139.77, k: 4.6, cl: 102.58, co2: 24.86, bun: 16.83, cr: 1.0, glu: 131.42, ca: 9.36, egfr: 59.9 }, {}, { code: '24321-2' }),
     encounter('enc-t6-mercer-1001', 'mercer', PROBLEM, '2026-10-01T14:20:00-04:00', '2026-10-01T14:50:00-04:00'),
     note('doc-t6-mercer-1001', 'mercer', '2026-10-01T14:55:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('mercer', 'Hypertension follow-up.\nBP 156/92 and 152/90 on lisinopril 10 mg daily. Taking metformin 1000 mg twice daily. Pre-visit labs of yesterday: creatinine 1.00, potassium 4.6, eGFR 60.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 2 weeks.'), 'enc-t6-mercer-1001'),
     medication('mr-t6-mercer-lisinopril', 'mercer', RX.lis20, 20, 'QD', '2026-10-01T14:40:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
-    ...bmp('mercer-1015', 'mercer', '2026-10-15T09:05:00-04:00', '2026-10-15T14:35:00-04:00', null, { na: 139.2, k: 4.9, cl: 101.9, co2: 24.3, bun: 19.6, cr: 1.12, glu: 127.8, ca: 9.3, egfr: 52.3 }, {}, { code: '24321-2' }),
+    ...bmp('mercer-1020', 'mercer', '2026-10-20T09:05:00-04:00', '2026-10-20T14:35:00-04:00', null, { na: 139.23, k: 4.9, cl: 101.94, co2: 24.31, bun: 19.57, cr: 1.12, glu: 127.84, ca: 9.29, egfr: 52.3 }, {}, { code: '24321-2' }),
   ];
 }
+// The hosts' messages (MSGS, each on the queue while its item is in LEVER): m14 Kaplan (B), m15 and
+// m16 Mercer (the reserve); their Communication and inbox Task keys are lever keys too.
+const LEVER_MESSAGES = [14, 15, 16] as const;
 // The hosts of the active static lever items (overlay isolation: a Patient the overlay adds is its own).
 const leverHosts = (world: WorldReader, lever: readonly string[]): Resource[] => [...(lever.includes('B') ? kaplan(world) : []), ...(lever.includes('reserve') ? mercer(world) : [])];
 
@@ -695,7 +695,7 @@ const overlay: Overlay = {
       // Every key a LEVER toggle adds: each host and every record of its chart, present in this
       // build or not (the central lever-invariant test checks that no state adds a key this list
       // lacks; item A, webb-a1, adds nothing to the world, its records arrive in the trial).
-      lever: leverHosts(world, ['B', 'reserve']).map((r) => r.id!),
+      lever: [...leverHosts(world, ['B', 'reserve']).map((r) => r.id!), ...LEVER_MESSAGES.flatMap((n) => [`comm-t6-m${n}`, `task-t6-m${n}`])],
       lint: {
         thresholds: [
           // Ruling R7: each value an item turns on, the trap values included (the hemolyzed potassium,
@@ -714,10 +714,10 @@ const overlay: Overlay = {
             : []),
           ...(LEVER.includes('reserve')
             ? [
-                { quantity: 'scr' as const, threshold: 1.3, observation: 'obs-t6-mercer-1015-cr', label: 'reserve: 30% over the 1.00 before the dose was raised, as first reported' },
-                { quantity: 'egfr' as const, threshold: 45, observation: 'obs-t6-mercer-1015-egfr' },
+                { quantity: 'scr' as const, threshold: 1.3, observation: 'obs-t6-mercer-1020-cr', label: 'reserve: 30% over the 1.00 before the dose was raised, as first reported' },
+                { quantity: 'egfr' as const, threshold: 45, observation: 'obs-t6-mercer-1020-egfr' },
                 { quantity: 'egfr' as const, threshold: 45, observation: 'obs-t6-mercer-0930-egfr' },
-                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-mercer-1015-k' },
+                { quantity: 'potassium' as const, threshold: 5.5, observation: 'obs-t6-mercer-1020-k' },
               ]
             : []),
           { quantity: 'potassium', threshold: 5.5, observation: 'obs-t6-hayes-1005-k' },
@@ -735,7 +735,7 @@ const overlay: Overlay = {
           {
             name: 'BMP within 12 months (collection date)',
             boundary: { months: 12 },
-            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-park-0421-k', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k', ...(LEVER.includes('B') ? ['obs-t6-kaplan-1019-k'] : []), ...(LEVER.includes('reserve') ? ['obs-t6-mercer-1015-k'] : [])],
+            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-park-0421-k', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k', ...(LEVER.includes('B') ? ['obs-t6-kaplan-1019-k'] : []), ...(LEVER.includes('reserve') ? ['obs-t6-mercer-1020-k'] : [])],
             traps: { 'doc-t6-park-1002': 'filed inside the window, collected outside it', 'obs-t6-webb-1020-k': 'collected outside the window, issued inside it' },
           },
           { name: 'Visit within 15 months', boundary: { months: 15 }, resources: ['enc-t6-park-0720', 'enc-t6-webb-0928', 'enc-t6-odum-0120', ...(LEVER.includes('B') ? ['enc-t6-kaplan-0928'] : []), ...(LEVER.includes('reserve') ? ['enc-t6-mercer-1001'] : [])] },

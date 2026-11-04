@@ -139,7 +139,7 @@ describe('message-queue', () => {
       ['mr-t6-brooks-lisinopril', 'obs-t6-brooks-0921-cr', 'obs-t6-brooks-1008-cr'],
       ['mr-t6-price-lisinopril', 'obs-t6-price-0918-cr', 'obs-t6-price-1006-cr'],
       ...(LEVER.includes('B') ? [['mr-t6-kaplan-lisinopril', 'obs-t6-kaplan-0928-cr', 'obs-t6-kaplan-1019-cr'] as const] : []),
-      ...(LEVER.includes('reserve') ? [['mr-t6-mercer-lisinopril', 'obs-t6-mercer-0930-cr', 'obs-t6-mercer-1015-cr'] as const] : []),
+      ...(LEVER.includes('reserve') ? [['mr-t6-mercer-lisinopril', 'obs-t6-mercer-0930-cr', 'obs-t6-mercer-1020-cr'] as const] : []),
     ];
     for (const [order, before, after] of increases) {
       const at = Date.parse((store.get('MedicationRequest', idOf(order)) as R).authoredOn!);
@@ -159,6 +159,6 @@ describe('message-queue', () => {
       const at = Date.parse((store.get('MedicationRequest', idOf('mr-t6-kaplan-lisinopril')) as R).authoredOn!);
       expect(Date.parse((store.get('Observation', idOf('obs-t6-kaplan-uc-0928-cr')) as R).effectiveDateTime!)).toBeGreaterThan(at);
     }
-    if (LEVER.includes('reserve')) expect(rise('obs-t6-mercer-0930-cr', 'obs-t6-mercer-1015-cr')).toBeLessThan(0.25);
+    if (LEVER.includes('reserve')) expect(rise('obs-t6-mercer-0930-cr', 'obs-t6-mercer-1020-cr')).toBeLessThan(0.25);
   });
 });

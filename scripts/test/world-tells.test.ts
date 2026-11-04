@@ -30,7 +30,7 @@ import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
 import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../tasks/renal-dose-review/expected.ts';
 import { expected as T2_EXPECTED, LEVER_ITEMS as T2_LEVER_ITEMS } from '../../tasks/results-inbox/expected.ts';
-import { expected as T6_EXPECTED, LEVER_ITEMS as T6_LEVER_ITEMS } from '../../tasks/message-queue/expected.ts';
+import { ITEMS as T6_ITEMS, LEVER_ITEMS as T6_LEVER_ITEMS } from '../../tasks/message-queue/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -414,8 +414,8 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // host's inbox item's owner), so an inactive item's host reads 'off the list' here. T6's
 // (builder-302): pt-0070 Kaplan (B) and pt-0071 Mercer (the reserve), each in the world only while
 // its item is on; its item A is on a cohort patient (Webb). An item's patient is a bare id (T1) or
-// a reference (T6).
-const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }, { items: T2_LEVER_ITEMS, list: T2_EXPECTED.items }, { items: T6_LEVER_ITEMS, list: T6_EXPECTED.items }];
+// a reference (T6), and T6's items (ITEMS) name their class `klass`.
+const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient: string }>; list: ReadonlyArray<{ patient: string; class: string }> }> = [{ items: T1_LEVER_ITEMS, list: T1_EXPECTED.items }, { items: T2_LEVER_ITEMS, list: T2_EXPECTED.items }, { items: T6_LEVER_ITEMS, list: T6_ITEMS.map((x) => ({ patient: x.patient, class: x.klass })) }];
 const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
   [...ADDED_PATIENTS].sort().map((p) => {
     const table = LEVER_TABLES.find((t) => t.items.some((i) => i.patient.replace(/^Patient\//, '') === p));

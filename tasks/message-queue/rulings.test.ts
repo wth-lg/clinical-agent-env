@@ -66,7 +66,7 @@ const DECISIVE: Record<string, string[]> = {
   // W5-E: m14's 10-19 creatinine and the morning one it is compared with (the evening one cannot
   // decide: it is after the order and 18% below the 1.46, R1, R19); the reserve's base inputs.
   ...(LEVER.includes('B') ? { m14: ['Observation/obs-t6-kaplan-1019-cr', 'Observation/obs-t6-kaplan-0928-cr'] } : {}),
-  ...(LEVER.includes('reserve') ? { m15: ['Observation/obs-t6-mercer-1015-cr', 'Observation/obs-t6-mercer-0930-cr', 'Observation/obs-t6-mercer-1015-k'], m16: ['Observation/obs-t6-mercer-1015-egfr', 'Observation/obs-t6-mercer-a1c-0608'] } : {}),
+  ...(LEVER.includes('reserve') ? { m15: ['Observation/obs-t6-mercer-1020-cr', 'Observation/obs-t6-mercer-0930-cr', 'Observation/obs-t6-mercer-1020-k'], m16: ['Observation/obs-t6-mercer-1020-egfr', 'Observation/obs-t6-mercer-a1c-0608'] } : {}),
 };
 
 describe('T6 probe rulings', () => {
