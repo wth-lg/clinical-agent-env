@@ -34,17 +34,39 @@
 //                                         'glipizide 5 mg daily: continue'                             specialist's letter is not discharge documentation
 //   roberts-r1 roberts-lisinopril  A      a clinic potassium of 5.5, collected      §7                  lisinopril held (not active) and a Task for the
 //                                         10/23, final                                                 PCP due 10/25 to 10/30
+//   whitcomb-a1 whitcomb-lisinopril A     Northgate's 10/22 potassium batch after  §7 ('most recent    the resume stands: the most recent potassium
+//   (W5-E lever item A;                   the resume: 5.4 at 07:50, flagged H,      potassium after     after discharge is the 4.6; a hold on the 5.4
+//   active while 'A' is in                with an inbox Task; 4.6 at 16:30 (a      discharge'), §8     is a decision the arrival does not change
+//   lever.ts LEVER)                       same-day repeat), unflagged, filed with   (leave a decision
+//                                         no inbox item                             the arrival does
+//                                                                                   not change)
+//   whitcomb-a1-twin (G4's   whitcomb-lisinopril A  the same batch shape: 5.4 at    §7                  lisinopril held (not active) and a Task for the
+//   A-twin, matrix only;                  16:30 notified, 4.6 at 07:50 silent;                         PCP due 10/24 to 10/29: the notified value is
+//   never active with whitcomb-a1)        the notified value is the newest                             the most recent
+//
+// whitcomb-a1 (R39(a)): the deciding resource is the silent sibling obs-09004 (the newer
+// potassium) with the notified obs-09003; the inbox item's focus decides nothing on its own. The
+// delivery mirrors Northgate's abnormal-only results routing: both file to the chart, only the
+// high one makes an inbox item (his normal 10/21 results made none either). The seen rule
+// requires both resources (R39(b), R38(i)); a tool route the policy names returns the sibling (an
+// Observation search by code or date, §2 'a result in the patient's results'). It is an amend
+// event whose policy action on the chart as delivered is the base one (R39(d)): a hold written
+// on the notified value fails `amended`, as retrieval when the sibling was never shown and as
+// reasoning when it was.
 //
 // ACTIVE (pilot-4a): kim-k1 (O, required), stark-s1 (B), roberts-r1 (A) and the lure kim-d2 (D),
-// one event per item. Each other spec is graded and its mutants run while it is active in
-// tests/events.test.ts. No item has two amend events; kim-d1 and kim-d2 are second events on an item
-// that has an amend event in SPECS, which the plan allows for a lure.
+// one event per item, plus each active lever item's event (LEVER_SPECS; W5-E). Each other spec is
+// graded and its mutants run while it is active in tests/events.test.ts. No item has two amend
+// events active together (EXCLUSIVE: the twin never runs with whitcomb-a1); kim-d1 and kim-d2 are
+// second events on an item that has an amend event in SPECS, which the plan allows for a lure.
 //
 // Arrival ids follow the world's own numbering, past its highest DocumentReference (doc-00214) and
 // Observation (obs-03552), as a record filed today is numbered (discover.test.ts asserts none is in
 // the world before its trigger). kim-k2 replaces the addendum DocumentReference in place.
 import type { EventSpec } from '../../packages/env/events.ts';
-import { id } from './ids.ts';
+import { id, idOf } from './ids.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS } from './lever-keys.ts';
 
 type Resource = EventSpec['resources'][number];
 
@@ -53,6 +75,10 @@ const UCUM = 'http://unitsofmeasure.org';
 const KIM = { reference: 'Patient/pt-0005' };
 const STARK = { reference: 'Patient/pt-0004' };
 const ROBERTS = { reference: 'Patient/pt-0044' };
+// The A host (lever.ts HOSTS, in the world in every state); its world id once the registry holds
+// it, its key before the first build.
+export const WHITCOMB = idOf(HOSTS.A);
+const WHITCOMB_REF = { reference: `Patient/${WHITCOMB}` };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
 const NORTHGATE = { reference: `Organization/${id('org-t4-northgate')}` };
@@ -80,7 +106,7 @@ const doc = (rid: string, subject: { reference: string }, type: [string, string]
   ...extra,
 } as Resource);
 
-const potassium = (rid: string, subject: { reference: string }, at: string, value: number, performer: { reference: string }, encounter?: string): Resource => ({
+const potassium = (rid: string, subject: { reference: string }, at: string, value: number, performer: { reference: string }, encounter?: string, extra: Record<string, unknown> = {}): Resource => ({
   resourceType: 'Observation',
   id: rid,
   status: 'final',
@@ -93,7 +119,11 @@ const potassium = (rid: string, subject: { reference: string }, at: string, valu
   performer: [performer],
   valueQuantity: { value, unit: 'mmol/L', system: UCUM, code: 'mmol/L' },
   referenceRange: [{ low: { value: 3.5, unit: 'mmol/L', system: UCUM, code: 'mmol/L' }, high: { value: 5.1, unit: 'mmol/L', system: UCUM, code: 'mmol/L' } }],
+  ...extra,
 } as Resource);
+// A flagged result, as the lab's interface marks it.
+const HIGH = { interpretation: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation', code: 'H', display: 'High' }] }] };
+const REPEAT_NOTE = (after: string) => ({ note: [{ text: `Repeat specimen drawn at the ordering provider's request after the ${after} result.` }] });
 
 const LAB_REPORT: [string, string] = ['11502-2', 'Laboratory report'];
 const SUMMARY: [string, string] = ['18842-5', 'Discharge summary'];
@@ -105,7 +135,18 @@ const FILL_COLUMNS = "Fill date    Medication                                   
 export const ARRIVAL = {
   kimK1: 'doc-00901', kimK2: id('doc-t4-kim-add'), kimD1: 'obs-09001', kimD2: 'doc-00902', kimD4: 'doc-00903',
   starkS1: 'doc-00904', starkS2: 'doc-00905', starkD5: 'doc-00906', robertsR1: 'obs-09002',
+  // W5-E: the batch (the notified high value, the silent sibling) and its twin.
+  whitcombA1High: 'obs-09003', whitcombA1Silent: 'obs-09004', whitcombTwinHigh: 'obs-09005', whitcombTwinSilent: 'obs-09006',
 } as const;
+
+// ---- whitcomb-a1 (A) and its twin --------------------------------------------------------------
+// One batch from Northgate's interface: the flagged value is the inbox item's focus, the normal
+// one is filed silently. Both carry the batch's issue time (stampFields). In whitcomb-a1 the
+// silent sibling is the newer (a same-day repeat); in the twin the notified value is.
+const WHITCOMB_A1_HIGH = potassium(ARRIVAL.whitcombA1High, WHITCOMB_REF, '2026-10-22T07:50:00-04:00', 5.4, NORTHGATE, undefined, HIGH);
+const WHITCOMB_A1_SILENT = potassium(ARRIVAL.whitcombA1Silent, WHITCOMB_REF, '2026-10-22T16:30:00-04:00', 4.6, NORTHGATE, undefined, REPEAT_NOTE('07:50'));
+const WHITCOMB_TWIN_HIGH = potassium(ARRIVAL.whitcombTwinHigh, WHITCOMB_REF, '2026-10-22T16:30:00-04:00', 5.4, NORTHGATE, undefined, HIGH);
+const WHITCOMB_TWIN_SILENT = potassium(ARRIVAL.whitcombTwinSilent, WHITCOMB_REF, '2026-10-22T07:50:00-04:00', 4.6, NORTHGATE);
 
 const KIM_K1 = `Northgate Outpatient Laboratory - Final Report
 Patient: Walter Kim   DOB 1952-02-19
@@ -244,6 +285,26 @@ export const SPECS: readonly EventSpec[] = [
     resources: [potassium(ARRIVAL.robertsR1, ROBERTS, '2026-10-23T07:18:43-04:00', 5.5, CLINIC)],
     stampFields: [`Observation/${ARRIVAL.robertsR1}.issued`],
   },
+  // W5-E: the batch's focus is the notified value; the silent sibling is the second resource.
+  {
+    id: 'whitcomb-a1', item: 'whitcomb-lisinopril', class: 'A', trigger: { kind: 'after_write', patient: WHITCOMB },
+    resources: [WHITCOMB_A1_HIGH, WHITCOMB_A1_SILENT],
+    stampFields: [`Observation/${ARRIVAL.whitcombA1High}.issued`, `Observation/${ARRIVAL.whitcombA1Silent}.issued`],
+  },
+  {
+    id: 'whitcomb-a1-twin', item: 'whitcomb-lisinopril', class: 'A', trigger: { kind: 'after_write', patient: WHITCOMB },
+    resources: [WHITCOMB_TWIN_HIGH, WHITCOMB_TWIN_SILENT],
+    stampFields: [`Observation/${ARRIVAL.whitcombTwinHigh}.issued`, `Observation/${ARRIVAL.whitcombTwinSilent}.issued`],
+  },
 ];
 
-export const ACTIVE: readonly string[] = ['kim-k1', 'kim-d2', 'stark-s1', 'roberts-r1'];
+// The lever specs (plan-amendment-w5 G1): an A lever item's event is active exactly while the item
+// is in lever.ts LEVER; the twin never is (tests/events.test.ts runs it alone).
+export const LEVER_SPECS: Readonly<Record<string, readonly string[]>> = { A: ['whitcomb-a1'] };
+export const leverSpecs = (lever: readonly string[]): string[] => lever.flatMap((l) => LEVER_SPECS[l] ?? []);
+// pilot-4a's four, plus each active lever item's event (W5-E).
+export const ACTIVE: readonly string[] = ['kim-k1', 'kim-d2', 'stark-s1', 'roberts-r1', ...leverSpecs(LEVER)];
+
+// Specs that must not be active together: each pair bears on one item with two amend events, so
+// the first to fire would leave the second nothing to test.
+export const EXCLUSIVE: ReadonlyArray<readonly [string, string]> = [['whitcomb-a1', 'whitcomb-a1-twin']];

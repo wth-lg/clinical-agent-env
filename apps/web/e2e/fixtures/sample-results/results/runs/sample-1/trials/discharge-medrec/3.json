@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:3",
   "task_id": "discharge-medrec",
-  "task_version": "83160297acd6ca75b52806402ec05ad7fdb3bea606a0543a5c5160942ab9ffaa",
-  "env_version": "f2be44cec665a5dc266cf38458e71e5536998b4f28c6e75c3b46dbfa63bcdaa1",
-  "grader_task_version": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
-  "fixture_hash": "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210",
+  "task_version": "1727385f8259ee68027bb658e52200feae426e08cefc65da98216e3e835c9a89",
+  "env_version": "08d852025d09e73c807cfac4a41dea6269222642e0df1486c879e9a13a8b0f6d",
+  "grader_task_version": "96bfe6bcc98504e9ea343f27dbf05c0cdf945efdd625b240d83772a77d5f2587",
+  "fixture_hash": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
   "state_hash": {
-    "initial": "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210",
-    "final": "df4ead5ae81b822f922136d2714499e15f8ddfe8581cdd965633b72dc1152eff",
-    "replay_final": "df4ead5ae81b822f922136d2714499e15f8ddfe8581cdd965633b72dc1152eff"
+    "initial": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
+    "final": "6acf0bfe907f4a5d43426b1746d891b43c34e0bc01eb7f3d81caf63eca5705a0",
+    "replay_final": "6acf0bfe907f4a5d43426b1746d891b43c34e0bc01eb7f3d81caf63eca5705a0"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:17:34.000Z",
+  "started": "2026-10-23T13:19:37.000Z",
   "turns": 8,
-  "tool_calls": 42,
+  "tool_calls": 60,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reconciled the three post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
+  "summary": "Reconciled the five post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:19:51.000Z",
+  "ended": "2026-10-23T13:22:35.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
@@ -67,7 +67,8 @@
           "item": "kim-furosemide",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00009"
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
           ],
           "evidence": {}
         },
@@ -99,7 +100,8 @@
           "item": "stark-carvedilol",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00005"
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
           ],
           "evidence": {}
         },
@@ -126,6 +128,25 @@
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
             "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
           ],
           "evidence": {}
         }
@@ -147,7 +168,8 @@
           "item": "kim-furosemide",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00009"
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
           ],
           "evidence": {}
         },
@@ -179,7 +201,8 @@
           "item": "stark-carvedilol",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00005"
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
           ],
           "evidence": {}
         },
@@ -206,6 +229,25 @@
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
             "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
           ],
           "evidence": {}
         }
@@ -273,6 +315,18 @@
           "evidence": {}
         },
         {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
           "item": "outside",
           "met": true,
           "decisive_ids": [],
@@ -296,7 +350,8 @@
           "item": "kim-furosemide",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00009"
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
           ],
           "evidence": {}
         },
@@ -328,7 +383,8 @@
           "item": "stark-carvedilol",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-00005"
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
           ],
           "evidence": {}
         },
@@ -355,6 +411,25 @@
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
             "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
           ],
           "evidence": {}
         }
@@ -418,6 +493,18 @@
         },
         {
           "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
           "met": true,
           "decisive_ids": [],
           "evidence": {}
@@ -487,6 +574,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09004"
+          ],
+          "evidence": {
+            "fired": [
+              "whitcomb-a1"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -550,6 +650,19 @@
           "evidence": {
             "fired": [
               "roberts-r1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09004"
+          ],
+          "evidence": {
+            "fired": [
+              "whitcomb-a1"
             ],
             "not_fired": []
           }
@@ -619,6 +732,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09004"
+          ],
+          "evidence": {
+            "fired": [
+              "whitcomb-a1"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -672,6 +798,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09004"
+          ],
+          "evidence": {
+            "fired": [
+              "whitcomb-a1"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -709,6 +848,19 @@
           "evidence": {
             "fired": [
               "stark-s1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09004"
+          ],
+          "evidence": {
+            "fired": [
+              "whitcomb-a1"
             ],
             "not_fired": []
           }
@@ -774,7 +926,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list",
-        "cache_key": "ef4d4576f6f74609e3843459e554087812a5c18ec46a9240e5656931a4f50683"
+        "cache_key": "839b975e13e09440c857aec8295b51653c5d55177a9f952253b08b543d3706d5"
       }
     },
     {
@@ -786,8 +938,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed",
-        "cache_key": "803cc9901fc202987933093feedc9303af7a27cf21fb422b846600ac85a135ed"
+        "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed",
+        "cache_key": "c94dfc11b8b00f15df86bf58bbe973b1aacb9683b1a28cf52b568887bfc5b025"
       }
     }
   ],
@@ -800,12 +952,12 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "ef4d4576f6f74609e3843459e554087812a5c18ec46a9240e5656931a4f50683",
-      "803cc9901fc202987933093feedc9303af7a27cf21fb422b846600ac85a135ed"
+      "839b975e13e09440c857aec8295b51653c5d55177a9f952253b08b543d3706d5",
+      "c94dfc11b8b00f15df86bf58bbe973b1aacb9683b1a28cf52b568887bfc5b025"
     ],
     "cache": [
       {
-        "key": "ef4d4576f6f74609e3843459e554087812a5c18ec46a9240e5656931a4f50683",
+        "key": "839b975e13e09440c857aec8295b51653c5d55177a9f952253b08b543d3706d5",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -823,14 +975,14 @@
         }
       },
       {
-        "key": "803cc9901fc202987933093feedc9303af7a27cf21fb422b846600ac85a135ed",
+        "key": "c94dfc11b8b00f15df86bf58bbe973b1aacb9683b1a28cf52b568887bfc5b025",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+          "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
         },
         "error": null,
         "calls": 1,

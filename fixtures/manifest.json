@@ -2,27 +2,27 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210",
-    "ndjson_sha256": "b34b31c276033e9664a439220af11030d85a0cc16064dbf5aecf09d513e2b6e4",
-    "resources": 7550,
+    "state_hash": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
+    "ndjson_sha256": "c880f8c7ae33a3b60623e6c9bc525ca24a4011575d46265befc1ae0a27d62ddc",
+    "resources": 7539,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
-      "Communication": 14,
-      "Condition": 905,
-      "DiagnosticReport": 489,
-      "DocumentReference": 224,
+      "Communication": 13,
+      "Condition": 915,
+      "DiagnosticReport": 486,
+      "DocumentReference": 226,
       "Encounter": 423,
       "EpisodeOfCare": 2,
       "Group": 5,
-      "MedicationRequest": 443,
-      "Observation": 3611,
+      "MedicationRequest": 447,
+      "Observation": 3588,
       "Organization": 10,
-      "Patient": 66,
+      "Patient": 67,
       "Practitioner": 20,
       "Procedure": 1251,
       "ServiceRequest": 3,
-      "Task": 30
+      "Task": 29
     }
   },
   "base": {
@@ -81,8 +81,8 @@
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
-    "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
-    "tasks/message-queue/overlay.ts": "bbc14a774c3a06b8d458ca162dc26198edc27543b30a9d8175815e2df69ee620",
+    "tasks/discharge-medrec/overlay.ts": "455ef35a311e698b3a1244771c010990840a3a237176b41edf0f21e09b5d2f06",
+    "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
     "tasks/renal-dose-review/overlay.ts": "2210ced9d4442304f1b472039e72c2ffeffff39f234fba69c16fe1e58bbd67d9",
     "tasks/results-inbox/overlay.ts": "686fc9e71a7897c1ccb7efedde5bea056e7901c1018c78d83c3557d6859216d6"
   },
@@ -113,7 +113,7 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "f645d557fe8bf1baa2f1b4c27b0692c3d96df38b42b747eca2fdc0796e85d8c0",
+    "sha256": "17f9593790a01d535f92dbd4be131575cd4d6a61457409c443e0ff035eeb481b",
     "synthea_file": "fixtures/synthea-ids.ts",
     "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }

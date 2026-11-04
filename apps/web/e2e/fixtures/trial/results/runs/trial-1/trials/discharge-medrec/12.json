@@ -1,12 +1,12 @@
 {
   "trial_id": "sample-1:discharge-medrec:12",
   "task_id": "discharge-medrec",
-  "task_version": "83160297acd6ca75b52806402ec05ad7fdb3bea606a0543a5c5160942ab9ffaa",
-  "env_version": "f2be44cec665a5dc266cf38458e71e5536998b4f28c6e75c3b46dbfa63bcdaa1",
-  "grader_task_version": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
-  "fixture_hash": "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210",
+  "task_version": "1727385f8259ee68027bb658e52200feae426e08cefc65da98216e3e835c9a89",
+  "env_version": "08d852025d09e73c807cfac4a41dea6269222642e0df1486c879e9a13a8b0f6d",
+  "grader_task_version": "96bfe6bcc98504e9ea343f27dbf05c0cdf945efdd625b240d83772a77d5f2587",
+  "fixture_hash": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
   "state_hash": {
-    "initial": "78d0e1940940c3c845f10fbdb0a102bf336da56d9dbe69b3e4813d7bb63b4210",
+    "initial": "369b3020d383863a5d4c46419cd9cc5afa17ac205dee317d1b99c0e20235629c",
     "final": null,
     "replay_final": null
   },
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:38:07.000Z",
+  "started": "2026-10-23T13:46:19.000Z",
   "turns": 1,
   "tool_calls": 3,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": null,
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:38:19.000Z",
+  "ended": "2026-10-23T13:46:31.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "ENV_ERROR",
