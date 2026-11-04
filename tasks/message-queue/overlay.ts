@@ -494,7 +494,9 @@ St. Brigid Regional Urgent Care`;
 function kaplan(world: WorldReader): Resource[] {
   return [
     patient(world, PT.webb, HOST.kaplan, 'kaplan', '1966-07-19', '555-0142', '14 Orchard Lane', 'Amherst', '01002', ['M', 'Married'], 'Ruth Feld', 'Worcester', [42.3732, -72.5199]),
-    condition('cond-t6-kaplan-htn', 'kaplan', HTN[0], HTN[1], '2019-02-11T10:00:00-05:00'),
+    // The hosts' problem-list onsets are afternoon ones, as T1's and T4's hosts' are (the Condition
+    // residual TH:onsetDateTime=am in scripts/test/world-tells.test.ts, capped at 0.81).
+    condition('cond-t6-kaplan-htn', 'kaplan', HTN[0], HTN[1], '2019-02-11T14:35:00-05:00'),
     medication('mr-t6-kaplan-lisinopril10', 'kaplan', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
     // The hosts' panels carry the generated charts' value forms (two decimal places on the analytes
     // that are not the item's lines, as most of Synthea's values; one on a potassium and an eGFR,
@@ -518,8 +520,8 @@ function kaplan(world: WorldReader): Resource[] {
 function mercer(world: WorldReader): Resource[] {
   return [
     patient(world, PT.hayes, HOST.mercer, 'mercer', '1954-04-09', '555-0168', '9 Linden Court', 'Greenfield', '01301', ['W', 'Widowed'], 'Margaret Doyle', 'Pittsfield', [42.5876, -72.5995]),
-    condition('cond-t6-mercer-htn', 'mercer', HTN[0], HTN[1], '2019-02-11T10:00:00-05:00'),
-    condition('cond-t6-mercer-t2dm', 'mercer', T2DM[0], T2DM[1], '2023-05-22T10:00:00-04:00'),
+    condition('cond-t6-mercer-htn', 'mercer', HTN[0], HTN[1], '2019-02-11T14:35:00-05:00'),
+    condition('cond-t6-mercer-t2dm', 'mercer', T2DM[0], T2DM[1], '2023-05-22T14:35:00-04:00'),
     medication('mr-t6-mercer-lisinopril10', 'mercer', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
     medication('mr-t6-mercer-metformin', 'mercer', RX.met1000, 1000, 'BID', '2025-10-27T09:15:00-04:00', 'Type 2 diabetes mellitus', YEAR_BID),
     encounter('enc-t6-mercer-0608', 'mercer', VISIT, '2026-06-08T09:00:00-04:00', '2026-06-08T09:30:00-04:00'),
