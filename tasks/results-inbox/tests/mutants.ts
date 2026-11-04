@@ -65,14 +65,14 @@ const amendsOn = (active: readonly string[], item: string) => SPECS.filter((s) =
 
 // The corrections whose item note, left as the oracle writes it before the arrival, states what the
 // corrected record denies: Walter Brennan's note calls his specimen hemolyzed, and the correction
-// says it was not. A near miss that keeps that decision after reading the correction loses
-// note_contradicts_result on the chart as delivered (judged live in PW4-T; a note that states the
-// first reading of a result the arrival corrected contradicts it).
-// The same for Raj Patel once the addendum has arrived: his base note plans the next LDCT for
-// April 2027 under the first report, which the addendum's 'LDCT in 6 months' contradicts; a near
-// miss that leaves that plan loses the penalty (the judge's live answer in the W5-E fill; its
-// earlier cached answer was 'unknown', which counts as neither).
-const KEPT_NOTE_CONTRADICTS: ReadonlySet<string> = new Set(['brennan-k-corrected', 'patel-ldct-addendum']);
+// says it was not; Raj Patel's base note plans the next LDCT for April 2027 under the first
+// report, which the addendum's 'LDCT in 6 months' contradicts. A near miss that keeps that decision
+// after reading the arrival would lose note_contradicts_result on the chart as delivered, and the
+// judge said so once for each (PW4-T, 2026-11-02; the W5-E fill, 2026-11-03). Asked again in the
+// W5-T train (2026-11-04), it answered 'unknown' three times of three on each question (the Brennan
+// one 'not_met' once more), and an unknown majority counts as not met (coordinator, W5-T): no near
+// miss declares the loss until the rubric item is reworded. The set is kept, empty, for that day.
+const KEPT_NOTE_CONTRADICTS: ReadonlySet<string> = new Set();
 
 // The mutants with `active` the active events (events.ts ACTIVE by default).
 export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
@@ -86,8 +86,8 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     why: "Reads Raj Patel's April screening LDCT but applies §2's high-risk row anyway (current smoker) and orders a CT chest 12 months from the October CT (2027-10-19), when his next screening LDCT runs from April: 2027-03-14 to 2027-05-14.",
     loses: ['nodule_scheduled_tracking_task'],
     // With the addendum active the stale note (April 2027, Lung-RADS 2) contradicts the chart as
-    // delivered (KEPT_NOTE_CONTRADICTS).
-    ...masked('nodule_scheduled', { fails: ['item_orders'], items: { nodule_scheduled: 'reasoning' } }, { fails: ['amended'], items: { nodule_scheduled: 'reasoning' }, loses: ['nodule_scheduled_tracking_task', 'note_contradicts_result'] }),
+    // delivered, but the judge answers unknown (KEPT_NOTE_CONTRADICTS): no loss declared.
+    ...masked('nodule_scheduled', { fails: ['item_orders'], items: { nodule_scheduled: 'reasoning' } }, { fails: ['amended'], items: { nodule_scheduled: 'reasoning' }, loses: ['nodule_scheduled_tracking_task'] }),
     script: solve({ ...hold('nodule_scheduled'), plans: { nodule_scheduled: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-19', end: '2027-11-19' }], track: '2027-11-19' } } }),
   },
   {
@@ -96,8 +96,8 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     why: "Repeats Walter Brennan's potassium correctly but also gives on-call a stat task about it, which RBC-LAB-03 §2 says not to do for a hemolyzed specimen.",
     loses: [],
     // With the correction active, the item's note still calls the specimen hemolyzed, which the
-    // corrected result denies: note_contradicts_result applies (KEPT_NOTE_CONTRADICTS).
-    ...masked('hemolyzed_note', { fails: ['item_no_forbidden'], items: { hemolyzed_note: 'over_action' } }, { fails: ['amended'], items: { hemolyzed_note: 'reasoning' }, loses: ['note_contradicts_result'] }),
+    // corrected result denies, but the judge answers unknown (KEPT_NOTE_CONTRADICTS): no loss declared.
+    ...masked('hemolyzed_note', { fails: ['item_no_forbidden'], items: { hemolyzed_note: 'over_action' } }, { fails: ['amended'], items: { hemolyzed_note: 'reasoning' }, loses: [] }),
     script: solve({ ...hold('hemolyzed_note'), plans: { hemolyzed_note: { more: (w) => [w.task(PT.brennan, 'Group/pool-oncall', '2026-10-23', 'stat', 'Potassium 6.4 mmol/L: please review today.', SRC.kC)] } } }),
   },
   {
@@ -289,7 +289,7 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     trap: 'nodule_screening_snippets',
     why: "Finds Raj Patel's October CT and his screening LDCT through two note searches whose snippets show the 4 mm solid nodule and the LDCT in 12 months, opens neither report, then applies §2's high-risk row anyway and orders a CT chest 12 months from the October CT (2027-10-19 to 2027-11-19).",
     loses: ['nodule_scheduled_tracking_task'],
-    ...masked('nodule_scheduled', { fails: ['item_orders'], items: { nodule_scheduled: 'reasoning' } }, { fails: ['amended'], items: { nodule_scheduled: 'reasoning' }, loses: ['nodule_scheduled_tracking_task', 'note_contradicts_result'] }),
+    ...masked('nodule_scheduled', { fails: ['item_orders'], items: { nodule_scheduled: 'reasoning' } }, { fails: ['amended'], items: { nodule_scheduled: 'reasoning' }, loses: ['nodule_scheduled_tracking_task'] }),
     script: solve({
       ...hold('nodule_scheduled'),
       reads: [...readsWithout([read(SRC.ctRp), reportsOf(PT.patel), read(SRC.ldctRp)]).slice(0, 2), { calls: [searchNotes('solid nodule', PT.patel), searchNotes('12 months', PT.patel)] }, ...readsWithout([read(SRC.ctRp), reportsOf(PT.patel), read(SRC.ldctRp)]).slice(2)],
