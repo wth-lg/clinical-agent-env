@@ -1493,11 +1493,8 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
       const mmss = (salt: string) => `${String(fnv(`chart-clock-m:${salt}:${fnv(p)}`) % 60).padStart(2, '0')}:${String(1 + (fnv(`chart-clock-s:${salt}:${fnv(p)}`) % 59)).padStart(2, '0')}`;
       clock.set('effectiveDateTime', new Map([[mmss('start'), 3]]));
       clock.set('period.end', new Map([[mmss('end'), 3]]));
-      // A result's issue time takes a third (Synthea issues a result on its chart's clock: on the
-      // cohort, 54% of generated Observation.issued values sit in their chart's top three mm:ss);
-      // a report's does not (profileWorld issues a generated report at a drawn minute and second,
-      // 19% in the top three), so DiagnosticReport:issued is left to the fill, as the cohort's are.
-      clock.set('Observation:issued', new Map([[mmss('issued'), 3]]));
+      // Issue times (UNTIMED paths) are left to the fill, as a generated report's are (profileWorld
+      // draws them); a seeded issue clock measured no gain and lifted T6's DiagnosticReport pair.
     }
     const everyTime = () => mine.flatMap((r) => stamps(r).filter((t) => !( !planted.has(key(r)) && UNTIMED.test(t.path))).map((t) => ({ r, ...t, s: sec(t.v) })));
 

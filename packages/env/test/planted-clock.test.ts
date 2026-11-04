@@ -94,17 +94,6 @@ describe('plantedClock on an added chart (no generated record)', () => {
     expect(new Set(starts(run('pt-0071')).map(mmss))).not.toEqual(a);
   });
 
-  it("its results' issue times share a minute-and-second of their own; a report's issue time is drawn, as the cohort's are (#221 round 2 F1)", () => {
-    const subject = { reference: 'Patient/pt-0070' };
-    const report = { resourceType: 'DiagnosticReport', id: 'dr-x', status: 'final', subject, category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB' }] }], code: { coding: [{ system: 'http://loinc.org', code: '24321-2' }] }, effectiveDateTime: '2026-09-30T08:30:00-04:00', issued: '2026-09-30T13:40:00-04:00', result: [{ reference: 'Observation/obs-pt-0070-2' }] } as unknown as Resource;
-    const rs = [...added('pt-0070'), report];
-    const out = plantedClock(rs, new Set([...keys(added('pt-0070')), 'DiagnosticReport/dr-x']));
-    const issued = (t: string) => out.filter((r) => r.resourceType === t).flatMap((r) => { const i = (r as unknown as { issued?: string }).issued; return i ? [mmss(i)] : []; });
-    expect(new Set(issued('Observation')).size, issued('Observation').join(' ')).toBe(1);
-    expect(issued('DiagnosticReport')).toHaveLength(1);
-    expect(issued('DiagnosticReport')[0]).not.toBe(issued('Observation')[0]);
-  });
-
   it('an instant that is both a start and an end takes the start clock (#221 round 2 F1b)', () => {
     // The second visit starts the instant the first ends (in the next hour, so the instant is the
     // hour's first draw and the first visit's length needs no move): both fields hold one time and
@@ -122,6 +111,41 @@ describe('plantedClock on an added chart (no generated record)', () => {
     expect(mmss(at('enc-b').period!.start)).toBe(mmss(at('obs-a').effectiveDateTime!));
   });
 
+  // The chart's two seeded values: a lone start (a result's draw) and a lone end (a problem's
+  // abatement, the one end path no visit-length rule touches), each the only instant of its hour.
+  const seeds = (patient: string) => {
+    const subject = { reference: `Patient/${patient}` };
+    const rs = [
+      { resourceType: 'Patient', id: patient },
+      { resourceType: 'Observation', id: 'obs-s', status: 'final', subject, category: LAB, code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, effectiveDateTime: '2026-06-08T10:05:00-04:00', issued: '2026-06-08T15:10:00-04:00' },
+      { resourceType: 'Condition', id: 'cond-e', clinicalStatus: { coding: [{ code: 'resolved' }] }, subject, onsetDateTime: '2020-01-14T10:00:00-05:00', abatementDateTime: '2026-06-09T10:20:00-04:00' },
+    ] as unknown as Resource[];
+    const out = plantedClock(rs, new Set(['Observation/obs-s', 'Condition/cond-e']));
+    const at = (id: string) => out.find((r) => r.id === id) as unknown as { effectiveDateTime?: string; abatementDateTime?: string };
+    return { start: mmss(at('obs-s').effectiveDateTime!), end: mmss(at('cond-e').abatementDateTime!) };
+  };
+
+  it('a shared instant whose start value the band already spent takes a fill second, never the end clock (#221 round 3 M1)', () => {
+    // An id whose end value sorts after its start value, so a merged pool (the rule applied to no
+    // chart) would hold the end value alone once the start value is spent, and land on it.
+    const patient = Array.from({ length: 40 }, (_, i) => `pt-${String(70 + i).padStart(4, '0')}`).find((id) => seeds(id).end > seeds(id).start)!;
+    const { start, end } = seeds(patient);
+    const subject = { reference: `Patient/${patient}` };
+    const rs = [
+      { resourceType: 'Patient', id: patient },
+      // A result at 10:05 spends the hour's start value; a zero-length visit at 10:20 (a participant
+      // period's shape) is the instant the next visit starts.
+      { resourceType: 'Observation', id: 'obs-first', status: 'final', subject, category: LAB, code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, effectiveDateTime: '2026-06-08T10:05:00-04:00', issued: '2026-06-08T15:10:00-04:00' },
+      { resourceType: 'Encounter', id: 'enc-zero', status: 'finished', subject, period: { start: '2026-06-08T10:20:00-04:00', end: '2026-06-08T10:20:00-04:00' } },
+      { resourceType: 'Encounter', id: 'enc-next', status: 'finished', subject, period: { start: '2026-06-08T10:20:00-04:00', end: '2026-06-08T11:40:00-04:00' } },
+    ] as unknown as Resource[];
+    const out = plantedClock(rs, new Set(['Observation/obs-first', 'Encounter/enc-zero', 'Encounter/enc-next']));
+    const at = (id: string) => out.find((r) => r.id === id) as unknown as { period: { start: string; end: string }; effectiveDateTime: string };
+    expect(mmss(at('obs-first').effectiveDateTime)).toBe(start);
+    expect(at('enc-zero').period.start).toBe(at('enc-next').period.start);
+    expect(mmss(at('enc-next').period.start), `end value ${end}`).not.toBe(end);
+  });
+
   it('consecutive patient ids do not take consecutive minutes (#221 round 2 F2)', () => {
     const minute = (patient: string) => Number(starts(run(patient))[0]!.slice(14, 16));
     const ids = Array.from({ length: 30 }, (_, i) => `pt-${String(61 + i).padStart(4, '0')}`);
@@ -130,19 +154,24 @@ describe('plantedClock on an added chart (no generated record)', () => {
     expect(consecutive, ms.join(' ')).toBeLessThanOrEqual(3);
   });
 
-  it('a chart with generated records takes its clock from them, as before: the seeded clock never applies, and an instant that is both a start and an end keeps its merged draw there', () => {
-    // A planted order authored as its planted visit ends, on a chart with a generated clock: the
-    // instant draws from the starts' and the ends' pools together, as before this change.
+  it('a chart with generated records takes its clock from them, as before: the seeded clock never applies, and an instant that is both a start and an end keeps its merged draw there (#221 round 3 S1)', () => {
+    // A planted order authored the instant a planted note's context period ends, on a chart with a
+    // generated clock (an instant that is both a start and an end, as the cohort's pt-0034 has at
+    // enc-00236 and mr-00318 to mr-00320; a note rather than a visit, so no visit-length rule decides
+    // it and the band draw does). The merged pool of the chart's visit starts and ends lands on the
+    // visit end 55:35 (an exact value: the draw is a hash of the chart and the instant); the
+    // start-pool rule applied to this chart would land it on a visit start (26:16).
     const subject = { reference: 'Patient/pt-x' };
-    const withOrder = [
+    const withNote = [
       ...chart('Follow-up.'),
-      { resourceType: 'Encounter', id: 'enc-planted', status: 'finished', subject, period: { start: '2026-10-09T13:00:00-04:00', end: '2026-10-09T13:30:00-04:00' } },
-      { resourceType: 'MedicationRequest', id: 'mr-planted', status: 'active', intent: 'order', subject, authoredOn: '2026-10-09T13:30:00-04:00' },
+      { resourceType: 'DocumentReference', id: 'doc-ctx', status: 'current', subject, date: '2026-10-09T13:30:00-04:00', context: { period: { start: '2026-10-09T13:00:00-04:00', end: '2026-10-09T13:30:00-04:00' } }, content: [{ attachment: { contentType: 'text/plain', data: b64('Note.') } }] },
+      { resourceType: 'MedicationRequest', id: 'mr-ctx', status: 'active', intent: 'order', subject, authoredOn: '2026-10-09T13:30:00-04:00' },
     ] as unknown as Resource[];
-    const moved = plantedClock(withOrder, new Set(['DocumentReference/doc-planted', 'Encounter/enc-planted', 'MedicationRequest/mr-planted']));
-    const order = moved.find((r) => r.id === 'mr-planted') as unknown as { authoredOn: string };
-    const visitEnds = new Set(chart('Follow-up.').filter((r) => r.resourceType === 'Encounter').map((r) => mmss((r as unknown as { period: { end: string } }).period.end)));
-    expect(visitEnds.has(mmss(order.authoredOn)), order.authoredOn).toBe(true);
+    const moved = plantedClock(withNote, new Set(['DocumentReference/doc-planted', 'DocumentReference/doc-ctx', 'MedicationRequest/mr-ctx']));
+    const order = moved.find((r) => r.id === 'mr-ctx') as unknown as { authoredOn: string };
+    const ctx = moved.find((r) => r.id === 'doc-ctx') as unknown as { context: { period: { end: string } } };
+    expect(order.authoredOn).toBe(ctx.context.period.end);
+    expect(order.authoredOn).toBe('2026-10-09T13:55:35-04:00');
     const out = plantedClock(chart('Follow-up.'), new Set(['DocumentReference/doc-planted']));
     const visits = new Set(out.filter((r) => r.resourceType === 'Encounter').map((r) => mmss((r as unknown as { period: { start: string } }).period.start)));
     const note = out.find((r) => r.id === 'doc-planted') as unknown as { date: string; context: { period: { start: string } } };
