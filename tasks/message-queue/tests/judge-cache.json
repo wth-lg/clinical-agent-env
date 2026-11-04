@@ -394,5 +394,401 @@
       "model": "claude-opus-5-5",
       "at": "2026-11-03T10:36:33.113Z"
     }
+  },
+  {
+    "key": "0fd3eb22603966629d156e84a1be86cc99ca8516d3c3cb8af27e8e7827710ba9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "1a0588b03648ced0da6c758f956be5b759c2a7d9024585c5480f09c1e501f802",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "20cea587dd9edf63946d6d8545947ad97b6f094419d54661ccf07af2fab7a110",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "3897111642eac8880b594ebd6372f6253e95df3694ec9b712d510abe99df65a7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "3cd6a47419af22ee00db7fb9282766b7cfb0c1177b4353cb0c0c8c80b133f100",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "3d8e2dd72a7d10a6e490413c88afbba1b252751cab0c76e4b7f2dd6c0a74615d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "96c51c20c6bff38fbd413c5544b58ab21a36917087c30258a4ffb1b3f9ebd5e1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "ec7f30492c2883d2166a8081b7aaf580cc52af6ed62139dfb54485c9d6b99fda",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T17:59:46.972Z"
+    }
+  },
+  {
+    "key": "06e4c32a8f424dca3255f76a4a9766b69ede23d637960cb35ab15e1d374d9e99",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:02:27.034Z"
+    }
+  },
+  {
+    "key": "54c3bb93d2d3a01a9a3c86c0be25715ca3eb7a41bdc01457dcf7924fe80f674c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:02:27.034Z"
+    }
+  },
+  {
+    "key": "7e4588c0c89b59820e97424996a633be8a7b43a23fdb39783f70409fbc3f13a3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:02:27.034Z"
+    }
+  },
+  {
+    "key": "acc5a377cd776432918c95bc138ab2f8bb7ad0b8a4f429bd3bd740268bb1eb93",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:02:27.034Z"
+    }
+  },
+  {
+    "key": "0e1aa498234e1b793b79053aa4e4b57161480e1a47446064c678ecfc9e93433e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "333d655627ab77a0c38c931e6f125f0dbd2743c124373ea9cd89e9c9e877f4d4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "3406fded72112a6f4964d3b99650230131bd1252d867dde2e3c59ff3f6423e77",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "38b5ca66ef320a1ddd5d467bd24580e8a5d55c1fca58ec3ae2d4af30c11cbdf7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "54b2989309b45b5bef369335a805daaa041c096ab9556774069d2b3b13d26d44",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "9f184e2adf9360b8277c73ccd2227364d8d75037a3e8755faffd4f08615e92b9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "be147f529be2df15c9f7e038141a1faabbc5232e34eb2b42e71fc0efcfe5b3cc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "c77a83fe2b2f36b085c9702e42a00aada33039a98555a7e49424ae9d19b8f7c3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "e17dc6424383613f36bb39f0f600222a11e5aaa41669391d02007af7fef0b95e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
+  },
+  {
+    "key": "e1fec536bc0e4c942f3f91177a45c150943fb8c9af00416a7ff62e607034e558",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-04T18:08:53.351Z"
+    }
   }
 ]

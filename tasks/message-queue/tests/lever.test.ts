@@ -46,6 +46,9 @@ const all = [...store.resources()];
 const reader: WorldReader = { get: store.get.bind(store), search: store.search.bind(store), resources: store.resources.bind(store), size: store.size };
 const task = await nodeTaskSource({ testMode: false }).get('message-queue');
 const FILES = nodeTaskDirs().find((d) => d.id === 'message-queue')!.files;
+
+// The reserve's texts that name her panel's date (tests/rubric.ts, solution/steps.ts), as text.
+const RESERVE_TEXTS = ['tests/rubric.ts', 'solution/steps.ts'].map((f) => { const t = FILES[f]; if (t === undefined) throw new Error(`${f} is not among the task's files`); return t; });
 const T6_SLOTS: readonly string[] = TASKS.T6.slots;
 const LEVER_DECL = /^export const LEVER(?:\s*:\s*[^=\n]+?)?\s*=\s*\[([^\]]*)\]/m;
 const leverOfText = (text: string) => (LEVER_DECL.exec(text)![1]!.match(/'([^']*)'|"([^"]*)"/g) ?? []).map((q) => q.slice(1, -1));
@@ -119,6 +122,13 @@ describe('message-queue lever toggles (W5-E)', () => {
         expect(T6_SLOTS.includes(p) || hostIds.has(p), `${key} (${id}) names Patient/${p}`).toBe(true);
         expect(frozen.has(p), `${key} touches a frozen task's patient`).toBe(false);
       }
+    }
+  });
+
+  it("the reserve's rubric matters and the oracle's reply to Mercer date her panel as the world does, October 20 (gate W5E-T6-223 S2)", () => {
+    for (const text of RESERVE_TEXTS) {
+      expect(text).not.toMatch(/October 15/);
+      expect(text).toMatch(/October 20/);
     }
   });
 

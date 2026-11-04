@@ -36,7 +36,7 @@ const ALL_MATTERS: Matters = {
   // their keys otherwise; listed whatever LEVER holds, so the criterion reads the same in every
   // lever state (a patient not on the queue is simply never messaged).
   [`Patient/${idOf(HOST_KEYS.kaplan)}`]: ['Leonard Kaplan', 'his lisinopril dose increase to 20 mg on September 28, 2026 and its refill, and his blood tests: on the morning of September 28, 2026: creatinine 1.00, potassium 4.5; at urgent care that evening: creatinine 1.24, potassium 4.3; on October 19, 2026: creatinine 1.46, potassium 4.8'],
-  [`Patient/${idOf(HOST_KEYS.mercer)}`]: ['Rosalind Mercer', 'her lisinopril dose increase to 20 mg on October 1, 2026 and its refill, her metformin refill and her blood tests: HbA1c 7.3 on June 8, 2026; on September 30, 2026: creatinine 1.00, potassium 4.6, eGFR 60; on October 15, 2026: creatinine 1.12, potassium 4.9, eGFR 52'],
+  [`Patient/${idOf(HOST_KEYS.mercer)}`]: ['Rosalind Mercer', 'her lisinopril dose increase to 20 mg on October 1, 2026 and its refill, her metformin refill and her blood tests: HbA1c 7.3 on June 8, 2026; on September 30, 2026: creatinine 1.00, potassium 4.6, eGFR 60; on October 20, 2026: creatinine 1.12, potassium 4.9, eGFR 52'],
 };
 // What each amend event adds to its patient's matters once it has arrived (events.ts): the chart as
 // delivered.
@@ -47,7 +47,7 @@ const MATTERS_AFTER: Record<string, [patient: string, adds: string]> = {
   'webb-c1': ['Patient/pt-0031', 'a panel drawn October 22, 2026: potassium 5.8 (high), creatinine 1.04, eGFR 90'],
   'webb-b2': ['Patient/pt-0031', 'the September 28 HbA1c of 6.9 marked entered in error (not his specimen)'],
   'webb-a1': ['Patient/pt-0031', 'a panel drawn October 22, 2026: potassium 4.6, creatinine 1.04, eGFR 90, and his lisinopril renewed for 90 days on it'],
-  'mercer-b1': [`Patient/${idOf(HOST_KEYS.mercer)}`, 'the October 15 creatinine corrected by the laboratory to 1.46 and the eGFR to 38'],
+  'mercer-b1': [`Patient/${idOf(HOST_KEYS.mercer)}`, 'the October 20 creatinine corrected by the laboratory to 1.46 and the eGFR to 38'],
 };
 // The queue's patients (expected.ts ITEMS) and the lever hosts.
 const HOSTS = new Set(Object.values(HOST_KEYS).map((k) => `Patient/${idOf(k)}`));

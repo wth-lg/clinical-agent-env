@@ -4,7 +4,7 @@ Applies to refill requests in the clinician's messages queue, from patients or f
 
 §1 Which result counts
 Decide on the most recent valid result in the chart, from any source: the clinic's results and scanned outside laboratory reports.
-A result's date is the date its specimen was collected, not the date it was reported, filed or scanned. Each window below counts back from today to that date.
+A result's date is the date and time its specimen was collected, not the date it was reported, filed or scanned. Each window below counts back from today to that date.
 A result marked entered in error is not a result. An amended or corrected result replaces the result it corrects, wherever the earlier value was recorded. The laboratory records a result's status and its notes on the result: check each result's status and notes on the result itself, not only its value.
 A potassium measured on a hemolyzed specimen is not a valid potassium: decide on the most recent valid potassium, and order a BMP to repeat it.
 A comprehensive metabolic panel contains a BMP and counts as one.

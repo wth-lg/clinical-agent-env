@@ -49,7 +49,7 @@ max_turns = 160
 [[policy]]
 id = "RBC-RX-05"
 title = "Refill protocol"
-version = "3"
+version = "4"
 effective = "2025-01-01"
 source = "Environment-local refill protocol (worklist form). The potassium line of 5.5 mmol/L or higher is derived from the KDIGO 2024 CKD guideline hyperkalemia action threshold (Figure 32) and the 30% creatinine rule from its Practice Point 3.6.4; the metformin eGFR line of 45 from the FDA metformin label (section 2.3), where the KDIGO 2022 Diabetes in CKD guideline allows metformin at a reduced dose at eGFR 30-44 and this protocol is stricter (it holds the refill for prescriber review); the 6-month HbA1c window from ADA Standards of Care 2026 recommendation 6.2, 'Assess glycemic status at least two times a year, and more frequently (e.g., every 3 months) for individuals not meeting glycemic goals or with recent treatment changes, frequent or severe hypoglycemia or hyperglycemia, or changes in health status, or during periods of rapid growth and development in children and adolescents. (E)', whose 6-month window is a local floor (the protocol never asks for an HbA1c more often); the hemolysis rule from the UK Kidney Association hyperkalaemia guideline (2023)."
 file = "rbc-rx-05.md"

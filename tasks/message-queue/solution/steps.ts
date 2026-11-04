@@ -201,7 +201,7 @@ export function replies(active: readonly string[] = ACTIVE): ScriptCall[] {
   const webbMet = on('webb-b2') ? 'I sent a 30-day supply of metformin 500 mg; please have an HbA1c drawn at our lab in the next two weeks so we can renew it for longer.' : 'I sent a 90-day supply of metformin 500 mg with 1 refill.';
   const kaplan = 'I did not refill lisinopril 20 mg for now: your kidney blood test from October 19 needs Dr. Okafor\'s review first, and she will contact you soon.';
   const mercer = on('mercer-b1')
-    ? 'I did not refill lisinopril 20 mg or metformin 1000 mg for now: the laboratory corrected your kidney blood test from October 15 this morning, and both need Dr. Okafor\'s review first. She will contact you soon.'
+    ? 'I did not refill lisinopril 20 mg or metformin 1000 mg for now: the laboratory corrected your kidney blood test from October 20 this morning, and both need Dr. Okafor\'s review first. She will contact you soon.'
     : 'I sent a 90-day supply of lisinopril 20 mg with 1 refill, and a 90-day supply of metformin 1000 mg with 1 refill.';
   return [
     message(PT.odum, 'Your lisinopril refill', odum),

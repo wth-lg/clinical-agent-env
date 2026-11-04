@@ -323,6 +323,9 @@ describe('T6 probe rulings', () => {
     // Both in §1, the section on which results count and how to review them (as T3's §7).
     const s1 = policy.slice(policy.indexOf('§1'), policy.indexOf('§2'));
     expect(s1).toContain('A comprehensive metabolic panel contains a BMP and counts as one.');
+    // W5-E (plan-amendment-w5 T6; gate W5E-T6-223 S1): a result's date is its collection time, said
+    // outright, since item B turns on two draws of one day (08:40 and 17:30).
+    expect(s1).toContain("A result's date is the date and time its specimen was collected, not the date it was reported, filed or scanned.");
     expect(s1).toContain('A search narrowed by code, category or status shows only what it names; to show that a patient has no qualifying record, do not narrow out any record that could count.');
   });
 
