@@ -18,7 +18,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
-import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
+import { fetchEvents, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
@@ -119,14 +119,17 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   if (runId === 'session') return <Frame title="Trials from this session" headingRef={headingRef}><SessionNotice /></Frame>;
   if (results === null) return <Frame title={title} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
   if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
-  const runs = [...(results.official ? [results.official] : []), ...results.pilots];
+  const runs = [...(results.official ? [results.official] : []), ...results.superseded, ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
   if (r.kind !== 'trial') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">{r.message}</Notice></Frame>;
-  return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
+  return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} frozen={results.frozen[r.trial.task] ?? null} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
 }
 
-function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; files: ReadonlySet<string>; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+// The run's place in words: the official run, a superseded version of one of its tasks (R42), or a pilot.
+const runWords = (run: RunData): string => (run.official ? ', the official run' : run.superseded !== null ? `, the superseded ${run.superseded.version} of ${run.superseded.task} in ${run.superseded.of}, not counted in the results` : ', a pilot run, not counted in the results');
+
+function Detail({ t, run, files, frozen, tab, headingRef }: { t: Trial; run: RunData; files: ReadonlySet<string>; frozen: FrozenTask | null; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const [full, setFull] = useState<Explanation | null>(null);
   const [events, setEvents] = useState<Loaded<TrialEvent[]> | null>(() => (t.trajectoryUrl === null && !t.record.trajectory ? null : { state: 'loading' }));
   const [current, setCurrent] = useState<{ step: number; seq: number } | null>(null);
@@ -167,7 +170,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
-          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>
+          Run <span className="font-medium text-ink">{run.runId}</span>{runWords(run)}. Task <span className="font-medium text-ink">{t.task}</span>
           {/* A blocked run has no pass rate, here too (verifier-phase-P17i-JU7r2-1 F1). */}
           {run.official && runBlock(run.trials) !== null ? <>: <span data-testid="run-blocked-line">the run is blocked, so it has no pass rate</span></>
             : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
@@ -178,7 +181,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
-              'state-diff': <StateDiff official={run.official} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
+              'state-diff': <StateDiff official={run.official} frozen={frozen} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
             }}

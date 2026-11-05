@@ -8,7 +8,7 @@ import { Loader2, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
-import type { Trial } from '../data/results.ts';
+import type { FrozenTask, Trial } from '../data/results.ts';
 import { BUTTON, Hash } from '../data/ui.tsx';
 import { MANIFEST } from '../data/world.ts';
 import { EvidenceId, Section } from './Grading.tsx';
@@ -22,8 +22,11 @@ type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message:
 // decisiveIds: the evidence ids of the decisive check, marked wherever they show.
 // official: the trial is of the official run. A pilot on another world is said in a neutral tone
 // and offers no Replay (it cannot reproduce on today's world); an official trial on another world
-// keeps the alert, because the committed results must run on today's world (P17j JU11).
-export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean }) {
+// keeps the alert, because the committed results must run on today's world (P17j JU11), unless
+// that world is its task's frozen one (frozen: the task's entry in results/tasks-final.json): then
+// the trial is historical data, reproduced at the commit the freeze names (R37, pre-audit-2 S15),
+// said in a neutral tone with the tag and commit, and with no Replay here.
+export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true, frozen = null }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean; frozen?: FrozenTask | null }) {
   const [run, setRun] = useState<Run>({ state: 'idle' });
   const h = t.record.state_hash;
   const manifest = MANIFEST.world.state_hash;
@@ -41,10 +44,16 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
   // A trial from another world cannot be reproduced on today's: a differing hash is expected
   // there, not a failure (verifier-phase-P16-1 m3).
   const otherWorld = h.initial !== manifest;
+  const onFrozen = official && otherWorld && frozen !== null && frozen.world_hash !== manifest && h.initial === frozen.world_hash;
+  const reproduce = frozen?.replay_at ?? null;
   return (
     <div className="space-y-4">
       {!otherWorld ? (
         <p data-testid="manifest-line" className="break-words text-ink">Initial state hash matches the manifest: the trial started from the world every trial starts from.</p>
+      ) : onFrozen ? (
+        <p data-testid="manifest-line" data-tone="frozen" className="break-words text-ink-muted">
+          This trial started from the frozen world of {t.task} ({h.initial!.slice(0, 4)}…), not today's ({manifest.slice(0, 4)}…). Its records are historical and are reproduced at {reproduce !== null ? <>tag <code className="text-xs text-ink">{reproduce.tag}</code> ({reproduce.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{frozen.frozen_at.tag}</code></>}, not here.
+        </p>
       ) : official ? (
         <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
       ) : (
@@ -82,7 +91,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
           </ul>
         )}
       </Section>
-      {!(otherWorld && !official) && (
+      {!(otherWorld && !official) && !onFrozen && (
       <div className="space-y-2" data-testid="replay-block">
         <button type="button" className={BUTTON} disabled={!canReplay || run.state === 'running'} onClick={() => void replay()}>
           {run.state === 'running' ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" strokeWidth={1.75} /> : <RotateCcw aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}

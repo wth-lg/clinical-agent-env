@@ -9,7 +9,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FINAL_TRIALS_PER_TASK } from '../../../packages/core/cost.ts';
-import { bandCount, bandLine, notFinalLine, officialRunLabel, verdictLabel } from '../src/overview/band.ts';
+import { bandCount, bandLine, isFinalTask, notFinalLine, officialRunLabel, verdictLabel } from '../src/overview/band.ts';
+import { bandVerdict } from '../../../packages/core/summary.ts';
 
 const N = FINAL_TRIALS_PER_TASK;
 const inBand = { band_verdict: 'In band' as const, trials: N };
@@ -114,12 +115,14 @@ describe('verdictLabel', () => {
 });
 
 describe('officialRunLabel', () => {
-  const at = (trials: number) => ({ trials });
+  // A task at n valid trials with the verdict of k passes (bandVerdict), as summary.json gives it.
+  const at = (trials: number, passes = Math.floor(trials / 2)) => ({ trials, band_verdict: bandVerdict(passes, trials) });
+  const every = (trials: number) => Object.fromEntries(ALL.map((t) => [t, at(trials)]));
 
   it('is (final) only when the run covers every task of the environment and each has the final sample of valid trials', () => {
-    expect(officialRunLabel(Object.fromEntries(ALL.map((t) => [t, at(20)])), ALL)).toBe('(final)');
-    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), 'crc-care-gap': at(21) }, ALL)).toBe('(final)');
-    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), 'crc-care-gap': at(12) }, ALL)).toBe('(official, in progress)');
+    expect(officialRunLabel(every(20), ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...every(20), 'crc-care-gap': at(21) }, ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...every(20), 'crc-care-gap': at(12) }, ALL)).toBe('(official, in progress)');
     expect(officialRunLabel({}, ALL)).toBe('(official, in progress)');
   });
 
@@ -129,15 +132,31 @@ describe('officialRunLabel', () => {
   });
 
   it('a task the run holds beyond the environment list counts too, as in bandCount', () => {
-    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), _toy: at(20) }, ALL)).toBe('(final)');
-    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), _toy: at(3) }, ALL)).toBe('(official, in progress)');
+    expect(officialRunLabel({ ...every(20), _toy: at(20) }, ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...every(20), _toy: at(3) }, ALL)).toBe('(official, in progress)');
   });
 
-  it('while the task list loads (null), only the run\'s own tasks decide, as in bandCount', () => {
-    expect(officialRunLabel({ a: at(20), b: at(21) }, null)).toBe('(final)');
-    expect(officialRunLabel({ a: at(20), b: at(12) }, null)).toBe('(official, in progress)');
+  // HARD2-228-1 m1: while the task list is null (loading, or its load failed) the label cannot know
+  // the run covers every task, so it never claims (final).
+  it('while the task list is null (loading or failed) the label is (official, in progress), never (final)', () => {
+    expect(officialRunLabel(every(20), null)).toBe('(official, in progress)');
+    expect(officialRunLabel({ a: at(20), b: at(21) }, null)).toBe('(official, in progress)');
     expect(officialRunLabel({ a: at(12) }, null)).toBe('(official, in progress)');
     expect(officialRunLabel({}, null)).toBe('(official, in progress)');
+  });
+
+  // HARD2-228-1 m2: one isFinal predicate (the final sample and a band verdict) for the label and
+  // the band count, so a task at 20 trials with no verdict is final in neither.
+  it('shares bandCount\'s isFinal predicate: 20 valid trials and a band verdict', () => {
+    const noVerdict = { ...every(20), 'crc-care-gap': { trials: 20, band_verdict: null } };
+    expect(isFinalTask(noVerdict['crc-care-gap'])).toBe(false);
+    expect(isFinalTask(at(20))).toBe(true);
+    expect(isFinalTask(at(19))).toBe(false);
+    expect(isFinalTask(undefined)).toBe(false);
+    expect(officialRunLabel(noVerdict, ALL)).toBe('(official, in progress)');
+    expect(bandCount(noVerdict, ALL).final).toBe(ALL.length - 1);
+    expect(bandCount(every(20), ALL).final).toBe(ALL.length);
+    expect(officialRunLabel(every(20), ALL)).toBe('(final)');
   });
 });
 

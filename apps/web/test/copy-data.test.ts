@@ -25,7 +25,12 @@ function resultsTree(): string {
   put(root, 'results/runs/final-1/manifest.json');
   put(root, 'results/runs/final-1/audit.jsonl', '{}\n');
   put(root, 'results/runs/final-1/scratch.tmp', 'not copied\n');
+  // R42: a task's superseded version, with its trials, trajectory and README.
+  put(root, 'results/runs/final-1/superseded/t1-v1/trials/t1/0.json');
+  put(root, 'results/runs/final-1/superseded/t1-v1/trajectories/t1/0.jsonl', '{}\n');
+  put(root, 'results/runs/final-1/superseded/t1-v1/README.md', '# t1 v1\n');
   put(root, 'results/runs/pilot-1/summary.json');
+  put(root, 'results/tasks-final.json');
   put(root, 'docs/findings.md', '# Findings\n');
   return root;
 }
@@ -36,10 +41,14 @@ const EXPECTED = [
   'results/runs/final-1/audit.jsonl',
   'results/runs/final-1/manifest.json',
   'results/runs/final-1/summary.json',
+  'results/runs/final-1/superseded/t1-v1/README.md',
+  'results/runs/final-1/superseded/t1-v1/trajectories/t1/0.jsonl',
+  'results/runs/final-1/superseded/t1-v1/trials/t1/0.json',
   'results/runs/final-1/trajectories/t1/0.jsonl',
   'results/runs/final-1/trajectories/t1/1.jsonl',
   'results/runs/final-1/trials/t1/0.json',
   'results/runs/final-1/trials/t1/1.json',
+  'results/tasks-final.json',
 ];
 
 const index = (outDir: string) => JSON.parse(readFileSync(join(outDir, 'data/index.json'), 'utf8')) as { files: string[] };
@@ -60,6 +69,16 @@ describe('copyData', () => {
     for (const f of files) expect(existsSync(join(outDir, 'data', f))).toBe(true);
     expect(existsSync(join(outDir, 'data/results/runs/pilot-1'))).toBe(false);
     expect(existsSync(join(outDir, 'data/results/runs/final-1/scratch.tmp'))).toBe(false);
+  });
+
+  it('publishes docs/writeup.html as data/writeup.html, where the Findings view links it', () => {
+    const root = resultsTree();
+    put(root, 'docs/writeup.html', '<!doctype html>\n');
+    const outDir = tmp('dist');
+    copyData({ root, outDir });
+    expect(index(outDir).files).toEqual([...EXPECTED, 'writeup.html'].sort());
+    expect(readFileSync(join(outDir, 'data/writeup.html'), 'utf8')).toBe('<!doctype html>\n');
+    expect(existsSync(join(outDir, 'data/docs/writeup.html'))).toBe(false);
   });
 
   it('writes an empty index when there is no source data', () => {
@@ -115,6 +134,8 @@ describe('vite build with copy-data', () => {
     expect(r.status, r.stderr).toBe(0);
     expect(index(outDir).files).toEqual(EXPECTED);
     expect(existsSync(join(outDir, 'data/results/runs/final-1/trials/t1/1.json'))).toBe(true);
+    expect(existsSync(join(outDir, 'data/results/runs/final-1/superseded/t1-v1/trials/t1/0.json'))).toBe(true);
+    expect(existsSync(join(outDir, 'data/results/tasks-final.json'))).toBe(true);
   });
 
   it('exits 0 with an empty index when there is no results/', () => {

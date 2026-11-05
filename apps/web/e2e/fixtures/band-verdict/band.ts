@@ -7,9 +7,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Summary } from '../../../../../packages/core/summary.ts';
 import { serve } from '../sample-results/sample.ts';
-import { OFFICIAL, PILOT, PILOT_ID, RUN_ID } from './generate.ts';
+import { OFFICIAL, PILOT, PILOT_ID, RUN_ID, SUPERSEDED, SUPERSEDED_KEY } from './generate.ts';
 
-export { OFFICIAL, PILOT, PILOT_ID, RUN_ID };
+export { OFFICIAL, PILOT, PILOT_ID, RUN_ID, SUPERSEDED, SUPERSEDED_KEY };
 export const ROOT = fileURLToPath(new URL('./', import.meta.url));
 const REPO = fileURLToPath(new URL('../../../../../', import.meta.url));
 export const summary = JSON.parse(readFileSync(join(ROOT, 'results/runs', RUN_ID, 'summary.json'), 'utf8')) as Summary;

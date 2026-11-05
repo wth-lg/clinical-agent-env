@@ -49,6 +49,9 @@ export interface FrozenTask {
   oracle_final_hash: string;
   frozen_at: { tag: string };
   frozen_from_branch: string;
+  // The tag and commit that reproduce the task's final-1 records (R37): the commit holds the run,
+  // the frozen world and the grader of the current grade.
+  replay_at?: { tag: string; commit: string };
   regrades: FrozenRegrade[];
 }
 // A task whose freeze a new version superseded (R42, T3 v2): `status: "v2-pending"`, the reason,
@@ -164,6 +167,30 @@ describe('results/tasks-final.json', () => {
       }
       const now = await taskVersions(await source.get(id), t.world_hash);
       expect(now.task_version, `${id} is pending a new version, so its checkout files must differ from the superseded freeze`).not.toBe(held.task_version);
+    }
+  });
+
+  // Pre-audit-2 S14, R37: replay_at names the commit that reproduces a frozen task's final-1
+  // records, which is not the freeze commit once a grader fix regraded them (the freeze's grader
+  // contradicts the current grade): a tag the coordinator creates, and the commit it names, so the
+  // test holds before the tag exists. That commit's tree must hold the run and the frozen world.
+  it('replay_at names a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
+    const d = doc();
+    // A v2-pending task's replay_at is its superseded freeze's (R42): the commit that holds its
+    // earlier version's final-1 records.
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      const t = isPending(entry) ? entry.superseded : entry;
+      expect(t.replay_at?.tag, `${id}.replay_at.tag`).toMatch(TAG);
+      expect(t.replay_at?.commit, `${id}.replay_at.commit`).toMatch(COMMIT);
+      const { commit, tag } = t.replay_at!;
+      const show = (path: string) => spawnSync('git', ['-C', repoRoot, 'cat-file', '-p', `${commit}:${path}`], { encoding: 'utf8' });
+      const manifest = show('fixtures/manifest.json');
+      expect(manifest.status, `${id}: commit ${commit} is not on this checkout or has no fixtures/manifest.json`).toBe(0);
+      expect((JSON.parse(manifest.stdout) as { world: { state_hash: string } }).world.state_hash, `${id}: the world at ${commit.slice(0, 12)} is not the frozen world`).toBe(t.world_hash);
+      const trials = spawnSync('git', ['-C', repoRoot, 'ls-tree', '--name-only', commit, `results/runs/final-1/trials/${id}/`], { encoding: 'utf8' });
+      expect(trials.stdout.trim().split('\n').filter((l) => l !== '').length, `${id}: ${commit.slice(0, 12)} holds no final-1 records of it`).toBe(FINAL_TRIALS_PER_TASK);
+      const resolved = spawnSync('git', ['-C', repoRoot, 'rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`], { encoding: 'utf8' });
+      if (resolved.status === 0) expect(resolved.stdout.trim(), `${id}: tag ${tag} does not name replay_at.commit`).toBe(commit);
     }
   });
 });

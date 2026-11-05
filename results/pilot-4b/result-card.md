@@ -10,6 +10,10 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 |---|---|---|---|---|---|---|---|---|---|
 | crc-care-gap | 4/4 | [0.51, 1.00] | Above band | 1.00 | 1.00 | n/a | 0 | 0 | 0 (0) |
 
+## Superseded versions
+
+None.
+
 ## Failures by fault
 
 | task | failures | model | environment | grader | infra (cli classes) | re-queued infra attempts (summary infra_reruns) | source |

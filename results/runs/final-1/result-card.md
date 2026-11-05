@@ -11,6 +11,10 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 | contrast-ct-prep | 5/20 | [0.11, 0.47] | In band | 0.25 | 0.01 | <0.01 | 0 | 0 | 0 (0) |
 | crc-care-gap | 18/20 | [0.70, 0.97] | Above band | 0.90 | 0.72 | 0.55 | 0 | 0 | 0 (0) |
 
+## Superseded versions
+
+None.
+
 ## Failures by fault
 
 | task | failures | model | environment | grader | infra (cli classes) | re-queued infra attempts (summary infra_reruns) | source |

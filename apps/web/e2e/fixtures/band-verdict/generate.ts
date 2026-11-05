@@ -8,6 +8,9 @@
 //     discharge-medrec 16/20 (Above band), contrast-ct-prep 10/20 (In band)
 //   results/pilot-4a/trials/<task>/<index>.json
 //     8 trials of each: 8/8, 6/8 and 2/8, the difficulty history's earlier column
+//   results/runs/band-1/superseded/contrast-ct-prep-v1/trials/contrast-ct-prep/<index>.json, README.md
+//     the task's superseded version (R42): 18/20 (Above band), summarized under summary.json
+//     superseded, shown beside the current version and never counted
 // Each record is a copy of one PASS or FAIL record of that task in the sample run
 // (../sample-results, real scripted runs), with its index, trial id and run id set and its
 // trajectory left out (these specs never open a trial). summary.json is packages/core/summary.ts
@@ -33,6 +36,9 @@ export const PILOT: Readonly<Record<string, { passes: number; trials: number }>>
   'discharge-medrec': { passes: 6, trials: 8 },
   'message-queue': { passes: 8, trials: 8 },
 };
+// The superseded version of contrast-ct-prep in the official run: its directory key and counts.
+export const SUPERSEDED_KEY = 'contrast-ct-prep-v1';
+export const SUPERSEDED: Readonly<Record<string, { passes: number; trials: number }>> = { 'contrast-ct-prep': { passes: 18, trials: 20 } };
 
 type Record_ = SummaryTrial & { index: number; run_id?: string; trial_id?: string; trajectory?: string };
 
@@ -65,13 +71,15 @@ function main() {
   writeFileSync(join(HERE, 'results/official.json'), `${JSON.stringify({ run: `runs/${RUN_ID}` })}\n`);
   const run = join(HERE, 'results/runs', RUN_ID);
   const records = writeRun(run, RUN_ID, OFFICIAL);
-  const summary = summarize({ run_id: RUN_ID, trials: records, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: Object.keys(OFFICIAL).sort(), from: 'generate.ts' }, audit: null });
+  const old = writeRun(join(run, 'superseded', SUPERSEDED_KEY), SUPERSEDED_KEY, SUPERSEDED);
+  writeFileSync(join(run, 'superseded', SUPERSEDED_KEY, 'README.md'), `# contrast-ct-prep v1 (superseded)\n\nThe task's first version, ${SUPERSEDED['contrast-ct-prep']!.passes}/${SUPERSEDED['contrast-ct-prep']!.trials}, replaced by the version in ${RUN_ID}. Fixture records copied from the sample run.\n`);
+  const summary = summarize({ run_id: RUN_ID, trials: records, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: Object.keys(OFFICIAL).sort(), from: 'generate.ts' }, audit: null, superseded: [{ key: SUPERSEDED_KEY, task: 'contrast-ct-prep', version: 'v1', trials: old }] });
   assertSummary(summary);
   writeFileSync(join(run, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   copyFileSync(join(SAMPLE, 'matrix.json'), join(run, 'matrix.json'));
   writeFileSync(join(run, 'manifest.json'), `${JSON.stringify({ ...(JSON.parse(readFileSync(join(SAMPLE, 'manifest.json'), 'utf8')) as object), run_id: RUN_ID }, null, 2)}\n`);
   writeRun(join(HERE, 'results', PILOT_ID), PILOT_ID, PILOT);
-  console.log(`wrote ${records.length} official records and the pilot ${PILOT_ID}; verdicts ${Object.entries(summary.tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials} ${t.band_verdict}`).join(', ')}`);
+  console.log(`wrote ${records.length} official records, ${old.length} superseded records (${SUPERSEDED_KEY}) and the pilot ${PILOT_ID}; verdicts ${Object.entries(summary.tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials} ${t.band_verdict}`).join(', ')}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

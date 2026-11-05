@@ -91,7 +91,7 @@ describe('loadResults when data/index.json answers an HTTP error', () => {
 
   it('a 404 is a ready load with no runs', async () => {
     serveIndex(404);
-    expect(await (await freshLoad())()).toEqual({ kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() });
+    expect(await (await freshLoad())()).toEqual({ kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], frozen: {}, findings: null, files: new Set() });
   });
 
   it('a 500 is an error that names the status', async () => {

@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
 import { main as resultCard, readClasses } from '../result-card.ts';
-import { tempDir } from '../../scripts/test/helpers.ts';
+import { repoRoot, tempDir } from '../../scripts/test/helpers.ts';
 
 type Outcome = 'PASS' | 'FAIL';
 
@@ -286,5 +286,54 @@ describe('cli result-card', () => {
     expect(r.out).toContain('| egfr_window | 1 (Britt Vincenzo Mohr) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |');
     expect(r.out).toContain('| filler | 1 (Lauren Sixta Beahan) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |');
     expect(row(r.out, 'message-queue')).toMatch(/\| 6\/6 \| \[0\.61, 1\.00\] \| Above band \|/);
+  });
+});
+
+// R42: a task's superseded version in the run (<run>/superseded/<task>-v<n>/) gets its own section
+// and a column of the difficulty history, beside the current version, and never changes the task's row.
+describe('superseded versions', () => {
+  it('lists each superseded version with its k/n, verdict and world, and a history column', async () => {
+    const root = tempDir('card-superseded');
+    const dir = join(root, 'final-x');
+    writeRun(dir, 'final-x', { 't-a': { n: 20, passes: 8 } });
+    writeRun(join(dir, 'superseded', 't-a-v1'), 't-a-v1', { 't-a': { n: 20, passes: 18 } });
+    const lines: string[] = [];
+    const code = await resultCard([dir, '--out', join(root, 'card.md')], { out: (l) => lines.push(l), err: (l) => lines.push(l) });
+    expect(code, lines.join('\n')).toBe(0);
+    const card = readFileSync(join(root, 'card.md'), 'utf8');
+    expect(card).toContain('## Superseded versions');
+    expect(card).toMatch(/\| t-a v1 \| t-a \| 18\/20 \| [^|]+ \| Above band \| h-initial \| final-x\/superseded\/t-a-v1 \(t-a-v1\) \|/);
+    expect(card).toContain('| task | t-a-v1 (t-a v1, superseded) | final-x |');
+    expect(card).toContain('| t-a | 18/20 Above band | 8/20 In band |');
+    // The task's own row is the current version's.
+    expect(card).toMatch(/\| t-a \| 8\/20 \|/);
+    const none = tempDir('card-none');
+    writeRun(join(none, 'r'), 'r', { 't-a': { n: 20, passes: 8 } });
+    expect(await resultCard([join(none, 'r'), '--out', join(none, 'card.md')], { out: () => {}, err: () => {} })).toBe(0);
+    expect(readFileSync(join(none, 'card.md'), 'utf8')).toContain('## Superseded versions\n\nNone.');
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-1 B3: the commands the committed READMEs give run on the committed
+// runs as they are: every summary.json they read is at the schema this reader reads, so the
+// final-1 card is regenerated as its README says, with the pilots as its history.
+describe('the committed runs', () => {
+  const at = (rel: string) => join(repoRoot, rel);
+
+  it('results/runs/final-1/README.md: result-card with --classes and the pilot-4a and pilot-4b history exits 0 and prints the history columns', async () => {
+    const r = await cli([at('results/runs/final-1'), '--classes', at('results/runs/final-1/classes.json'), '--history', `${at('results/pilot-4a')},${at('results/pilot-4b')}`]);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toContain('## Difficulty history');
+    const header = r.out.split('## Difficulty history')[1]!.split('\n').find((l) => l.startsWith('| task |')) ?? '';
+    expect(header).toContain('| pilot-4a |');
+    expect(header).toContain('| pilot-4b |');
+    expect(header).toContain('| final-1 |');
+    expect(r.out).toContain('## Superseded versions');
+  });
+
+  it.each(['results/pilot-4a', 'results/pilot-4b', 'results/runs/final-1'])('%s: result-card on the run alone exits 0 reading its committed summary.json', async (rel) => {
+    const r = await cli([at(rel)]);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).not.toContain('summary computed from the records');
   });
 });

@@ -33,7 +33,8 @@ const VIEW_DATA: Record<string, string[]> = {
   // The live trial's outcome and fault text (explainTrial's words and NOT_AUDITED_MARKER, which
   // data/ui.tsx FaultMeta draws) come from packages/core/explain.ts, as on Runs.
   live: ['apps/web/src/live', 'packages/core/anthropic.ts', 'packages/core/explain.ts'],
-  runs: ['apps/web/src/runs', 'apps/web/src/trial', 'packages/core/explain.ts', 'packages/core/outcomes.ts'],
+  // The model name on a run's trials (W4) is the records' model_requested, MODEL in anthropic.ts.
+  runs: ['apps/web/src/runs', 'apps/web/src/trial', 'packages/core/explain.ts', 'packages/core/outcomes.ts', 'packages/core/anthropic.ts'],
   overview: ['apps/web/src/overview'],
   findings: ['apps/web/src/findings'],
   glossary: ['apps/web/src/glossary', 'packages/core/outcomes.ts'],

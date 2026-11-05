@@ -20,6 +20,7 @@ import { terminalEvent, type TrialEvent } from '../../../packages/core/events.ts
 import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { validateAuditRow, validateRecord } from '../src/data/records.ts';
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
+import { readSuperseded } from '../../../cli/summary.ts';
 import { taskVersions, type TaskVersions } from '../../../packages/core/tasks.ts';
 import { GRADER_VERSION } from '../../../packages/grader/grade.ts';
 
@@ -30,10 +31,11 @@ const roots = readdirSync(FIXTURES, { withFileTypes: true })
   .map((e) => e.name)
   .sort();
 
-// Each directory under results/ that holds trials/: the official run and every pilot.
+// Each directory under results/ that holds trials/: the official run, every pilot and each
+// superseded task version under the official run (R42, <run>/superseded/<task>-v<n>/).
 function runDirs(dir: string): string[] {
   const subs = readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory());
-  if (subs.some((e) => e.name === 'trials')) return [dir];
+  if (subs.some((e) => e.name === 'trials')) return [dir, ...subs.filter((e) => e.name === 'superseded').flatMap((e) => runDirs(join(dir, e.name)))];
   return subs.flatMap((e) => runDirs(join(dir, e.name)));
 }
 
@@ -112,7 +114,9 @@ describe.each(roots)('fixture %s', (root) => {
       .sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1));
     // fault_counts.label reads the run's audit labels, as cli summary does (P17j JG7).
     const audit = existsSync(join(run, 'audit.jsonl')) ? Object.fromEntries(lines(join(run, 'audit.jsonl')).flatMap((a) => (typeof (a as AuditRow).trial === 'string' ? [[(a as AuditRow).trial, auditLabelOf(a as AuditRow)]] : []))) : null;
-    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}), audit });
+    // The run's superseded versions, as cli summary reads them (R42).
+    const superseded = readSuperseded(run).map((v) => ({ ...v, trials: [...v.trials].sort((a, b) => (a.index ?? 0) - (b.index ?? 0)) }));
+    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}), audit, superseded });
     expect(again).toEqual(summary);
   });
 });

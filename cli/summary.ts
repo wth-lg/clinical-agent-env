@@ -16,7 +16,9 @@
 //                    pilot and the final run require env_limit=0, so a human reviews each one
 //                    (plan-amendment-worklist W0-A)
 //   model=M          every record requested M and every response came from M
-//   replay=all       replay.json exists and every trial reproduced; every record's replay_final
+//   replay=all       replay.json exists and every trial reproduced (a trial replay.json marks
+//                    world_mismatch, run on another world than the replaying checkout's, is named
+//                    with the two-step replay, cli/replay.ts header, R37); every record's replay_final
 //                    equals its final hash
 //   grader_error=N   at most N records whose current grade (the last regrade, else the recorded
 //                    outcome) is GRADER_ERROR. GRADER_ERROR is settled, never re-queued as a
@@ -43,16 +45,20 @@
 // records share, and each task's fault box line its valid failures by kind (TAXONOMY of the current
 // grade), by audit label when <run>/audit.jsonl is present, its infra re-runs and its top failed
 // checks (packages/core/summary.ts faultCounts, P17j JG7).
+// The run's superseded task versions (R42, <run>/superseded/<task>-v<n>/ with trials/) are
+// summarized under superseded and printed one line each, never counted or required; a directory
+// not named so, or holding another task's records, is an error (exit 1).
 // Trials are named by trialName, as replay.json names them. --json prints only the summary on stdout (the lines go to stderr). Exit 0 when every
 // requirement holds; 1 on a violation or a missing run; 2 on a usage error.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
 import { readLabels, rowLabel } from './audit-check.ts';
-import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
+import { replayStateOf, whyStale, type ReplayEntry, type ReplayRecord } from '../packages/core/replay.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type RegradeGrade, type ReplayState, type Requirements, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -78,12 +84,52 @@ const toTrial = (r: BatchRecord & { regrades?: RegradeGrade[] }): SummaryTrial =
   ...(r.regrades ? { regrades: r.regrades } : {}),
 });
 
-// replay.json as trial -> reproduced; null when replay has not run.
-export function readReplay(dir: string): Record<string, boolean> | null {
+// replay.json as trial -> verdict (packages/core/replay.ts replayStateOf: the named verdict, or
+// match or mismatch from the match field of a file written before verdicts were named), for the
+// entries that are verdicts of the run's settled records as they are now (isVerdictOf: the
+// outcomes the entry names are the record's, and a match or mismatch stamped with replayed_at
+// was made at the record's env_version). A stale entry, of a record rewritten under the same
+// trial name with no replay since (R42; verifier-phase-P17i-TWOW-229-1 S2), is left out of
+// states, so summary lists the trial as not replayed, and named in stale with why. An entry of
+// no settled record is left out too. null when replay has not run.
+export function readReplay(dir: string, records: ReadonlyArray<ReplayRecord>): { states: Record<string, ReplayState>; stale: Record<string, string> } | null {
   const file = join(dir, 'replay.json');
   if (!existsSync(file)) return null;
-  const trials = (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, { match?: unknown }> }).trials ?? {};
-  return Object.fromEntries(Object.entries(trials).map(([k, v]) => [k, v.match === true]));
+  const trials = (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, ReplayEntry> }).trials ?? {};
+  const byName = new Map(records.map((r) => [trialName(r), r]));
+  const states: Record<string, ReplayState> = {};
+  const stale: Record<string, string> = {};
+  for (const [name, entry] of Object.entries(trials)) {
+    const r = byName.get(name);
+    if (r === undefined) continue;
+    const why = whyStale(entry, r);
+    if (why === null) states[name] = replayStateOf(entry);
+    else stale[name] = why;
+  }
+  return { states, stale };
+}
+
+// The run's superseded task versions (R42): each <run>/superseded/<task>-v<n>/ with a trials/
+// directory, its settled records as summary reads them, and its own audit labels when it holds
+// an audit.jsonl (cli supersede moves the version's rows there). Throws on a directory not named
+// so, or whose records are of another task.
+export function readSuperseded(dir: string): SupersededInput[] {
+  const base = join(dir, 'superseded');
+  if (!existsSync(base)) return [];
+  return readdirSync(base, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(base, d.name, 'trials')))
+    .map((d) => d.name)
+    .sort()
+    .map((key) => {
+      const m = /^(.+)-v(\d+)$/.exec(key);
+      if (m === null) throw new Error(`${base}/${key}: a superseded version directory is named <task>-v<n>`);
+      const task = m[1] as string;
+      const trials = settledRecords(join(base, key)).map((x) => toTrial(x.record));
+      const other = [...new Set(trials.map((t) => t.task_id).filter((id) => id !== task))];
+      if (other.length > 0) throw new Error(`${base}/${key}: holds records of ${other.join(', ')}, not of ${task}`);
+      const own = join(base, key);
+      return { key, task, version: `v${m[2]}`, trials, ...(existsSync(join(own, 'audit.jsonl')) ? { audit: readAuditLabels(own) } : {}) };
+    });
 }
 
 // audit.jsonl's label of each audited trial, by trial; null without the file. The rows are read by
@@ -158,11 +204,21 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       return 1;
     }
   } else if (manifest?.task_versions) expected = { tasks: Object.keys(manifest.task_versions), from: 'the run manifest' };
+  let superseded: SupersededInput[];
+  try {
+    superseded = readSuperseded(dir);
+  } catch (e) {
+    deps.err(`summary: ${(e as Error).message}`);
+    return 1;
+  }
+  const settled = settledRecords(dir).map((x) => x.record);
+  const replay = readReplay(dir, settled);
   const s = summarize({
     run_id: manifest?.run_id ?? basename(dir),
-    trials: settledRecords(dir).map((x) => toTrial(x.record)),
+    trials: settled.map(toTrial),
     requeued: requeuedRecords(dir).map((x) => toTrial(x.record)),
-    replay: readReplay(dir),
+    replay: replay === null ? null : replay.states,
+    superseded,
     mode: manifest?.mode ?? null,
     ...(expected ? { expected } : {}),
     audit: readAuditLabels(dir),
@@ -193,6 +249,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const flagged = describeConsistency(t.consistency);
     if (flagged.length > 0) say(`${' '.repeat(width)}  consistency flagged: ${flagged.join('; ')} (audit-check requires a task-validity review)`);
   }
+  for (const [key, v] of Object.entries(s.superseded)) {
+    const t = v.summary;
+    const w = t.wilson95 === null ? 'n/a' : `${pct(t.wilson95.lo)}-${pct(t.wilson95.hi)}`;
+    say(`superseded ${key}: ${v.task} ${v.version}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ${t.band_verdict ?? 'no valid trials'}  world ${v.initial_state_hashes.map((h) => h.slice(0, 12)).join(',') || '(none)'}  env ${t.env_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}  grader ${t.grader_task_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}; not counted in the tasks above`);
+  }
+  if (s.replay.ran && s.replay.other_world.length > 0) say(`replay: ${s.replay.other_world.length} trial(s) ran on another world than the replaying checkout's (replay.json world_mismatch): ${s.replay.other_world.join(', ')}`);
+  const staleNames = Object.keys(replay?.stale ?? {}).sort();
+  if (staleNames.length > 0) say(`replay: ${staleNames.length} ${staleNames.length === 1 ? 'entry of replay.json is not a verdict of its record' : 'entries of replay.json are not verdicts of their records'} as it is now (stale; replay the task again): ${staleNames.map((n) => `${n} (${replay!.stale[n]})`).join(', ')}`);
   say(
     `GRADER_ERROR ${s.totals.grader_error} at the current grade; history ${s.totals.grader_error_history} (GRADER_ERROR in an earlier grade, disclosed only). ` +
       'A GRADER_ERROR is a grader bug, never re-queued as a model trial: fix the grader, regrade the whole run offline (pnpm cli regrade), and disclose the history; ' +

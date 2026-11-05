@@ -1,8 +1,9 @@
-import { copyFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
+import { WRITEUP_SECTIONS } from '../docs-lib.ts';
 import { git, repoRoot, runScript, tempDir, write } from './helpers.ts';
 
 const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
@@ -10,8 +11,10 @@ const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
 // written into the fixture, so the sentence's literal stays in command.ts, ui-contract.md and
 // README.md alone.
 const PREREQUISITES = `${LOCAL_PREREQUISITES} Install [Node.js](${NODE_INSTALL_URL}) and [pnpm](${PNPM_INSTALL_URL}).\n`;
-const README_PASS = readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace('\n## Findings', `${PREREQUISITES}\n## Findings`);
-const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass', 'task-hash': 'task-hash-current' };
+const README_PASS = readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace('\n## Key handling', `${PREREQUISITES}\n## Key handling`);
+// docs-check is clause (7)'s own command (DONEWHEN_DOCS_CHECK), stubbed through the same stub-cli
+// and the same map, under the name docs-check.
+const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass', 'task-hash': 'task-hash-current', 'docs-check': 'docs-check-pass' };
 const TASKS = ['t1', 't2', 't3', 't4', 't5'];
 const FINAL_RUN = 'results/runs/final-1';
 const WORLD = '9f2c';
@@ -61,6 +64,7 @@ function donewhen(root: string, stubs: Record<string, string>, env: Record<strin
     env: {
       NODE_ENV: 'test',
       DONEWHEN_CLI: `${process.execPath} ${join(FIXTURES, 'stub-cli.ts')}`,
+      DONEWHEN_DOCS_CHECK: `${process.execPath} ${join(FIXTURES, 'stub-cli.ts')} docs-check`,
       DONEWHEN_STUB: JSON.stringify(stubs),
       DONEWHEN_STUB_LOG: log,
       ...env,
@@ -360,6 +364,16 @@ describe('donewhen', () => {
     expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).not.toContain('historical');
   });
 
+  // Pre-audit-2 S14: once a frozen task names a replay_at (the commit that reproduces its records,
+  // after a regrade moved them off the freeze's grader), the historical line points there.
+  it('clause 5 points a moved task at its replay_at tag and commit when the freeze names one', () => {
+    const root = completeRepo();
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t1: { replay_at: { tag: 'final-1-test', commit: 'b'.repeat(40) } } }));
+    const line = donewhen(root, { ...ALL_STUBS, 'task-hash': 'task-hash-moved' }).clause(5);
+    expect(line).toMatch(/^PASS \(5\)/);
+    expect(line).toContain(`t1 reproduce at tag final-1-test (${'b'.repeat(12)}, replay_at), t2 reproduce at tag freeze-test (not on this checkout yet)`);
+  });
+
   it('clause 5 resolves the freeze tag to its commit when the checkout has it', () => {
     const root = completeRepo();
     git(root, 'init', '-q', '-b', 'main');
@@ -386,18 +400,15 @@ describe('donewhen', () => {
     expect(regraded).toContain('summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 1');
   });
 
-  it('clause 7 fails on a README without a dated reference', () => {
-    const root = completeRepo();
-    copyFileSync(join(FIXTURES, 'README-undated.md'), join(root, 'README.md'));
-    expect(donewhen(root, ALL_STUBS).clause(7)).toMatch(/^FAIL/);
-  });
-
-  it('clause 7 fails on a README missing a writeup section', () => {
-    const root = completeRepo();
-    copyFileSync(join(FIXTURES, 'README-nosurprises.md'), join(root, 'README.md'));
-    const line = donewhen(root, ALL_STUBS).clause(7);
-    expect(line).toMatch(/^FAIL/);
-    expect(line).toContain('surprises');
+  it('clause 7 reads the exit code of docs:check and counts its lines', () => {
+    const pass = donewhen(completeRepo(), ALL_STUBS);
+    expect(pass.calls).toContain('docs-check');
+    // The clause names the sections docs:check requires, from the one WRITEUP_SECTIONS constant.
+    expect(pass.clause(7)).toBe(`PASS (7) docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check: docs:check: exit 0; 0 error line(s), 2 warning(s)`);
+    const fail = donewhen(completeRepo(), { ...ALL_STUBS, 'docs-check': 'docs-check-fail' }).clause(7);
+    expect(fail).toMatch(/^FAIL \(7\)/);
+    expect(fail).toContain('docs:check: exit 1; 2 error line(s), 1 warning(s)');
+    expect(donewhen(completeRepo(), { ...ALL_STUBS, 'docs-check': undefined } as unknown as Record<string, string>).clause(7)).toContain('command not built');
   });
 
   it('ignores DONEWHEN_CLI outside NODE_ENV=test', () => {

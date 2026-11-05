@@ -2,7 +2,7 @@
 // record missing a field fails it, and Wilson 95% intervals match hand-checked values.
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../anthropic.ts';
-import { assertSummary, checkRequirements, parseRequire, summarize, validateSummary, wilson, type Requirements, type SummaryTrial } from '../summary.ts';
+import { assertSummary, checkRequirements, parseRequire, summarize, validateSummary, wilson, type ReplayState, type Requirements, type SummaryTrial } from '../summary.ts';
 
 const trial = (task_id: string, index: number, outcome: string, over: Partial<SummaryTrial> = {}): SummaryTrial => ({
   task_id, task_version: 'v1', index, outcome, model_requested: MODEL, models_returned: [MODEL],
@@ -11,7 +11,7 @@ const trial = (task_id: string, index: number, outcome: string, over: Partial<Su
 });
 
 const tenOf = (task: string, passes: number) => Array.from({ length: 10 }, (_, i) => trial(task, i, i < passes ? 'PASS' : 'FAIL'));
-const replayAll = (ts: SummaryTrial[]) => Object.fromEntries(ts.map((t) => [`${t.task_id}/${t.index}`, true]));
+const replayAll = (ts: SummaryTrial[]): Record<string, ReplayState> => Object.fromEntries(ts.map((t) => [`${t.task_id}/${t.index}`, 'match' as const]));
 
 describe('wilson 95%', () => {
   it('5/10 is 23.7% to 76.3% (the design: 24-76%)', () => {
@@ -188,12 +188,64 @@ describe('every figure reads the current grade: the last regrade, else the recor
 });
 
 describe('summary.json schema version', () => {
-  it('is 10; a version 9 file is rejected with a message naming the version', () => {
+  it('is 11; a version 10 file is rejected with a message naming the version', () => {
     const ts = tenOf('t-a', 5);
     const s = summarize({ run_id: 'r', trials: ts, requeued: [], replay: replayAll(ts) });
-    expect(s.schema_version).toBe(10);
-    const v9 = { ...JSON.parse(JSON.stringify(s)), schema_version: 9 };
-    expect(validateSummary(v9)).toContainEqual(expect.stringMatching(/schema_version 9.*version 10/));
-    expect(() => assertSummary(v9)).toThrow(/schema_version 9/);
+    expect(s.schema_version).toBe(11);
+    const v10 = { ...JSON.parse(JSON.stringify(s)), schema_version: 10 };
+    expect(validateSummary(v10)).toContainEqual(expect.stringMatching(/schema_version 10.*version 11/));
+    expect(() => assertSummary(v10)).toThrow(/schema_version 10/);
+  });
+});
+
+// Pre-audit-2 B4, R37: replay.json's per-trial verdicts. A trial replayed at another checkout than
+// its own world (verdict world_mismatch, cli/replay.ts) is not a failed reproduction: summary lists
+// it apart from the mismatches, and replay=all names it with the way to replay it.
+describe('replay verdicts', () => {
+  const ts = [...tenOf('t-a', 5), ...tenOf('t-b', 3)];
+  const states = (over: Record<string, ReplayState>) => ({ ...replayAll(ts), ...over });
+
+  it('counts match, lists mismatch and world_mismatch apart, and missing entries', () => {
+    const s = summarize({ run_id: 'r', trials: ts, requeued: [], replay: states({ 't-a/0': 'mismatch', 't-b/0': 'world_mismatch', 't-b/1': 'world_mismatch' }), mode: 'live' });
+    expect(s.replay).toEqual({ ran: true, matched: 17, mismatched: ['t-a/0'], other_world: ['t-b/0', 't-b/1'], missing: [] });
+    expect(validateSummary(JSON.parse(JSON.stringify(s)))).toEqual([]);
+    const { 't-a/9': _, ...fewer } = replayAll(ts);
+    expect(summarize({ run_id: 'r', trials: ts, requeued: [], replay: fewer }).replay).toMatchObject({ matched: 19, missing: ['t-a/9'], other_world: [] });
+    expect(summarize({ run_id: 'r', trials: ts, requeued: [], replay: null }).replay).toEqual({ ran: false, matched: 0, mismatched: [], other_world: [], missing: [] });
+  });
+
+  it('replay=all fails on a world_mismatch trial, naming its task and the two-step replay', () => {
+    const s = summarize({ run_id: 'r', trials: ts, requeued: [], replay: states({ 't-b/0': 'world_mismatch' }), mode: 'live' });
+    expect(checkRequirements(s, parseRequire('replay=all'))).toEqual([
+      'replay: t-b/0 ran on another world than the replaying checkout\'s (R37): replay t-b at its own commit (results/tasks-final.json replay_at, else the run\'s README.md) with pnpm cli replay <run> --tasks t-b, then the other tasks at this checkout; the two steps merge into one replay.json',
+    ]);
+    expect(checkRequirements(summarize({ run_id: 'r', trials: ts, requeued: [], replay: states({ 't-a/0': 'mismatch' }), mode: 'live' }), parseRequire('replay=all'))).toEqual(['replay: did not reproduce t-a/0']);
+  });
+});
+
+// R42: a task's superseded version (results/<run>/superseded/<task>-v<n>/) is summarized beside
+// the current one and never counted in tasks or totals.
+describe('superseded versions', () => {
+  const current = [...tenOf('t-a', 5), ...tenOf('t-b', 3)];
+  const v1 = Array.from({ length: 10 }, (_, i) => trial('t-a', i, i < 9 ? 'PASS' : 'FAIL', { state_hash: { initial: 'h-old', final: 'h2', replay_final: 'h2' }, env_version: 'e-old' }));
+
+  it('summarizes each superseded version as a task summary with its own world, apart from the run\'s tasks and totals', () => {
+    const s = summarize({ run_id: 'r', trials: current, requeued: [], replay: replayAll(current), superseded: [{ key: 't-a-v1', task: 't-a', version: 'v1', trials: v1 }] });
+    expect(Object.keys(s.superseded)).toEqual(['t-a-v1']);
+    expect(s.superseded['t-a-v1']).toMatchObject({ task: 't-a', version: 'v1', dir: 'superseded/t-a-v1', initial_state_hashes: ['h-old'], summary: { records: 10, trials: 10, passes: 9, env_versions: ['e-old'], band_verdict: 'Above band' } });
+    expect(s.tasks['t-a']).toMatchObject({ trials: 10, passes: 5 });
+    expect(s.totals).toMatchObject({ records: 20, trials: 20, passes: 8 });
+    expect(s.initial_state_hashes).toEqual(['h0']);
+    expect(validateSummary(JSON.parse(JSON.stringify(s)))).toEqual([]);
+    expect(summarize({ run_id: 'r', trials: current, requeued: [], replay: null }).superseded).toEqual({});
+  });
+
+  it('the schema checks each superseded entry', () => {
+    const s = summarize({ run_id: 'r', trials: current, requeued: [], replay: null, superseded: [{ key: 't-a-v1', task: 't-a', version: 'v1', trials: v1 }] }) as unknown as { superseded: Record<string, Record<string, unknown>> };
+    delete s.superseded['t-a-v1']!.task;
+    expect(validateSummary(s)).toContainEqual(expect.stringContaining('superseded.t-a-v1.task'));
+    const t = summarize({ run_id: 'r', trials: current, requeued: [], replay: null, superseded: [{ key: 't-a-v1', task: 't-a', version: 'v1', trials: v1 }] }) as unknown as { superseded: Record<string, { summary: Record<string, unknown> }> };
+    delete t.superseded['t-a-v1']!.summary.passes;
+    expect(validateSummary(t)).toContainEqual(expect.stringContaining('superseded.t-a-v1.summary.passes'));
   });
 });

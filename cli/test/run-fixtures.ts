@@ -56,7 +56,12 @@ const regrade = (task: string, outcome: 'PASS' | 'FAIL') => ({
 
 export function writeFixtureRun(dir: string, fixture: Fixture, opts: { trials?: number } = {}): void {
   const labels: Array<Record<string, unknown>> = [];
-  const replay: Record<string, { match: boolean }> = {};
+  // Each entry as cli replay writes it: the record's recorded and current outcomes beside the verdict,
+  // stamped with the commit, world and the record's env_version it was made at, so summary and
+  // audit-check count it as this record's (S2, packages/core/replay.ts isVerdictOf).
+  type Entry = { match: boolean; verdict: 'match' | 'mismatch'; outcome: string; recorded_outcome: string; current_outcome: string; replayed_at: { commit: string; dirty: boolean; world_hash: string; env_version: string } };
+  const stamp = (task: string) => ({ commit: 'c'.repeat(40), dirty: false, world_hash: 'h-initial', env_version: `e-${task}` });
+  const replay: Record<string, Entry> = {};
   const mode = fixture === 'mock-mode' ? 'mock-fixture' : 'live';
   const n = opts.trials ?? 10;
   // The variants' trial indices, written for 10 trials, moved to the same place in a longer run.
@@ -80,7 +85,9 @@ export function writeFixtureRun(dir: string, fixture: Fixture, opts: { trials?: 
       const r = record(task, i, outcome, { mode, ...over });
       put(dir, `trials/${task}/${i}.json`, `${JSON.stringify(r, null, 2)}\n`);
       put(dir, `trajectories/${task}/${i}.jsonl`, TRAJECTORY);
-      replay[`${task}/${i}`] = { match: !(fixture === 'replay-mismatch' && task === 't-alpha' && i === 2) };
+      const current = (r as { regrades?: Array<{ outcome: string }> }).regrades?.at(-1)?.outcome ?? (r as { outcome: string }).outcome;
+      const match = !(fixture === 'replay-mismatch' && task === 't-alpha' && i === 2);
+      replay[`${task}/${i}`] = { match, verdict: match ? 'match' : 'mismatch', outcome: current, recorded_outcome: (r as { outcome: string }).outcome, current_outcome: current, replayed_at: stamp(task) };
       const key = `${task}/${i}`;
       if (outcome === 'FAIL') {
         if (fixture === 'missing-label' && key === `t-alpha/${at(6)}`) continue;
@@ -104,7 +111,7 @@ export function writeFixtureRun(dir: string, fixture: Fixture, opts: { trials?: 
     // An eleventh record: a check threw.
     put(dir, 'trials/t-alpha/10.json', `${JSON.stringify(record('t-alpha', 10, 'GRADER_ERROR', { mode }), null, 2)}\n`);
     put(dir, 'trajectories/t-alpha/10.jsonl', TRAJECTORY);
-    replay['t-alpha/10'] = { match: true };
+    replay['t-alpha/10'] = { match: true, verdict: 'match', outcome: 'GRADER_ERROR', recorded_outcome: 'GRADER_ERROR', current_outcome: 'GRADER_ERROR', replayed_at: stamp('t-alpha') };
   }
   put(dir, 'replay.json', `${JSON.stringify({ trials: replay }, null, 2)}\n`);
   put(dir, 'audit.jsonl', labels.map((l) => JSON.stringify(l)).join('\n') + '\n');

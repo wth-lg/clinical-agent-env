@@ -82,7 +82,7 @@ describe('replay and regrade on run-one output', () => {
     expect(s.code, s.text).toBe(0);
     expect(s.text).not.toContain('undefined');
     const json = JSON.parse(s.text.split('\n').at(-1) as string) as { replay: { matched: number; mismatched: string[]; missing: string[] } };
-    expect(json.replay).toEqual({ ran: true, matched: 3, mismatched: [], missing: [] });
+    expect(json.replay).toEqual({ ran: true, matched: 3, mismatched: [], other_world: [], missing: [] });
   });
 
   it('regrade grades all three and records a PASS with its checks on each', async () => {

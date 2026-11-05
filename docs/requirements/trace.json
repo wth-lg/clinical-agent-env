@@ -73,10 +73,6 @@
         }
       },
       "phase": "P24",
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
-      ],
       "note": "The writeup states the shape we chose (an in-memory FHIR R4 store behind typed tools) and why."
     },
     {
@@ -116,7 +112,7 @@
         }
       },
       "phase": "P14",
-      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (the writeup\u2019s next steps section)."
+      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (the writeup’s next steps section)."
     },
     {
       "id": "A4",
@@ -220,10 +216,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md"
-      ]
+      "phase": "P24"
     },
     {
       "id": "N1",
@@ -618,7 +611,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run \u00d71 on Live trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
+        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run ×1 on Live trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
         "surface": "local"
       },
       "evidence": [
@@ -657,7 +650,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "Open a task on Tasks and press Run trial: the Live trial launcher shows the task and the model claude-opus-5-5, and Run \u00d71 hands back one graded trial record; the CLI one-liner is pnpm cli run-one --task <id> --model claude-opus-5-5.",
+        "action": "Open a task on Tasks and press Run trial: the Live trial launcher shows the task and the model claude-opus-5-5, and Run ×1 hands back one graded trial record; the CLI one-liner is pnpm cli run-one --task <id> --model claude-opus-5-5.",
         "surface": "local"
       },
       "evidence": [
@@ -761,7 +754,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },
@@ -1043,7 +1036,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1 && pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,replay=all,valid=20",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue && pnpm cli summary \"$d/final-1\" --require model=claude-opus-5-5,replay=all,valid=20",
             "exit": 0
           }
         },
@@ -1054,10 +1047,7 @@
           }
         }
       ],
-      "phase": "P22",
-      "pending": [
-        "results/official.json"
-      ]
+      "phase": "P22"
     },
     {
       "id": "W5",
@@ -1370,11 +1360,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md",
-        "scripts/test/docs-check.test.ts"
-      ]
+      "phase": "P24"
     },
     {
       "id": "W10",
@@ -1425,12 +1411,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md",
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
-      ]
+      "phase": "P24"
     },
     {
       "id": "H1",
@@ -1490,7 +1471,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },
@@ -1532,11 +1513,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts",
-        "scripts/test/ste-check.test.ts"
       ]
     },
     {
@@ -1697,10 +1673,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
       ],
       "note": "docs:check fails when the dated reference list (2025-2026 research, datasets, tools) is missing from docs/writeup.html."
     },
@@ -1952,7 +1924,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "On the local runner open a task on Tasks, press Run trial, then Run \u00d71: the trial runs in the runner through run() and its events stream back into the live view.",
+        "action": "On the local runner open a task on Tasks, press Run trial, then Run ×1: the trial runs in the runner through run() and its events stream back into the live view.",
         "surface": "local"
       },
       "evidence": [
@@ -2509,10 +2481,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md"
-      ]
+      "phase": "P24"
     },
     {
       "id": "U28",
@@ -2840,12 +2809,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/ste-check.ts",
-        "scripts/test/docs-check.test.ts",
-        "scripts/test/ste-check.test.ts"
       ]
     },
     {

@@ -13,18 +13,28 @@ It is pinned to (manifest.json, equal to results/tasks-final.json):
 
 ## Reproduce
 
-Reproduce commit for the records: 1b120e8bbd380e48ba9f82094bf393b408c8efbf (tag freeze-t3t5, the P21 merge). The regrade: a checkout at or after tag regrade-r41 (9e72939a73c38624896f9ef92286ed3c45572625, grader 22) whose world is still ba0b0206 (it was, at the regrade). A later W5 world rebuild moves both tasks' current env_version on main (R40); the records stay valid at the versions above and are reproduced at that commit (R37).
+The records of the two frozen tasks are reproduced at tag `final-1-t3t5` (e8ef8c4d9bedce9e93d1a6d2031785c295e5caae, `results/tasks-final.json` replay_at: the commit that holds this run, grader 22 and the frozen world ba0b0206). They were run at tag freeze-t3t5 (1b120e8bbd380e48ba9f82094bf393b408c8efbf, the P21 merge, grader 21); a replay there gives 28 of 40, because the grader-21 code contradicts the grader-22 current grade of the 12 regraded G6/G7 trials, so the replay commit is the regrade's, not the freeze's. A later W5 world rebuild moved both tasks' current env_version on main (R40); the records stay valid at the versions above and are reproduced at the replay commit (R37). A replay of this run at today's main keeps the committed verdicts of their trials, made at the replay commit, as they are (it cannot replay them, and a verdict made where the record could be replayed is never overwritten without `--overwrite`); a trial of theirs with no such verdict is marked `world_mismatch` (not a failed reproduction) and the output says where to replay it.
+
+The run will hold tasks of two worlds (the frozen two on ba0b0206, the four W5 tasks and crc-care-gap v2 on the later world), so it is replayed in two steps that merge into one replay.json (`pnpm cli replay --tasks`, cli/replay.ts header):
 
 ```sh
-git checkout freeze-t3t5
-cp -R results/runs/final-1 /tmp/final-1    # replay, summary --write and audit-check write into the run directory; keep the committed copy clean
-pnpm cli replay /tmp/final-1
-pnpm cli summary /tmp/final-1 --tasks crc-care-gap,contrast-ct-prep --require valid=20,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all   # with band=0.2-0.7 it exits 1: crc-care-gap 18/20 is above the band
+# 1. The frozen tasks, at their replay commit, on a copy of the run as it was there.
+git worktree add /tmp/final-1-t3t5 final-1-t3t5
+cp -R /tmp/final-1-t3t5/results/runs/final-1 /tmp/final-1-step1
+(cd /tmp/final-1-t3t5 && pnpm cli replay /tmp/final-1-step1)    # 40 of 40 trials reproduced
+# 2. The other tasks at today's main, merged into a copy of the run as it is now (replay, summary --write and audit-check write into the run directory; keep the committed copy clean).
+cp -R results/runs/final-1 /tmp/final-1
+cp /tmp/final-1-step1/replay.json /tmp/final-1/replay.json
+pnpm cli replay /tmp/final-1 --stamp e8ef8c4d9bedce9e93d1a6d2031785c295e5caae   # step 1's replay writes no replayed_at; this stamps each entry with that commit, the frozen world and the record's env_version (an unstamped entry is stale), and gives the committed replay.json byte for byte
+pnpm cli replay /tmp/final-1 --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue   # once those tasks' trials are in the run; their entries are made here, the frozen tasks' kept from step 1 (a kept entry counts only while it is the verdict of the record as it is: same recorded and current outcomes, stamped at the record's env_version)
+pnpm cli summary /tmp/final-1 --tasks crc-care-gap,contrast-ct-prep --require valid=20,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all   # reads the merged verdicts; with band=0.2-0.7 it exits 1: crc-care-gap 18/20 is above the band
 pnpm cli matrix --task crc-care-gap --out /tmp/final-1 && pnpm cli matrix --task contrast-ct-prep --out /tmp/final-1
 pnpm cli audit-check /tmp/final-1
-pnpm cli regrade <copy of results/runs/final-1, regrades[] removed> --grader-version 22   # at or after regrade-r41: 12 crc-care-gap records FAIL -> PASS, 0 of 20 contrast-ct-prep change
+pnpm cli regrade <copy of results/runs/final-1, regrades[] removed> --grader-version 22   # at the replay commit: 12 crc-care-gap records FAIL -> PASS, 0 of 20 contrast-ct-prep change
 pnpm cli classes results/runs/final-1 --json
 pnpm cli result-card results/runs/final-1 --classes results/runs/final-1/classes.json --history results/pilot-4a,results/pilot-4b
 ```
 
-The run was made with `pnpm cli run --task crc-care-gap,contrast-ct-prep --model claude-opus-5-5 --effort high --trials 20 --concurrency 4 --cost-from results/pilot-4a,results/pilot-4b --out results/runs/final-1` after its --dry-run ($106.41) and `pnpm cli spend --check --final-reserve --cost-from results/pilot-4a,results/pilot-4b` (exit 0). The other four tasks add their 20 trials here after their W5 lever, pilots and freeze; results/official.json is written then.
+Until the other tasks' trials are in the run, step 2's replay has nothing to replay (`--tasks` refuses a task with no records here); the committed replay.json is step 1's file, and `summary --require replay=all` reads it. The manifest names each task's world in `world_hashes` once a batch of the later world is appended (the two frozen tasks on ba0b0206, as its first batch ran them); `world_hash` is then the latest batch's.
+
+The run was made with `pnpm cli run --task crc-care-gap,contrast-ct-prep --model claude-opus-5-5 --effort high --trials 20 --concurrency 4 --cost-from results/pilot-4a,results/pilot-4b --out results/runs/final-1` after its --dry-run ($106.41) and `pnpm cli spend --check --final-reserve --cost-from results/pilot-4a,results/pilot-4b` (exit 0). The other four tasks add their 20 trials here after their W5 lever, pilots and freeze; crc-care-gap's v2 replaces v1 here, and v1's 20 records move byte-identical to `superseded/crc-care-gap-v1/` (R42), summarized beside v2 and never counted. That move is `pnpm cli supersede results/runs/final-1 --task crc-care-gap --version v1`, run before v2's batch: it moves v1's trial records, trajectories, replay.json entries (into `superseded/crc-care-gap-v1/replay.json`, so no v1 verdict stands for a v2 trial of the same name) and audit.jsonl rows (into `superseded/crc-care-gap-v1/audit.jsonl`, which summary reads for v1's labels); the README of the moved version is written by hand. results/official.json names this run as the official one; the Overview labels it in progress until every task has its final sample.

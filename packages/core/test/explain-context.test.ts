@@ -157,6 +157,24 @@ describe('runWorldHash', () => {
     expect(runWorldHash(null)).toBeNull();
     expect(runWorldHash([])).toBeNull();
   });
+  // Pre-audit-2 S16: a run whose batches ran on two worlds names each task's world in
+  // world_hashes; a task's world is that entry, else the top-level world_hash (a manifest written
+  // before the map, or a task the map does not name).
+  it('reads a task\'s world from world_hashes first, then the top-level world_hash', () => {
+    const m = { world_hash: 'latest', world_hashes: { frozen: 'old', other: 'latest' } };
+    expect(runWorldHash(m, 'frozen')).toBe('old');
+    expect(runWorldHash(m, 'other')).toBe('latest');
+    expect(runWorldHash(m, 'unknown')).toBe('latest');
+    expect(runWorldHash({ world_hash: 'abc' }, 'frozen')).toBe('abc');
+    expect(runWorldHash({ world_hash: 'abc', world_hashes: { frozen: 7 } }, 'frozen')).toBe('abc');
+    expect(runWorldHash(m)).toBe('latest');
+  });
+  it('explainContext gives M3 the record task\'s world, so a frozen task\'s trial on a two-world run matches its own world', () => {
+    const manifest = { world_hash: 'latest', world_hashes: { frozen: 'old' } };
+    const record = { task_id: 'frozen', outcome: 'PASS', state_hash: { initial: 'old', final: 'x', replay_final: 'x' } } as unknown as ExplainRecord;
+    expect(explainContext({ record, events: [], manifest, matrix: null, text: null }).world_state_hash).toBe('old');
+    expect(explainContext({ record: { ...record, task_id: 'other' } as ExplainRecord, events: [], manifest, matrix: null, text: null }).world_state_hash).toBe('latest');
+  });
   // M1 reads reachability from matrix.json, never the world (R14-30), so the world shim is gone.
   it('exports no world lookup for M1', () => {
     expect(explainContextModule).not.toHaveProperty('needsWorld');

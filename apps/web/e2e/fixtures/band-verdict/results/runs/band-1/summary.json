@@ -1,5 +1,5 @@
 {
-  "schema_version": 10,
+  "schema_version": 11,
   "run_id": "band-1",
   "model": "claude-opus-5-5",
   "effort": "high",
@@ -317,7 +317,115 @@
     "ran": false,
     "matched": 0,
     "mismatched": [],
+    "other_world": [],
     "missing": []
+  },
+  "superseded": {
+    "contrast-ct-prep-v1": {
+      "task": "contrast-ct-prep",
+      "version": "v1",
+      "dir": "superseded/contrast-ct-prep-v1",
+      "initial_state_hashes": [
+        "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4"
+      ],
+      "summary": {
+        "task_versions": [
+          "6a7892418184467633ddf59d69e1eb4423fc2c27f1dda5b6490b42ecfac637a7"
+        ],
+        "env_versions": [
+          "e19277b03e45cab3d09922fa7e8a538ea106490afcf8056c16fae735fb4c4326"
+        ],
+        "grader_task_versions": [
+          "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
+        ],
+        "records": 20,
+        "trials": 20,
+        "passes": 18,
+        "pass_rate": 0.9,
+        "wilson95": {
+          "lo": 0.6989663547715128,
+          "hi": 0.9721335187862319
+        },
+        "band_verdict": "Above band",
+        "refusals": 0,
+        "refusal_excluded_rate": 0.9,
+        "outcomes": {
+          "PASS": 18,
+          "FAIL": 2
+        },
+        "recorded_outcomes": {
+          "PASS": 18,
+          "FAIL": 2
+        },
+        "regraded": 0,
+        "env_error_raw": 0,
+        "env_limit": 0,
+        "grader_error": 0,
+        "grader_error_history": 0,
+        "requeued": 0,
+        "mean_score": 1,
+        "mean_cost_usd": 0.6119999999999999,
+        "raw_mean_score": 1,
+        "gate_fraction": 0.9846153846153847,
+        "pass_no_harm": 18,
+        "pass_no_harm_rate": 0.9,
+        "limits": {
+          "turns": 0,
+          "cost": 0,
+          "wall_clock": 0,
+          "max_tokens": 0,
+          "context_window": 0
+        },
+        "requeued_outcomes": {},
+        "infra_counted_attempts": 20,
+        "infra_counted_rate": 0.9,
+        "metric_trials": {
+          "mean_score": 20,
+          "raw_mean_score": 20,
+          "gate_fraction": 20
+        },
+        "pass_k": {
+          "1": 0.9,
+          "3": 0.7157894736842105,
+          "5": 0.5526315789473685
+        },
+        "consistency": {
+          "valid": 20,
+          "passes": 18,
+          "failures": 2,
+          "shared": {
+            "check": "no_substitution",
+            "count": 2,
+            "found": "{\"failed\":[{\"item\":\"Patient/pt-0046\",\"why\":\"a IMG-CT-CHEST-WO order in place of the booked IMG-CT-AP-WO\"}]}",
+            "found_count": 2,
+            "found_values": 1
+          },
+          "flags": []
+        },
+        "fault_counts": {
+          "failures": 2,
+          "taxonomy": {
+            "retrieval": 0,
+            "reasoning": 0,
+            "output_gap": 0,
+            "over_action": 2,
+            "process": 0,
+            "action_form": 0,
+            "did_not_finish": 0,
+            "refusal": 0,
+            "unattributed": 0
+          },
+          "label": null,
+          "infra_reruns": 0
+        },
+        "top_failed_checks": [
+          {
+            "check": "no_substitution",
+            "count": 2
+          }
+        ]
+      }
+    }
   },
   "requirements": {},
   "violations": []
