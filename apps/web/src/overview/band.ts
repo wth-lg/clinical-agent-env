@@ -66,9 +66,14 @@ export function verdictLabel(verdict: BandVerdict, trials: number): { label: str
   return { label: `${verdict}, provisional`, count: `${trials} of ${FINAL_TRIALS_PER_TASK} valid trials` };
 }
 
-// The official run's column label in the difficulty history: "(final)" only when every task in it
-// has the final sample of valid trials, else "(official, in progress)" (verifier UIBAND-219-3 N1-r3).
-export function officialRunLabel(tasks: Readonly<Record<string, { trials: number }>>): '(final)' | '(official, in progress)' {
-  const all = Object.values(tasks);
-  return all.length > 0 && all.every((t) => t.trials >= FINAL_TRIALS_PER_TASK) ? '(final)' : '(official, in progress)';
+// The official run's column label in the difficulty history: "(final)" only when the run covers
+// every task of the environment and each has the final sample of valid trials, else "(official, in
+// progress)" (verifier UIBAND-219-3 N1-r3; UIBAND-219-4 M1: a run holding 2 tasks of 6 at 20
+// trials each is not final). all is the task list bandCount receives, or null while it loads, when
+// the run's own tasks are the known set, as in bandCount; a task the run holds beyond the list
+// counts too.
+export function officialRunLabel(tasks: Readonly<Record<string, { trials: number }>>, all: readonly string[] | null): '(final)' | '(official, in progress)' {
+  const known = all === null ? Object.keys(tasks) : [...new Set([...all, ...Object.keys(tasks)])];
+  const final = known.length > 0 && known.every((id) => tasks[id] !== undefined && tasks[id].trials >= FINAL_TRIALS_PER_TASK);
+  return final ? '(final)' : '(official, in progress)';
 }

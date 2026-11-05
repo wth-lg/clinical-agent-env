@@ -161,6 +161,10 @@ describe('plantedClock on an added chart (no generated record)', () => {
     // it and the band draw does). The merged pool of the chart's visit starts and ends lands on the
     // visit end 55:35 (an exact value: the draw is a hash of the chart and the instant); the
     // start-pool rule applied to this chart would land it on a visit start (26:16).
+    // The exact pin is the point (#221 round 3 M2): any change to the band draw's hashing on
+    // cohort charts fails this case, a harmless one included. Whoever changes the draw must
+    // re-derive the value against a base world diff (the world built before and after the change,
+    // the moved charts' clocks compared), not just update the literal to the new output.
     const subject = { reference: 'Patient/pt-x' };
     const withNote = [
       ...chart('Follow-up.'),

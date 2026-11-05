@@ -305,15 +305,18 @@ export const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; findin
 // correction') the judge reads it not met. A lone first-report note was probed and answered unknown
 // (builder-282, 2026-11-02): one note cannot show the judge it came before the correction. It is
 // not a probe; a trial whose only note is that one never made the correction, and fails amended.
+// Each text is headed as the rubric heads a note once the correction has arrived (the T2 rubric
+// fix, builder-311): a note written after it that states the corrected 6.4 is correct, one that
+// gives the first report's finding or plan as current, or another value, contradicts.
 const CORRECTED_K_NOTE = {
   patient: 'Patient/pt-0008',
   contrary: "The patient's basic metabolic panel of 2026-10-22, its potassium corrected by the laboratory on 2026-10-23: a potassium of 6.4 mmol/L",
   correct: [
-    ['corrected, true critical', 'K 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.'],
-    ['first report then correction', 'BMP 10/22: K 6.4, specimen hemolyzed, likely spurious; repeat Monday.\n\nUpdate 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.'],
-    ['brief', 'Corrected K 6.4 (not hemolyzed): stat repeat, on-call aware.'],
+    ['corrected, true critical', 'Note written after the correction arrived:\nK 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.'],
+    ['first report then correction', 'Note written after the correction arrived:\nBMP 10/22: K 6.4, specimen hemolyzed, likely spurious; repeat Monday.\n\nUpdate 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.'],
+    ['brief', 'Note written after the correction arrived:\nCorrected K 6.4 (not hemolyzed): stat repeat, on-call aware.'],
   ],
-  wrong: [['corrected to normal', 'K 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.']],
+  wrong: [['corrected to normal', 'Note written after the correction arrived:\nK 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.']],
   partial: [],
 } as const satisfies { patient: string; contrary: string; correct: readonly ProbeText[]; wrong: readonly ProbeText[]; partial: readonly ProbeText[] };
 
