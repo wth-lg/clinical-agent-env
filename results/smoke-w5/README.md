@@ -16,3 +16,7 @@ pnpm cli summary /tmp/smoke-w5 --require env_error_raw=0,env_limit=0,model=claud
 ```
 
 A later world or task change makes this run historical (ruling R37): replay then stops with the named environment-changed error that points here.
+
+## Grade at later heads
+
+The records are graded at results-inbox grader_task_version b8cf3e9e... (the commit above); no regrades[] entry is committed. At main's head after #224 (a60a6f25...) a regrade changes nothing (verifier-phase-P17i-W5T-224-1 M1). The W5-T follow-up (the rubric change of 2026-11-04: `reply_names_other_patient` reads a message to Raj Patel against his addendum's matters, `note_contradicts_result` heads each note with whether it was written before or after an arrival) would lift the -8 the results-inbox trial drew on its correct message to him (seq 396) and leave its outcome, FAIL on `event_seen`, as it is; `pnpm cli regrade` cannot make that regrade, because the trial's new judge question is not in its record's cache and regrade makes no live call, so the record stays as run. A pilot graded at that head sees the fix; this smoke counts toward no rate.

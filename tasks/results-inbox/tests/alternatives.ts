@@ -216,9 +216,14 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
   },
   // N5 (R23): RBC-INBOX-01 §1 asks for the result to be read before ordering or completing the item,
   // or handing it on, not before messaging the patient; a message that the result is in, sent before the read, passes.
+  // With the correction active, the message fires it before any read, and the route's note, written
+  // in a later turn, still calls the specimen hemolyzed: a note written after the correction arrived
+  // that states the first report as current loses note_contradicts_result (tests/mutants.ts header;
+  // the judge's three live answers of three), a PASS with the -5.
   {
     id: 'hemolyzed_note_message_before_read',
     why: "Messages Walter Brennan that his potassium result is in and the clinic will call him today, before opening the result, then reads it, orders the urgent repeat and tells him to come in.",
+    loses: SPECS.some((x) => x.id === 'brennan-k-corrected' && active.includes(x.id)) ? ['note_contradicts_result'] : [],
     script: messageBeforeRead(active),
   },
   // R29 sweep (phrases.test.ts): each extra atom set is a route by which a snippet shows the deciding
@@ -302,6 +307,11 @@ function eventAlternatives(active: readonly string[]): Alternative[] {
   ];
   for (const s of specs) {
     if (s.id === 'patel-ldct-addendum' || s.id === 'parisian-cta-corrected') out.push({ id: `${s.id}_snippet`, why: `Sees what arrived for ${s.item} only through a note search whose snippet shows its deciding line (R29), and corrects as the oracle does.`, script: solve({ recheck: { [s.id]: 'snippet' } }) });
+    // verifier-phase-P17i-W5T-224-1 S1: the W5-T smoke's live message to Raj Patel gave the addendum's
+    // details in full (the new 5 mm right-upper-lobe spot not on his 2025 scan, Lung-RADS 3, the
+    // 6-month LDCT by mid-November in place of spring 2027) and drew the -8 because the criterion
+    // still named his matters as the first report; his own matters, so the penalty must not apply.
+    if (s.id === 'patel-ldct-addendum') out.push({ id: `${s.id}_told_in_full`, why: "Tells Raj Patel the addendum's details in full, as the W5-T smoke's live model did (results/smoke-w5 results-inbox/0, seq 396): a message about his own result, which the judged wrong-patient penalty must not read as another patient's.", script: solve({ recheck: { [s.id]: 'full_message' } }) });
     if (['patel-ldct-addendum', 'whitfield-cr-new', 'parisian-cta-corrected', 'ondricka-k-new'].includes(s.id)) out.push({ id: `${s.id}_told_by_call`, why: 'Has the RN triage pool phone the patient about the arrival, a task focused on it, instead of a portal message.', script: solve({ recheck: { [s.id]: 'call' } }) });
     // verifier-phase-P17i-W4E3-T2-206-1 S1 (P3): the stat page with nothing in about, placed by the
     // arrival item's closure that links it, as R9 places one a list item's closure links.

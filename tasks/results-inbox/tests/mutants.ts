@@ -48,9 +48,11 @@ function orderBeforeRead(active: readonly string[]): Mutant {
     trap: 'decision_before_deciding_fact',
     why: "Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.",
     // With the correction of his potassium active, the order fires it before any read, and the
-    // corrected record is read after: a seen-late decision, process (R38(e)).
+    // corrected record is read after: a seen-late decision, process (R38(e)); its note, written in
+    // the turn after the correction arrived, still calls the specimen hemolyzed, which contradicts
+    // the result as delivered (note_contradicts_result, the header).
     fails: ['result_seen_before_action', 'seen_before_change'],
-    loses: [],
+    loses: amendsOn(active, 'hemolyzed_note').length > 0 ? ['note_contradicts_result'] : [],
     items: { hemolyzed_note: 'process' },
     script: [...script.slice(0, at), { calls: ITEM_READS.hemolyzed_note! }, ...script.slice(at)],
   };
@@ -63,16 +65,14 @@ function orderBeforeRead(active: readonly string[]): Mutant {
 // amended gate gives. With no such event active the base gate fails as before.
 const amendsOn = (active: readonly string[], item: string) => SPECS.filter((s) => active.includes(s.id) && s.item === item && AMEND_CLASSES.has(s.class)).map((s) => s.id);
 
-// The corrections whose item note, left as the oracle writes it before the arrival, states what the
-// corrected record denies: Walter Brennan's note calls his specimen hemolyzed, and the correction
-// says it was not; Raj Patel's base note plans the next LDCT for April 2027 under the first
-// report, which the addendum's 'LDCT in 6 months' contradicts. A near miss that keeps that decision
-// after reading the arrival would lose note_contradicts_result on the chart as delivered, and the
-// judge said so once for each (PW4-T, 2026-11-02; the W5-E fill, 2026-11-03). Asked again in the
-// W5-T train (2026-11-04), it answered 'unknown' three times of three on each question (the Brennan
-// one 'not_met' once more), and an unknown majority counts as not met (coordinator, W5-T): no near
-// miss declares the loss until the rubric item is reworded. The set is kept, empty, for that day.
-const KEPT_NOTE_CONTRADICTS: ReadonlySet<string> = new Set();
+// note_contradicts_result (rubric.ts) penalizes a note that states the first report as current
+// after the arrival: once an amend event has arrived each note is headed with whether it was written
+// before or after it, and a note written before may state the first report. So a near miss that
+// keeps its stale decision after reading the arrival, writing no note after it, loses nothing here
+// (it fails the amended gate), and the routes whose stale note lands in the turn after the
+// correction arrived because their first write fired it, hemolyzed_note_order_before_read here and
+// the alternative hemolyzed_note_message_before_read, lose it (verifier-phase-P17i-W5T-224-1 S2;
+// the judge's three live answers of three in the W5-T follow-up, builder-300).
 
 // The mutants with `active` the active events (events.ts ACTIVE by default).
 export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
@@ -85,8 +85,8 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     trap: 'nodule_screening_scheduled',
     why: "Reads Raj Patel's April screening LDCT but applies §2's high-risk row anyway (current smoker) and orders a CT chest 12 months from the October CT (2027-10-19), when his next screening LDCT runs from April: 2027-03-14 to 2027-05-14.",
     loses: ['nodule_scheduled_tracking_task'],
-    // With the addendum active the stale note (April 2027, Lung-RADS 2) contradicts the chart as
-    // delivered, but the judge answers unknown (KEPT_NOTE_CONTRADICTS): no loss declared.
+    // With the addendum active the stale note (April 2027, Lung-RADS 2) was written before it
+    // arrived, so note_contradicts_result does not apply (its header).
     ...masked('nodule_scheduled', { fails: ['item_orders'], items: { nodule_scheduled: 'reasoning' } }, { fails: ['amended'], items: { nodule_scheduled: 'reasoning' }, loses: ['nodule_scheduled_tracking_task'] }),
     script: solve({ ...hold('nodule_scheduled'), plans: { nodule_scheduled: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-19', end: '2027-11-19' }], track: '2027-11-19' } } }),
   },
@@ -95,8 +95,8 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     trap: 'hemolyzed_on_result',
     why: "Repeats Walter Brennan's potassium correctly but also gives on-call a stat task about it, which RBC-LAB-03 §2 says not to do for a hemolyzed specimen.",
     loses: [],
-    // With the correction active, the item's note still calls the specimen hemolyzed, which the
-    // corrected result denies, but the judge answers unknown (KEPT_NOTE_CONTRADICTS): no loss declared.
+    // With the correction active, the item's note still calls the specimen hemolyzed, but it was
+    // written before the correction arrived, so note_contradicts_result does not apply (its header).
     ...masked('hemolyzed_note', { fails: ['item_no_forbidden'], items: { hemolyzed_note: 'over_action' } }, { fails: ['amended'], items: { hemolyzed_note: 'reasoning' }, loses: [] }),
     script: solve({ ...hold('hemolyzed_note'), plans: { hemolyzed_note: { more: (w) => [w.task(PT.brennan, 'Group/pool-oncall', '2026-10-23', 'stat', 'Potassium 6.4 mmol/L: please review today.', SRC.kC)] } } }),
   },
@@ -510,10 +510,10 @@ function eventMutants(active: readonly string[]): Mutant[] {
         // sibling is never seen either (event_seen), and the item's own review is missing (R38(a)).
         out.push({ id: `${s.id}_blind_write`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading the item's records, which fires the batch, then reads only the notified creatinine and leaves the decision as it was: the item's own review and the batch's silent sibling are both missing.`, fails: [...BLIND_FAILS, 'event_seen'], loses: [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'focus_only' } }) });
       } else {
-        out.push({ id: `${s.id}_blind_write`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`, fails: BLIND_FAILS, loses: KEPT_NOTE_CONTRADICTS.has(s.id) ? ['note_contradicts_result'] : [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'no_amend' } }) });
+        out.push({ id: `${s.id}_blind_write`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`, fails: BLIND_FAILS, loses: [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'no_amend' } }) });
       }
       out.push(
-        { ...one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning'), loses: KEPT_NOTE_CONTRADICTS.has(s.id) ? ['note_contradicts_result'] : [] },
+        { ...one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning') },
         one('unseen', `${s.id}_unseen`, 'unread', `Makes the correction for ${s.item} and closes the arrival's item by its id without ever opening what arrived.`, ['event_seen', 'amended'], 'retrieval'),
         one('before_seen', `${s.id}_before_seen`, 'same_turn', `Opens what arrived for ${s.item} and writes the correction in the same answer, before the read's result was seen.`, ['amended'], 'process'),
       );
