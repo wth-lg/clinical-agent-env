@@ -13,17 +13,18 @@
 // route completes the patient's inbox items, a write about the patient), at most one amend per item,
 // the arrivals' ids clear of the world's (a class B correction replaces its record and keeps every
 // field but the corrected ones), the inbox summaries generic, and the numbers clear their lines.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { NOW_DATE } from '../../../packages/env/clock.ts';
 import { activeSpecs, AMEND_CLASSES, type EventSpec } from '../../../packages/env/events.ts';
 import { loadStore } from '../../../packages/env/fixture-source.ts';
 import type { Task, TaskSource } from '../../../packages/core/tasks.ts';
-import { stepsOf } from '../../../packages/grader/exposure.ts';
+import { firstExposed, stepsOf } from '../../../packages/grader/exposure.ts';
+import { Judge } from '../../../packages/grader/judge.ts';
 import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/grader/matrix/matrix.ts';
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
 import { EVENTS, expected, LEVER } from '../expected.ts';
-import { ACTIVE, EXCLUSIVE, LEVER_SPECS, SPECS } from '../events.ts';
+import { ACTIVE, ARRIVAL, EXCLUSIVE, LEVER_SPECS, SPECS } from '../events.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
 import { mutantsFor } from './mutants.ts';
@@ -210,5 +211,63 @@ describe.each(LIVE.map((s) => [s.id, s] as const))('event %s, active alone', (id
     const n = await run(at, 'null', 'null', NULL_AGENT);
     const failed = new Set(n.grade.checks.flatMap((c) => c.items ?? []).filter((i) => !i.met).map((i) => i.item));
     for (const k of ITEMS) expect(failed.has(k), k).toBe(true);
+  });
+});
+
+// R43 (verifier-phase-P17i-T2RUB-225-1 B1): note_contradicts_result heads a note "written after
+// <the arrival> arrived" only when its turn is later than the turn of the step that first showed the
+// arrival to the model, the event_seen rule; a note of the turn after the write that fired the
+// arrival, nothing read between, is "before". With ACTIVE, so the questions are the matrix's and the
+// cache answers them (a spec active alone changes the other patients' criteria, which no cache holds).
+describe('R43: note headings by exposure of the arrival', () => {
+  // The judge's note questions of a run, as asked (the cache answers them; no call).
+  async function noteQuestions<T>(fn: () => Promise<T>): Promise<{ result: T; asked: string[] }> {
+    const spy = vi.spyOn(Judge.prototype, 'judge');
+    try {
+      const result = await fn();
+      return { result, asked: spy.mock.calls.map(([q]) => q.text).filter((t) => t.includes('Note written ')) };
+    } finally { spy.mockRestore(); }
+  }
+  const brennanNotes = (asked: string[]) => asked.find((t) => t.includes('specimen hemolyzed and possibly falsely elevated'))!;
+  const turnOf = (steps: ReturnType<typeof stepsOf>, n: number | null) => steps.find((s) => s.n === n)?.turn;
+
+  it("the oracle with Walter Brennan's note in the answer after the one that fired the correction, nothing read between, heads it before and loses nothing", async () => {
+    const at = withActive(ACTIVE);
+    const alt = at.task.alternatives.find((a) => a.id === 'brennan-k-corrected_note_after_firing')!;
+    expect(alt.loses).toEqual([]);
+    const { result: r, asked } = await noteQuestions(() => run(at, 'alternative', alt.id, alt.script));
+    const arrival = r.steps.find((s) => (s.arrivals ?? []).some((a) => a.spec === 'brennan-k-corrected'))!;
+    const note = r.steps.find((s) => s.turn === arrival.turn + 1 && s.written_ids.some((k) => k.startsWith('DocumentReference/')))!;
+    expect(note, 'the note lands in the turn after the firing write').toBeDefined();
+    const seen = firstExposed(r.steps.filter((s) => s.n > arrival.n), `Observation/${ARRIVAL.brennanK}`);
+    expect(turnOf(r.steps, seen)!).toBeGreaterThan(note.turn);
+    const text = brennanNotes(asked);
+    expect(text.startsWith('Note written before the correction arrived:\nPotassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed')).toBe(true);
+    expect(text).toContain('\n\nNote written after the correction arrived:\nCorrection under RBC-INBOX-01 §8');
+    expect(r.grade.checks.find((c) => c.id === 'note_contradicts_result')?.met).toBe(false);
+    expect(r.grade.outcome).toBe('PASS');
+    expect(r.grade.score).toBe(1);
+  });
+
+  it("hemolyzed_note_order_before_read reads the corrected record before its stale note, so the note is headed after and the item is lost", async () => {
+    const at = withActive(ACTIVE);
+    const m = at.task.mutants.find((x) => x.id === 'hemolyzed_note_order_before_read')!;
+    expect(m.loses).toEqual(['note_contradicts_result']);
+    const { result: r, asked } = await noteQuestions(() => run(at, 'mutant', m.id, m.script));
+    const arrival = r.steps.find((s) => (s.arrivals ?? []).some((a) => a.spec === 'brennan-k-corrected'))!;
+    const seen = firstExposed(r.steps.filter((s) => s.n > arrival.n), `Observation/${ARRIVAL.brennanK}`);
+    const note = r.steps.find((s) => s.turn > turnOf(r.steps, seen)! && s.written_ids.some((k) => k.startsWith('DocumentReference/')))!;
+    expect(note, 'the stale note comes after the read that showed the corrected record').toBeDefined();
+    expect(brennanNotes(asked).startsWith('Note written after the correction arrived:\nPotassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed')).toBe(true);
+    expect(r.grade.checks.find((c) => c.id === 'note_contradicts_result')?.met).toBe(true);
+  });
+
+  it("a trial that never reads the corrected record heads every note before, its correction note too", async () => {
+    const at = withActive(ACTIVE);
+    const m = at.task.mutants.find((x) => x.id === 'brennan-k-corrected_blind_write_never_reads')!;
+    const { asked } = await noteQuestions(() => run(at, 'mutant', m.id, m.script));
+    const text = brennanNotes(asked);
+    expect(text).not.toContain('Note written after');
+    expect(text).toContain('Note written before the correction arrived:\nCorrection under RBC-INBOX-01 §8');
   });
 });

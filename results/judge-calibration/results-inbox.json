@@ -1046,61 +1046,61 @@
     {
       "check": "note_contradicts_result",
       "about": "Patient/pt-0008",
-      "criterion": "The text is one or more notes by a clinician about a patient. The patient's basic metabolic panel of 2026-10-22, its potassium corrected by the laboratory on 2026-10-23: a potassium of 6.4 mmol/L, first reported with a comment that the specimen was hemolyzed; the correction says the comment belonged to another specimen and this one was not hemolyzed, so 6.4 is a true critical high potassium. A note written before the correction may state the first report. A note states a finding that contradicts this, for example a normal potassium, a potassium value other than 6.4, or that no repeat or follow-up is needed. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "criterion": "The text is one or more notes by a clinician about a patient, each headed by whether it was written before or after the correction arrived. The patient's basic metabolic panel of 2026-10-22, its potassium corrected by the laboratory on 2026-10-23: a potassium of 6.4 mmol/L, first reported with a comment that the specimen was hemolyzed; the correction says the comment belonged to another specimen and this one was not hemolyzed, so 6.4 is a true critical high potassium. A note written before the correction arrived may state the first report; a note written after it arrived that gives the first report's finding or plan as current contradicts it. A note states a finding that contradicts this, for example a normal potassium, a potassium value other than 6.4, or that no repeat or follow-up is needed. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-11-02T07:58:01.855Z",
+      "at": "2026-11-05T10:18:48.378Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0008) follows the wording of the text, not agreement with a reference. Ledger batch 5c47cf77-fb4b-4fc9-970a-56f62fd82f30.",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0008) follows the wording of the text, not agreement with a reference. Ledger batch 781e4565-e26f-414a-a446-ce7e532d2819.",
       "agree": 4,
       "calls": 4,
       "ledger_settles": 4,
-      "cost_usd": 0.019148,
+      "cost_usd": 0.02194,
       "items": [
         {
           "label": "corrected, true critical",
-          "text": "K 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.",
+          "text": "Note written after the correction arrived:\nK 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "K 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia",
+          "quote": "True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "cd48505dbbcc45547c80657de9bbc30baeae1a98b8a82854bd4d93e030c606a4"
+          "key": "96d2d1c857a40eb08d963d08b07d00104e16b40162c8ed9408d4afca082a7494"
         },
         {
           "label": "first report then correction",
-          "text": "BMP 10/22: K 6.4, specimen hemolyzed, likely spurious; repeat Monday.\n\nUpdate 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.",
+          "text": "Note written after the correction arrived:\nBMP 10/22: K 6.4, specimen hemolyzed, likely spurious; repeat Monday.\n\nUpdate 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.",
           "expected": "not_met",
           "verdict": "not_met",
           "quote": "Update 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "6ad35060913ab6c0195d0c0e2e788b6448b9cd46ce9516194a95134055d64364"
+          "key": "c3ff72f30f2227fe937ef3ffff9b8c774c8ddd59a355fcd9a08c13bedf6a6e5c"
         },
         {
           "label": "brief",
-          "text": "Corrected K 6.4 (not hemolyzed): stat repeat, on-call aware.",
+          "text": "Note written after the correction arrived:\nCorrected K 6.4 (not hemolyzed): stat repeat, on-call aware.",
           "expected": "not_met",
           "verdict": "not_met",
           "quote": "Corrected K 6.4 (not hemolyzed): stat repeat, on-call aware.",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "71afe16d75777398804dd00a4c3a48603ac6a9a772fa79e6ccb2a089bf7f1224"
+          "key": "37da6b5c2e074dbcfd168700cf1b5139e7aa75371bde880e771cbb62d309ad0b"
         },
         {
           "label": "corrected to normal",
-          "text": "K 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.",
+          "text": "Note written after the correction arrived:\nK 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.",
           "expected": "met",
           "verdict": "met",
           "quote": "K 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "fc209ba484862d79f2f2b1d2756e75bccf1ee3091f286838ed4ffcf042bb50c1"
+          "key": "a062ea13e4955c06cf7c489bb6011e293fe320b29e1ed09200947568d4a097f9"
         }
       ]
     }
