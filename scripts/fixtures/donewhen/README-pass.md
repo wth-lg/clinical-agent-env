@@ -1,19 +1,17 @@
 # Riverbend clinical agent environment
 
-Open https://wth-lg.github.io/clinical-agent-env/, or run the local runner:
-`git clone https://github.com/wth-lg/clinical-agent-env && cd clinical-agent-env && pnpm start`.
+## Quick start
 
-## Findings
+1. Run `git clone https://github.com/wth-lg/clinical-agent-env && cd clinical-agent-env && pnpm start`.
+2. Open the URL that the runner prints.
+
+## Key handling
 Text.
 
-## Surprises
+## Run from the CLI
 Text.
 
-## Changes
-Text.
+## Links
 
-## Next steps
-Text.
-
-## References
-- PhysicianBench (2026-09-30). https://example.org/physicianbench
+- [docs/writeup.html](docs/writeup.html)
+- https://wth-lg.github.io/clinical-agent-env/
