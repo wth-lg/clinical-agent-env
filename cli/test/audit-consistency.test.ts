@@ -44,6 +44,12 @@ function failures(dir: string, evidence: ReadonlyArray<object | null>): void {
   });
   const turned = new Set(evidence.flatMap((ev, i) => (ev === null ? [`t-alpha/${5 + i}`] : [])));
   writeRows(dir, rows(dir).filter((l) => !turned.has(l.trial as string)));
+  // A record turned into a PASS gets its replay.json entry turned with it: an entry whose outcomes
+  // are not the record's is stale and no verdict (S2, packages/core/replay.ts isVerdictOf).
+  const replayFile = join(dir, 'replay.json');
+  const replay = readJson(replayFile) as { trials: Record<string, Record<string, unknown>> };
+  for (const name of turned) replay.trials[name] = { ...replay.trials[name], outcome: 'PASS', recorded_outcome: 'PASS', current_outcome: 'PASS' };
+  writeJson(replayFile, replay);
 }
 
 // The clean fixture without t-alpha's task-validity review (t-beta keeps its own).

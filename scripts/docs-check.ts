@@ -26,14 +26,17 @@
 //     start holds LOCAL_START_COMMAND byte for byte, LOCAL_PREREQUISITES, both install URLs and a
 //     Windows line that names PowerShell 7 and WSL; Key handling names both caps; Run from the CLI
 //     names the model and --out;
-//   - a TODO token: TODO-R16 is a warning; TODO-W5F is a warning until results/official.json
-//     exists, then an error; any other TODO is an error. The sources (docs/writeup/*.md,
+//   - a TODO token: TODO-R16 is a warning; TODO-W5F is a warning until the official run is
+//     complete (results/official.json names a run whose summary.json has every task of tasks/
+//     final, by the predicate the Overview shares, apps/web/src/overview/band.ts isFinalTask),
+//     then an error; any other TODO is an error. The sources (docs/writeup/*.md,
 //     docs/findings.md) are scanned too.
 // Each error prints <file>:<line>: <problem>; fix: <fix>; a warning starts with "warning:".
 // Exit codes: 0 no error, 1 an error, 2 usage or read error (a root with no docs).
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isFinalTask, type BandTask } from '../apps/web/src/overview/band.ts';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 import { ACTUAL_CAP_USD, PROJECTED_CAP_USD } from '../packages/core/ledger.ts';
 import { DENOMINATOR_RULE, PASS_DEFINITION } from '../packages/core/outcomes.ts';
@@ -218,12 +221,49 @@ function checkReadme(root: string, text: string, problems: Problem[]): void {
   void root;
 }
 
+// The environment's tasks: each directory of tasks/ with a task.toml, the _-prefixed ones (the
+// toy) left out.
+function taskIds(root: string): string[] {
+  const dir = join(root, 'tasks');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((f) => !f.startsWith('_') && existsSync(join(dir, f, 'task.toml'))).sort();
+}
+
+// Whether the official run is complete (header): results/official.json names a run whose
+// summary.json has every task of tasks/ final (isFinalTask: the final sample of valid trials and
+// a band verdict). Not complete: why, for the warning. An official.json on a run still in
+// progress (final-1 with two of six tasks) does not make TODO-W5F an error.
+export function officialState(root: string): { complete: true; run: string } | { complete: false; why: string } {
+  const file = join(root, 'results/official.json');
+  if (!existsSync(file)) return { complete: false, why: 'no results/official.json' };
+  let run: unknown;
+  try {
+    run = (JSON.parse(readFileSync(file, 'utf8')) as { run?: unknown }).run;
+  } catch {
+    return { complete: false, why: 'results/official.json is not JSON' };
+  }
+  if (typeof run !== 'string') return { complete: false, why: 'results/official.json names no run' };
+  const summaryFile = join(root, 'results', run, 'summary.json');
+  if (!existsSync(summaryFile)) return { complete: false, why: `${run} has no summary.json` };
+  let tasks: Record<string, BandTask>;
+  try {
+    tasks = (JSON.parse(readFileSync(summaryFile, 'utf8')) as { tasks?: Record<string, BandTask> }).tasks ?? {};
+  } catch {
+    return { complete: false, why: `${run}/summary.json is not JSON` };
+  }
+  const ids = taskIds(root);
+  if (ids.length === 0) return { complete: false, why: 'tasks/ names no task' };
+  const notFinal = ids.filter((id) => !isFinalTask(tasks[id]));
+  if (notFinal.length > 0) return { complete: false, why: `official run not complete: ${notFinal.length} of ${ids.length} tasks have no final result in ${run} (${notFinal.join(', ')})` };
+  return { complete: true, run };
+}
+
 function checkTodos(root: string, problems: Problem[], warnings: string[]): void {
-  const official = existsSync(join(root, 'results/official.json'));
+  const official = officialState(root);
   const files = [WRITEUP, README, 'docs/findings.md', ...(existsSync(join(root, SOURCES)) ? readdirSync(join(root, SOURCES)).filter((f) => f.endsWith('.md')).map((f) => `${SOURCES}/${f}`) : [])];
   const WHY: Record<string, string> = {
     'TODO-R16': 'a researcher fills the comparison table',
-    'TODO-W5F': 'waits for the W5 final results (an error once results/official.json exists)',
+    'TODO-W5F': `waits for the W5 final results (${official.complete ? '' : `${official.why}; `}an error once the official run is complete: every task final in the run results/official.json names)`,
   };
   for (const rel of files) {
     const path = join(root, rel);
@@ -238,8 +278,8 @@ function checkTodos(root: string, problems: Problem[], warnings: string[]): void
     }
     for (const [token, { count, line }] of seen) {
       const times = count === 1 ? '' : ` (${count} times, first at line ${line})`;
-      if (token === 'TODO-R16' || (token === 'TODO-W5F' && !official)) warnings.push(`warning: ${rel}:${line}: ${token}${times}: ${WHY[token]}`);
-      else if (token === 'TODO-W5F') problems.push({ file: rel, line, problem: `TODO-W5F with results/official.json present${times}`, fix: 'write the finding from the official run and remove the token' });
+      if (token === 'TODO-R16' || (token === 'TODO-W5F' && !official.complete)) warnings.push(`warning: ${rel}:${line}: ${token}${times}: ${WHY[token]}`);
+      else if (token === 'TODO-W5F' && official.complete) problems.push({ file: rel, line, problem: `TODO-W5F with the official run complete (every task final in ${official.run})${times}`, fix: 'write the finding from the official run and remove the token' });
       else problems.push({ file: rel, line, problem: `${token} in the text${times}`, fix: 'finish the text; only TODO-W5F and TODO-R16 may stay, as warnings' });
     }
   }

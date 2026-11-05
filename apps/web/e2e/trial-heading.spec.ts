@@ -88,6 +88,32 @@ test('a pilot with no initial hash says the world it ran on is not recorded', as
   await expect(line).toHaveAttribute('data-tone', 'neutral');
 });
 
+// Pre-audit-2 S15, R37: an official trial of a frozen task that started from that task's frozen
+// world (results/tasks-final.json) is historical data, said in a neutral tone with the tag and
+// commit that reproduce it, with no Replay here.
+test('an official trial on its task\'s frozen world says so, names the replay tag and commit, and offers no Replay', async ({ page }) => {
+  const task = TRIALS.failAudited.split('/')[0]!;
+  const commit = 'e8ef8c4d9bedce9e93d1a6d2031785c295e5caae';
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files, ...rest } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { ...rest, files: [...files.filter((f) => f !== 'results/tasks-final.json'), 'results/tasks-final.json'] } });
+  });
+  await page.route('**/data/results/tasks-final.json', (route) => route.fulfill({ json: { schema_version: 1, tasks: { [task]: { world_hash: EARLIER, frozen_at: { tag: 'freeze-test' }, replay_at: { tag: 'final-1-test', commit } } } } }));
+  await otherWorld(page, `runs/${RUN_ID}/trials/${TRIALS.failAudited}.json`);
+  await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}&tab=state-diff`);
+  const p = page.getByTestId('panel-state-diff');
+  const line = p.getByTestId('manifest-line');
+  await expect(line).toHaveText(`This trial started from the frozen world of ${task} (${EARLIER.slice(0, 4)}…), not today's (${MANIFEST.slice(0, 4)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
+  await expect(line).toHaveAttribute('data-tone', 'frozen');
+  await expect(line).not.toHaveAttribute('role', 'alert');
+  await expect(p.getByTestId('replay-block')).toHaveCount(0);
+  await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
+  // The Runs list says the run was graded on the frozen world, not an older one.
+  await page.getByRole('link', { name: 'Back to Runs' }).click();
+  await expect(page.locator(`[data-testid="run"][data-run="${RUN_ID}"] [data-testid="grading-line"]`)).toContainText('on the frozen world of its task (1 trial, results/tasks-final.json)');
+});
+
 test('an official trial on another world keeps the alert and its Replay', async ({ page }) => {
   await otherWorld(page, `runs/${RUN_ID}/trials/${TRIALS.failAudited}.json`);
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}&tab=state-diff`);

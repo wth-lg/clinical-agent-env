@@ -120,9 +120,16 @@ describe('replay and regrade', () => {
     expect(judged.text).toMatch(/_toy\/0: judge cache miss /);
     expect(judged.text).toContain(MISS_CAUSES);
     expect(judged.text).toContain('Only a new run grades with the judge: pnpm cli run --task _toy --model claude-opus-5-5 --out <new run dir> (pnpm cli oracle --task _toy --live-judge refreshes only the matrix cache).');
+    // After the edit the records are of another world. Their entries, the judge-miss mismatches
+    // made at their own env_version just above, are verdicts of the records and are kept (S1);
+    // --overwrite replaces them with this checkout's world_mismatch.
     const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
     expect(turns.code).toBe(1);
-    expect(turns.text).toMatch(/_toy\/0: environment changed: run at env_version /);
+    expect(turns.text).toMatch(/_toy\/0: kept as made at its own commit, where it did not reproduce: judge cache miss /);
+    expect(turns.text).toContain('2 entries of records of another world kept as made at their own commit (_toy/0, _toy/1)');
+    const over = await cli(replay, [dir, '--overwrite'], edited('max_turns = 6', 'max_turns = 7'));
+    expect(over.code).toBe(1);
+    expect(over.text).toMatch(/_toy\/0: environment changed: run at env_version /);
   });
 
   // The graded text is the fifth input of the judge cache key: here the record's finish summary,
@@ -156,8 +163,9 @@ describe('replay and regrade', () => {
     expect(r.code, r.text).toBe(1);
     expect(r.text).toContain(`_toy/0: environment changed: run at env_version v-before-the-edit, checkout at ${current}`);
     const j = JSON.parse(readFileSync(join(copy, 'replay.json'), 'utf8'));
-    expect(j.trials['_toy/0']).toMatchObject({ match: false });
-    expect(j.trials['_toy/1']).toMatchObject({ match: true });
+    expect(j.trials['_toy/0']).toMatchObject({ verdict: 'world_mismatch' });
+    expect(j.trials['_toy/0']).not.toHaveProperty('match');
+    expect(j.trials['_toy/1']).toMatchObject({ match: true, verdict: 'match' });
     expect((await cli(regrade, [copy, '--grader-version', GRADER_VERSION])).code).toBe(0);
   });
 

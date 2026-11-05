@@ -28,6 +28,23 @@
 // Trials are named by trialName, as replay.json names them: <task>/<index> for a batch record,
 // the run-one key <task>/<model>/<effort>/<mode>/<index> for a run-one record (it has no index).
 //
+// replay.json's verdicts are named (ReplayState, packages/core/replay.ts): match, mismatch and
+// world_mismatch, a record of another environment than the replaying checkout's, which that
+// checkout cannot replay (R37). The replay block counts the matches, lists the mismatches (and
+// the records whose replay_final is not their final) and lists the world mismatches apart in
+// other_world; replay=all fails on either, and on a world mismatch names the two-step replay
+// (cli/replay.ts header, pre-audit-2 B4): the task at its own commit with --tasks, the rest here.
+// The caller gives only the entries that are verdicts of the records as they are now
+// (cli/summary.ts readReplay, packages/core/replay.ts isVerdictOf); a stale entry's trial is
+// listed in missing (verifier-phase-P17i-TWOW-229-1 S2).
+//
+// A task's superseded version (R42: results/<run>/superseded/<task>-v<n>/, its records moved
+// there byte-identical when a later version's trials entered the run) is summarized under
+// superseded, keyed by that directory name: the task, the version, the directory, the worlds its
+// records started from and a TaskSummary over its records, the same figures as a task's. It is
+// never in tasks, totals, initial_state_hashes or any requirement: it is history shown beside the
+// current version.
+//
 // Wilson score interval, z = 1.959964 (two-sided 95%), for k passes in n valid trials, p = k/n:
 //   centre = (p + z²/2n) / (1 + z²/n)
 //   half   = z / (1 + z²/n) · sqrt(p(1-p)/n + z²/4n²)
@@ -104,7 +121,12 @@ import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
 // 8: fault_counts.taxonomy gains action_form (TAXONOMY, P17j JG8b).
 // 9: env_limit added per task and in the totals; limits gains context_window (W0-A).
 // 10: band_verdict added per task (plan-amendment-w4 PW4-F).
-export const SUMMARY_SCHEMA_VERSION = 10;
+// 11: replay.other_world (the trials replay.json marks world_mismatch, R37) and superseded (a
+//     task's superseded versions, R42) added (pre-audit-2 B4, S15, R42).
+export const SUMMARY_SCHEMA_VERSION = 11;
+
+// A trial's verdict in replay.json (packages/core/replay.ts ReplayVerdict.verdict).
+export type ReplayState = 'match' | 'mismatch' | 'world_mismatch';
 // A met or unknown rubric item worth this many points or fewer is a harm: such a PASS is not
 // pass_no_harm.
 export const HARM_POINTS = -5;
@@ -253,9 +275,12 @@ export interface SummaryInput {
   trials: readonly SummaryTrial[];
   // Attempts that were re-queued (INFRA, ENV_ERROR, CANCELLED): counted raw, never in a rate.
   requeued: readonly SummaryTrial[];
-  // replay.json, written by `pnpm cli replay`: whether each trial (by trialName) reproduced
-  // its grade. null when replay has not run.
-  replay: Readonly<Record<string, boolean>> | null;
+  // replay.json, written by `pnpm cli replay`: each trial's verdict (by trialName). null when
+  // replay has not run.
+  replay: Readonly<Record<string, ReplayState>> | null;
+  // The run's superseded task versions (header): each directory's key (<task>-v<n>), task,
+  // version and settled records.
+  superseded?: ReadonlyArray<SupersededInput>;
   // The manifest's mode (live, mock-<scenario>); null without a manifest.
   mode?: string | null;
   // The tasks the run must hold, and who says so: the manifest's task_versions, or --task.
@@ -398,7 +423,11 @@ export interface Summary {
   expected_tasks: { tasks: string[]; from: string } | null;
   models: string[];
   initial_state_hashes: string[];
-  replay: { ran: boolean; matched: number; mismatched: string[]; missing: string[] };
+  // other_world: the trials replay.json marks world_mismatch (header), apart from mismatched.
+  // missing: the trials with no entry, or a stale one (header).
+  replay: { ran: boolean; matched: number; mismatched: string[]; other_world: string[]; missing: string[] };
+  // The run's superseded task versions by directory name (header); {} when it has none.
+  superseded: Record<string, SupersededSummary>;
   requirements: Requirements;
   violations: string[];
   // Written by cli/judge-agreement.ts --write after `summary --write` (which rewrites the file
@@ -407,6 +436,27 @@ export interface Summary {
   // builder labels against the LLM auditor (P23, R14-33). validateSummary does not read them.
   judge_agreement?: { n_judge: number; judge_agree: number; judge_agreement: number | null; n_extract: number; extract_agree: number; extract_agreement: number | null; labels: string };
   kappa?: Record<'double_label' | 'builder_vs_auditor', { n: number; agree: number; agreement: number | null; kappa: number | null; categories: string[]; note?: string; seed?: number | null; sample_n?: number | null }>;
+}
+
+export interface SupersededInput {
+  key: string;
+  task: string;
+  version: string;
+  trials: readonly SummaryTrial[];
+  // The version's own audit labels (superseded/<key>/audit.jsonl, as cli supersede moves them);
+  // without them the run's labels are read, by trial name.
+  audit?: Readonly<Record<string, string | null>> | null;
+}
+
+export interface SupersededSummary {
+  task: string;
+  version: string;
+  // The directory under the run: superseded/<key>.
+  dir: string;
+  // The worlds its records started from, sorted: a superseded version usually ran on an
+  // earlier world than the run's current tasks (R37, R40).
+  initial_state_hashes: string[];
+  summary: TaskSummary;
 }
 
 // The grades before a record's current one.
@@ -543,54 +593,10 @@ const oneValue = (xs: ReadonlyArray<string | null | undefined>): string | null =
 export function summarize(input: SummaryInput): Summary {
   const ids = sorted([...input.trials, ...input.requeued].map((t) => t.task_id).concat(input.expected?.tasks ?? []));
   const tasks: Record<string, TaskSummary> = {};
-  for (const id of ids) {
-    const mine = input.trials.filter((t) => t.task_id === id);
-    const requeued = input.requeued.filter((t) => t.task_id === id);
-    const grades = mine.map(currentGrade);
-    const valid = grades.filter((g) => g.valid);
-    const passes = valid.filter((g) => g.outcome === 'PASS').length;
-    const refusals = valid.filter((g) => g.outcome === 'REFUSAL').length;
-    const scores = valid.flatMap((g) => (g.score === null ? [] : [g.score]));
-    const known = <T>(xs: (T | null)[]): T[] => xs.filter((x): x is T => x !== null);
-    const raws = known(valid.map((g) => (g.checks === null ? null : rawScore(g.checks))));
-    const fractions = known(valid.map((g) => (g.checks === null ? null : gateFraction(g.checks))));
-    const noHarm = valid.filter((g) => g.outcome === 'PASS' && g.checks !== null && !harmed(g.checks)).length;
-    const infraAttempts = valid.length + [...mine, ...requeued].filter((t) => infraCounted(currentGrade(t).outcome)).length;
-    tasks[id] = {
-      task_versions: sorted(mine.flatMap((t) => (t.task_version === null ? [] : [t.task_version]))),
-      env_versions: sorted(mine.flatMap((t) => (t.env_version ? [t.env_version] : []))),
-      grader_task_versions: sorted(grades.flatMap((g) => (g.grader_task_version === null ? [] : [g.grader_task_version]))),
-      records: mine.length,
-      trials: valid.length,
-      passes,
-      pass_rate: valid.length === 0 ? null : passes / valid.length,
-      wilson95: wilson(passes, valid.length),
-      band_verdict: bandVerdict(passes, valid.length),
-      refusals,
-      refusal_excluded_rate: valid.length - refusals === 0 ? null : passes / (valid.length - refusals),
-      outcomes: histogram(grades.map((g) => g.outcome)),
-      recorded_outcomes: histogram(mine.map((t) => t.outcome)),
-      regraded: grades.filter((g) => g.regraded).length,
-      env_error_raw: [...mine, ...requeued].filter((t) => t.outcome === 'ENV_ERROR').length,
-      env_limit: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'ENV_LIMIT').length,
-      grader_error: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'GRADER_ERROR').length,
-      grader_error_history: [...mine, ...requeued].filter((t) => earlierOutcomes(t).includes('GRADER_ERROR')).length,
-      requeued: requeued.length,
-      mean_score: mean(scores),
-      mean_cost_usd: mean(mine.map((t) => t.cost_usd + (t.judge_cost_usd ?? 0))),
-      raw_mean_score: mean(raws),
-      gate_fraction: mean(fractions),
-      pass_no_harm: noHarm,
-      pass_no_harm_rate: valid.length === 0 ? null : noHarm / valid.length,
-      limits: histogram(mine.flatMap((t, i) => (grades[i]!.valid && grades[i]!.outcome === 'LIMIT' ? [t.detail ?? 'unknown'] : [])), LIMITS),
-      requeued_outcomes: histogram(requeued.map((t) => t.outcome)),
-      infra_counted_attempts: infraAttempts,
-      infra_counted_rate: infraAttempts === 0 ? null : passes / infraAttempts,
-      metric_trials: { mean_score: scores.length, raw_mean_score: raws.length, gate_fraction: fractions.length },
-      pass_k: Object.fromEntries(PASS_K.map((k) => [k, passK(passes, valid.length, k)])) as TaskSummary['pass_k'],
-      consistency: consistencyOf(grades),
-      ...faultCounts(mine, requeued, input.audit ?? null),
-    };
+  for (const id of ids) tasks[id] = taskSummary(input.trials.filter((t) => t.task_id === id), input.requeued.filter((t) => t.task_id === id), input.audit ?? null);
+  const superseded: Record<string, SupersededSummary> = {};
+  for (const v of input.superseded ?? []) {
+    superseded[v.key] = { task: v.task, version: v.version, dir: `superseded/${v.key}`, initial_state_hashes: sorted(v.trials.flatMap((t) => (t.state_hash.initial === null ? [] : [t.state_hash.initial]))), summary: taskSummary(v.trials, [], v.audit ?? input.audit ?? null) };
   }
   const all = [...input.trials, ...input.requeued];
   const replay = input.replay;
@@ -621,15 +627,66 @@ export function summarize(input: SummaryInput): Summary {
     initial_state_hashes: sorted(input.trials.flatMap((t) => (t.state_hash.initial === null ? [] : [t.state_hash.initial]))),
     replay: {
       ran: replay !== null,
-      matched: replay === null ? 0 : keys.filter((k) => replay[k] === true).length,
+      matched: replay === null ? 0 : keys.filter((k) => replay[k] === 'match').length,
       mismatched: sorted([
-        ...(replay === null ? [] : keys.filter((k) => replay[k] === false)),
+        ...(replay === null ? [] : keys.filter((k) => replay[k] === 'mismatch')),
         ...input.trials.filter((t) => t.state_hash.final === null || t.state_hash.replay_final !== t.state_hash.final).map(keyOf),
       ]),
+      other_world: replay === null ? [] : keys.filter((k) => replay[k] === 'world_mismatch').sort(),
       missing: replay === null ? [] : keys.filter((k) => replay[k] === undefined).sort(),
     },
+    superseded,
     requirements: {},
     violations: [],
+  };
+}
+
+// One task's figures (header) over its settled records and re-queued attempts.
+function taskSummary(mine: readonly SummaryTrial[], requeued: readonly SummaryTrial[], audit: Readonly<Record<string, string | null>> | null): TaskSummary {
+  const grades = mine.map(currentGrade);
+  const valid = grades.filter((g) => g.valid);
+  const passes = valid.filter((g) => g.outcome === 'PASS').length;
+  const refusals = valid.filter((g) => g.outcome === 'REFUSAL').length;
+  const scores = valid.flatMap((g) => (g.score === null ? [] : [g.score]));
+  const known = <T>(xs: (T | null)[]): T[] => xs.filter((x): x is T => x !== null);
+  const raws = known(valid.map((g) => (g.checks === null ? null : rawScore(g.checks))));
+  const fractions = known(valid.map((g) => (g.checks === null ? null : gateFraction(g.checks))));
+  const noHarm = valid.filter((g) => g.outcome === 'PASS' && g.checks !== null && !harmed(g.checks)).length;
+  const infraAttempts = valid.length + [...mine, ...requeued].filter((t) => infraCounted(currentGrade(t).outcome)).length;
+  return {
+    task_versions: sorted(mine.flatMap((t) => (t.task_version === null ? [] : [t.task_version]))),
+    env_versions: sorted(mine.flatMap((t) => (t.env_version ? [t.env_version] : []))),
+    grader_task_versions: sorted(grades.flatMap((g) => (g.grader_task_version === null ? [] : [g.grader_task_version]))),
+    records: mine.length,
+    trials: valid.length,
+    passes,
+    pass_rate: valid.length === 0 ? null : passes / valid.length,
+    wilson95: wilson(passes, valid.length),
+    band_verdict: bandVerdict(passes, valid.length),
+    refusals,
+    refusal_excluded_rate: valid.length - refusals === 0 ? null : passes / (valid.length - refusals),
+    outcomes: histogram(grades.map((g) => g.outcome)),
+    recorded_outcomes: histogram(mine.map((t) => t.outcome)),
+    regraded: grades.filter((g) => g.regraded).length,
+    env_error_raw: [...mine, ...requeued].filter((t) => t.outcome === 'ENV_ERROR').length,
+    env_limit: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'ENV_LIMIT').length,
+    grader_error: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'GRADER_ERROR').length,
+    grader_error_history: [...mine, ...requeued].filter((t) => earlierOutcomes(t).includes('GRADER_ERROR')).length,
+    requeued: requeued.length,
+    mean_score: mean(scores),
+    mean_cost_usd: mean(mine.map((t) => t.cost_usd + (t.judge_cost_usd ?? 0))),
+    raw_mean_score: mean(raws),
+    gate_fraction: mean(fractions),
+    pass_no_harm: noHarm,
+    pass_no_harm_rate: valid.length === 0 ? null : noHarm / valid.length,
+    limits: histogram(mine.flatMap((t, i) => (grades[i]!.valid && grades[i]!.outcome === 'LIMIT' ? [t.detail ?? 'unknown'] : [])), LIMITS),
+    requeued_outcomes: histogram(requeued.map((t) => t.outcome)),
+    infra_counted_attempts: infraAttempts,
+    infra_counted_rate: infraAttempts === 0 ? null : passes / infraAttempts,
+    metric_trials: { mean_score: scores.length, raw_mean_score: raws.length, gate_fraction: fractions.length },
+    pass_k: Object.fromEntries(PASS_K.map((k) => [k, passK(passes, valid.length, k)])) as TaskSummary['pass_k'],
+    consistency: consistencyOf(grades),
+    ...faultCounts(mine, requeued, audit),
   };
 }
 
@@ -738,6 +795,12 @@ export function checkRequirements(s: Summary, req: Requirements): string[] {
   if (req.replay === 'all') {
     if (!s.replay.ran) out.push('replay: replay.json is missing; run pnpm cli replay first');
     if (s.replay.mismatched.length > 0) out.push(`replay: did not reproduce ${s.replay.mismatched.join(', ')}`);
+    if (s.replay.other_world.length > 0) {
+      // R37: the trials ran on another world than the replaying checkout's; their task is replayed
+      // at its own commit, in the two-step replay cli/replay.ts describes.
+      const tasks = sorted(s.replay.other_world.map((k) => k.slice(0, k.indexOf('/'))));
+      out.push(`replay: ${s.replay.other_world.join(', ')} ran on another world than the replaying checkout's (R37): replay ${tasks.join(', ')} at its own commit (results/tasks-final.json replay_at, else the run's README.md) with pnpm cli replay <run> --tasks ${tasks.join(',')}, then the other tasks at this checkout; the two steps merge into one replay.json`);
+    }
     if (s.replay.missing.length > 0) out.push(`replay: not replayed ${s.replay.missing.join(', ')}`);
   }
   return out;
@@ -766,59 +829,70 @@ export function validateSummary(x: unknown): string[] {
   }
   check('', x, {
     schema_version: (v) => v === SUMMARY_SCHEMA_VERSION, run_id: (v) => typeof v === 'string', model: (v) => v === null || typeof v === 'string', effort: (v) => v === null || typeof v === 'string', tasks: isObj, totals: isObj, models: strings,
-    initial_state_hashes: strings, replay: isObj, requirements: isObj, violations: strings, mode: (v) => v === null || typeof v === 'string',
+    initial_state_hashes: strings, replay: isObj, superseded: isObj, requirements: isObj, violations: strings, mode: (v) => v === null || typeof v === 'string',
     expected_tasks: (v) => v === null || (isObj(v) && strings(v.tasks) && typeof v.from === 'string'),
   });
   if (isObj(x.totals)) {
     check('totals.', x.totals, { records: count, trials: count, passes: count, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, internal_errors: count, cost_usd: num });
   }
-  if (isObj(x.replay)) check('replay.', x.replay, { ran: (v) => typeof v === 'boolean', matched: count, mismatched: strings, missing: strings });
-  if (isObj(x.tasks)) {
-    for (const [id, t] of Object.entries(x.tasks)) {
-      if (!isObj(t)) {
-        errors.push(`tasks.${id}: not an object`);
+  if (isObj(x.replay)) check('replay.', x.replay, { ran: (v) => typeof v === 'boolean', matched: count, mismatched: strings, other_world: strings, missing: strings });
+  // Each task's summary, and each superseded version's, is checked the same way.
+  const taskEntries: Array<[string, unknown]> = isObj(x.tasks) ? Object.entries(x.tasks).map(([id, t]) => [`tasks.${id}`, t]) : [];
+  if (isObj(x.superseded)) {
+    for (const [key, v] of Object.entries(x.superseded)) {
+      if (!isObj(v)) {
+        errors.push(`superseded.${key}: not an object`);
         continue;
       }
-      const histogram = (v: unknown) => isObj(v) && Object.entries(v).every(([o, n]) => (OUTCOMES as readonly string[]).includes(o) && count(n));
-      check(`tasks.${id}.`, t, {
-        task_versions: strings, env_versions: strings, grader_task_versions: strings, records: count, trials: count, passes: count, pass_rate: rate, wilson95: interval,
-        band_verdict: (v) => v === null || (BAND_VERDICTS as readonly unknown[]).includes(v), refusals: count,
-        refusal_excluded_rate: rate, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, mean_score: (v) => v === null || num(v), mean_cost_usd: (v) => v === null || num(v),
-        outcomes: histogram, recorded_outcomes: histogram,
-        raw_mean_score: (v) => v === null || num(v), gate_fraction: rate, pass_no_harm: count, pass_no_harm_rate: rate,
-        limits: (v) => isObj(v) && LIMITS.every((k) => Object.hasOwn(v, k)) && Object.values(v).every(count), requeued_outcomes: histogram,
-        infra_counted_attempts: count, infra_counted_rate: rate,
-        metric_trials: (v) => isObj(v) && count(v.mean_score) && count(v.raw_mean_score) && count(v.gate_fraction),
-        pass_k: (v) => isObj(v) && Object.keys(v).length === PASS_K.length && PASS_K.every((k) => Object.hasOwn(v, String(k)) && rate(v[String(k)])),
-        consistency: (v) => isObj(v) && count(v.valid) && count(v.passes) && count(v.failures)
-          && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && count(v.shared.count) && typeof v.shared.found === 'string' && count(v.shared.found_count) && count(v.shared.found_values)))
-          && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
-        fault_counts: (v) => isObj(v) && count(v.failures) && count(v.infra_reruns) && keyed(v.taxonomy, FAILURE_KINDS) && (v.label === null || keyed(v.label, FAILURE_LABELS)),
-        top_failed_checks: (v) => Array.isArray(v) && v.every((c) => isObj(c) && typeof c.check === 'string' && count(c.count) && (c.count as number) > 0),
-      });
-      // Each way of counting the failures adds up to them, and the checks count no more of them.
-      const fc = t.fault_counts;
-      if (isObj(fc) && count(fc.failures)) {
-        const sum = (h: unknown) => Object.values(h as Record<string, number>).reduce((a, n) => a + n, 0);
-        if (keyed(fc.taxonomy, FAILURE_KINDS) && sum(fc.taxonomy) !== fc.failures) errors.push(`tasks.${id}.fault_counts.taxonomy: adds up to ${sum(fc.taxonomy)}, not its ${fc.failures as number} failures`);
-        if (fc.label !== null && keyed(fc.label, FAILURE_LABELS) && sum(fc.label) !== fc.failures) errors.push(`tasks.${id}.fault_counts.label: adds up to ${sum(fc.label)}, not its ${fc.failures as number} failures`);
-        if (count(t.trials) && count(t.passes) && fc.failures !== (t.trials as number) - (t.passes as number)) errors.push(`tasks.${id}.fault_counts.failures: ${fc.failures as number}, not its ${(t.trials as number) - (t.passes as number)} valid failures`);
-        if (Array.isArray(t.top_failed_checks) && t.top_failed_checks.reduce((a: number, c) => a + (isObj(c) && count(c.count) ? (c.count as number) : 0), 0) > (fc.failures as number)) errors.push(`tasks.${id}.top_failed_checks: counts more than its ${fc.failures as number} failures`);
-      }
-      if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`tasks.${id}.passes: more than its trials`);
-      // pass_k is a function of passes and trials: a value that is not passK of them is stale or edited.
-      else if (count(t.passes) && count(t.trials)) {
-        if (isObj(t.pass_k)) {
-          for (const k of PASS_K) {
-            const want = passK(t.passes as number, t.trials as number, k);
-            const got = t.pass_k[String(k)];
-            if (Object.hasOwn(t.pass_k, String(k)) && got !== want) errors.push(`tasks.${id}.pass_k.${k}: ${JSON.stringify(got)}, not pass^${k} of ${t.passes as number}/${t.trials as number} = ${want}`);
-          }
+      check(`superseded.${key}.`, v, { task: (w) => typeof w === 'string', version: (w) => typeof w === 'string', dir: (w) => w === `superseded/${key}`, initial_state_hashes: strings, summary: isObj });
+      if (isObj(v.summary)) taskEntries.push([`superseded.${key}.summary`, v.summary]);
+    }
+  }
+  for (const [path, t] of taskEntries) {
+    if (!isObj(t)) {
+      errors.push(`${path}: not an object`);
+      continue;
+    }
+    const id = path;
+    const histogram = (v: unknown) => isObj(v) && Object.entries(v).every(([o, n]) => (OUTCOMES as readonly string[]).includes(o) && count(n));
+    check(`${id}.`, t, {
+      task_versions: strings, env_versions: strings, grader_task_versions: strings, records: count, trials: count, passes: count, pass_rate: rate, wilson95: interval,
+      band_verdict: (v) => v === null || (BAND_VERDICTS as readonly unknown[]).includes(v), refusals: count,
+      refusal_excluded_rate: rate, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, mean_score: (v) => v === null || num(v), mean_cost_usd: (v) => v === null || num(v),
+      outcomes: histogram, recorded_outcomes: histogram,
+      raw_mean_score: (v) => v === null || num(v), gate_fraction: rate, pass_no_harm: count, pass_no_harm_rate: rate,
+      limits: (v) => isObj(v) && LIMITS.every((k) => Object.hasOwn(v, k)) && Object.values(v).every(count), requeued_outcomes: histogram,
+      infra_counted_attempts: count, infra_counted_rate: rate,
+      metric_trials: (v) => isObj(v) && count(v.mean_score) && count(v.raw_mean_score) && count(v.gate_fraction),
+      pass_k: (v) => isObj(v) && Object.keys(v).length === PASS_K.length && PASS_K.every((k) => Object.hasOwn(v, String(k)) && rate(v[String(k)])),
+      consistency: (v) => isObj(v) && count(v.valid) && count(v.passes) && count(v.failures)
+        && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && count(v.shared.count) && typeof v.shared.found === 'string' && count(v.shared.found_count) && count(v.shared.found_values)))
+        && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
+      fault_counts: (v) => isObj(v) && count(v.failures) && count(v.infra_reruns) && keyed(v.taxonomy, FAILURE_KINDS) && (v.label === null || keyed(v.label, FAILURE_LABELS)),
+      top_failed_checks: (v) => Array.isArray(v) && v.every((c) => isObj(c) && typeof c.check === 'string' && count(c.count) && (c.count as number) > 0),
+    });
+    // Each way of counting the failures adds up to them, and the checks count no more of them.
+    const fc = t.fault_counts;
+    if (isObj(fc) && count(fc.failures)) {
+      const sum = (h: unknown) => Object.values(h as Record<string, number>).reduce((a, n) => a + n, 0);
+      if (keyed(fc.taxonomy, FAILURE_KINDS) && sum(fc.taxonomy) !== fc.failures) errors.push(`${id}.fault_counts.taxonomy: adds up to ${sum(fc.taxonomy)}, not its ${fc.failures as number} failures`);
+      if (fc.label !== null && keyed(fc.label, FAILURE_LABELS) && sum(fc.label) !== fc.failures) errors.push(`${id}.fault_counts.label: adds up to ${sum(fc.label)}, not its ${fc.failures as number} failures`);
+      if (count(t.trials) && count(t.passes) && fc.failures !== (t.trials as number) - (t.passes as number)) errors.push(`${id}.fault_counts.failures: ${fc.failures as number}, not its ${(t.trials as number) - (t.passes as number)} valid failures`);
+      if (Array.isArray(t.top_failed_checks) && t.top_failed_checks.reduce((a: number, c) => a + (isObj(c) && count(c.count) ? (c.count as number) : 0), 0) > (fc.failures as number)) errors.push(`${id}.top_failed_checks: counts more than its ${fc.failures as number} failures`);
+    }
+    if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`${id}.passes: more than its trials`);
+    // pass_k is a function of passes and trials: a value that is not passK of them is stale or edited.
+    else if (count(t.passes) && count(t.trials)) {
+      if (isObj(t.pass_k)) {
+        for (const k of PASS_K) {
+          const want = passK(t.passes as number, t.trials as number, k);
+          const got = t.pass_k[String(k)];
+          if (Object.hasOwn(t.pass_k, String(k)) && got !== want) errors.push(`${id}.pass_k.${k}: ${JSON.stringify(got)}, not pass^${k} of ${t.passes as number}/${t.trials as number} = ${want}`);
         }
-        // band_verdict is a function of passes and trials too.
-        const want = bandVerdict(t.passes as number, t.trials as number);
-        if (Object.hasOwn(t, 'band_verdict') && t.band_verdict !== want) errors.push(`tasks.${id}.band_verdict: ${JSON.stringify(t.band_verdict)}, not the verdict of ${t.passes as number}/${t.trials as number}, ${JSON.stringify(want)}`);
       }
+      // band_verdict is a function of passes and trials too.
+      const want = bandVerdict(t.passes as number, t.trials as number);
+      if (Object.hasOwn(t, 'band_verdict') && t.band_verdict !== want) errors.push(`${id}.band_verdict: ${JSON.stringify(t.band_verdict)}, not the verdict of ${t.passes as number}/${t.trials as number}, ${JSON.stringify(want)}`);
     }
   }
   return errors;

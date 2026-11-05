@@ -39,8 +39,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   if (params.get('trial')) return <TrialPage headingRef={headingRef} />;
   if (results === null) return <Page title="Runs" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
   if (results.kind === 'error') return <Page title="Runs" headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Page>;
-  const { official, pilots, officialError } = results;
-  const runs = [...(official ? [official] : []), ...pilots];
+  const { official, superseded, pilots, officialError } = results;
+  const runs = [...(official ? [official] : []), ...superseded, ...pilots];
   const task = params.get('task') ?? '';
   const label = params.get('label') ?? '';
   const check = params.get('check') ?? '';
@@ -56,7 +56,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   // While a run in the list is blocked (the official run, or a pilot shown under it) the count
   // line says why in place of its number, under every label: under pass it is a pass count, and
   // under the others the pass count is the total less their sum (verifier-phase-P17i-UI-FU-1 B1).
-  const listed = [...(official ? [official] : []), ...(check === '' && audit === '' ? pilots : [])];
+  const listed = [...(official ? [official] : []), ...(check === '' && audit === '' ? [...superseded, ...pilots] : [])];
   const holding = listed.reduce((n, r) => n + (runBlock(r.trials)?.trials ?? 0), 0);
   const falsePasses = official ? official.trials.filter((t) => (task === '' || t.task === task) && isFalsePass(t.explanation)).length : 0;
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
@@ -130,6 +130,14 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
         </p>
       )}
       {official && <RunList run={official} matches={matches} filtered={filtered} later={later} />}
+      {/* R42: a task's superseded version, under the official run and never counted; its trials open like any other. */}
+      {superseded.length > 0 && check === '' && audit === '' && (
+        <section className="space-y-3" data-testid="superseded-runs">
+          <h2 className="pt-2 font-medium text-ink">Superseded task versions (not counted in the results)</h2>
+          <p className="text-xs text-ink-muted">A task's earlier version, run before the task was changed: its trials stay as recorded, beside the current version's.</p>
+          {superseded.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} filtered={filtered} later={later} heading />)}
+        </section>
+      )}
       {/* The check and audit filters come from the official run, so the pilots hide while one is set (JU7r2 n1). */}
       {pilots.length > 0 && check === '' && audit === '' && (
         <section className="space-y-3" data-testid="pilot-runs">
@@ -148,13 +156,14 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 // "pilot-3: 47/48 pass · 1 failure": the run's valid trials, and how many it leaves out. A pilot
 // a trial blocks gives no pass count, and no failure count, which with the total gives one
-// (data/failures.ts noPassCount).
+// (data/failures.ts noPassCount). A superseded version is named by its task and version.
 function runLine(run: RunData): string {
   const valid = run.trials.filter((t) => t.explanation.valid);
   const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
   const out = run.trials.length - valid.length;
   const held = noPassCount(run.trials);
-  return `${run.runId}: ${held ?? `${passes}/${valid.length} pass · ${plural(valid.length - passes, 'failure')}`}${out > 0 ? ` · ${out} not counted` : ''}${run.bad.length > 0 ? ` · ${run.bad.length} unreadable` : ''}`;
+  const name = run.superseded === null ? run.runId : `${run.superseded.task} ${run.superseded.version} (superseded in ${run.superseded.of})`;
+  return `${name}: ${held ?? `${passes}/${valid.length} pass · ${plural(valid.length - passes, 'failure')}`}${out > 0 ? ` · ${out} not counted` : ''}${run.bad.length > 0 ? ` · ${run.bad.length} unreadable` : ''}`;
 }
 
 function RunList({ run, matches, filtered, later, heading = false }: { run: RunData; matches: (t: Trial) => boolean; filtered: boolean; later: Later; heading?: boolean }) {
@@ -179,7 +188,7 @@ function RunList({ run, matches, filtered, later, heading = false }: { run: RunD
     button?.focus({ preventScroll: true });
   }, [run.runId]);
   return (
-    <div ref={box} className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)}>
+    <div ref={box} className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)} data-superseded={run.superseded === null ? undefined : `${run.superseded.task} ${run.superseded.version}`}>
       {heading && <h3 data-testid="run-header" className="sticky top-0 z-10 -mx-1 bg-canvas px-1 py-1 font-medium text-ink">{runLine(run)}</h3>}
       {graded !== null && <p className="text-xs text-ink-muted" data-testid="grading-line">{graded}</p>}
       {run.warnings.length > 0 && <Notice testId="data-warning">{run.warnings.join(' ')}</Notice>}

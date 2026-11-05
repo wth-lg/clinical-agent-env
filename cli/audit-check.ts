@@ -38,7 +38,8 @@
 //     grader_task_version;
 //   - no attempt, re-queued ones included, had an INTERNAL tool error;
 //   - every record's replay_final equals its final hash, and replay.json, when present, says
-//     every trial reproduced;
+//     every trial reproduced, by an entry that is the record's verdict as it is now (a stale
+//     entry, of a record rewritten under the same name, is no verdict: packages/core/replay.ts);
 //   - every label with model_fault unclear or llm_auditor_agrees false carries an adjudicated_label,
 //     one of AUDIT_LABELS; on a PASS, grader (a false PASS) or pass (outcomes.ts PASS_CONFIRMED: the
 //     adjudicator confirms the PASS, and the row gives no label; verifier-phase-P17j-retro-JG5-unread-1
@@ -430,10 +431,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   }
   const internal = [...records.values(), ...requeued].filter((r) => (r.tool_errors?.INTERNAL ?? 0) > 0);
   if (internal.length > 0) v.push(`INTERNAL tool errors in ${internal.map((r) => `${trialName(r)} (${r.attempt})`).join(', ')}; the run must have 0`);
-  const replay = readReplay(dir);
+  const replay = readReplay(dir, [...records.values()]);
   for (const [name, r] of records) {
     if (r.state_hash.final === null || r.state_hash.replay_final !== r.state_hash.final) v.push(`${name}: replay_final ${r.state_hash.replay_final} is not final ${r.state_hash.final}`);
-    if (replay !== null && replay[name] !== true) v.push(`${name}: replay.json says it did not reproduce`);
+    if (replay === null) continue;
+    // S2: an entry that is not this record's verdict (the record was rewritten under the same name) is no verdict at all.
+    const why = replay.stale[name];
+    if (why !== undefined) v.push(`${name}: replay.json holds no verdict of this record as it is now (its entry is stale: ${why}); replay the task again`);
+    else if (replay.states[name] !== 'match') v.push(`${name}: replay.json says it did not reproduce${replay.states[name] === 'world_mismatch' ? ' (it ran on another world than the replaying checkout\'s: replay its task at its own commit, cli/replay.ts header)' : ''}`);
   }
   for (const task of [...new Set([...records.values()].map((r) => r.task_id))].sort()) {
     const passes = [...records.values()].filter((r) => r.task_id === task && currentGrade(r).outcome === 'PASS');

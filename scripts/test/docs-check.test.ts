@@ -6,7 +6,7 @@
 // generated blocks, that the HTML loads nothing from outside, and the README rules. Each mutation
 // the plan names makes it exit 1. Every case runs on a copy of the repo's docs and README with the
 // repo's results/ and tasks/ linked in, so the repo itself is never written.
-import { cpSync, existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ACTUAL_CAP_USD, PROJECTED_CAP_USD } from '../../packages/core/ledger.ts';
@@ -300,7 +300,11 @@ describe('docs-check', () => {
     expect(check(root2).status).toBe(1);
   });
 
-  it('TODO-W5F is a warning without results/official.json and an error with it; any other TODO is an error', () => {
+  // TODO-W5F waits for the W5 final results, so it is an error only once the official run is
+  // complete: results/official.json names a run whose summary has every task of tasks/ final
+  // (apps/web/src/overview/band.ts isFinalTask, the predicate the Overview shares). An official.json
+  // on a run still in progress (final-1 today: two of six tasks) keeps it a warning.
+  it('TODO-W5F is a warning without results/official.json, and with one that names a run still in progress; any other TODO is an error', () => {
     const root = docsRoot();
     edit(root, 'docs/findings.md', /\n\n/, '\n\nTODO-W5F the W5 tasks.\n\n');
     regenerated(root);
@@ -310,11 +314,26 @@ describe('docs-check', () => {
     writeFileSync(join(root, 'results/official.json'), JSON.stringify({ run: 'runs/final-1' }));
     regenerated(root);
     const r2 = check(root);
-    expect(r2.status).toBe(1);
-    expect(errors(r2).some((l) => l.includes('TODO-W5F'))).toBe(true);
+    expect(r2.status, r2.stdout).toBe(0);
+    expect(warnings(r2).some((w) => w.includes('TODO-W5F') && w.includes('official run not complete: 4 of 6 tasks have no final result'))).toBe(true);
     const root3 = docsRoot();
     edit(root3, 'docs/findings.md', /\n\n/, '\n\nTODO-XYZ later.\n\n');
     expect(check(regenerated(root3)).status).toBe(1);
+  });
+
+  it('TODO-W5F is an error once the official run is complete: every task of tasks/ final in its summary', () => {
+    const root = docsRoot();
+    // An environment of the two tasks final-1 holds, so its official run covers every task.
+    rmSync(join(root, 'tasks'));
+    mkdirSync(join(root, 'tasks'));
+    for (const id of ['crc-care-gap', 'contrast-ct-prep']) symlinkSync(join(repoRoot, 'tasks', id), join(root, 'tasks', id));
+    symlinkSync(join(repoRoot, 'tasks/_toy'), join(root, 'tasks/_toy'));
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nTODO-W5F the W5 tasks.\n\n');
+    writeFileSync(join(root, 'results/official.json'), JSON.stringify({ run: 'runs/final-1' }));
+    regenerated(root);
+    const r = check(root);
+    expect(r.status).toBe(1);
+    expect(errors(r).some((l) => l.includes('TODO-W5F with the official run complete (every task final in runs/final-1)'))).toBe(true);
   });
 
   it('fails when a reference line has no date', () => {

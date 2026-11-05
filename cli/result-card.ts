@@ -24,7 +24,11 @@
 //                      by instance and over its observations with the pass rate's Wilson 95%
 //                      (computed here from the counts with summary.ts wilson) and failure labels,
 //                      and each event's. Without --classes it says "Not given".
-//   Difficulty history k/n and verdict per task over the --history runs, oldest first, then this run
+//   Superseded        each superseded task version of this run (summary.json superseded, R42):
+//   versions           its k/n, Wilson 95%, verdict and the world it ran on, beside the current
+//                      version's row above; never counted. "None." when the run has none
+//   Difficulty history k/n and verdict per task over the --history runs, oldest first, then each
+//                      superseded version of this run, then this run
 //   No failures        for each task with valid trials and no failure, "No failures in N trials"
 //                      (a task with 0 valid trials is named on its own line, outside the claim)
 //                      and the strictness evidence: <run>/matrix.json's entry at the task's
@@ -164,6 +168,16 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
     id, `${t.passes}/${t.trials}`, interval(t.wilson95), t.band_verdict ?? 'no valid trials', chance(t.pass_k[1]), chance(t.pass_k[3]), chance(t.pass_k[5]), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
   ])), '');
 
+  lines.push('## Superseded versions', '');
+  const superseded = Object.entries(s.superseded);
+  if (superseded.length === 0) lines.push('None.', '');
+  else {
+    lines.push('A superseded version is a task as it was before it was changed (R42); its trials stay as recorded beside the current version and are not counted.', '');
+    lines.push(...table(['version', 'task', 'k/n', 'Wilson 95%', 'verdict', 'world', 'directory'], superseded.map(([key, v]) => [
+      `${v.task} ${v.version}`, v.task, `${v.summary.passes}/${v.summary.trials}`, interval(v.summary.wilson95), v.summary.band_verdict ?? 'no valid trials', v.initial_state_hashes.map((h) => h.slice(0, 12)).join(', ') || 'none', `${basename(dir)}/${v.dir} (${key})`,
+    ])), '');
+  }
+
   lines.push('## Failures by fault', '');
   lines.push(...table(['task', 'failures', 'model', 'environment', 'grader', 'infra (cli classes)', 're-queued infra attempts (summary infra_reruns)', 'source'], tasks.map(([id, t]) => {
     const f = t.fault_counts;
@@ -221,10 +235,15 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
   }
 
   lines.push('## Difficulty history', '');
-  const runs = [...input.history.map((h) => h.summary), s];
-  const ids = [...new Set(runs.flatMap((r) => Object.keys(r.tasks)))].sort();
-  lines.push(...table(['task', ...runs.map((r) => r.run_id)], ids.map((id) => [id, ...runs.map((r) => {
-    const t = r.tasks[id];
+  // Each column: a run's tasks, or one superseded version of this run (its one task).
+  const columns: Array<{ name: string; tasks: Record<string, Pick<Summary['tasks'][string], 'passes' | 'trials' | 'band_verdict'>> }> = [
+    ...input.history.map((h) => ({ name: h.summary.run_id, tasks: h.summary.tasks })),
+    ...superseded.map(([key, v]) => ({ name: `${key} (${v.task} ${v.version}, superseded)`, tasks: { [v.task]: v.summary } })),
+    { name: s.run_id, tasks: s.tasks },
+  ];
+  const ids = [...new Set(columns.flatMap((c) => Object.keys(c.tasks)))].sort();
+  lines.push(...table(['task', ...columns.map((c) => c.name)], ids.map((id) => [id, ...columns.map((c) => {
+    const t = c.tasks[id];
     return t === undefined || t.trials === 0 ? 'none' : `${t.passes}/${t.trials} ${t.band_verdict}`;
   })])), '');
 

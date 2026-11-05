@@ -350,6 +350,16 @@ describe('donewhen', () => {
     expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).not.toContain('historical');
   });
 
+  // Pre-audit-2 S14: once a frozen task names a replay_at (the commit that reproduces its records,
+  // after a regrade moved them off the freeze's grader), the historical line points there.
+  it('clause 5 points a moved task at its replay_at tag and commit when the freeze names one', () => {
+    const root = completeRepo();
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t1: { replay_at: { tag: 'final-1-test', commit: 'b'.repeat(40) } } }));
+    const line = donewhen(root, { ...ALL_STUBS, 'task-hash': 'task-hash-moved' }).clause(5);
+    expect(line).toMatch(/^PASS \(5\)/);
+    expect(line).toContain(`t1 reproduce at tag final-1-test (${'b'.repeat(12)}, replay_at), t2 reproduce at tag freeze-test (not on this checkout yet)`);
+  });
+
   it('clause 5 resolves the freeze tag to its commit when the checkout has it', () => {
     const root = completeRepo();
     git(root, 'init', '-q', '-b', 'main');

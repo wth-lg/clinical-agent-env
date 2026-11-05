@@ -8,7 +8,7 @@
 // fixture (P21 gate: 19 trials, 15/20, a current GRADER_ERROR, replay.json removed, a record on
 // another world hash or task_version; and PASS with one GRADER_ERROR regraded to FAIL).
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
@@ -53,7 +53,19 @@ const GRADER_ERROR = ['summary', RUN, '--require', 'grader_error=0', '--json'];
 const AUDIT = ['audit-check', RUN, '--final', '--json'];
 
 const record = (root: string, task: string, i: number) => JSON.parse(readFileSync(join(root, RUN, `trials/${task}/${i}.json`), 'utf8')) as Record<string, unknown>;
-const putRecord = (root: string, task: string, i: number, r: Record<string, unknown>) => writeFileSync(join(root, RUN, `trials/${task}/${i}.json`), JSON.stringify(r, null, 2));
+// Writes the record, and turns its replay.json entry with it (when the file is there), as a replay
+// of the record as written would: an entry whose outcomes are not the record's, or stamped at
+// another env_version, is stale and no verdict (S2, packages/core/replay.ts isVerdictOf).
+const putRecord = (root: string, task: string, i: number, r: Record<string, unknown>) => {
+  writeFileSync(join(root, RUN, `trials/${task}/${i}.json`), JSON.stringify(r, null, 2));
+  const file = join(root, RUN, 'replay.json');
+  if (!existsSync(file)) return;
+  const replay = JSON.parse(readFileSync(file, 'utf8')) as { trials: Record<string, Record<string, unknown>> };
+  const current = ((r.regrades as Array<{ outcome: string }> | undefined)?.at(-1)?.outcome ?? r.outcome) as string;
+  const entry = replay.trials[`${task}/${i}`] ?? {};
+  replay.trials[`${task}/${i}`] = { ...entry, outcome: current, recorded_outcome: r.outcome, current_outcome: current, replayed_at: { ...(entry.replayed_at as object), env_version: r.env_version } };
+  writeFileSync(file, `${JSON.stringify(replay, null, 2)}\n`);
+};
 // A record's PASS turned into a FAIL, with the audit row the FAIL needs.
 function failTrial(root: string, task: string, i: number): void {
   const r = record(root, task, i);

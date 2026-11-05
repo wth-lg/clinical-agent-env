@@ -754,7 +754,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },
@@ -1035,7 +1035,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1 && pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,replay=all,valid=20",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue && pnpm cli summary \"$d/final-1\" --require model=claude-opus-5-5,replay=all,valid=20",
             "exit": 0
           }
         },
@@ -1046,10 +1046,7 @@
           }
         }
       ],
-      "phase": "P22",
-      "pending": [
-        "results/official.json"
-      ]
+      "phase": "P22"
     },
     {
       "id": "W5",
@@ -1473,7 +1470,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "d=$(mktemp -d) && cp -R results/runs/final-1 \"$d/final-1\" && pnpm cli replay \"$d/final-1\" --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },

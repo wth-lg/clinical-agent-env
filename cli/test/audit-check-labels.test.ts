@@ -33,9 +33,16 @@ const reviews = (dir: string) => readFileSync(join(dir, 'audit.jsonl'), 'utf8').
 const writeLabels = (dir: string, rows: object[]) => writeFileSync(join(dir, 'audit.jsonl'), [...rows.map((r) => JSON.stringify(r)), ...reviews(dir)].join('\n') + '\n');
 
 // Turns t-alpha/9 (a labelled FAIL in the clean run) into another outcome.
+// Rewrites t-alpha/9's record, and its replay.json entry with it: an entry whose outcomes are not
+// the record's is stale and no verdict (S2, packages/core/replay.ts isVerdictOf).
 function retrial(dir: string, over: Record<string, unknown>): void {
   const file = join(dir, 'trials/t-alpha/9.json');
-  writeJson(file, { ...readJson(file), checks: [], attribution: null, ...over });
+  const r: Record<string, unknown> = { ...readJson(file), checks: [], attribution: null, ...over };
+  writeJson(file, r);
+  const replayFile = join(dir, 'replay.json');
+  const replay = readJson(replayFile) as { trials: Record<string, Record<string, unknown>> };
+  replay.trials['t-alpha/9'] = { ...replay.trials['t-alpha/9'], outcome: r.outcome, recorded_outcome: r.outcome, current_outcome: r.outcome };
+  writeJson(replayFile, replay);
 }
 
 describe('audit-check: P12 fixtures exit as intended', () => {
