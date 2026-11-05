@@ -1,0 +1,55 @@
+{
+  "env_git_sha": "1e61eeaac42cfb69de522c15feee29c08b6f534b",
+  "env_dirty": false,
+  "run_id": "pilot-5a",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "api_version": "2026-10-21",
+  "trials": 8,
+  "task_versions": {
+    "renal-dose-review": "c6d1cd72efc0c84a3f209ca44335d25554b10d017c876cdf912999777a6c3ba6",
+    "results-inbox": "4649856adf37e907be1b7dcab951d090afef88cf3f4aa1523b4069481f67cec8",
+    "discharge-medrec": "1bbcb0b8fd31de8c65072152c98741aaa12375823076bea8bc494a1cf408f711",
+    "message-queue": "b759f5a29688c70f08c1c656b61f1911ceb12f5766a95a3d1cda3386872cb3c6"
+  },
+  "env_versions": {
+    "renal-dose-review": "32aa59082bd2b2420d22fad7f4660cf96a7d29ffe1901409e4cfdd5813e99c7c",
+    "results-inbox": "359bb51cd6417d68900ef32a78cbf2bdb8a3e3b1c7c346be418806a5dc0692dd",
+    "discharge-medrec": "aceb38ca22128e59def31fc16da5024d1fbae413bca99ee588f2448ef2669994",
+    "message-queue": "970fe35aef67cb5b8f64480d109647c728333b63f3e5704e863064cb576c93d4"
+  },
+  "grader_task_versions": {
+    "renal-dose-review": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
+    "results-inbox": "47bbba4153eec343098ad55ef72bfebae887417045e78c6026954053c783654a",
+    "discharge-medrec": "1f9cb1dfb1f6be1244603c75525d95f4c16756b6f010691cbd5da0b224fe0aa5",
+    "message-queue": "076ed39cad117c8640a4b78f507ab9e173b89d94419af6cd9ed5ed7a9ca9df70"
+  },
+  "batches": [
+    {
+      "batch_id": "8f1cf1b7-ab88-4248-bc40-9dfd4fe09ae0",
+      "started": "2026-11-05T19:44:03.129Z",
+      "ended": "2026-11-05T20:02:40.547Z",
+      "projection": 111.39999999999999,
+      "remaining": 16,
+      "settled": 16,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "d318656535fbe75937333c42fda789be4343323f"
+    },
+    {
+      "batch_id": "ba41d848-a555-4f80-b714-074e039792d1",
+      "started": "2026-11-05T20:25:51.469Z",
+      "ended": "2026-11-05T20:44:57.036Z",
+      "projection": 111.39999999999999,
+      "remaining": 16,
+      "settled": 16,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "1e61eeaac42cfb69de522c15feee29c08b6f534b"
+    }
+  ]
+}

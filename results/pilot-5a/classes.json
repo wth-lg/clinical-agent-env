@@ -1,0 +1,2261 @@
+{
+ "schema_version": 1,
+ "run_dirs": [
+  "results/pilot-5a"
+ ],
+ "grader_versions": [
+  "22"
+ ],
+ "tasks": {
+  "discharge-medrec": {
+   "trials_valid": 8,
+   "pass": 0,
+   "wilson": {
+    "lo": 0,
+    "hi": 0.32440756488388023
+   },
+   "split": {
+    "model": 8,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 0,
+    "rate": 0
+   },
+   "classes": [
+    {
+     "class": "precedence",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-furosemide",
+       "label": "kim-furosemide",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "potassium",
+     "fails": 8,
+     "base_fails": 0,
+     "observations": 24,
+     "pass_rate": 0.6666666666666667,
+     "wilson": {
+      "lo": 0.46706316838131745,
+      "hi": 0.8202780967270223
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-lisinopril",
+       "label": "kim-lisinopril",
+       "fails": 0,
+       "observations": 8
+      },
+      {
+       "instance": 2,
+       "item": "roberts-lisinopril",
+       "label": "roberts-lisinopril",
+       "fails": 0,
+       "observations": 8
+      },
+      {
+       "instance": 3,
+       "item": "whitcomb-lisinopril",
+       "label": "whitcomb-lisinopril",
+       "fails": 8,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-kcl",
+       "label": "kim-kcl",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "formulary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-omeprazole",
+       "label": "kim-omeprazole",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "brand",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-carvedilol",
+       "label": "stark-carvedilol",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "fill_gap",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-atorvastatin",
+       "label": "stark-atorvastatin",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "fill_history",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-glipizide",
+       "label": "stark-glipizide",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "conditional",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "pruitt-metformin",
+       "label": "pruitt-metformin",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "kim-k1",
+     "item": "kim-lisinopril",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-k2",
+     "item": "kim-furosemide",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d1",
+     "item": "kim-lisinopril",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d2",
+     "item": "kim-furosemide",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d4",
+     "item": "kim-omeprazole",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-s1",
+     "item": "stark-carvedilol",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-s2",
+     "item": "stark-atorvastatin",
+     "class": "O",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-d5",
+     "item": "stark-glipizide",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "roberts-r1",
+     "item": "roberts-lisinopril",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitcomb-a1",
+     "item": "whitcomb-lisinopril",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 8,
+     "observations": 8,
+     "wilson": {
+      "lo": 0,
+      "hi": 0.32440756488388023
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/pilot-5a",
+       "item": "whitcomb-lisinopril",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitcomb-a1-twin",
+     "item": "whitcomb-lisinopril",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 0,
+    "expected_per_item": 0,
+    "expected_per_class": 5.333333333333334
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    }
+   ],
+   "lever": {
+    "base_pass": 8,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "whitcomb-lisinopril",
+      "spec": "whitcomb-a1",
+      "active": true,
+      "observed": 8,
+      "passed": 0,
+      "catch_rate": 0,
+      "wilson": {
+       "lo": 0,
+       "hi": 0.32440756488388023
+      },
+      "split": {
+       "retrieval": 8,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "fails": [
+       {
+        "trial": 0,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 1,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 2,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 3,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 4,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 5,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 6,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 7,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "pruitt-metformin",
+      "spec": null,
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "salazar-amlodipine",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "message-queue": {
+   "trials_valid": 8,
+   "pass": 2,
+   "wilson": {
+    "lo": 0.071479212752109,
+    "hi": 0.5907245696898311
+   },
+   "split": {
+    "model": 6,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 2,
+    "rate": 0.25
+   },
+   "classes": [
+    {
+     "class": "hemolyzed_potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00014",
+       "label": "m3",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "creatinine_rise",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00020",
+       "label": "m9",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "metformin_two_series",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00021",
+       "label": "m10",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "same_patient",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00022",
+       "label": "m11",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "collection_date",
+     "fails": 6,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 0.25,
+     "wilson": {
+      "lo": 0.071479212752109,
+      "hi": 0.5907245696898311
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00023",
+       "label": "m12",
+       "fails": 6,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "amended_or_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00024",
+       "label": "m13",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "same_day_baseline",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-70001",
+       "label": "m14",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "odum-o1",
+     "item": "Task/task-00014",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b1",
+     "item": "Task/task-00020",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-d1",
+     "item": "Task/task-00022",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b2",
+     "item": "Task/task-00021",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-c1",
+     "item": "Task/task-00023",
+     "class": "C",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-b2",
+     "item": "Task/task-00024",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-a1",
+     "item": "Task/task-00023",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 6,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.071479212752109,
+      "hi": 0.5907245696898311
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "Task/task-00023",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 2,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 2,
+    "expected_per_item": 2,
+    "expected_per_class": 2
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 8,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Task/task-00023",
+      "spec": "webb-a1",
+      "active": true,
+      "observed": 8,
+      "passed": 2,
+      "catch_rate": 0.25,
+      "wilson": {
+       "lo": 0.071479212752109,
+       "hi": 0.5907245696898311
+      },
+      "split": {
+       "retrieval": 6,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 2,
+      "fails": [
+       {
+        "trial": 0,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 1,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 2,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 3,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 5,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 6,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "Task/task-70001",
+      "spec": null,
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "A",
+      "item": "Task/task-t6-m16",
+      "spec": "mercer-b1",
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "renal-dose-review": {
+   "trials_valid": 8,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.40927543031016883,
+    "hi": 0.9285207872478909
+   },
+   "split": {
+    "model": 2,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 6,
+    "rate": 0.75
+   },
+   "classes": [
+    {
+     "class": "inhibitor_stopped",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0061",
+       "label": "Irene Castellano",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "outside_scr_umol",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0003",
+       "label": "Frank Delgado",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "pgp_cyp3a4_inhibitor",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0041",
+       "label": "Raymond Duquette",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 2,
+     "base_fails": 0,
+     "observations": 16,
+     "pass_rate": 0.875,
+     "wilson": {
+      "lo": 0.639771727342413,
+      "hi": 0.9650225122567595
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0062",
+       "label": "Norman Fairweather",
+       "fails": 2,
+       "observations": 8
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0043",
+       "label": "Marjorie Pellegrino",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "cg_crcl_weight_rule",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0038",
+       "label": "Eugene Moravec",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "apixaban_two_of_three",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0002",
+       "label": "Harold Vance",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "pellegrino-scr-new",
+     "item": "Patient/pt-0043",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "delgado-scr-amended",
+     "item": "Patient/pt-0003",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "vance-itraconazole",
+     "item": "Patient/pt-0002",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "moravec-weight-reported",
+     "item": "Patient/pt-0038",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "moravec-scr-new",
+     "item": "Patient/pt-0038",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "vance-clarithromycin",
+     "item": "Patient/pt-0002",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "fairweather-scr-batch",
+     "item": "Patient/pt-0062",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 2,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.40927543031016883,
+      "hi": 0.9285207872478909
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 6,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "fairweather-scr-twin",
+     "item": "Patient/pt-0062",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 7
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 8,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Patient/pt-0062",
+      "spec": "fairweather-scr-batch",
+      "active": true,
+      "observed": 8,
+      "passed": 6,
+      "catch_rate": 0.75,
+      "wilson": {
+       "lo": 0.40927543031016883,
+       "hi": 0.9285207872478909
+      },
+      "split": {
+       "retrieval": 2,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 6,
+      "fails": [
+       {
+        "trial": 0,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 5,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "Patient/pt-0061",
+      "spec": null,
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "Patient/pt-t1-whitcombe#unbuilt",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "results-inbox": {
+   "trials_valid": 8,
+   "pass": 2,
+   "wilson": {
+    "lo": 0.071479212752109,
+    "hi": 0.5907245696898311
+   },
+   "split": {
+    "model": 6,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 4,
+    "rate": 0.5
+   },
+   "classes": [
+    {
+     "class": "nodule_screening",
+     "fails": 3,
+     "base_fails": 3,
+     "observations": 8,
+     "pass_rate": 0.625,
+     "wilson": {
+      "lo": 0.3057423946026273,
+      "hi": 0.8631557141764027
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "nodule_scheduled",
+       "gate": "seen_before_change",
+       "label": "process"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5a",
+       "item": "nodule_scheduled",
+       "gate": "seen_before_change",
+       "label": "process"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5a",
+       "item": "nodule_scheduled",
+       "gate": "seen_before_change",
+       "label": "process"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "nodule_scheduled",
+       "label": "nodule_scheduled",
+       "fails": 3,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "hemolyzed",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "hemolyzed_note",
+       "label": "hemolyzed_note",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "corrected",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "corrected_down",
+       "label": "corrected_down",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "entered_in_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "eie_baseline",
+       "label": "eie_baseline",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "preliminary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "prelim_negative",
+       "label": "prelim_negative",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "aki",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "aki_48h",
+       "label": "aki_48h",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "normal_tsh",
+       "label": "normal_tsh",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "creatinine_no_aki",
+     "fails": 4,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 0.5,
+     "wilson": {
+      "lo": 0.21521606221387757,
+      "hi": 0.7847839377861224
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "marchetti_cr_ed",
+       "label": "marchetti_cr_ed",
+       "fails": 4,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "misfiled",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "nowicki_fax",
+       "label": "nowicki_fax",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "patel-ldct-addendum",
+     "item": "nodule_scheduled",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-corrected",
+     "item": "hemolyzed_note",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-new",
+     "item": "eie_baseline",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cxr-prelim",
+     "item": "prelim_negative",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cta-corrected",
+     "item": "prelim_negative",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "ondricka-k-new",
+     "item": "corrected_down",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-hemolyzed",
+     "item": "hemolyzed_note",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-outside",
+     "item": "eie_baseline",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch",
+     "item": "marchetti_cr_ed",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 4,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.21521606221387757,
+      "hi": 0.7847839377861224
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 1,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5a",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 4,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch-twin",
+     "item": "marchetti_cr_ed",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 2,
+    "expected_per_item": 2.5,
+    "expected_per_class": 2.5
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5a",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5a",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 5,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "marchetti_cr_ed",
+      "spec": "marchetti-cr-batch",
+      "active": true,
+      "observed": 8,
+      "passed": 4,
+      "catch_rate": 0.5,
+      "wilson": {
+       "lo": 0.21521606221387757,
+       "hi": 0.7847839377861224
+      },
+      "split": {
+       "retrieval": 4,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 4,
+      "fails": [
+       {
+        "trial": 0,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 1,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 5,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 6,
+        "run": "results/pilot-5a",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "nowicki_fax",
+      "spec": null,
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "cipriani_k_exception",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": null,
+      "fails": []
+     }
+    ]
+   }
+  }
+ }
+}
