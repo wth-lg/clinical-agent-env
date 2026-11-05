@@ -32,7 +32,8 @@
   }
 }
 html { color-scheme: light dark; }
-body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+/* overflow-wrap: anywhere lets a long URL or command break, so a phone never scrolls the page sideways; tables and code blocks scroll inside their own box. */
+body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; overflow-wrap: anywhere; }
 main, header, footer { max-width: 56rem; margin: 0 auto; padding: 0 1rem; }
 header { padding-top: 2rem; }
 h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.5rem; }
@@ -181,11 +182,13 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <li data-src="docs/findings.md:59">Add a reverse traceability report that lists each policy section with no check.</li>
 <li data-src="docs/findings.md:60">Export the tasks in the Harbor format through the MCP server, with measured difficulty in each task's metadata.</li>
 <li data-src="docs/findings.md:61">Add the US Core search parameters the store lacks. They are Condition clinical-status, MedicationRequest intent and authoredon, and <code>_include</code>. Then require <code>patient</code> on Observation searches, as Oracle does.</li>
-<li data-src="docs/findings.md:62">Run the final sample on every task once the record-integrity lever is set, and publish the official run.</li>
+<li data-src="docs/findings.md:62">Have a human clinician read the audited failures and the task-validity verdicts. The reads in this run were LLM sessions, so where the two disagree the human read decides.</li>
+<li data-src="docs/findings.md:63">Run the final sample on every task once the record-integrity lever is set, and publish the official run.</li>
 </ol>
 <h2 id="how-failures-are-attributed" data-src="docs/writeup/60-attribution.md:1">How failures are attributed</h2>
 <p data-src="docs/writeup/60-attribution.md:3">Every trial gets one outcome. A trial that did not pass gets the fault whose criterion holds first in the order below. The fault gives its label: model, environment or grader. The definitions below are rendered from <code>packages/core/outcomes.ts</code>. The UI's Attribution page and the CLI's audit check read the same file, and a test fails on a copy written anywhere else.</p>
 <!-- docs-gen:begin outcomes -->
+<div class="table-wrap">
 <table><caption>Each fault and the label it gives</caption>
 <thead><tr><th scope="col">fault</th><th scope="col">label</th></tr></thead>
 <tbody>
@@ -196,6 +199,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">model</th><td>model</td></tr>
 </tbody>
 </table>
+</div>
 <p>When criteria of several faults hold, the first in the order infra, grader, environment, refusal, model decides and the others are shown as notes: a trial the infrastructure ended says nothing about the model, a grader fault on the check the trial failed means the grade itself is wrong, an environment fault means the trial was unfair to the model, and a refusal is reported both with and without refusals.</p>
 <h3 id="fault-infra">Fault: infra</h3>
 <p>The infrastructure is at fault when the API, the harness, a wrong model or a stop from outside ended the trial, so the trial gives no data about the model.</p>
@@ -257,12 +261,14 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <dt>B1</dt><dd>The task's oracle or a declared alternative fails the grader validation matrix on the grader_task_version of the trial's current grade, which blocks the run until the task or the grader is fixed.</dd>
 </dl>
 <!-- docs-gen:end outcomes -->
-<h3 id="how-we-told-grader-faults-apart" data-src="docs/writeup/60-attribution.md:7">How we told grader faults apart</h3>
-<p data-src="docs/writeup/60-attribution.md:9">A grader fault never comes from the grader alone. Three checks stand between a task and its first live trial. The reference solution must score full marks. Every declared alternative route must pass. Every mutant, one per clinical trap, must fail on its item alone with the label it declares. The matrix runs on every pull request, and a judge cache miss fails the build.</p>
-<p data-src="docs/writeup/60-attribution.md:11">After a run, a clinician reads every failure and every penalised pass from the trajectory and writes an audit row with the evidence ids. A script refuses an id the trajectory never exposed. The criteria M1 to M5 then confirm the label, or contradict it, from the record, the manifest, the matrix and the audit row.</p>
-<p data-src="docs/writeup/60-attribution.md:13">Two grader faults came out of the final run of the colorectal task. Both refused a complete review because the search had a shape the rule did not list. We ruled both grader faults, rewrote the rule by exposure of the target set, bumped the grader version and regraded the run offline. The records keep the first grade and carry the regrade. No trial was rerun.</p>
-<p data-src="docs/writeup/60-attribution.md:15">Known strictness limits stand and are disclosed. In the results inbox task, a call task focused on the trial's own order reads as the wrong form. A gate cannot read free text, and a Task has no structured purpose. In the message queue task, the gate reads the final owner of an item. A forward to the on-call clinician and a reassignment back look the same. A note that says &quot;no change&quot; and contradicts the chart is not penalised when the dose gate already fails the trial. Each is listed in the task page and the changelog.</p>
-<p data-src="docs/writeup/60-attribution.md:17">&quot;Model fault&quot; is relative to this harness. The tool texts, the oldest-first default sort and the closed-book calculator shape what the model sees. A different harness over the same chart could move some labels, as MedicalHarness shows for its benchmark.</p>
+<h3 id="who-did-the-clinical-reads" data-src="docs/writeup/60-attribution.md:7">Who did the clinical reads</h3>
+<p data-src="docs/writeup/60-attribution.md:9">Every clinician read of a trajectory and every task-validity verdict in this run came from LLM sessions, not from a human clinician. The rulings those reads rest on, R1 to R41, are recorded in the run's decision log. Each grader fault they found was fixed and regraded. A review of the same failures by a human clinician is listed under Next steps.</p>
+<h3 id="how-we-told-grader-faults-apart" data-src="docs/writeup/60-attribution.md:11">How we told grader faults apart</h3>
+<p data-src="docs/writeup/60-attribution.md:13">A grader fault never comes from the grader alone. Three checks stand between a task and its first live trial. The reference solution must score full marks. Every declared alternative route must pass. Every mutant, one per clinical trap, must fail on its item alone with the label it declares. The matrix runs on every pull request, and a judge cache miss fails the build.</p>
+<p data-src="docs/writeup/60-attribution.md:15">After a run, a clinician reads every failure and every penalised pass from the trajectory and writes an audit row with the evidence ids. A script refuses an id the trajectory never exposed. The criteria M1 to M5 then confirm the label, or contradict it, from the record, the manifest, the matrix and the audit row.</p>
+<p data-src="docs/writeup/60-attribution.md:17">Two grader faults came out of the final run of the colorectal task. Both refused a complete review because the search had a shape the rule did not list. We ruled both grader faults, rewrote the rule by exposure of the target set, bumped the grader version and regraded the run offline. The records keep the first grade and carry the regrade. No trial was rerun.</p>
+<p data-src="docs/writeup/60-attribution.md:19">Known strictness limits stand and are disclosed. In the results inbox task, a call task focused on the trial's own order reads as the wrong form. A gate cannot read free text, and a Task has no structured purpose. In the message queue task, the gate reads the final owner of an item. A forward to the on-call clinician and a reassignment back look the same. A note that says &quot;no change&quot; and contradicts the chart is not penalised when the dose gate already fails the trial. Each is listed in the task page and the changelog.</p>
+<p data-src="docs/writeup/60-attribution.md:21">&quot;Model fault&quot; is relative to this harness. The tool texts, the oldest-first default sort and the closed-book calculator shape what the model sees. A different harness over the same chart could move some labels, as MedicalHarness shows for its benchmark.</p>
 <h2 id="pass-rates" data-src="docs/writeup/70-pass-rates.md:1">Pass rates</h2>
 <p data-src="docs/writeup/70-pass-rates.md:3">The definitions come first, then the numbers. Every number in this section is rendered from the final run's <code>summary.json</code> and from <code>packages/core</code>. <code>pnpm docs:check</code> fails when a number here differs from a fresh regeneration.</p>
 <!-- docs-gen:begin outcomes -->
@@ -275,6 +281,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:begin pass-rates -->
 <p>Run <code>final-1</code>: model claude-opus-5-5, effort high, 40 valid trials in 2 tasks, $76.33 settled. Rendered from <code>results/runs/final-1/summary.json</code>.</p>
 <p>The target band is 20% to 70% of 20 valid trials, both ends included.</p>
+<div class="table-wrap">
 <table><caption>Pass rate per task at the current grade</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass rate</th><th scope="col">Wilson 95%</th><th scope="col">verdict</th><th scope="col">safe passes</th><th scope="col">refusals</th><th scope="col">rate without refusals</th><th scope="col">ENV_ERROR raw</th><th scope="col">ENV_LIMIT</th><th scope="col">GRADER_ERROR (earlier)</th></tr></thead>
 <tbody>
@@ -282,15 +289,19 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">crc-care-gap</th><td>18/20</td><td>90%</td><td>[0.70, 0.97]</td><td>Above band</td><td>18/20</td><td>0</td><td>90%</td><td>0</td><td>0</td><td>0 (0)</td></tr>
 </tbody>
 </table>
+</div>
 <p>4 tasks have no final result yet: <code>discharge-medrec</code>, <code>message-queue</code>, <code>renal-dose-review</code>, <code>results-inbox</code>.</p>
 <!-- docs-gen:end pass-rates -->
 <p data-src="docs/writeup/70-pass-rates.md:11">A task's verdict is the band verdict above, read on its k of n. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. TODO-W5F: the four lever tasks join this table after their final run.</p>
-<h3 id="what-a-pass-certifies" data-src="docs/writeup/70-pass-rates.md:13">What a pass certifies</h3>
-<p data-src="docs/writeup/70-pass-rates.md:15">A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum, and a pass with a harm item met is counted apart as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none. TODO-W5F: the strict points of the four lever tasks are listed here once their run is final.</p>
-<h3 id="resolution-of-the-band" data-src="docs/writeup/70-pass-rates.md:17">Resolution of the band</h3>
-<p data-src="docs/writeup/70-pass-rates.md:19">The band is a check on a point estimate. Twenty trials tell apart a task the model mostly passes from one it mostly fails, and little more. The table below says how often a task with a given true pass rate lands in the band.</p>
+<p data-src="docs/writeup/70-pass-rates.md:13">Five of the six tasks share one failure route: a result filed silently beside the one the inbox names. The record-integrity lever copied that device from the contrast CT task into four tasks. Every failure of the contrast CT task in the final run is that route. TODO-W5F: a per-task pass rate without the silent-sibling item is generated here once the lever tasks' final run is committed. It shows how much of each rate rests on that one device.</p>
+<h3 id="what-a-pass-certifies" data-src="docs/writeup/70-pass-rates.md:15">What a pass certifies</h3>
+<p data-src="docs/writeup/70-pass-rates.md:17">A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum, and a pass with a harm item met is counted apart as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none.</p>
+<p data-src="docs/writeup/70-pass-rates.md:19">A sensitivity line is planned and is not in this version. It is the pass rate when only the final state is graded against the reference solution's. Under it, a trial whose action was right but whose review was incomplete counts as a pass. The seen and process gates fail such trials today, and one grader fix of that family moved twelve trials of the colorectal task. The line is generated from the records once it is built. TODO-W5F: the strict points of the four lever tasks are listed here once their run is final.</p>
+<h3 id="resolution-of-the-band" data-src="docs/writeup/70-pass-rates.md:21">Resolution of the band</h3>
+<p data-src="docs/writeup/70-pass-rates.md:23">The band is a check on a point estimate. Twenty trials tell apart a task the model mostly passes from one it mostly fails, and little more. The table below says how often a task with a given true pass rate lands in the band.</p>
 <!-- docs-gen:begin band-resolution -->
 <p>At n = 20 the band 20% to 70% is 4 to 14 passes. The Wilson 95% interval at the lower edge, 4/20, is [0.08, 0.42]; at the upper edge, 14/20, it is [0.48, 0.85] (<code>wilson</code>, packages/core/summary.ts).</p>
+<div class="table-wrap">
 <table><caption>How often a task with a given true pass rate reads In band over 20 trials (exact binomial)</caption>
 <thead><tr><th scope="col">true pass rate</th><th scope="col">chance that k of 20 lands in 4 to 14</th></tr></thead>
 <tbody>
@@ -304,10 +315,12 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">80%</th><td>20%</td></tr>
 </tbody>
 </table>
+</div>
 <!-- docs-gen:end band-resolution -->
-<p data-src="docs/writeup/70-pass-rates.md:23">Infrastructure outcomes are excluded from the denominator and rerun, as tau2-bench excludes infrastructure-errored calls from its denominators. An environment or grader fault is never excluded that way. It blocks the run until the fault is fixed and the run is regraded, or the affected trials are rerun. The final run holds no such fault.</p>
-<h3 id="pass-k" data-src="docs/writeup/70-pass-rates.md:25">pass^k</h3>
+<p data-src="docs/writeup/70-pass-rates.md:27">Infrastructure outcomes are excluded from the denominator and rerun, as tau2-bench excludes infrastructure-errored calls from its denominators. An environment or grader fault is never excluded that way. It blocks the run until the fault is fixed and the run is regraded, or the affected trials are rerun. The final run holds no such fault.</p>
+<h3 id="pass-k" data-src="docs/writeup/70-pass-rates.md:29">pass^k</h3>
 <!-- docs-gen:begin pass-k -->
+<div class="table-wrap">
 <table><caption>pass^k: the chance that k trials drawn without replacement from the task's valid trials all pass</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass^1</th><th scope="col">pass^3</th><th scope="col">pass^5</th></tr></thead>
 <tbody>
@@ -315,10 +328,12 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">crc-care-gap</th><td>18/20</td><td>0.90</td><td>0.72</td><td>0.55</td></tr>
 </tbody>
 </table>
+</div>
 <p>pass^k is C(c, k) / C(n, k) for c passes in n valid trials (<code>passK</code>, packages/core/summary.ts). It is a function of k/n at a fixed n, so it adds no evidence to k/n; it reads the same count as a reliability figure.</p>
 <!-- docs-gen:end pass-k -->
-<h3 id="cost-per-trial" data-src="docs/writeup/70-pass-rates.md:29">Cost per trial</h3>
+<h3 id="cost-per-trial" data-src="docs/writeup/70-pass-rates.md:33">Cost per trial</h3>
 <!-- docs-gen:begin cost -->
+<div class="table-wrap">
 <table><caption>Cost per trial, trial calls and judge calls included, from each record's settled cost</caption>
 <thead><tr><th scope="col">task</th><th scope="col">mean cost per trial</th><th scope="col">records</th></tr></thead>
 <tbody>
@@ -326,10 +341,12 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">crc-care-gap</th><td>$2.19</td><td>20</td></tr>
 </tbody>
 </table>
+</div>
 <p>The run settled $76.33 over 40 records.</p>
 <!-- docs-gen:end cost -->
-<h3 id="example-trajectories" data-src="docs/writeup/70-pass-rates.md:33">Example trajectories</h3>
+<h3 id="example-trajectories" data-src="docs/writeup/70-pass-rates.md:37">Example trajectories</h3>
 <!-- docs-gen:begin exemplars -->
+<div class="table-wrap">
 <table><caption>One trial of each kind per task, on the hosted site</caption>
 <thead><tr><th scope="col">task</th><th scope="col">a pass</th><th scope="col">a failure</th></tr></thead>
 <tbody>
@@ -337,12 +354,14 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">crc-care-gap</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F0">crc-care-gap/0 (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F3">crc-care-gap/3 (FAIL)</a></td></tr>
 </tbody>
 </table>
+</div>
 <p>Each link opens the trial on the hosted site: its grade, its attribution and its trajectory. The Runs view lists every trial.</p>
 <!-- docs-gen:end exemplars -->
-<h3 id="requirement-trace" data-src="docs/writeup/70-pass-rates.md:37">Requirement trace</h3>
-<p data-src="docs/writeup/70-pass-rates.md:39">Each sentence of the assignment and each user modification has a row in <code>docs/requirements/trace.json</code>. The row names the code, the tests, the evidence and an expect that checks it. <code>pnpm cli trace-check</code> runs in CI.</p>
+<h3 id="requirement-trace" data-src="docs/writeup/70-pass-rates.md:41">Requirement trace</h3>
+<p data-src="docs/writeup/70-pass-rates.md:43">Each sentence of the assignment and each user modification has a row in <code>docs/requirements/trace.json</code>. The row names the code, the tests, the evidence and an expect that checks it. <code>pnpm cli trace-check</code> runs in CI.</p>
 <!-- docs-gen:begin trace -->
 <p>69 rows, one per sentence of the assignment and per user modification, each with code, tests, evidence and an expect (<code>pnpm cli trace-check</code>). The assignment text is pinned by sha256 <code>d4b59ac91014</code>. Done phases: P9t, Prn, P11, P12b, P12c, P12n, P13, P14, P15, P16.</p>
+<div class="table-wrap">
 <table><caption>Requirement trace by section</caption>
 <thead><tr><th scope="col">section</th><th scope="col">rows</th><th scope="col">needs a UI screen</th><th scope="col">with evidence named</th><th scope="col">with a path still pending</th><th scope="col">superseded or amended</th></tr></thead>
 <tbody>
@@ -353,6 +372,8 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">U: user modifications</th><td>37</td><td>19</td><td>37</td><td>0</td><td>3</td></tr>
 </tbody>
 </table>
+</div>
+<div class="table-wrap">
 <table><caption>Rows that carry each done-when clause</caption>
 <thead><tr><th scope="col">done-when clause</th><th scope="col">rows</th></tr></thead>
 <tbody>
@@ -365,10 +386,12 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">(7)</th><td>3</td></tr>
 </tbody>
 </table>
+</div>
 <p>Rows with a path a later phase builds: W4.</p>
 <!-- docs-gen:end trace -->
 <h2 id="how-the-environment-differs-from-a-real-ehr" data-src="docs/writeup/80-ehr.md:1">How the environment differs from a real EHR</h2>
 <p data-src="docs/writeup/80-ehr.md:3">The store is an in-memory FHIR R4 store behind eighteen typed tools, nine that read and nine that write. The tools are MCP-shaped definitions: a name, a description and an input schema, in the fixed order the model sees. No MCP server ships; a stdio adapter is a next step. The simplifications below are deliberate and kept.</p>
+<div class="table-wrap">
 <table data-src="docs/writeup/80-ehr.md:5">
 <thead><tr><th scope="col">area</th><th scope="col">this environment</th><th scope="col">a real server</th></tr></thead>
 <tbody>
@@ -387,12 +410,14 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">formulas</th><td><code>calculate</code> has no clinical formulas, so a renal dose needs recalled formulas</td><td>a clinical calculator in the EHR</td></tr>
 </tbody>
 </table>
+</div>
 <p data-src="docs/writeup/80-ehr.md:21">Two more facts of the setting matter to the model. The clock of the world is pinned, so every trial starts at the same moment. Arrivals during a trial carry a stamp later than every seed record, and their inbox items take a distinct id form. The policy of each task says to review anything that arrived after the start, so noticing an arrival is the behaviour asked for.</p>
 <h2 id="audit-against-research-and-public-environments" data-src="docs/writeup/85-audit.md:1">Audit against research and public environments</h2>
 <p data-src="docs/writeup/85-audit.md:3">Three statements about the judge hold throughout. The judge never gates: gates are code-only checks, and a judged rubric item changes the score alone. Judge calibration measures stability on authored answers, re-asked live, and not agreement with clinicians. The judge is the same model as the agent, claude-opus-5-5.</p>
 <p data-src="docs/writeup/85-audit.md:5">The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Each trap has a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.</p>
 <h3 id="clinical-agent-benchmarks" data-src="docs/writeup/85-audit.md:7">Clinical agent benchmarks</h3>
 <!-- docs-check:allow-numbers published results of other benchmarks, each with its source and date -->
+<div class="table-wrap">
 <table data-src="docs/writeup/85-audit.md:11">
 <thead><tr><th scope="col">benchmark</th><th scope="col">date</th><th scope="col">what the agent does</th><th scope="col">grading</th><th scope="col">reported result</th></tr></thead>
 <tbody>
@@ -411,23 +436,44 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tr><th scope="row">Terminal-Bench 2.0</th><td>2026-01-17</td><td>89 kept tasks from 229 candidates</td><td>oracle, tests, an exploit agent</td><td>human &quot;medium&quot; read as hard 54.5% of the time</td></tr>
 </tbody>
 </table>
+</div>
 <!-- docs-check:end-allow-numbers -->
 <p data-src="docs/writeup/85-audit.md:29">PhysicianBench's tasks are about one and a half times longer than this environment's by tool calls. Opus 5.5 at max effort scores well above the band on them. That anchor says why short, trap-dense tasks can still land above the band at effort high, and why change during the trial was needed.</p>
 <h3 id="public-agent-environment-repositories" data-src="docs/writeup/85-audit.md:31">Public agent-environment repositories</h3>
-<p data-src="docs/writeup/85-audit.md:33">TODO-R16: a researcher fills this table from each repository's latest release, with a URL and a YYYY-MM-DD date in every row.</p>
+<p data-src="docs/writeup/85-audit.md:33">The table reads each repository at its latest release on 2026-11-05, or at its last commit on main where it has no release. Our row reads origin/main at commit ad740dae of 2026-11-04.</p>
+<div class="table-wrap">
 <table data-src="docs/writeup/85-audit.md:35">
-<thead><tr><th scope="col">repository</th><th scope="col">release date</th><th scope="col">task layout (instruction, tests, solution)</th><th scope="col">tool interface</th><th scope="col">grader</th><th scope="col">repeatable state</th></tr></thead>
+<thead><tr><th scope="col">repository</th><th scope="col">release (date)</th><th scope="col">task layout (instruction, tests, solution)</th><th scope="col">tool interface</th><th scope="col">grader</th><th scope="col">repeatable state</th></tr></thead>
 <tbody>
-<tr><th scope="row">this environment</th><td>see the Changes section</td><td><code>tasks/&lt;id&gt;/instruction.md</code>, <code>tests/grader.ts</code>, <code>solution/solve.ts</code></td><td>eighteen MCP-shaped tool definitions, no server</td><td>gates plus a rubric, matrix-validated</td><td>world hash, pinned clock, replay</td></tr>
-<tr><th scope="row">Harbor and Terminal-Bench 2.0</th><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td></tr>
-<tr><th scope="row">tau2-bench</th><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td></tr>
-<tr><th scope="row">MedAgentBench</th><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td></tr>
-<tr><th scope="row">CHI-Bench</th><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td></tr>
-<tr><th scope="row">OpenEnv</th><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td><td>TODO-R16</td></tr>
+<tr><th scope="row">this environment, <a href="https://github.com/wth-lg/clinical-agent-env">clinical-agent-env</a></th><td>no release; last main commit ad740dae (2026-11-04)</td><td><code>tasks/&lt;id&gt;/</code>: <code>instruction.md</code>, <code>task.toml</code>, <code>policy/*.md</code>, <code>expected.ts</code>, <code>events.ts</code>, <code>solution/solve.ts</code>, <code>tests/grader.ts</code>, <code>tests/rubric.ts</code>, <code>tests/mutants.ts</code>, <code>tests/alternatives.ts</code>; six tasks</td><td>eighteen typed in-process tools over an in-memory FHIR R4 store, sent as MCP-shaped definitions; no MCP server</td><td>code gates decide pass or fail; a rubric with code, hybrid and judged items gives the score; attribution labels; a mutant and alternative matrix</td><td>a fresh store from a hashed world, a fixed clock, a pinned Synthea generator; task and environment versions are content hashes</td></tr>
+<tr><th scope="row"><a href="https://github.com/harbor-framework/harbor">Harbor</a> and Terminal-Bench 2.0</th><td>v0.25.0 (2026-10-25)</td><td>a task directory with <code>instruction.md</code>, <code>task.toml</code>, <code>environment/</code>, <code>solution/solve.sh</code>, <code>tests/test.sh</code>; Terminal-Bench 2.0 has 89 tasks</td><td>the agent's own tools over container primitives; an optional per-task MCP server list, empty in every Terminal-Bench 2.0 task</td><td><code>test.sh</code> writes a reward; Terminal-Bench 2.0 grades the final container state with no LLM judge</td><td>a fresh container per trial; images pinned by date tag; verification installs packages over the network</td></tr>
+<tr><th scope="row"><a href="https://github.com/sierra-research/tau2-bench">tau2-bench</a></th><td>v2.0.0 (2026-10-20)</td><td>per-domain data: policy, database, <code>tasks.json</code>, splits; a task holds the user scenario, the initial state and the evaluation criteria</td><td>in-process Python toolkits sent as function-calling schemas; a simulated user with its own tools; no MCP</td><td>the product of a database hash, assertions, deterministic actions, and LLM-judged communication and natural-language assertions</td><td>a database rebuilt fresh; the gold state replays the reference actions; the simulated user and the judges stay stochastic</td></tr>
+<tr><th scope="row"><a href="https://github.com/stanfordmlgroup/MedAgentBench">MedAgentBench</a></th><td>no release; last commit 99260117 (2025-11-21)</td><td>one JSON file of 300 tasks; the reference graders are a separate download</td><td>plain-text GET, POST and FINISH actions; v2 uses function tools that write to a HAPI server; no MCP</td><td>deterministic Python per category, by exact match or a live FHIR recompute; writes graded from the transcript</td><td>a prebuilt HAPI image tagged latest; the original never mutates the server; v2 has no reset</td></tr>
+<tr><th scope="row"><a href="https://github.com/actava-ai/chi-bench">CHI-Bench</a></th><td>no release; last commit 7998d113 (2026-10-26); dataset tag chi-bench-v1.0.0 (2026-05-21)</td><td>Harbor-format task directories: 75 single-domain, 23 end-to-end, 3 marathon; fixtures hold judge rubrics and documents</td><td>MCP: three role-scoped servers with 87 tools over a simulator of 20 applications</td><td>a Claude Code judge writes per-rubric verdicts beside deterministic stage checks; a malformed judge output voids the trial</td><td>separate agent and trusted containers; state exported after tool calls drain; the judge stays stochastic</td></tr>
+<tr><th scope="row"><a href="https://github.com/openenv/OpenEnv">OpenEnv</a></th><td>v0.12.0 (2026-11-05)</td><td>no fixed layout: an Environment class with reset, step and state, served over HTTP or WebSocket</td><td>MCP built in, one endpoint per environment</td><td>server-side rubrics, deterministic by default, with an optional LLM judge</td><td>a container per environment with a seeded reset; the framework does not enforce determinism</td></tr>
+<tr><th scope="row"><a href="https://github.com/YoussefMkst/FHIR-AgentEval">FHIR-AgentEval</a></th><td>no release; last commit 8686a84c (2026-10-26)</td><td>48 Python task modules with templated prompts, a validator and a scripted human agent</td><td>MCP: a FHIR CRUD server against HAPI, with optional lookup and memory servers</td><td>deterministic checks on the HAPI state, the response and the tool-call sequence; an optional LLM audit of the validator that does not score</td><td>a HAPI image tagged latest with a persistent volume; each task seeds and cleans its resource types</td></tr>
 </tbody>
 </table>
-<h3 id="what-was-ruled-against-the-research" data-src="docs/writeup/85-audit.md:44">What was ruled against the research</h3>
-<p data-src="docs/writeup/85-audit.md:46">NICE NG12 recommends considering a very urgent referral when an X-ray suggests bone sarcoma. The results inbox policy sets its contact window by the next business day, a realistic rule, and the grader reads that window. Harbor's task format and Inspect AI's limits and pass^k reducer are cited as source files at their tags. Their release notes do not name them.</p>
+</div>
+<p data-src="docs/writeup/85-audit.md:45">What this environment can claim, against these six systems and as of 2026-11-05:</p>
+<ul data-src="docs/writeup/85-audit.md:47">
+<li data-src="docs/writeup/85-audit.md:47">It is the only one of them that grades by turn-ordered exposure. A write counts as informed only when the deciding record was shown in an earlier turn.</li>
+<li data-src="docs/writeup/85-audit.md:48">It is the only one that delivers chart arrivals between the agent's writes. It grades whether the agent noticed and amended. tau2-bench has a dynamic user, but no unannounced arrivals.</li>
+<li data-src="docs/writeup/85-audit.md:49">Among the clinical systems, it is the only one where every task ships mutants that must fail and alternatives that must pass. The matrix checks them before any trial.</li>
+<li data-src="docs/writeup/85-audit.md:50">It runs without a container and without a live FHIR server. Every clinical comparator depends on a HAPI image or containers, and those HAPI images are tagged latest.</li>
+<li data-src="docs/writeup/85-audit.md:51">Its judged rubric items need a verbatim quote and are cached for offline regrading, and pass or fail is decided by code gates alone. CHI-Bench's pass depends on its judge.</li>
+<li data-src="docs/writeup/85-audit.md:52">Its scope is primary care and pharmacy operations under written clinic policies, which none of the comparators covers.</li>
+</ul>
+<p data-src="docs/writeup/85-audit.md:54">What it does not claim:</p>
+<ul data-src="docs/writeup/85-audit.md:56">
+<li data-src="docs/writeup/85-audit.md:56">MCP support or an MCP server. The tools are MCP-shaped definitions sent as Messages API tools.</li>
+<li data-src="docs/writeup/85-audit.md:57">Harbor compatibility. The repository has a name map, not a runnable export.</li>
+<li data-src="docs/writeup/85-audit.md:58">The first clinical agent benchmark, or any claim of scale. It has six tasks and 68 patients, against 300 tasks in MedAgentBench.</li>
+<li data-src="docs/writeup/85-audit.md:59">Full determinism. The model's sampling is not deterministic. The environment, the grading and the cached judging are.</li>
+<li data-src="docs/writeup/85-audit.md:60">Novelty over private or unpublished environments.</li>
+</ul>
+<h3 id="what-was-ruled-against-the-research" data-src="docs/writeup/85-audit.md:62">What was ruled against the research</h3>
+<p data-src="docs/writeup/85-audit.md:64">NICE NG12 recommends considering a very urgent referral when an X-ray suggests bone sarcoma. The results inbox policy sets its contact window by the next business day, a realistic rule, and the grader reads that window. Harbor's task format and Inspect AI's limits and pass^k reducer are cited as source files at their tags. Their release notes do not name them.</p>
 <h2 id="references" data-src="docs/writeup/90-references.md:1">References</h2>
 <p data-src="docs/writeup/90-references.md:3">Each entry gives the version or page we read and its date. A baseline marks a source older than 2025 that the design still rests on.</p>
 <h3 id="research-and-benchmarks" data-src="docs/writeup/90-references.md:5">Research and benchmarks</h3>
@@ -461,41 +507,44 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <li data-src="docs/writeup/90-references.md:33">tau2-bench v2.0.0, docs/evaluation.md at the tag, https://github.com/sierra-research/tau2-bench/blob/v2.0.0/docs/evaluation.md, 2026-10-20.</li>
 <li data-src="docs/writeup/90-references.md:34">tau2-bench commit 85e5017, infrastructure-errored calls excluded from the score denominators, https://github.com/sierra-research/tau2-bench/commit/85e501724ded198b6dcf0c64563e2740fd3b5fa6, 2026-10-20.</li>
 <li data-src="docs/writeup/90-references.md:35">tau2-bench v2.0.0 environment.py, strict set_state replay, https://github.com/sierra-research/tau2-bench/blob/v2.0.0/src/tau2/environment/environment.py, 2026-10-20.</li>
-<li data-src="docs/writeup/90-references.md:36">Harbor v0.24.0, the task config, NopAgent and quality-check files at the tag, https://github.com/harbor-framework/harbor/tree/v0.24.0, 2026-10-05.</li>
-<li data-src="docs/writeup/90-references.md:37">Inspect AI 0.3.284, the pass_k reducer and the per-task limits in the source at the tag, https://github.com/UKGovernmentBEIS/inspect_ai/releases/tag/0.3.284, 2026-10-25.</li>
-<li data-src="docs/writeup/90-references.md:38">verifiers v0.4.0, runtimes architecture, https://github.com/PrimeIntellect-ai/verifiers/blob/v0.4.0/docs/v1/architecture.md, 2026-10-12.</li>
-<li data-src="docs/writeup/90-references.md:39">OpenEnv v0.10.0 README, https://github.com/meta-pytorch/OpenEnv/blob/v0.10.0/README.md, 2026-10-22.</li>
-<li data-src="docs/writeup/90-references.md:40">MedAgentBench repository, server task handling, https://github.com/stanfordmlgroup/MedAgentBench, 2025-11-21.</li>
-<li data-src="docs/writeup/90-references.md:41">Terminal-Bench 2 repository, https://github.com/laude-institute/terminal-bench-2, 2026-04-30.</li>
+<li data-src="docs/writeup/90-references.md:36">Harbor v0.25.0 release (task.toml schema 1.4, more than one solution per task, harbor lint), https://github.com/harbor-framework/harbor/releases/tag/v0.25.0, 2026-10-25.</li>
+<li data-src="docs/writeup/90-references.md:37">Harbor v0.24.0, the task config, NopAgent and quality-check files at the tag, https://github.com/harbor-framework/harbor/tree/v0.24.0, 2026-10-05.</li>
+<li data-src="docs/writeup/90-references.md:38">CHI-Bench repository, https://github.com/actava-ai/chi-bench, last commit 2026-10-26; dataset tag chi-bench-v1.0.0, 2026-05-21.</li>
+<li data-src="docs/writeup/90-references.md:39">FHIR-AgentEval repository, https://github.com/YoussefMkst/FHIR-AgentEval, last commit 2026-10-26.</li>
+<li data-src="docs/writeup/90-references.md:40">Inspect AI 0.3.284, the pass_k reducer and the per-task limits in the source at the tag, https://github.com/UKGovernmentBEIS/inspect_ai/releases/tag/0.3.284, 2026-10-25.</li>
+<li data-src="docs/writeup/90-references.md:41">verifiers v0.4.0, runtimes architecture, https://github.com/PrimeIntellect-ai/verifiers/blob/v0.4.0/docs/v1/architecture.md, 2026-10-12.</li>
+<li data-src="docs/writeup/90-references.md:42">OpenEnv v0.12.0 release, https://github.com/openenv/OpenEnv, 2026-11-05.</li>
+<li data-src="docs/writeup/90-references.md:43">MedAgentBench repository, server task handling, https://github.com/stanfordmlgroup/MedAgentBench, 2025-11-21.</li>
+<li data-src="docs/writeup/90-references.md:44">Terminal-Bench 2 repository, https://github.com/laude-institute/terminal-bench-2, 2026-04-30.</li>
 </ul>
-<h3 id="standards-and-tooling" data-src="docs/writeup/90-references.md:43">Standards and tooling</h3>
-<ul data-src="docs/writeup/90-references.md:45">
-<li data-src="docs/writeup/90-references.md:45">Model Context Protocol specification 2025-11-25, Tools, https://modelcontextprotocol.io/specification/2025-11-25/server/tools, 2025-11-25.</li>
-<li data-src="docs/writeup/90-references.md:46">Model Context Protocol specification 2025-03-26, changelog (tool annotations), https://modelcontextprotocol.io/specification/2025-03-26/changelog, 2025-03-26.</li>
-<li data-src="docs/writeup/90-references.md:47">Model Context Protocol specification 2026-07-28, changelog (stateless servers, deterministic tool order), https://modelcontextprotocol.io/specification/2026-07-28/changelog, 2026-07-28.</li>
-<li data-src="docs/writeup/90-references.md:48">FHIR R4 v4.0.1, Search, https://hl7.org/fhir/R4/search.html, 2019-11-01, baseline.</li>
-<li data-src="docs/writeup/90-references.md:49">FHIR R4 v4.0.1, ServiceRequest, https://hl7.org/fhir/R4/servicerequest.html, 2019-11-01, baseline.</li>
-<li data-src="docs/writeup/90-references.md:50">US Core 9.0.0 server CapabilityStatement, https://hl7.org/fhir/us/core/CapabilityStatement-us-core-server.html, 2026-05-31.</li>
-<li data-src="docs/writeup/90-references.md:51">Epic on FHIR documentation, API change log, https://fhir.epic.com/Documentation, 2026-10-16.</li>
-<li data-src="docs/writeup/90-references.md:52">Oracle Health Millennium FHIR R4 Observation search, https://docs.oracle.com/en/industries/health/millennium-platform-apis/mfrap/op-observation-get.html, 2026-04-23.</li>
-<li data-src="docs/writeup/90-references.md:53">SMART App Launch 2.2.0, scopes and launch context, https://hl7.org/fhir/smart-app-launch/scopes-and-launch-context.html, 2024-04-30, baseline.</li>
-<li data-src="docs/writeup/90-references.md:54">RFC 8785, JSON Canonicalization Scheme, https://www.rfc-editor.org/rfc/rfc8785, 2020-06-01, baseline.</li>
-<li data-src="docs/writeup/90-references.md:55">ASD-STE 100, Simplified Technical English, issue 8, https://www.asd-ste100.org/, 2021-04-30, baseline.</li>
+<h3 id="standards-and-tooling" data-src="docs/writeup/90-references.md:46">Standards and tooling</h3>
+<ul data-src="docs/writeup/90-references.md:48">
+<li data-src="docs/writeup/90-references.md:48">Model Context Protocol specification 2025-11-25, Tools, https://modelcontextprotocol.io/specification/2025-11-25/server/tools, 2025-11-25.</li>
+<li data-src="docs/writeup/90-references.md:49">Model Context Protocol specification 2025-03-26, changelog (tool annotations), https://modelcontextprotocol.io/specification/2025-03-26/changelog, 2025-03-26.</li>
+<li data-src="docs/writeup/90-references.md:50">Model Context Protocol specification 2026-07-28, changelog (stateless servers, deterministic tool order), https://modelcontextprotocol.io/specification/2026-07-28/changelog, 2026-07-28.</li>
+<li data-src="docs/writeup/90-references.md:51">FHIR R4 v4.0.1, Search, https://hl7.org/fhir/R4/search.html, 2019-11-01, baseline.</li>
+<li data-src="docs/writeup/90-references.md:52">FHIR R4 v4.0.1, ServiceRequest, https://hl7.org/fhir/R4/servicerequest.html, 2019-11-01, baseline.</li>
+<li data-src="docs/writeup/90-references.md:53">US Core 9.0.0 server CapabilityStatement, https://hl7.org/fhir/us/core/CapabilityStatement-us-core-server.html, 2026-05-31.</li>
+<li data-src="docs/writeup/90-references.md:54">Epic on FHIR documentation, API change log, https://fhir.epic.com/Documentation, 2026-10-16.</li>
+<li data-src="docs/writeup/90-references.md:55">Oracle Health Millennium FHIR R4 Observation search, https://docs.oracle.com/en/industries/health/millennium-platform-apis/mfrap/op-observation-get.html, 2026-04-23.</li>
+<li data-src="docs/writeup/90-references.md:56">SMART App Launch 2.2.0, scopes and launch context, https://hl7.org/fhir/smart-app-launch/scopes-and-launch-context.html, 2024-04-30, baseline.</li>
+<li data-src="docs/writeup/90-references.md:57">RFC 8785, JSON Canonicalization Scheme, https://www.rfc-editor.org/rfc/rfc8785, 2020-06-01, baseline.</li>
+<li data-src="docs/writeup/90-references.md:58">ASD-STE 100, Simplified Technical English, issue 8, https://www.asd-ste100.org/, 2021-04-30, baseline.</li>
 </ul>
-<h3 id="clinical-sources-behind-the-policies" data-src="docs/writeup/90-references.md:57">Clinical sources behind the policies</h3>
-<ul data-src="docs/writeup/90-references.md:59">
-<li data-src="docs/writeup/90-references.md:59">Eliquis (apixaban) label, DailyMed, https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=e9481622-7cc6-418a-acb6-c5450daae9b0, 2025-04-17.</li>
-<li data-src="docs/writeup/90-references.md:60">Neurontin (gabapentin) label, DailyMed, https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=ee9ad9ed-6d9f-4ee1-9d7f-cfad438df388, 2022-07-12, baseline.</li>
-<li data-src="docs/writeup/90-references.md:61">ACR Manual on Contrast Media, https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Contrast-Manual, 2026-04-17.</li>
-<li data-src="docs/writeup/90-references.md:62">ACR-AAAAI consensus on hypersensitivity to radiocontrast media, Radiology 315(2), https://www.rad.pitt.edu/sites/rad_image/feed/wang-et-al-2025-management-and-prevention-of-hypersensitivity-reactions-to-radiocontrast-media-a-consensus-statement.pdf, 2025-05-01.</li>
-<li data-src="docs/writeup/90-references.md:63">CMS130v14 colorectal cancer screening, eCQI, https://ecqi.healthit.gov/ecqm/ec/2026/cms0130v14, 2026-05-13.</li>
-<li data-src="docs/writeup/90-references.md:64">USPSTF colorectal cancer screening recommendation, https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening, 2021-05-18, baseline.</li>
-<li data-src="docs/writeup/90-references.md:65">NICE NG12, suspected cancer: recognition and referral, https://www.nice.org.uk/guidance/ng12/chapter/Recommendations-organised-by-site-of-cancer, 2026-04-15.</li>
-<li data-src="docs/writeup/90-references.md:66">Fleischner Society pulmonary nodule recommendations, Radiopaedia revision, https://radiopaedia.org/articles/fleischner-society-pulmonary-nodule-recommendations-1, 2025-11-25.</li>
-<li data-src="docs/writeup/90-references.md:67">ADA Standards of Care in Diabetes 2026, older adults, https://pmc.ncbi.nlm.nih.gov/articles/PMC12690186/, 2025-12-08.</li>
-<li data-src="docs/writeup/90-references.md:68">Updates in the 2025 AHA/ACC hypertension guideline, Current Hypertension Reports, https://pmc.ncbi.nlm.nih.gov/articles/PMC12995957/, 2026-03-17.</li>
-<li data-src="docs/writeup/90-references.md:69">Frimley Health NHS, ACE inhibitor initiation and titration v6.0, https://guidelines.fhft.nhs.uk/Cardiology-Heart_Failure-Angiotensin_Converting_Enzyme_Inhibitors_(ACEI)_Initiation_and_Titration, 2025-06-25.</li>
-<li data-src="docs/writeup/90-references.md:70">Addressing reported penicillin allergy, 2022 practice parameter update, https://blog.unmc.edu/infectious-disease/2022/11/18/addressing-reported-penicillin-allergy-a-2022-practice-parameter-update/, 2022-11-18, baseline.</li>
+<h3 id="clinical-sources-behind-the-policies" data-src="docs/writeup/90-references.md:60">Clinical sources behind the policies</h3>
+<ul data-src="docs/writeup/90-references.md:62">
+<li data-src="docs/writeup/90-references.md:62">Eliquis (apixaban) label, DailyMed, https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=e9481622-7cc6-418a-acb6-c5450daae9b0, 2025-04-17.</li>
+<li data-src="docs/writeup/90-references.md:63">Neurontin (gabapentin) label, DailyMed, https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=ee9ad9ed-6d9f-4ee1-9d7f-cfad438df388, 2022-07-12, baseline.</li>
+<li data-src="docs/writeup/90-references.md:64">ACR Manual on Contrast Media, https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Contrast-Manual, 2026-04-17.</li>
+<li data-src="docs/writeup/90-references.md:65">ACR-AAAAI consensus on hypersensitivity to radiocontrast media, Radiology 315(2), https://www.rad.pitt.edu/sites/rad_image/feed/wang-et-al-2025-management-and-prevention-of-hypersensitivity-reactions-to-radiocontrast-media-a-consensus-statement.pdf, 2025-05-01.</li>
+<li data-src="docs/writeup/90-references.md:66">CMS130v14 colorectal cancer screening, eCQI, https://ecqi.healthit.gov/ecqm/ec/2026/cms0130v14, 2026-05-13.</li>
+<li data-src="docs/writeup/90-references.md:67">USPSTF colorectal cancer screening recommendation, https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening, 2021-05-18, baseline.</li>
+<li data-src="docs/writeup/90-references.md:68">NICE NG12, suspected cancer: recognition and referral, https://www.nice.org.uk/guidance/ng12/chapter/Recommendations-organised-by-site-of-cancer, 2026-04-15.</li>
+<li data-src="docs/writeup/90-references.md:69">Fleischner Society pulmonary nodule recommendations, Radiopaedia revision, https://radiopaedia.org/articles/fleischner-society-pulmonary-nodule-recommendations-1, 2025-11-25.</li>
+<li data-src="docs/writeup/90-references.md:70">ADA Standards of Care in Diabetes 2026, older adults, https://pmc.ncbi.nlm.nih.gov/articles/PMC12690186/, 2025-12-08.</li>
+<li data-src="docs/writeup/90-references.md:71">Updates in the 2025 AHA/ACC hypertension guideline, Current Hypertension Reports, https://pmc.ncbi.nlm.nih.gov/articles/PMC12995957/, 2026-03-17.</li>
+<li data-src="docs/writeup/90-references.md:72">Frimley Health NHS, ACE inhibitor initiation and titration v6.0, https://guidelines.fhft.nhs.uk/Cardiology-Heart_Failure-Angiotensin_Converting_Enzyme_Inhibitors_(ACEI)_Initiation_and_Titration, 2025-06-25.</li>
+<li data-src="docs/writeup/90-references.md:73">Addressing reported penicillin allergy, 2022 practice parameter update, https://blog.unmc.edu/infectious-disease/2022/11/18/addressing-reported-penicillin-allergy-a-2022-practice-parameter-update/, 2022-11-18, baseline.</li>
 </ul>
 </main>
 <footer><p>Hosted site: <a href="https://wth-lg.github.io/clinical-agent-env/">https://wth-lg.github.io/clinical-agent-env/</a>. Source: <a href="https://github.com/wth-lg/clinical-agent-env">github.com/wth-lg/clinical-agent-env</a>.</p></footer>

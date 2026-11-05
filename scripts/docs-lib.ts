@@ -23,6 +23,10 @@ export interface Unit {
   text: string;
 }
 
+// The h2 sections docs/writeup.html must carry, in reading order: docs-gen reports the ones its
+// sources lack, docs-check fails on them and donewhen names them (pre-audit-2 S19, one list).
+export const WRITEUP_SECTIONS = ['Instructions', 'Findings', 'Surprises', 'Changes', 'Next steps', 'How failures are attributed', 'Pass rates', 'How the environment differs from a real EHR', 'Audit against research and public environments', 'References'] as const;
+
 export const GENERATED_BEGIN = /<!-- docs-gen:begin ([a-z-]+) -->/g;
 export const GENERATED_END = /<!-- docs-gen:end ([a-z-]+) -->/g;
 // What a code span or element becomes in a prose unit: one word that no rule reads.
@@ -151,7 +155,7 @@ export function renderBlocks(blocks: readonly Block[], file: string, shift = 1):
       case 'code':
         return `<pre${src(b.line)}><code>${escapeHtml(b.text)}</code></pre>`;
       case 'table':
-        return `<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${renderInline(c)}</th>` : `<td>${renderInline(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>`;
+        return `<div class="table-wrap">\n<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${renderInline(c)}</th>` : `<td>${renderInline(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
       case 'html':
         return b.text;
     }

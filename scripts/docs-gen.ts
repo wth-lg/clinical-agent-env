@@ -23,7 +23,7 @@ import {
   AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, PASS_DEFINITION, RUN_BLOCKS,
 } from '../packages/core/outcomes.ts';
 import { BAND_VERDICT_RULE, PASS_K, trialName, wilson, type Summary, type TaskSummary } from '../packages/core/summary.ts';
-import { escapeHtml, parseMarkdown, renderBlocks, type Block } from './docs-lib.ts';
+import { escapeHtml, parseMarkdown, renderBlocks, WRITEUP_SECTIONS, type Block } from './docs-lib.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const WRITEUP = 'docs/writeup.html';
@@ -46,8 +46,10 @@ const interval = (k: number, n: number) => {
   const w = wilson(k, n);
   return w === null ? 'n/a' : `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`;
 };
+// Every table sits in a scroll container, so a wide one scrolls inside its box and the page never
+// scrolls sideways on a phone (verifier P24A-227 F1).
 const table = (head: string[], rows: string[][], caption?: string) =>
-  `<table>${caption ? `<caption>${caption}</caption>` : ''}\n<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>\n<tbody>\n${rows.map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${c}</th>` : `<td>${c}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>`;
+  `<div class="table-wrap">\n<table>${caption ? `<caption>${caption}</caption>` : ''}\n<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>\n<tbody>\n${rows.map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${c}</th>` : `<td>${c}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
 const trialUrl = (run: string, trial: string) => `${HOSTED_URL}?view=runs&run=${encodeURIComponent(run)}&trial=${encodeURIComponent(trial)}`;
 
 type RunTrial = { task_id: string; index: number; outcome: string };
@@ -243,10 +245,16 @@ const BLOCKS: Record<string, { name: string; render: (d: Data) => string }> = {
 
 // --- the page ---------------------------------------------------------------------------------
 
+// A source may carry docs-gen:block and docs-gen:include comments only. A docs-gen:begin or
+// docs-gen:end written by hand would pass hand-written text off as generated, hiding it from the
+// number rule of docs-check and from scripts/test/one-definition.test.ts (verifier P24A-227 F2).
 function readSource(root: string, rel: string): Block[] {
   const file = join(root, rel);
   if (!existsSync(file)) throw new Error(`${rel}: missing`);
-  return parseMarkdown(readFileSync(file, 'utf8'));
+  const text = readFileSync(file, 'utf8');
+  const forged = /docs-gen:(begin|end)\b/.exec(text);
+  if (forged) throw new Error(`${rel}:${text.slice(0, forged.index).split('\n').length}: a docs-gen:${forged[1]} comment in a source; only docs-gen:block and docs-gen:include are allowed, and docs-gen writes the begin and end markers itself`);
+  return parseMarkdown(text);
 }
 
 // The sections of the writeup: each source file's blocks, includes spliced, with its file name.
@@ -305,7 +313,8 @@ export function themeCss(): string {
 
 const STYLE = `
 html { color-scheme: light dark; }
-body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+/* overflow-wrap: anywhere lets a long URL or command break, so a phone never scrolls the page sideways; tables and code blocks scroll inside their own box. */
+body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; overflow-wrap: anywhere; }
 main, header, footer { max-width: 56rem; margin: 0 auto; padding: 0 1rem; }
 header { padding-top: 2rem; }
 h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.5rem; }
@@ -335,12 +344,13 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 @media (max-width: 640px) { body { font-size: 14px; } }
 `;
 
-export function generate(root: string): { writeup: string; readme: string | null } {
+export function generate(root: string): { writeup: string; readme: string | null; missing: string[] } {
   const data = readData(root);
   const srcs = sources(root);
   const body = srcs.map((s) => renderSource(s, data)).join('\n');
   const headings = [...body.matchAll(/<h2 id="([^"]+)"[^>]*>(.*?)<\/h2>/g)].map((m) => ({ id: m[1]!, text: m[2]!.replace(/<[^>]+>/g, '') }));
   const nav = `<nav aria-label="Sections"><ul>\n${headings.map((h) => `<li><a href="#${h.id}">${h.text}</a></li>`).join('\n')}\n</ul></nav>`;
+  const missing = WRITEUP_SECTIONS.filter((s) => !headings.some((h) => h.text === s));
   const writeup = [
     '<!doctype html>',
     '<html lang="en">',
@@ -371,7 +381,7 @@ export function generate(root: string): { writeup: string; readme: string | null
     const re = new RegExp(`${begin('caps').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}[\\s\\S]*?${end('caps').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`);
     readme = re.test(text) ? text.replace(re, wrap('caps', capsBlock())) : null;
   }
-  return { writeup, readme };
+  return { writeup, readme, missing };
 }
 
 // The first line at which a and b differ, 1-based, or null when equal.
@@ -407,6 +417,7 @@ export function main(argv: string[]): number {
     process.stderr.write(`docs-gen: ${(e as Error).message}\n`);
     return 2;
   }
+  for (const m of out.missing) process.stderr.write(`docs-gen: warning: no section "${m}" in ${SOURCES}/ (pnpm docs:check fails on it)\n`);
   const targets: Array<[string, string | null]> = [[WRITEUP, out.writeup], [README, out.readme]];
   let differ = 0;
   for (const [rel, text] of targets) {

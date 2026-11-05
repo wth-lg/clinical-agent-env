@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 import { ACTUAL_CAP_USD, PROJECTED_CAP_USD } from '../packages/core/ledger.ts';
 import { DENOMINATOR_RULE, PASS_DEFINITION } from '../packages/core/outcomes.ts';
-import { decodeEntities, parseMarkdown } from './docs-lib.ts';
+import { decodeEntities, parseMarkdown, WRITEUP_SECTIONS } from './docs-lib.ts';
 import { firstDifference, generate, HOSTED_URL, README, SOURCES, WRITEUP } from './docs-gen.ts';
 import { checkFile, loadRules } from './ste-check.ts';
 
@@ -41,7 +41,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..');
 const NUMBERS_ALLOW = join(HERE, 'ste/numbers-allow.txt');
 const TOKENS = join(REPO, 'apps/web/src/styles/tokens.css');
-export const WRITEUP_SECTIONS = ['Instructions', 'Findings', 'Surprises', 'Changes', 'Next steps', 'How failures are attributed', 'Pass rates', 'How the environment differs from a real EHR', 'Audit against research and public environments', 'References'];
 export const README_SECTIONS = ['Quick start', 'Key handling', 'Run from the CLI', 'Links'];
 const MODEL = 'claude-opus-5-5';
 const DATE = /\b20\d\d-\d\d-\d\d\b/;
@@ -75,8 +74,6 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
   const file = WRITEUP;
   const add = (line: number, problem: string, fix: string) => problems.push({ file, line, problem, fix });
   const secs = sectionsOf(html);
-  const titles = secs.map((s) => s.title);
-  for (const want of WRITEUP_SECTIONS) if (!titles.includes(want)) add(1, `no section "${want}"`, `add a level-1 heading "# ${want}" to a file under ${SOURCES}/`);
   const section = (title: string) => secs.find((s) => s.title === title);
   const instr = section('Instructions');
   if (instr) {
@@ -101,14 +98,15 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
       if (!DATE.test(stripTags(it[1]!))) problems.push({ ...where, problem: 'reference without a YYYY-MM-DD date', fix: 'add the date of the version cited' });
     }
   }
-  // Numbers outside generated blocks, code, tables and allowed regions.
+  // Numbers outside generated blocks, code and allowed regions. A hand-written table is prose here
+  // (verifier P24A-227 F3): its numbers come from a generated block or an allow-numbers region.
   const allow = readFileSync(NUMBERS_ALLOW, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l !== '' && !l.startsWith('#'));
   // Every replacement keeps the length and the newlines, so an index into prose is an index into html.
   const blank = (m: string) => m.replace(/[^\n]/g, ' ');
   let prose = html.replace(/<!-- docs-gen:begin [a-z-]+ -->[\s\S]*?<!-- docs-gen:end [a-z-]+ -->/g, blank);
   for (const m of prose.matchAll(/<!-- docs-check:allow-numbers ([^>]*?) -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g)) infos.push(`info: ${file}:${lineOf(prose, m.index)}: numbers allowed: ${m[1]!.trim()}`);
   prose = prose.replace(/<!-- docs-check:allow-numbers [^>]*? -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g, blank);
-  prose = prose.replace(/<(pre|table|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank);
+  prose = prose.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank);
   for (const a of allow) prose = prose.split(a).join(' '.repeat(a.length));
   for (const re of [PERCENT, K_OF_N]) {
     for (const m of prose.matchAll(new RegExp(re.source, 'g'))) {
@@ -192,6 +190,9 @@ function checkReadme(root: string, text: string, problems: Problem[]): void {
   }
   const caps = /<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/.exec(text);
   if (!caps) add(1, 'README.md has no caps block', 'add <!-- docs-gen:begin caps --> and <!-- docs-gen:end caps --> under Key handling');
+  // A dollar figure outside the caps block could differ from the caps (verifier P24A-227 F4).
+  const outside = text.replace(/<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/g, (m) => m.replace(/[^\n]/g, ' ')).replace(/`[^`]*`/g, (m) => ' '.repeat(m.length));
+  for (const m of outside.matchAll(/\$\s?\d[\d,]*(?:\.\d+)?/g)) add(lineOf(outside, m.index), `dollar amount outside the caps block: "${m[0]}"`, 'the caps block renders both caps from packages/core/ledger.ts; state no other amount in README.md');
   void root;
 }
 
@@ -226,7 +227,16 @@ export function run(root: string): { problems: Problem[]; warnings: string[]; in
   const problems: Problem[] = [];
   const warnings: string[] = [];
   const infos: string[] = [];
-  const out = generate(root);
+  let out: ReturnType<typeof generate>;
+  try {
+    out = generate(root);
+  } catch (e) {
+    // docs-gen names the source and line it refused ("<file>:<line>: <why>").
+    const m = /^([^:\s]+):(\d+): (.*)$/s.exec((e as Error).message);
+    problems.push(m ? { file: m[1]!, line: Number(m[2]), problem: m[3]!, fix: 'remove it from the source; docs-gen writes the markers' } : { file: SOURCES, line: 1, problem: (e as Error).message, fix: 'fix the sources under docs/writeup/' });
+    return { problems, warnings, infos };
+  }
+  for (const m of out.missing) problems.push({ file: WRITEUP, line: 1, problem: `no section "${m}"`, fix: `add a level-1 heading "# ${m}" to a file under ${SOURCES}/; the sections are ${WRITEUP_SECTIONS.join(', ')} (WRITEUP_SECTIONS in scripts/docs-lib.ts)` });
   const current = (rel: string) => (existsSync(join(root, rel)) ? readFileSync(join(root, rel), 'utf8') : '');
   const html = current(WRITEUP);
   const readme = current(README);

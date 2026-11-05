@@ -10,9 +10,13 @@ The definitions come first, then the numbers. Every number in this section is re
 
 A task's verdict is the band verdict above, read on its k of n. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. TODO-W5F: the four lever tasks join this table after their final run.
 
+Five of the six tasks share one failure route: a result filed silently beside the one the inbox names. The record-integrity lever copied that device from the contrast CT task into four tasks. Every failure of the contrast CT task in the final run is that route. TODO-W5F: a per-task pass rate without the silent-sibling item is generated here once the lever tasks' final run is committed. It shows how much of each rate rests on that one device.
+
 ## What a pass certifies
 
-A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum, and a pass with a harm item met is counted apart as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none. TODO-W5F: the strict points of the four lever tasks are listed here once their run is final.
+A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum, and a pass with a harm item met is counted apart as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none.
+
+A sensitivity line is planned and is not in this version. It is the pass rate when only the final state is graded against the reference solution's. Under it, a trial whose action was right but whose review was incomplete counts as a pass. The seen and process gates fail such trials today, and one grader fix of that family moved twelve trials of the colorectal task. The line is generated from the records once it is built. TODO-W5F: the strict points of the four lever tasks are listed here once their run is final.
 
 ## Resolution of the band
 

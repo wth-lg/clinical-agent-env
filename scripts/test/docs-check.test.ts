@@ -14,6 +14,7 @@ import { PASS_DEFINITION } from '../../packages/core/outcomes.ts';
 import { passK, wilson } from '../../packages/core/summary.ts';
 import { LOCAL_START_COMMAND } from '../../apps/web/src/surface/command.ts';
 import { generate, WRITEUP } from '../docs-gen.ts';
+import { WRITEUP_SECTIONS } from '../docs-lib.ts';
 import { repoRoot, runScript, tempDir } from './helpers.ts';
 
 const check = (root: string, args: string[] = []) => runScript('scripts/docs-check.ts', ['--root', root, ...args], { cwd: repoRoot });
@@ -80,6 +81,35 @@ describe('docs-gen', () => {
     expect(writeup).toContain("'Inter', ui-sans-serif, system-ui, sans-serif");
   });
 
+  it('wraps every table in a scroll container, so a phone never scrolls the page sideways (P24A-227 F1)', () => {
+    const { writeup } = generate(docsRoot());
+    const tables = writeup.match(/<table\b/g) ?? [];
+    expect(tables.length).toBeGreaterThan(5);
+    expect(writeup.match(/<div class="table-wrap">\n?<table\b/g) ?? []).toHaveLength(tables.length);
+    expect(writeup.match(/<\/table>\n?<\/div>/g) ?? []).toHaveLength(tables.length);
+  });
+
+  it('rejects a docs-gen:begin or docs-gen:end comment in a source (P24A-227 F2)', () => {
+    const root = docsRoot();
+    edit(root, 'docs/findings.md', /\n\n/, '\n\n<!-- docs-gen:begin pass-rates -->\nThe model passed 19/20 trials.\n<!-- docs-gen:end pass-rates -->\n\n');
+    expect(() => generate(root)).toThrow(/docs\/findings\.md:\d+: .*docs-gen:begin/);
+    const r = check(root);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/docs\/findings\.md:\d+: .*docs-gen:begin/);
+    const root2 = docsRoot();
+    edit(root2, 'docs/writeup/60-attribution.md', /\n\n/, '\n\n<!-- docs-gen:end outcomes -->\n\n');
+    expect(() => generate(root2)).toThrow(/60-attribution\.md:\d+: .*docs-gen:end/);
+  });
+
+  it('names the required sections once, and reports the ones the sources lack', () => {
+    expect(WRITEUP_SECTIONS).toContain('Instructions');
+    expect(WRITEUP_SECTIONS).toContain('References');
+    const root = docsRoot();
+    writeFileSync(join(root, 'docs/writeup/10-instructions.md'), '# How to run\n\nSee the README.\n');
+    expect(generate(root).missing).toEqual(['Instructions']);
+    expect(generate(docsRoot()).missing).toEqual([]);
+  });
+
   it('is the same on a second run and --check exits 0 after a write', () => {
     const root = docsRoot();
     expect(gen(root).status).toBe(0);
@@ -126,6 +156,22 @@ describe('docs-check', () => {
     const r = check(regenerated(root));
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/docs\/findings\.md:\d+: .*number/);
+  });
+
+  it('fails on a k/N in a hand-written source table (P24A-227 F3)', () => {
+    const root = docsRoot();
+    edit(root, 'docs/findings.md', /\n\n/, '\n\n| task | k/n |\n|---|---|\n| a | 12/20 |\n\n');
+    const r = check(regenerated(root));
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/docs\/findings\.md:\d+: .*number in prose: "12\/20"/);
+  });
+
+  it('fails on a dollar amount in README.md outside the caps block (P24A-227 F4)', () => {
+    const root = regenerated(docsRoot());
+    edit(root, 'README.md', /\n## Links/, '\nA trial costs below $900.\n\n## Links');
+    const r = check(root);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/README\.md:\d+: .*\$900/);
   });
 
   it('fails on a 30-word step in README.md', () => {

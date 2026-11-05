@@ -4,6 +4,10 @@ Every trial gets one outcome. A trial that did not pass gets the fault whose cri
 
 <!-- docs-gen:block definitions -->
 
+## Who did the clinical reads
+
+Every clinician read of a trajectory and every task-validity verdict in this run came from LLM sessions, not from a human clinician. The rulings those reads rest on, R1 to R41, are recorded in the run's decision log. Each grader fault they found was fixed and regraded. A review of the same failures by a human clinician is listed under Next steps.
+
 ## How we told grader faults apart
 
 A grader fault never comes from the grader alone. Three checks stand between a task and its first live trial. The reference solution must score full marks. Every declared alternative route must pass. Every mutant, one per clinical trap, must fail on its item alone with the label it declares. The matrix runs on every pull request, and a judge cache miss fails the build.

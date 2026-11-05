@@ -33,10 +33,13 @@ Each entry gives the version or page we read and its date. A baseline marks a so
 - tau2-bench v2.0.0, docs/evaluation.md at the tag, https://github.com/sierra-research/tau2-bench/blob/v2.0.0/docs/evaluation.md, 2026-10-20.
 - tau2-bench commit 85e5017, infrastructure-errored calls excluded from the score denominators, https://github.com/sierra-research/tau2-bench/commit/85e501724ded198b6dcf0c64563e2740fd3b5fa6, 2026-10-20.
 - tau2-bench v2.0.0 environment.py, strict set_state replay, https://github.com/sierra-research/tau2-bench/blob/v2.0.0/src/tau2/environment/environment.py, 2026-10-20.
+- Harbor v0.25.0 release (task.toml schema 1.4, more than one solution per task, harbor lint), https://github.com/harbor-framework/harbor/releases/tag/v0.25.0, 2026-10-25.
 - Harbor v0.24.0, the task config, NopAgent and quality-check files at the tag, https://github.com/harbor-framework/harbor/tree/v0.24.0, 2026-10-05.
+- CHI-Bench repository, https://github.com/actava-ai/chi-bench, last commit 2026-10-26; dataset tag chi-bench-v1.0.0, 2026-05-21.
+- FHIR-AgentEval repository, https://github.com/YoussefMkst/FHIR-AgentEval, last commit 2026-10-26.
 - Inspect AI 0.3.284, the pass_k reducer and the per-task limits in the source at the tag, https://github.com/UKGovernmentBEIS/inspect_ai/releases/tag/0.3.284, 2026-10-25.
 - verifiers v0.4.0, runtimes architecture, https://github.com/PrimeIntellect-ai/verifiers/blob/v0.4.0/docs/v1/architecture.md, 2026-10-12.
-- OpenEnv v0.10.0 README, https://github.com/meta-pytorch/OpenEnv/blob/v0.10.0/README.md, 2026-10-22.
+- OpenEnv v0.12.0 release, https://github.com/openenv/OpenEnv, 2026-11-05.
 - MedAgentBench repository, server task handling, https://github.com/stanfordmlgroup/MedAgentBench, 2025-11-21.
 - Terminal-Bench 2 repository, https://github.com/laude-institute/terminal-bench-2, 2026-04-30.
 

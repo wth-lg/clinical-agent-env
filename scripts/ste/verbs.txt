@@ -107,3 +107,4 @@ search
 order
 begin
 finish
+have

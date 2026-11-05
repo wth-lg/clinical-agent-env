@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
+import { WRITEUP_SECTIONS } from '../docs-lib.ts';
 import { git, repoRoot, runScript, tempDir, write } from './helpers.ts';
 
 const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
@@ -378,7 +379,8 @@ describe('donewhen', () => {
   it('clause 7 reads the exit code of docs:check and counts its lines', () => {
     const pass = donewhen(completeRepo(), ALL_STUBS);
     expect(pass.calls).toContain('docs-check');
-    expect(pass.clause(7)).toBe('PASS (7) docs/writeup.html and README.md pass pnpm docs:check: docs:check: exit 0; 0 error line(s), 2 warning(s)');
+    // The clause names the sections docs:check requires, from the one WRITEUP_SECTIONS constant.
+    expect(pass.clause(7)).toBe(`PASS (7) docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check: docs:check: exit 0; 0 error line(s), 2 warning(s)`);
     const fail = donewhen(completeRepo(), { ...ALL_STUBS, 'docs-check': 'docs-check-fail' }).clause(7);
     expect(fail).toMatch(/^FAIL \(7\)/);
     expect(fail).toContain('docs:check: exit 1; 2 error line(s), 1 warning(s)');

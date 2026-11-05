@@ -59,4 +59,5 @@ With more time, in this order.
 6. Add a reverse traceability report that lists each policy section with no check.
 7. Export the tasks in the Harbor format through the MCP server, with measured difficulty in each task's metadata.
 8. Add the US Core search parameters the store lacks. They are Condition clinical-status, MedicationRequest intent and authoredon, and `_include`. Then require `patient` on Observation searches, as Oracle does.
-9. Run the final sample on every task once the record-integrity lever is set, and publish the official run.
+9. Have a human clinician read the audited failures and the task-validity verdicts. The reads in this run were LLM sessions, so where the two disagree the human read decides.
+10. Run the final sample on every task once the record-integrity lever is set, and publish the official run.

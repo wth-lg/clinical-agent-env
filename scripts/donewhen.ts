@@ -57,6 +57,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../packages/core/cost.ts';
+import { WRITEUP_SECTIONS } from './docs-lib.ts';
 
 const FINAL_RUN = 'results/runs/final-1';
 const TASKS_FINAL = 'results/tasks-final.json';
@@ -365,7 +366,7 @@ const CLAUSES: Array<[string, () => Verdict]> = [
   ["every trial starts from its task's frozen world", clause4],
   [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, at its frozen versions`, clause5],
   ['every failure attributed, none to environment or grader, no current GRADER_ERROR', clause6],
-  ['docs/writeup.html and README.md pass pnpm docs:check', clause7],
+  [`docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check`, clause7],
 ];
 
 let passed = 0;
