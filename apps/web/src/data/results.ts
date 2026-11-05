@@ -278,8 +278,11 @@ const SUPERSEDED_DIR = /^superseded\/((.+)-(v\d+))\/trials\//;
 async function loadFrozen(has: ReadonlySet<string>): Promise<Record<string, FrozenTask>> {
   if (!has.has('results/tasks-final.json')) return {};
   try {
-    const doc = await fetchJson<{ tasks?: Record<string, { world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown } }> }>('results/tasks-final.json');
-    return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, t]) => {
+    type Entry = { world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown }; status?: unknown; superseded?: Entry };
+    const doc = await fetchJson<{ tasks?: Record<string, Entry> }>('results/tasks-final.json');
+    // A task pending a new version (R42: `status: "v2-pending"`) keeps its recorded version's
+    // freeze under `superseded`: the hint for its recorded trials is that one.
+    return Object.fromEntries(Object.entries(doc.tasks ?? {}).map(([id, e]) => [id, e.status === 'v2-pending' ? (e.superseded ?? {}) : e] as const).flatMap(([id, t]) => {
       if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return [];
       const replay_at = typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? { tag: t.replay_at.tag, commit: t.replay_at.commit } : null;
       return [[id, { world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at }]];

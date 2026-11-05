@@ -123,8 +123,12 @@ export { envChanged, judgeMissed };
 function replayAtOf(): Record<string, { tag: string; commit: string }> {
   const file = join(REPO, 'results/tasks-final.json');
   if (!existsSync(file)) return {};
-  const doc = JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, { replay_at?: { tag?: unknown; commit?: unknown } }> };
-  return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, t]) => (typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? [[id, { tag: t.replay_at.tag, commit: t.replay_at.commit }]] : [])));
+  type Entry = { replay_at?: { tag?: unknown; commit?: unknown }; status?: unknown; superseded?: { replay_at?: { tag?: unknown; commit?: unknown } } };
+  const doc = JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, Entry> };
+  // A task pending a new version (R42: `status: "v2-pending"`) keeps its recorded version's freeze
+  // under `superseded`: its records in the run are that version's, reproduced where it says.
+  const of = (t: Entry) => (t.status === 'v2-pending' ? (t.superseded ?? {}) : t);
+  return Object.fromEntries(Object.entries(doc.tasks ?? {}).map(([id, t]) => [id, of(t)] as const).flatMap(([id, t]) => (typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? [[id, { tag: t.replay_at.tag, commit: t.replay_at.commit }]] : [])));
 }
 
 // replay.json's entries as the file holds them; {} without the file.
