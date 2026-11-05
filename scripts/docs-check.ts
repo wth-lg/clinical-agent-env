@@ -11,10 +11,14 @@
 //     against research and public environments and References; Instructions names the local start
 //     command, the hosted URL and the CLI run command; Pass rates holds PASS_DEFINITION and
 //     DENOMINATOR_RULE; every reference item carries a YYYY-MM-DD date;
-//   - no percentage or k/N appears in the writeup's prose outside a generated block, a code
-//     element, a table, a phrase of scripts/ste/numbers-allow.txt, or a region between
+//   - no percentage, k/N or "k of N" appears in the writeup's prose outside a generated block, a
+//     code element, a phrase of scripts/ste/numbers-allow.txt, or a region between
 //     `<!-- docs-check:allow-numbers <why> -->` and `<!-- docs-check:end-allow-numbers -->`
-//     (each region is printed as an info line, so a reviewer sees what was allowed);
+//     (each region is printed as an info line, so a reviewer sees what was allowed); Unicode
+//     slashes and percent signs read as the ASCII ones. Limit: a rate written as a decimal
+//     ("0.95"), as "N percent" or in words ("ninety-five percent") is not caught, and the
+//     reviewer reads for those;
+//   - none of the claim phrases "MCP support", "Harbor compatible" or "first clinical" appears;
 //   - the writeup loads nothing from outside: no script, link, img, iframe, object or embed
 //     element, no @import or url() in its style, and every theme token of apps/web with its value;
 //   - README.md has the sections Quick start, Key handling, Run from the CLI and Links, and only

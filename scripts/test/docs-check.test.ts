@@ -56,7 +56,7 @@ describe('docs-gen', () => {
     const { writeup, readme } = generate(docsRoot());
     for (const [id, t] of Object.entries(summary.tasks)) {
       const w = wilson(t.passes, t.trials)!;
-      expect(writeup).toContain(`<td>${t.passes}/${t.trials}</td>`);
+      expect(writeup).toContain(`<td><span class="nw">${t.passes}/${t.trials}</span></td>`);
       expect(writeup).toContain(`[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`);
       expect(writeup).toContain(`<th scope="row">${id}</th>`);
       const p3 = passK(t.passes, t.trials, 3)!;
@@ -96,6 +96,19 @@ describe('docs-gen', () => {
     expect(writeup).toMatch(/\.table-wrap (th, )?td[^{]*\{[^}]*min-width/);
   });
 
+  it('keeps a date, a version, a k/n and a trial id on one line inside a table cell (P24A-227-3 F1)', () => {
+    const { writeup } = generate(docsRoot());
+    expect(writeup).toMatch(/\.nw \{ white-space: nowrap; \}/);
+    // A generated cell: k/n and the Wilson interval; a hand-written cell: a date and a version.
+    expect(writeup).toMatch(/<td><span class="nw">\d+\/20<\/span><\/td>/);
+    expect(writeup).toMatch(/<td><span class="nw">\[\d\.\d\d, \d\.\d\d\]<\/span><\/td>/);
+    expect(writeup).toMatch(/<span class="nw">\(2026-10-25\)<\/span>/);
+    expect(writeup).toMatch(/<span class="nw">v0\.25\.0<\/span>/);
+    expect(writeup).toMatch(/<a href="[^"]+"><span class="nw">crc-care-gap\/\d+<\/span> \(PASS\)<\/a>/);
+    // Never inside a tag: no href holds the span.
+    expect(writeup).not.toMatch(/href="[^"]*<span/);
+  });
+
   it('rejects a docs-gen:begin or docs-gen:end comment in a source (P24A-227 F2)', () => {
     const root = docsRoot();
     edit(root, 'docs/findings.md', /\n\n/, '\n\n<!-- docs-gen:begin pass-rates -->\nThe model passed 19/20 trials.\n<!-- docs-gen:end pass-rates -->\n\n');
@@ -128,7 +141,7 @@ describe('docs-gen', () => {
 
   it('--check exits 1 and names the file when the written copy differs', () => {
     const root = regenerated(docsRoot());
-    edit(root, WRITEUP, /<td>(\d+)\/20<\/td>/, '<td>19/20</td>');
+    edit(root, WRITEUP, /<td><span class="nw">(\d+)\/20<\/span><\/td>/, '<td><span class="nw">19/20</span></td>');
     const r = gen(root, ['--check']);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain(WRITEUP);
@@ -151,7 +164,7 @@ describe('docs-check', () => {
 
   it('fails on an edited generated number', () => {
     const root = regenerated(docsRoot());
-    edit(root, WRITEUP, /<td>(\d+)\/20<\/td>/, '<td>19/20</td>');
+    edit(root, WRITEUP, /<td><span class="nw">(\d+)\/20<\/span><\/td>/, '<td><span class="nw">19/20</span></td>');
     const r = check(root);
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/docs\/writeup\.html.*regenerat/);

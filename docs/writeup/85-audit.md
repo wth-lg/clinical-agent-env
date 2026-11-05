@@ -2,7 +2,7 @@
 
 Three statements about the judge hold throughout. The judge never gates: gates are code-only checks, and a judged rubric item changes the score alone. Judge calibration measures stability on authored answers, re-asked live, and not agreement with clinicians. The judge is the same model as the agent, claude-opus-5-5.
 
-The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Each trap has a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.
+The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Among the clinical systems compared, only this one gives each trap a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.
 
 ## Clinical agent benchmarks
 
@@ -49,7 +49,7 @@ What this environment can claim, against these six systems and as of 2026-11-05:
 - Among the clinical systems, it is the only one where every task ships mutants that must fail and alternatives that must pass. The matrix checks them before any trial.
 - It runs without a container and without a live FHIR server. Every clinical comparator depends on a HAPI image or containers, and those HAPI images are tagged latest.
 - Its judged rubric items need a verbatim quote and are cached for offline regrading, and pass or fail is decided by code gates alone. CHI-Bench's pass depends on its judge.
-- Its scope is primary care and pharmacy operations under written clinic policies, which none of the comparators covers.
+- Its scope is primary care and pharmacy operations under written clinic policies, which differs from the scope of MedAgentBench, CHI-Bench and FHIR-AgentEval.
 
 What it does not claim:
 

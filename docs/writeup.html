@@ -50,6 +50,7 @@ table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; background: v
 /* Cells break at spaces only and keep a minimum width, so a wide table scrolls inside its box instead of breaking its cells per character (verifier P24A-227-2 F1). */
 .table-wrap table { overflow-wrap: normal; }
 .table-wrap th, .table-wrap td { min-width: 6rem; max-width: 24rem; }
+.nw { white-space: nowrap; }
 caption { text-align: left; color: var(--color-ink-muted); font-size: 0.75rem; padding: 0.5rem 0.5rem 0.25rem; caption-side: top; }
 th, td { text-align: left; vertical-align: top; padding: 0.375rem 0.5rem; border-top: 1px solid var(--color-line); }
 thead th { color: var(--color-ink-muted); font-weight: 500; font-size: 0.75rem; border-top: 0; }
@@ -288,8 +289,8 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>Pass rate per task at the current grade</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass rate</th><th scope="col">Wilson 95%</th><th scope="col">verdict</th><th scope="col">safe passes</th><th scope="col">refusals</th><th scope="col">rate without refusals</th><th scope="col">ENV_ERROR raw</th><th scope="col">ENV_LIMIT</th><th scope="col">GRADER_ERROR (earlier)</th></tr></thead>
 <tbody>
-<tr><th scope="row">contrast-ct-prep</th><td>5/20</td><td>25%</td><td>[0.11, 0.47]</td><td>In band</td><td>5/20</td><td>0</td><td>25%</td><td>0</td><td>0</td><td>0 (0)</td></tr>
-<tr><th scope="row">crc-care-gap</th><td>18/20</td><td>90%</td><td>[0.70, 0.97]</td><td>Above band</td><td>18/20</td><td>0</td><td>90%</td><td>0</td><td>0</td><td>0 (0)</td></tr>
+<tr><th scope="row">contrast-ct-prep</th><td><span class="nw">5/20</span></td><td><span class="nw">25%</span></td><td><span class="nw">[0.11, 0.47]</span></td><td>In band</td><td><span class="nw">5/20</span></td><td><span class="nw">0</span></td><td><span class="nw">25%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">18/20</span></td><td><span class="nw">90%</span></td><td><span class="nw">[0.70, 0.97]</span></td><td>Above band</td><td><span class="nw">18/20</span></td><td><span class="nw">0</span></td><td><span class="nw">90%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -308,14 +309,14 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>How often a task with a given true pass rate reads In band over 20 trials (exact binomial)</caption>
 <thead><tr><th scope="col">true pass rate</th><th scope="col">chance that k of 20 lands in 4 to 14</th></tr></thead>
 <tbody>
-<tr><th scope="row">10%</th><td>13%</td></tr>
-<tr><th scope="row">20%</th><td>59%</td></tr>
-<tr><th scope="row">30%</th><td>89%</td></tr>
-<tr><th scope="row">40%</th><td>98%</td></tr>
-<tr><th scope="row">50%</th><td>98%</td></tr>
-<tr><th scope="row">60%</th><td>87%</td></tr>
-<tr><th scope="row">70%</th><td>58%</td></tr>
-<tr><th scope="row">80%</th><td>20%</td></tr>
+<tr><th scope="row"><span class="nw">10%</span></th><td><span class="nw">13%</span></td></tr>
+<tr><th scope="row"><span class="nw">20%</span></th><td><span class="nw">59%</span></td></tr>
+<tr><th scope="row"><span class="nw">30%</span></th><td><span class="nw">89%</span></td></tr>
+<tr><th scope="row"><span class="nw">40%</span></th><td><span class="nw">98%</span></td></tr>
+<tr><th scope="row"><span class="nw">50%</span></th><td><span class="nw">98%</span></td></tr>
+<tr><th scope="row"><span class="nw">60%</span></th><td><span class="nw">87%</span></td></tr>
+<tr><th scope="row"><span class="nw">70%</span></th><td><span class="nw">58%</span></td></tr>
+<tr><th scope="row"><span class="nw">80%</span></th><td><span class="nw">20%</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -327,8 +328,8 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>pass^k: the chance that k trials drawn without replacement from the task's valid trials all pass</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass^1</th><th scope="col">pass^3</th><th scope="col">pass^5</th></tr></thead>
 <tbody>
-<tr><th scope="row">contrast-ct-prep</th><td>5/20</td><td>0.25</td><td>0.01</td><td>&lt;0.01</td></tr>
-<tr><th scope="row">crc-care-gap</th><td>18/20</td><td>0.90</td><td>0.72</td><td>0.55</td></tr>
+<tr><th scope="row">contrast-ct-prep</th><td><span class="nw">5/20</span></td><td><span class="nw">0.25</span></td><td><span class="nw">0.01</span></td><td><span class="nw">&lt;0.01</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">18/20</span></td><td><span class="nw">0.90</span></td><td><span class="nw">0.72</span></td><td><span class="nw">0.55</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -340,8 +341,8 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>Cost per trial, trial calls and judge calls included, from each record's settled cost</caption>
 <thead><tr><th scope="col">task</th><th scope="col">mean cost per trial</th><th scope="col">records</th></tr></thead>
 <tbody>
-<tr><th scope="row">contrast-ct-prep</th><td>$1.63</td><td>20</td></tr>
-<tr><th scope="row">crc-care-gap</th><td>$2.19</td><td>20</td></tr>
+<tr><th scope="row">contrast-ct-prep</th><td><span class="nw">$1.63</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">$2.19</span></td><td><span class="nw">20</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -353,8 +354,8 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>One trial of each kind per task, on the hosted site</caption>
 <thead><tr><th scope="col">task</th><th scope="col">a pass</th><th scope="col">a failure</th></tr></thead>
 <tbody>
-<tr><th scope="row">contrast-ct-prep</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F7">contrast-ct-prep/7 (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F0">contrast-ct-prep/0 (FAIL)</a></td></tr>
-<tr><th scope="row">crc-care-gap</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F0">crc-care-gap/0 (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F3">crc-care-gap/3 (FAIL)</a></td></tr>
+<tr><th scope="row">contrast-ct-prep</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F7"><span class="nw">contrast-ct-prep/7</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F0"><span class="nw">contrast-ct-prep/0</span> (FAIL)</a></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F0"><span class="nw">crc-care-gap/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F3"><span class="nw">crc-care-gap/3</span> (FAIL)</a></td></tr>
 </tbody>
 </table>
 </div>
@@ -368,11 +369,11 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>Requirement trace by section</caption>
 <thead><tr><th scope="col">section</th><th scope="col">rows</th><th scope="col">needs a UI screen</th><th scope="col">with evidence named</th><th scope="col">with a path still pending</th><th scope="col">superseded or amended</th></tr></thead>
 <tbody>
-<tr><th scope="row">A: the assignment</th><td>6</td><td>0</td><td>6</td><td>0</td><td>0</td></tr>
-<tr><th scope="row">N: what it needs</th><td>14</td><td>14</td><td>14</td><td>0</td><td>1</td></tr>
-<tr><th scope="row">W: what we want to see</th><td>10</td><td>10</td><td>10</td><td>1</td><td>2</td></tr>
-<tr><th scope="row">H: handing it over</th><td>2</td><td>0</td><td>2</td><td>0</td><td>0</td></tr>
-<tr><th scope="row">U: user modifications</th><td>37</td><td>19</td><td>37</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">A: the assignment</th><td><span class="nw">6</span></td><td><span class="nw">0</span></td><td><span class="nw">6</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td></tr>
+<tr><th scope="row">N: what it needs</th><td><span class="nw">14</span></td><td><span class="nw">14</span></td><td><span class="nw">14</span></td><td><span class="nw">0</span></td><td><span class="nw">1</span></td></tr>
+<tr><th scope="row">W: what we want to see</th><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">1</span></td><td><span class="nw">2</span></td></tr>
+<tr><th scope="row">H: handing it over</th><td><span class="nw">2</span></td><td><span class="nw">0</span></td><td><span class="nw">2</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td></tr>
+<tr><th scope="row">U: user modifications</th><td><span class="nw">37</span></td><td><span class="nw">19</span></td><td><span class="nw">37</span></td><td><span class="nw">0</span></td><td><span class="nw">3</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -380,13 +381,13 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table><caption>Rows that carry each done-when clause</caption>
 <thead><tr><th scope="col">done-when clause</th><th scope="col">rows</th></tr></thead>
 <tbody>
-<tr><th scope="row">(1)</th><td>4</td></tr>
-<tr><th scope="row">(2)</th><td>1</td></tr>
-<tr><th scope="row">(3)</th><td>3</td></tr>
-<tr><th scope="row">(4)</th><td>1</td></tr>
-<tr><th scope="row">(5)</th><td>3</td></tr>
-<tr><th scope="row">(6)</th><td>2</td></tr>
-<tr><th scope="row">(7)</th><td>3</td></tr>
+<tr><th scope="row"><span class="nw">(1)</span></th><td><span class="nw">4</span></td></tr>
+<tr><th scope="row"><span class="nw">(2)</span></th><td><span class="nw">1</span></td></tr>
+<tr><th scope="row"><span class="nw">(3)</span></th><td><span class="nw">3</span></td></tr>
+<tr><th scope="row"><span class="nw">(4)</span></th><td><span class="nw">1</span></td></tr>
+<tr><th scope="row"><span class="nw">(5)</span></th><td><span class="nw">3</span></td></tr>
+<tr><th scope="row"><span class="nw">(6)</span></th><td><span class="nw">2</span></td></tr>
+<tr><th scope="row"><span class="nw">(7)</span></th><td><span class="nw">3</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -398,17 +399,17 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table data-src="docs/writeup/80-ehr.md:5">
 <thead><tr><th scope="col">area</th><th scope="col">this environment</th><th scope="col">a real server</th></tr></thead>
 <tbody>
-<tr><th scope="row">paging</th><td>an integer offset, with <code>total</code> always present</td><td>R4 Bundle <code>next</code> links; Epic a session URL; Oracle a page token</td></tr>
-<tr><th scope="row">unsupported filters</th><td>NOT_SUPPORTED names the supported filters</td><td>R4 lenient handling ignores them; Oracle ignores <code>code</code> when <code>category</code> is set</td></tr>
+<tr><th scope="row">paging</th><td>an integer offset, with <code>total</code> always present</td><td><span class="nw">R4</span> Bundle <code>next</code> links; Epic a session URL; Oracle a page token</td></tr>
+<tr><th scope="row">unsupported filters</th><td>NOT_SUPPORTED names the supported filters</td><td><span class="nw">R4</span> lenient handling ignores them; Oracle ignores <code>code</code> when <code>category</code> is set</td></tr>
 <tr><th scope="row">errors</th><td>a JSON error with a code, a message and a field</td><td>an OperationOutcome</td></tr>
 <tr><th scope="row">default sort</th><td>oldest first</td><td>Oracle sorts newest first</td></tr>
 <tr><th scope="row"><code>patient</code> on a search</th><td>not required</td><td>Oracle requires it for Observation</td></tr>
 <tr><th scope="row">authorization</th><td>none, no SMART scopes</td><td>SMART App Launch scopes</td></tr>
-<tr><th scope="row">US Core parameters</th><td>Condition clinical-status, MedicationRequest intent and authoredon, and <code>_include</code> are missing</td><td>US Core 9.0.0 requires them</td></tr>
-<tr><th scope="row">withdrawing a write</th><td>no path to revoke the agent's own ServiceRequest, Task or note</td><td>R4 <code>revoked</code> and <code>entered-in-error</code></td></tr>
+<tr><th scope="row">US Core parameters</th><td>Condition clinical-status, MedicationRequest intent and authoredon, and <code>_include</code> are missing</td><td>US Core <span class="nw">9.0.0</span> requires them</td></tr>
+<tr><th scope="row">withdrawing a write</th><td>no path to revoke the agent's own ServiceRequest, Task or note</td><td><span class="nw">R4</span> <code>revoked</code> and <code>entered-in-error</code></td></tr>
 <tr><th scope="row">order to appointment</th><td>the order carries the link in <code>ServiceRequest.supportingInfo</code></td><td>often <code>Appointment.basedOn</code></td></tr>
 <tr><th scope="row">unknown tool</th><td>a tool result that says so</td><td>a JSON-RPC error</td></tr>
-<tr><th scope="row">tool metadata</th><td>no <code>title</code>, <code>annotations</code> or <code>outputSchema</code></td><td>MCP annotations since the 2025-03-26 specification</td></tr>
+<tr><th scope="row">tool metadata</th><td>no <code>title</code>, <code>annotations</code> or <code>outputSchema</code></td><td>MCP annotations since the <span class="nw">2025-03-26</span> specification</td></tr>
 <tr><th scope="row">result size</th><td>a cap on each tool result, for cost</td><td>a larger default in agent harnesses</td></tr>
 <tr><th scope="row">formulas</th><td><code>calculate</code> has no clinical formulas, so a renal dose needs recalled formulas</td><td>a clinical calculator in the EHR</td></tr>
 </tbody>
@@ -417,26 +418,26 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/80-ehr.md:21">Two more facts of the setting matter to the model. The clock of the world is pinned, so every trial starts at the same moment. Arrivals during a trial carry a stamp later than every seed record, and their inbox items take a distinct id form. The policy of each task says to review anything that arrived after the start, so noticing an arrival is the behaviour asked for.</p>
 <h2 id="audit-against-research-and-public-environments" data-src="docs/writeup/85-audit.md:1">Audit against research and public environments</h2>
 <p data-src="docs/writeup/85-audit.md:3">Three statements about the judge hold throughout. The judge never gates: gates are code-only checks, and a judged rubric item changes the score alone. Judge calibration measures stability on authored answers, re-asked live, and not agreement with clinicians. The judge is the same model as the agent, claude-opus-5-5.</p>
-<p data-src="docs/writeup/85-audit.md:5">The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Each trap has a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.</p>
+<p data-src="docs/writeup/85-audit.md:5">The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Among the clinical systems compared, only this one gives each trap a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.</p>
 <h3 id="clinical-agent-benchmarks" data-src="docs/writeup/85-audit.md:7">Clinical agent benchmarks</h3>
 <!-- docs-check:allow-numbers published results of other benchmarks, each with its source and date -->
 <div class="table-wrap">
 <table data-src="docs/writeup/85-audit.md:11">
 <thead><tr><th scope="col">benchmark</th><th scope="col">date</th><th scope="col">what the agent does</th><th scope="col">grading</th><th scope="col">reported result</th></tr></thead>
 <tbody>
-<tr><th scope="row">PhysicianBench</th><td>2026-05-04</td><td>100 long consult workflows, about 27 tool calls each, FHIR writes plus a note</td><td>670 checkpoints: code, hybrid and LLM-judged; LLM-judged checkpoints are part of task completion</td><td>at effort high: GPT-5.5 46.3%, Opus 4.6 31.7%, Opus 4.7 29.3%; the Sonnet 5.5 system card gives Opus 5.5 68.4% at max effort</td></tr>
-<tr><th scope="row">HealthAgentBench</th><td>2026-06-30</td><td>54 tasks across imaging, pathology, trials, EHR and MEDS</td><td>binary success against hidden labels</td><td>best about 42%</td></tr>
-<tr><th scope="row">MedAgentBench</th><td>2025-02-12</td><td>300 mostly single-lookup or single-order FHIR tasks</td><td>task-specific checks</td><td>Claude 3.5 Sonnet v2 69.67%, later saturated</td></tr>
-<tr><th scope="row">FHIR-AgentBench</th><td>2025-11-13</td><td>2,931 read-only questions over MIMIC-IV-FHIR</td><td>answer correctness</td><td>best baseline 50%</td></tr>
-<tr><th scope="row">FHIR-AgentEval</th><td>2026-02-09</td><td>43 appointment and genetic-testing tasks, 23 with writes</td><td>ids for queries; the write validator checks field existence only</td><td>GPT-4.1 mini 60.6%</td></tr>
-<tr><th scope="row">HealthAdminBench</th><td>2026-04-10</td><td>135 GUI admin tasks across an EHR, payer portals and fax</td><td>1,698 verifiable subtasks</td><td>Opus 4.6 36.3% end to end</td></tr>
-<tr><th scope="row">ClinEnv</th><td>2026-06-01</td><td>multi-stage admissions that commit to orders and diagnoses</td><td>ontology-grounded matching</td><td>best decision F1 0.31</td></tr>
-<tr><th scope="row">CliniCARE-Bench</th><td>2026-08-07</td><td>750 EHR audits with retrieval, computation and policy-access tools</td><td>four-way verdict, defect-free accuracy</td><td>65.3% to 76.1%</td></tr>
-<tr><th scope="row">CHI-Bench</th><td>2026-09-30</td><td>hospital workflows over a 1,290-document handbook and 87 MCP tools</td><td>task success, strict pass^3</td><td>best agent under 20% at pass^3</td></tr>
-<tr><th scope="row">EHR-RobustGym</th><td>2026-09-30</td><td>clean and noisy database question pairs</td><td>task success</td><td>62.2% clean against 37.9% noisy</td></tr>
-<tr><th scope="row">MedHarnessBench</th><td>2026-10-11</td><td>342 FHIR, admin and multimodal tasks with single-fault perturbations</td><td>outcome plus seven process dimensions</td><td>abstract only</td></tr>
-<tr><th scope="row">MedicalHarness</th><td>2026-10-05</td><td>one benchmark run under several harnesses</td><td>variance decomposition</td><td>about a quarter of the variance from the harness and its interaction with the model</td></tr>
-<tr><th scope="row">Terminal-Bench 2.0</th><td>2026-01-17</td><td>89 kept tasks from 229 candidates</td><td>oracle, tests, an exploit agent</td><td>human &quot;medium&quot; read as hard 54.5% of the time</td></tr>
+<tr><th scope="row">PhysicianBench</th><td><span class="nw">2026-05-04</span></td><td><span class="nw">100</span> long consult workflows, about <span class="nw">27</span> tool calls each, FHIR writes plus a note</td><td><span class="nw">670</span> checkpoints: code, hybrid and LLM-judged; LLM-judged checkpoints are part of task completion</td><td>at effort high: <span class="nw">GPT-5.5</span> <span class="nw">46.3%,</span> Opus <span class="nw">4.6</span> <span class="nw">31.7%,</span> Opus <span class="nw">4.7</span> <span class="nw">29.3%;</span> the Sonnet <span class="nw">5.5</span> system card gives Opus <span class="nw">5.5</span> <span class="nw">68.4%</span> at max effort</td></tr>
+<tr><th scope="row">HealthAgentBench</th><td><span class="nw">2026-06-30</span></td><td><span class="nw">54</span> tasks across imaging, pathology, trials, EHR and MEDS</td><td>binary success against hidden labels</td><td>best about <span class="nw">42%</span></td></tr>
+<tr><th scope="row">MedAgentBench</th><td><span class="nw">2025-02-12</span></td><td><span class="nw">300</span> mostly single-lookup or single-order FHIR tasks</td><td>task-specific checks</td><td>Claude <span class="nw">3.5</span> Sonnet <span class="nw">v2</span> <span class="nw">69.67%,</span> later saturated</td></tr>
+<tr><th scope="row">FHIR-AgentBench</th><td><span class="nw">2025-11-13</span></td><td><span class="nw">2,931</span> read-only questions over MIMIC-IV-FHIR</td><td>answer correctness</td><td>best baseline <span class="nw">50%</span></td></tr>
+<tr><th scope="row">FHIR-AgentEval</th><td><span class="nw">2026-02-09</span></td><td><span class="nw">43</span> appointment and genetic-testing tasks, <span class="nw">23</span> with writes</td><td>ids for queries; the write validator checks field existence only</td><td><span class="nw">GPT-4.1</span> mini <span class="nw">60.6%</span></td></tr>
+<tr><th scope="row">HealthAdminBench</th><td><span class="nw">2026-04-10</span></td><td><span class="nw">135</span> GUI admin tasks across an EHR, payer portals and fax</td><td><span class="nw">1,698</span> verifiable subtasks</td><td>Opus <span class="nw">4.6</span> <span class="nw">36.3%</span> end to end</td></tr>
+<tr><th scope="row">ClinEnv</th><td><span class="nw">2026-06-01</span></td><td>multi-stage admissions that commit to orders and diagnoses</td><td>ontology-grounded matching</td><td>best decision <span class="nw">F1</span> <span class="nw">0.31</span></td></tr>
+<tr><th scope="row">CliniCARE-Bench</th><td><span class="nw">2026-08-07</span></td><td><span class="nw">750</span> EHR audits with retrieval, computation and policy-access tools</td><td>four-way verdict, defect-free accuracy</td><td><span class="nw">65.3%</span> to <span class="nw">76.1%</span></td></tr>
+<tr><th scope="row">CHI-Bench</th><td><span class="nw">2026-09-30</span></td><td>hospital workflows over a <span class="nw">1,290-document</span> handbook and <span class="nw">87</span> MCP tools</td><td>task success, strict <span class="nw">pass^3</span></td><td>best agent under <span class="nw">20%</span> at <span class="nw">pass^3</span></td></tr>
+<tr><th scope="row">EHR-RobustGym</th><td><span class="nw">2026-09-30</span></td><td>clean and noisy database question pairs</td><td>task success</td><td><span class="nw">62.2%</span> clean against <span class="nw">37.9%</span> noisy</td></tr>
+<tr><th scope="row">MedHarnessBench</th><td><span class="nw">2026-10-11</span></td><td><span class="nw">342</span> FHIR, admin and multimodal tasks with single-fault perturbations</td><td>outcome plus seven process dimensions</td><td>abstract only</td></tr>
+<tr><th scope="row">MedicalHarness</th><td><span class="nw">2026-10-05</span></td><td>one benchmark run under several harnesses</td><td>variance decomposition</td><td>about a quarter of the variance from the harness and its interaction with the model</td></tr>
+<tr><th scope="row">Terminal-Bench <span class="nw">2.0</span></th><td><span class="nw">2026-01-17</span></td><td><span class="nw">89</span> kept tasks from <span class="nw">229</span> candidates</td><td>oracle, tests, an exploit agent</td><td>human &quot;medium&quot; read as hard <span class="nw">54.5%</span> of the time</td></tr>
 </tbody>
 </table>
 </div>
@@ -448,13 +449,13 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <table data-src="docs/writeup/85-audit.md:35">
 <thead><tr><th scope="col">repository</th><th scope="col">release (date)</th><th scope="col">task layout (instruction, tests, solution)</th><th scope="col">tool interface</th><th scope="col">grader</th><th scope="col">repeatable state</th></tr></thead>
 <tbody>
-<tr><th scope="row">this environment, <a href="https://github.com/wth-lg/clinical-agent-env">clinical-agent-env</a></th><td>no release; last main commit ad740dae (2026-11-04)</td><td><code>tasks/&lt;id&gt;/</code>: <code>instruction.md</code>, <code>task.toml</code>, <code>policy/*.md</code>, <code>expected.ts</code>, <code>events.ts</code>, <code>solution/solve.ts</code>, <code>tests/grader.ts</code>, <code>tests/rubric.ts</code>, <code>tests/mutants.ts</code>, <code>tests/alternatives.ts</code>; six tasks</td><td>eighteen typed in-process tools over an in-memory FHIR R4 store, sent as MCP-shaped definitions; no MCP server</td><td>code gates decide pass or fail; a rubric with code, hybrid and judged items gives the score; attribution labels; a mutant and alternative matrix</td><td>a fresh store from a hashed world, a fixed clock, a pinned Synthea generator; task and environment versions are content hashes</td></tr>
-<tr><th scope="row"><a href="https://github.com/harbor-framework/harbor">Harbor</a> and Terminal-Bench 2.0</th><td>v0.25.0 (2026-10-25)</td><td>a task directory with <code>instruction.md</code>, <code>task.toml</code>, <code>environment/</code>, <code>solution/solve.sh</code>, <code>tests/test.sh</code>; Terminal-Bench 2.0 has 89 tasks</td><td>the agent's own tools over container primitives; an optional per-task MCP server list, empty in every Terminal-Bench 2.0 task</td><td><code>test.sh</code> writes a reward; Terminal-Bench 2.0 grades the final container state with no LLM judge</td><td>a fresh container per trial; images pinned by date tag; verification installs packages over the network</td></tr>
-<tr><th scope="row"><a href="https://github.com/sierra-research/tau2-bench">tau2-bench</a></th><td>v2.0.0 (2026-10-20)</td><td>per-domain data: policy, database, <code>tasks.json</code>, splits; a task holds the user scenario, the initial state and the evaluation criteria</td><td>in-process Python toolkits sent as function-calling schemas; a simulated user with its own tools; no MCP</td><td>the product of a database hash, assertions, deterministic actions, and LLM-judged communication and natural-language assertions</td><td>a database rebuilt fresh; the gold state replays the reference actions; the simulated user and the judges stay stochastic</td></tr>
-<tr><th scope="row"><a href="https://github.com/stanfordmlgroup/MedAgentBench">MedAgentBench</a></th><td>no release; last commit 99260117 (2025-11-21)</td><td>one JSON file of 300 tasks; the reference graders are a separate download</td><td>plain-text GET, POST and FINISH actions; v2 uses function tools that write to a HAPI server; no MCP</td><td>deterministic Python per category, by exact match or a live FHIR recompute; writes graded from the transcript</td><td>a prebuilt HAPI image tagged latest; the original never mutates the server; v2 has no reset</td></tr>
-<tr><th scope="row"><a href="https://github.com/actava-ai/chi-bench">CHI-Bench</a></th><td>no release; last commit 7998d113 (2026-10-26); dataset tag chi-bench-v1.0.0 (2026-05-21)</td><td>Harbor-format task directories: 75 single-domain, 23 end-to-end, 3 marathon; fixtures hold judge rubrics and documents</td><td>MCP: three role-scoped servers with 87 tools over a simulator of 20 applications</td><td>a Claude Code judge writes per-rubric verdicts beside deterministic stage checks; a malformed judge output voids the trial</td><td>separate agent and trusted containers; state exported after tool calls drain; the judge stays stochastic</td></tr>
-<tr><th scope="row"><a href="https://github.com/openenv/OpenEnv">OpenEnv</a></th><td>v0.12.0 (2026-11-05)</td><td>no fixed layout: an Environment class with reset, step and state, served over HTTP or WebSocket</td><td>MCP built in, one endpoint per environment</td><td>server-side rubrics, deterministic by default, with an optional LLM judge</td><td>a container per environment with a seeded reset; the framework does not enforce determinism</td></tr>
-<tr><th scope="row"><a href="https://github.com/YoussefMkst/FHIR-AgentEval">FHIR-AgentEval</a></th><td>no release; last commit 8686a84c (2026-10-26)</td><td>48 Python task modules with templated prompts, a validator and a scripted human agent</td><td>MCP: a FHIR CRUD server against HAPI, with optional lookup and memory servers</td><td>deterministic checks on the HAPI state, the response and the tool-call sequence; an optional LLM audit of the validator that does not score</td><td>a HAPI image tagged latest with a persistent volume; each task seeds and cleans its resource types</td></tr>
+<tr><th scope="row">this environment, <a href="https://github.com/wth-lg/clinical-agent-env">clinical-agent-env</a></th><td>no release; last main commit <span class="nw">ad740dae</span> <span class="nw">(2026-11-04)</span></td><td><code>tasks/&lt;id&gt;/</code>: <code>instruction.md</code>, <code>task.toml</code>, <code>policy/*.md</code>, <code>expected.ts</code>, <code>events.ts</code>, <code>solution/solve.ts</code>, <code>tests/grader.ts</code>, <code>tests/rubric.ts</code>, <code>tests/mutants.ts</code>, <code>tests/alternatives.ts</code>; six tasks</td><td>eighteen typed in-process tools over an in-memory FHIR <span class="nw">R4</span> store, sent as MCP-shaped definitions; no MCP server</td><td>code gates decide pass or fail; a rubric with code, hybrid and judged items gives the score; attribution labels; a mutant and alternative matrix</td><td>a fresh store from a hashed world, a fixed clock, a pinned Synthea generator; task and environment versions are content hashes</td></tr>
+<tr><th scope="row"><a href="https://github.com/harbor-framework/harbor">Harbor</a> and Terminal-Bench <span class="nw">2.0</span></th><td><span class="nw">v0.25.0</span> <span class="nw">(2026-10-25)</span></td><td>a task directory with <code>instruction.md</code>, <code>task.toml</code>, <code>environment/</code>, <code>solution/solve.sh</code>, <code>tests/test.sh</code>; Terminal-Bench <span class="nw">2.0</span> has <span class="nw">89</span> tasks</td><td>the agent's own tools over container primitives; an optional per-task MCP server list, empty in every Terminal-Bench <span class="nw">2.0</span> task</td><td><code>test.sh</code> writes a reward; Terminal-Bench <span class="nw">2.0</span> grades the final container state with no LLM judge</td><td>a fresh container per trial; images pinned by date tag; verification installs packages over the network</td></tr>
+<tr><th scope="row"><a href="https://github.com/sierra-research/tau2-bench"><span class="nw">tau2-bench</span></a></th><td><span class="nw">v2.0.0</span> <span class="nw">(2026-10-20)</span></td><td>per-domain data: policy, database, <code>tasks.json</code>, splits; a task holds the user scenario, the initial state and the evaluation criteria</td><td>in-process Python toolkits sent as function-calling schemas; a simulated user with its own tools; no MCP</td><td>the product of a database hash, assertions, deterministic actions, and LLM-judged communication and natural-language assertions</td><td>a database rebuilt fresh; the gold state replays the reference actions; the simulated user and the judges stay stochastic</td></tr>
+<tr><th scope="row"><a href="https://github.com/stanfordmlgroup/MedAgentBench">MedAgentBench</a></th><td>no release; last commit <span class="nw">99260117</span> <span class="nw">(2025-11-21)</span></td><td>one JSON file of <span class="nw">300</span> tasks; the reference graders are a separate download</td><td>plain-text GET, POST and FINISH actions; <span class="nw">v2</span> uses function tools that write to a HAPI server; no MCP</td><td>deterministic Python per category, by exact match or a live FHIR recompute; writes graded from the transcript</td><td>a prebuilt HAPI image tagged latest; the original never mutates the server; <span class="nw">v2</span> has no reset</td></tr>
+<tr><th scope="row"><a href="https://github.com/actava-ai/chi-bench">CHI-Bench</a></th><td>no release; last commit <span class="nw">7998d113</span> <span class="nw">(2026-10-26);</span> dataset tag <span class="nw">chi-bench-v1.0.0</span> <span class="nw">(2026-05-21)</span></td><td>Harbor-format task directories: <span class="nw">75</span> single-domain, <span class="nw">23</span> end-to-end, <span class="nw">3</span> marathon; fixtures hold judge rubrics and documents</td><td>MCP: three role-scoped servers with <span class="nw">87</span> tools over a simulator of <span class="nw">20</span> applications</td><td>a Claude Code judge writes per-rubric verdicts beside deterministic stage checks; a malformed judge output voids the trial</td><td>separate agent and trusted containers; state exported after tool calls drain; the judge stays stochastic</td></tr>
+<tr><th scope="row"><a href="https://github.com/openenv/OpenEnv">OpenEnv</a></th><td><span class="nw">v0.12.0</span> <span class="nw">(2026-11-05)</span></td><td>no fixed layout: an Environment class with reset, step and state, served over HTTP or WebSocket</td><td>MCP built in, one endpoint per environment</td><td>server-side rubrics, deterministic by default, with an optional LLM judge</td><td>a container per environment with a seeded reset; the framework does not enforce determinism</td></tr>
+<tr><th scope="row"><a href="https://github.com/YoussefMkst/FHIR-AgentEval">FHIR-AgentEval</a></th><td>no release; last commit <span class="nw">8686a84c</span> <span class="nw">(2026-10-26)</span></td><td><span class="nw">48</span> Python task modules with templated prompts, a validator and a scripted human agent</td><td>MCP: a FHIR CRUD server against HAPI, with optional lookup and memory servers</td><td>deterministic checks on the HAPI state, the response and the tool-call sequence; an optional LLM audit of the validator that does not score</td><td>a HAPI image tagged latest with a persistent volume; each task seeds and cleans its resource types</td></tr>
 </tbody>
 </table>
 </div>
@@ -465,7 +466,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <li data-src="docs/writeup/85-audit.md:49">Among the clinical systems, it is the only one where every task ships mutants that must fail and alternatives that must pass. The matrix checks them before any trial.</li>
 <li data-src="docs/writeup/85-audit.md:50">It runs without a container and without a live FHIR server. Every clinical comparator depends on a HAPI image or containers, and those HAPI images are tagged latest.</li>
 <li data-src="docs/writeup/85-audit.md:51">Its judged rubric items need a verbatim quote and are cached for offline regrading, and pass or fail is decided by code gates alone. CHI-Bench's pass depends on its judge.</li>
-<li data-src="docs/writeup/85-audit.md:52">Its scope is primary care and pharmacy operations under written clinic policies, which none of the comparators covers.</li>
+<li data-src="docs/writeup/85-audit.md:52">Its scope is primary care and pharmacy operations under written clinic policies, which differs from the scope of MedAgentBench, CHI-Bench and FHIR-AgentEval.</li>
 </ul>
 <p data-src="docs/writeup/85-audit.md:54">What it does not claim:</p>
 <ul data-src="docs/writeup/85-audit.md:56">

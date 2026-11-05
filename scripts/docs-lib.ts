@@ -136,6 +136,13 @@ export function proseInline(text: string): string {
   }).join('');
 }
 
+// Inside a table cell, every token that holds a digit (a date, a version, a k/n, a trial id, a
+// hash) and every bracketed interval sits in <span class="nw">, which the page styles
+// white-space: nowrap, so a browser never breaks it at a hyphen, a slash or a dot (verifier
+// P24A-227-3 F1). Tags are left alone, so an href never changes.
+export const nowrapNumbers = (html: string): string =>
+  html.split(/(<[^>]+>)/).map((part, i) => (i % 2 === 1 ? part : part.replace(/\[[^\]<>]*\d[^\]<>]*\]|\S*\d\S*/g, (m) => `<span class="nw">${m}</span>`))).join('');
+
 export const slug = (text: string) => text.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // Blocks to HTML. A markdown heading of level n becomes h(n + shift); the writeup's sections
@@ -155,7 +162,7 @@ export function renderBlocks(blocks: readonly Block[], file: string, shift = 1):
       case 'code':
         return `<pre${src(b.line)}><code>${escapeHtml(b.text)}</code></pre>`;
       case 'table':
-        return `<div class="table-wrap">\n<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${renderInline(c)}</th>` : `<td>${renderInline(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
+        return `<div class="table-wrap">\n<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${nowrapNumbers(renderInline(c))}</th>` : `<td>${nowrapNumbers(renderInline(c))}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
       case 'html':
         return b.text;
     }
