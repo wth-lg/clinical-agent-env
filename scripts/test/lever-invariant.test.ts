@@ -1,7 +1,7 @@
 // The W5 lever invariant (the #215 gate, F1; plan-amendment-w5 Correction 3(b)): a LEVER toggle
 // moves no world id outside its own item's added-Patient block. One harness, run over every task
 // whose expected.ts exports LEVER_ITEMS: with the task's lever.ts mocked to each state (every
-// subset of the declared items, the committed LEVER first, so a record that depends on a
+// subset of the declared items, the committed LEVER's items first, so a record that depends on a
 // combination of items is built too; at most three items, eight builds), the world fixtures:build
 // assembles (scripts/fixtures-build.ts assembleWorld, every overlay, the overlays' edits returned
 // with it) is built per state, and from those builds:
@@ -13,9 +13,13 @@
 //   (b) the world differs between any two states only in the toggled items' own blocks: every
 //       registry key present in both states keeps its world id, every other task's registry and
 //       the cohort's map (synthea) are identical. Reported per pair of states.
-// A task exporting an empty LEVER_ITEMS is refused (the loop would pass it vacuously). On main today
-// no task exports LEVER_ITEMS, so the loop over this checkout's tasks is vacuous: it binds once the
-// W5-E branches land. The same harness (the task scan, the lever.ts mock, assembleWorld with the
+// A task exporting an empty LEVER_ITEMS is refused (the loop would pass it vacuously), and so is a
+// LEVER naming an id no item has or naming one twice, or a LEVER_ITEMS declaring an id twice
+// (SLOTS2-217 F2: the committed state is then the committed LEVER itself, in the items' order, and
+// no build repeats; the matrix's leverDeclarations refuses the same). The four W5 lever tasks
+// (renal-dose-review, results-inbox, discharge-medrec, message-queue) export LEVER_ITEMS, so the
+// loop over this checkout's tasks builds each of them per state. The same harness (the task scan,
+// the lever.ts mock, assembleWorld with the
 // tasks root pointed at a temporary task directory) runs here on a synthetic lever task: `good`
 // passes; `omit` (no lever list) fails (a); `late` (an undeclared cohort resource that sorts last
 // in its type, so no other id moves) passes (b) and fails (a), which is why (a) carries the rule;
@@ -67,11 +71,25 @@ export async function leverTasks(root: string): Promise<LeverTask[]> {
     if (mod.LEVER_ITEMS === undefined) continue;
     if (mod.LEVER_ITEMS.length === 0) throw new Error(`${id}: LEVER_ITEMS is empty; a task with no lever item does not export it (the invariant would hold vacuously)`);
     if (!existsSync(join(dir, 'lever.ts'))) throw new Error(`${id} declares LEVER_ITEMS: its LEVER must live in lever.ts (the file this test mocks per state)`);
-    out.push({ id, dir, items: mod.LEVER_ITEMS.map((i) => i.id), lever: [...(mod.LEVER ?? [])] });
+    const items = mod.LEVER_ITEMS.map((i) => i.id);
+    const lever = [...(mod.LEVER ?? [])];
+    // The committed LEVER must be a set of the items (SLOTS2-217 F2): a stale id would never be
+    // built, a repeated one would repeat a build, and leverStates would pass a LEVER the matrix
+    // refuses.
+    const twice = (xs: readonly string[]) => xs.find((x, i) => xs.indexOf(x) !== i);
+    const dupItem = twice(items);
+    if (dupItem !== undefined) throw new Error(`${id}: lever item ${dupItem} is declared twice`);
+    const stale = lever.find((x) => !items.includes(x));
+    if (stale !== undefined) throw new Error(`${id}: LEVER names ${stale}, which no lever item has (the items are ${items.join(', ')})`);
+    const dupLever = twice(lever);
+    if (dupLever !== undefined) throw new Error(`${id}: LEVER names ${dupLever} twice`);
+    out.push({ id, dir, items, lever });
   }
   return out;
 }
-// Every state of a task's items (each subset, in the items' order), the committed LEVER first.
+// Every state of a task's items (each subset, in the items' order), the committed LEVER's items
+// first: leverTasks has refused a LEVER outside the items, so that state is the committed LEVER
+// itself, in the items' order.
 export function leverStates(items: readonly string[], lever: readonly string[]): string[][] {
   const committed = items.filter((i) => lever.includes(i));
   const all: string[][] = [];
@@ -126,13 +144,14 @@ const clean = (items: readonly string[], lever: readonly string[]): Findings => 
 // last in its type (the cohort's two are on pt-0011 and pt-0020), undeclared; `typo` lists a key
 // the overlay never puts; `combo` declares two items, A (adding nothing) and B, committed ['A'],
 // and puts an undeclared result on pt-0045 only with A off and B on; `empty` exports no item.
-type Variant = 'good' | 'omit' | 'late' | 'typo' | 'combo' | 'empty';
+type Variant = 'good' | 'omit' | 'late' | 'typo' | 'combo' | 'empty' | 'stale' | 'dup' | 'dupitem';
 const ENV = join(repo, 'packages', 'env');
 function plant(root: string, variant: Variant): string {
   const dir = join(root, 'tasks', 'lever-fixture');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'lever.ts'), variant === 'combo' ? "export const LEVER = ['A'];\n" : "export const LEVER = ['B'];\n");
-  const items = variant === 'empty' ? '' : variant === 'combo' ? "{ id: 'A', kind: 'A', item: 'dose' }, { id: 'B', kind: 'B', item: 'host' }" : "{ id: 'B', kind: 'B', item: 'host' }";
+  const lever_ = variant === 'combo' ? ['A'] : variant === 'stale' ? ['B', 'X'] : variant === 'dup' ? ['B', 'B'] : ['B'];
+  writeFileSync(join(dir, 'lever.ts'), `export const LEVER = [${lever_.map((i) => `'${i}'`).join(', ')}];\n`);
+  const items = variant === 'empty' ? '' : variant === 'combo' ? "{ id: 'A', kind: 'A', item: 'dose' }, { id: 'B', kind: 'B', item: 'host' }" : variant === 'dupitem' ? "{ id: 'B', kind: 'B', item: 'host' }, { id: 'B', kind: 'B', item: 'host' }" : "{ id: 'B', kind: 'B', item: 'host' }";
   writeFileSync(join(dir, 'expected.ts'), `export { LEVER } from './lever.ts';\nexport const LEVER_ITEMS = [${items}];\n`);
   const lever = variant === 'omit' ? '' : variant === 'typo' ? "lever: ['pt-t1-host', 'obs-t1-hots']," : "lever: ['pt-t1-host', 'obs-t1-host-cr'],";
   const late = variant === 'late' ? "put.push({ resourceType: 'EpisodeOfCare', id: 'eoc-t1-late', status: 'active', patient: { reference: 'Patient/pt-0045' }, period: { start: '2026-10-01T09:00:00-04:00' } } as Resource);" : '';
@@ -216,9 +235,26 @@ describe('the lever invariant harness on a synthetic lever task (the real loops,
     const { root } = fixture('empty');
     await expect(leverTasks(root)).rejects.toThrow(/LEVER_ITEMS is empty/);
   });
+
+  // SLOTS2-217 F2: the harness once built LEVER intersected with the items, so a LEVER naming an
+  // id no item has was never built as committed, and a repeated id repeated a build (Q1, Q4).
+  it('refuses a LEVER that names an id no lever item has', { timeout: 300_000 }, async () => {
+    const { root } = fixture('stale');
+    await expect(leverTasks(root)).rejects.toThrow(/lever-fixture: LEVER names X, which no lever item has \(the items are B\)/);
+  });
+
+  it('refuses a LEVER that names an item twice', { timeout: 300_000 }, async () => {
+    const { root } = fixture('dup');
+    await expect(leverTasks(root)).rejects.toThrow(/lever-fixture: LEVER names B twice/);
+  });
+
+  it('refuses a task whose LEVER_ITEMS declares an id twice', { timeout: 300_000 }, async () => {
+    const { root } = fixture('dupitem');
+    await expect(leverTasks(root)).rejects.toThrow(/lever-fixture: lever item B is declared twice/);
+  });
 });
 
-describe("the lever invariant over this checkout's lever tasks (vacuous until a task exports LEVER_ITEMS)", () => {
+describe("the lever invariant over this checkout's lever tasks (the four W5 tasks; vacuous while none exports LEVER_ITEMS)", () => {
   it('(a) every lever task lists every key its states add and no key it never puts, no state changes its removals; (b) no two states differ in a world id outside the toggled items\' blocks', { timeout: 3_600_000 }, async () => {
     const tasks = await leverTasks(repo);
     for (const t of tasks) {

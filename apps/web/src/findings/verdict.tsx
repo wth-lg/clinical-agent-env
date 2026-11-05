@@ -9,6 +9,7 @@
 import { bandVerdict } from '../../../../packages/core/summary.ts';
 import { officialRunLabel, verdictLabel } from '../overview/band.ts';
 import { noPassCount, runBlock } from '../data/failures.ts';
+import { useTaskList } from '../data/tasks.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { Card, GlossaryLink, LINK } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -36,14 +37,16 @@ function ratesOf(run: RunData): Record<string, { passes: number; trials: number 
   return Object.fromEntries(pilotRates(run).map((r) => [r.task, { passes: r.passes, trials: r.valid }]));
 }
 
-// A run's column heading: the official run's label, a superseded version's task and version (R42).
-const columnLabel = (run: RunData): string => (run.superseded !== null ? `${run.runId} (${run.superseded.task} ${run.superseded.version}, superseded)` : `${run.runId}${run.official && run.summary !== null ? ` ${officialRunLabel(run.summary.tasks)}` : ''}`);
+// A run's column heading: the official run's label (all: the task list, or null while it loads),
+// a superseded version's task and version (R42).
+const columnLabel = (run: RunData, all: readonly string[] | null): string => (run.superseded !== null ? `${run.runId} (${run.superseded.task} ${run.superseded.version}, superseded)` : `${run.runId}${run.official && run.summary !== null ? ` ${officialRunLabel(run.summary.tasks, all)}` : ''}`);
 
 // One row per task, one column per run, oldest first (the pilots by number, then each superseded
 // task version beside the official run that replaced it, then the official run, "(final)" only
-// once every task in it has the final sample, else "(official, in progress)"): k/n and the verdict
-// in each cell.
+// once it covers every task of the environment (the task list, as the band line) at the final
+// sample, else "(official, in progress)"): k/n and the verdict in each cell.
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
+  const list = useTaskList().tasks;
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
   const tasks = [...new Set(cols.flatMap((c) => Object.keys(c.rates ?? {})))].sort();
   if (runs.length === 0 || tasks.length === 0) return null;
@@ -56,7 +59,7 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
           <thead className="text-xs text-ink-muted">
             <tr>
               <th scope="col" className="py-1 pr-3 font-medium">Task</th>
-              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run" data-superseded={c.run.superseded === null ? undefined : `${c.run.superseded.task} ${c.run.superseded.version}`}>{columnLabel(c.run)}</th>)}
+              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run" data-superseded={c.run.superseded === null ? undefined : `${c.run.superseded.task} ${c.run.superseded.version}`}>{columnLabel(c.run, list === null ? null : list.map((t) => t.id))}</th>)}
             </tr>
           </thead>
           <tbody>

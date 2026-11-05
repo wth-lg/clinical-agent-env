@@ -2,7 +2,8 @@
 // message-queue 20/20, discharge-medrec 16/20, contrast-ct-prep 10/20, and a pilot of 8 each):
 // Overview and Findings give each task's verdict as text beside its Wilson interval, equal to
 // summary.json's band_verdict and to bandVerdict; Findings lists the task with no failures with a link
-// to its strictness evidence and gives the difficulty history, pilot first; the glossary gives the
+// to its strictness evidence and gives the difficulty history, pilot first, the official column
+// "(official, in progress)" since three tasks of six are not a full run; the glossary gives the
 // rule. At 390 px and on the desktop the verdict is visible text inside the viewport and the page
 // does not scroll sideways; axe finds nothing serious or critical, light and dark.
 import AxeBuilder from '@axe-core/playwright';
@@ -60,8 +61,10 @@ for (const size of SIZES) {
     await expect(clean).toHaveAttribute('data-task', 'message-queue');
     await expect(clean.getByTestId('no-failures-text')).toHaveText('No failures in 20 trials.');
     const history = page.getByTestId('difficulty-history');
-    // R42: the superseded version of contrast-ct-prep is a column beside the official run.
-    await expect(history.getByTestId('history-run')).toHaveText([PILOT_ID, `${SUPERSEDED_KEY} (contrast-ct-prep v1, superseded)`, `${RUN_ID} (final)`]);
+    // R42: the superseded version of contrast-ct-prep is a column beside the official run. band-1
+    // holds 20 valid trials of three tasks, but the environment has six: the official column is
+    // "(official, in progress)" until a run covers every task at the final sample (UIBAND-219-4 M1).
+    await expect(history.getByTestId('history-run')).toHaveText([PILOT_ID, `${SUPERSEDED_KEY} (contrast-ct-prep v1, superseded)`, `${RUN_ID} (official, in progress)`]);
     for (const id of Object.keys(WANT)) {
       const cells = history.locator(`[data-testid="history-row"][data-task="${id}"] [data-testid="history-cell"]`);
       const p = PILOT[id]!;
