@@ -49,8 +49,8 @@ function orderBeforeRead(active: readonly string[]): Mutant {
     why: "Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.",
     // With the correction of his potassium active, the order fires it before any read, and the
     // corrected record is read after: a seen-late decision, process (R38(e)); its note, written in
-    // the turn after the correction arrived, still calls the specimen hemolyzed, which contradicts
-    // the result as delivered (note_contradicts_result, the header).
+    // the turn after that read showed the corrected record, still calls the specimen hemolyzed,
+    // which contradicts the result as delivered (note_contradicts_result, the header).
     fails: ['result_seen_before_action', 'seen_before_change'],
     loses: amendsOn(active, 'hemolyzed_note').length > 0 ? ['note_contradicts_result'] : [],
     items: { hemolyzed_note: 'process' },
@@ -66,13 +66,16 @@ function orderBeforeRead(active: readonly string[]): Mutant {
 const amendsOn = (active: readonly string[], item: string) => SPECS.filter((s) => active.includes(s.id) && s.item === item && AMEND_CLASSES.has(s.class)).map((s) => s.id);
 
 // note_contradicts_result (rubric.ts) penalizes a note that states the first report as current
-// after the arrival: once an amend event has arrived each note is headed with whether it was written
-// before or after it, and a note written before may state the first report. So a near miss that
-// keeps its stale decision after reading the arrival, writing no note after it, loses nothing here
-// (it fails the amended gate), and the routes whose stale note lands in the turn after the
-// correction arrived because their first write fired it, hemolyzed_note_order_before_read here and
-// the alternative hemolyzed_note_message_before_read, lose it (verifier-phase-P17i-W5T-224-1 S2;
-// the judge's three live answers of three in the W5-T follow-up, builder-300).
+// after the arrival was seen: once an amend event has arrived each note is headed with whether it
+// was written before or after the arrival, by exposure (R43: after only when the note's turn is
+// later than the turn of the step that first showed the arrival), and a note written before may
+// state the first report. So a near miss that keeps its stale decision after reading the arrival,
+// writing no note after it, loses nothing here (it fails the amended gate), a note written in the
+// turn after the write that fired the arrival loses nothing either (the alternatives
+// *_note_after_firing), and the routes whose stale note comes in the turn after the read that
+// showed the corrected record, hemolyzed_note_order_before_read here and the alternative
+// hemolyzed_note_message_before_read, lose it (verifier-phase-P17i-W5T-224-1 S2; the judge's three
+// live answers of three in the W5-T follow-up, builder-300).
 
 // The mutants with `active` the active events (events.ts ACTIVE by default).
 export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {

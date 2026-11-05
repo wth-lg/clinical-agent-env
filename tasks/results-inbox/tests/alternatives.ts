@@ -44,6 +44,15 @@ const swapRead = (from: ScriptCall, to: ScriptCall[]): ScriptTurn[] => readsWith
 
 // Extra calls in their own answer before finish, so the ids the closures link do not move.
 const before = (script: Script, calls: ScriptCall[]): Script => [...script.slice(0, -1), { calls }, script.at(-1)!];
+// The script with its first note on `patient` moved out of its answer into the next one, nothing
+// read between (verifier-phase-P17i-T2RUB-225-1 P1): the answer's first write fires the patient's
+// event, so the note lands in the turn after the arrival fired and before it could be seen.
+function noteDeferred(script: Script, patient: string): Script {
+  const isNote = (c: ScriptCall) => c.name === 'write_note' && c.input.patient === patient;
+  const i = script.findIndex((t) => t.calls.some(isNote));
+  const t = script[i]!;
+  return [...script.slice(0, i), { calls: t.calls.filter((c) => !isNote(c)) }, { calls: t.calls.filter(isNote) }, ...script.slice(i + 1)];
+}
 
 // Walter Brennan messaged about his potassium during the item before his (in nodule_scheduled's
 // answer, so every id keeps its number), and his item's reads moved to just before his own answer.
@@ -216,10 +225,11 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
   },
   // N5 (R23): RBC-INBOX-01 §1 asks for the result to be read before ordering or completing the item,
   // or handing it on, not before messaging the patient; a message that the result is in, sent before the read, passes.
-  // With the correction active, the message fires it before any read, and the route's note, written
-  // in a later turn, still calls the specimen hemolyzed: a note written after the correction arrived
-  // that states the first report as current loses note_contradicts_result (tests/mutants.ts header;
-  // the judge's three live answers of three), a PASS with the -5.
+  // With the correction active, the message fires it before any read, the item's read in the next
+  // turn shows the corrected record, and the route's note, written in the turn after that read,
+  // still calls the specimen hemolyzed: a note written after the correction was seen that states the
+  // first report as current loses note_contradicts_result (tests/mutants.ts header; R43; the judge's
+  // three live answers of three), a PASS with the -5.
   {
     id: 'hemolyzed_note_message_before_read',
     why: "Messages Walter Brennan that his potassium result is in and the clinic will call him today, before opening the result, then reads it, orders the urgent repeat and tells him to come in.",
@@ -315,6 +325,14 @@ function eventAlternatives(active: readonly string[]): Alternative[] {
     if (['patel-ldct-addendum', 'whitfield-cr-new', 'parisian-cta-corrected', 'ondricka-k-new'].includes(s.id)) out.push({ id: `${s.id}_told_by_call`, why: 'Has the RN triage pool phone the patient about the arrival, a task focused on it, instead of a portal message.', script: solve({ recheck: { [s.id]: 'call' } }) });
     // verifier-phase-P17i-W4E3-T2-206-1 S1 (P3): the stat page with nothing in about, placed by the
     // arrival item's closure that links it, as R9 places one a list item's closure links.
+    // R43 (verifier-phase-P17i-T2RUB-225-1 P1, B1): the oracle with the item's note moved into the
+    // answer after the one whose first write fired the arrival, nothing read between. The note is
+    // written after the arrival fired and before the model could see it, so it is headed before and
+    // the route loses nothing; the W5-T smoke's live trial documented both patients this way.
+    if (s.id === 'brennan-k-corrected' || s.id === 'patel-ldct-addendum') {
+      const [patient, who, what] = s.id === 'brennan-k-corrected' ? [PT.brennan, "Walter Brennan's", 'repeat BMP'] : [PT.patel, "Raj Patel's", 'screening LDCT'];
+      out.push({ id: `${s.id}_note_after_firing`, why: `Orders ${who} ${what}, tells him and closes the item, then writes the item's note in the next answer, before listing the queue: the note follows the write that fired the arrival but comes before anything showed it, so it is not a note written after the arrival was seen.`, loses: [], script: noteDeferred(solve(), patient) });
+    }
     if (s.id === 'brennan-k-corrected') out.push({ id: `${s.id}_page_linked_by_arrival`, why: "Pages on-call at stat about Walter Brennan's corrected potassium with nothing in about, and completes the arrival's item linking the stat BMP and the page: the closure places the page.", script: solve({ recheck: { [s.id]: 'bare_page' } }) });
     if (s.class === 'D') out.push({ id: `${s.id}_repeat`, why: 'Reads the lure and adds what a careful clinician may: a repeat test, or a note that the preliminary read waits for its final; the decision stands.', script: solve({ recheck: { [s.id]: 'repeat' } }) });
   }
