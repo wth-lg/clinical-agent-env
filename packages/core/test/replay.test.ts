@@ -3,7 +3,7 @@
 // checkout's and the regrade has the outcome, score and check results of the record's current
 // grade; a judge cache miss or a thrown regrade never matches.
 import { describe, expect, it } from 'vitest';
-import { envChanged, isVerdictOf, judgeMissed, replayEnvVerdict, replayStateOf, replayVerdict, type ReplayRecord } from '../replay.ts';
+import { envChanged, isVerdictOf, judgeMissed, replayEnvVerdict, replayStateOf, replayVerdict, whyStale, type ReplayRecord } from '../replay.ts';
 
 const ENV = 'e'.repeat(64);
 const checks = [{ id: 'G1', met: true }, { id: 'G2', met: false }];
@@ -77,9 +77,14 @@ describe('isVerdictOf', () => {
   const entry = { match: true, verdict: 'match' as const, outcome: 'PASS', recorded_outcome: 'FAIL', current_outcome: 'PASS' };
   const r = record({ outcome: 'FAIL', regrades: [{ grader_task_version: 'g2', outcome: 'PASS', score: 1, valid: true, checks: [], changed: true }] });
 
-  it('holds when the recorded and current outcomes are the record\'s, stamped at its env_version or not stamped', () => {
-    expect(isVerdictOf(entry, r)).toBe(true);
+  it('holds when the recorded and current outcomes are the record\'s and the entry is stamped at its env_version', () => {
     expect(isVerdictOf({ ...entry, replayed_at: at(ENV) }, r)).toBe(true);
+  });
+
+  it('an unstamped entry is stale, whatever its outcomes (verifier-phase-P17i-TWOW-229-2-1 S1)', () => {
+    expect(isVerdictOf(entry, r)).toBe(false);
+    expect(whyStale(entry, r)).toBe('no replayed_at: written before verdicts were stamped; pnpm cli replay <run> --stamp <commit> stamps it');
+    expect(whyStale({ ...entry, verdict: 'world_mismatch', match: undefined }, r)).toBe('no replayed_at: written before verdicts were stamped; pnpm cli replay <run> --stamp <commit> stamps it');
   });
 
   it('fails on another recorded or current outcome, or a match or mismatch stamped at another env_version', () => {

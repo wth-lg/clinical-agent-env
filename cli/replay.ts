@@ -1,4 +1,5 @@
 // pnpm cli replay <run> [--tasks <id,...>] [--overwrite] [--json]
+// pnpm cli replay <run> --stamp <commit>
 // Re-executes every settled trial's tool log against a fresh store and grades it again from the
 // record's judge cache (packages/core/run.ts gradeTrajectory), with no model call and no client:
 // a judge cache miss is an error, named with its trial and cache key. Whether a trial matches is
@@ -29,19 +30,31 @@
 // every chosen record's entry, a kept verdict included. A kept entry counts toward the exit code
 // as it is.
 //
+// An entry with no replayed_at is stale whatever its outcomes (verifier-phase-P17i-TWOW-229-2-1
+// S1: a record rewritten under the same name with the same outcomes would inherit it).
+// `--stamp <commit>` stamps a file written before verdicts were stamped (the replay of tag
+// final-1-t3t5 writes one): each unstamped entry of a settled record whose outcomes are the
+// record's gets its named verdict and replayed_at {that commit, dirty null, the manifest's
+// world for the task, the record's env_version}; an entry whose outcomes differ stops the
+// command with nothing written; a stamped entry and an entry of no settled record are left as
+// they are. No trial is replayed; --stamp takes no --tasks or --overwrite.
+//
 // --tasks <id,...> replays only those tasks' settled records (each must have some) and merges
-// into replay.json: their entries are made or kept as above, every other task's entry is kept as
-// it is, verdict or not. Without --tasks the file holds the run's records' entries alone. So a run
+// into replay.json: their entries are made or kept as above, every other entry is kept as it is,
+// verdict or not, an entry's task told by the settled record it names (an entry of no record is
+// kept and named, whatever its name starts with). Without --tasks the file holds the run's
+// records' entries alone. So a run
 // whose tasks ran on two worlds (pre-audit-2 B4: T3/T5 frozen on world ba0b0206 at
 // results/tasks-final.json, the other tasks appended on a later world, R40) is replayed in two
 // steps that no single commit could do in one:
 //   1. at the frozen tasks' replay commit (tasks-final.json replay_at: a temp worktree at that
-//      tag), on a copy of the run: pnpm cli replay <copy> (that commit's replay has no --tasks;
-//      the copy holds only the frozen tasks' records, as the run did at that commit)
-//   2. at the head: copy step 1's replay.json into a copy of the run as it is now, then
-//      pnpm cli replay <copy> --tasks <the tasks this checkout's world has>: their entries are
-//      made here, the frozen tasks' kept from step 1, and summary --require replay=all reads
-//      one file. results/runs/final-1/README.md Reproduce has the commands.
+//      tag), on a copy of the run: pnpm cli replay <copy> (that commit's replay has no --tasks
+//      and stamps nothing; the copy holds only the frozen tasks' records, as the run did there)
+//   2. at the head: copy step 1's replay.json into a copy of the run as it is now, stamp it with
+//      pnpm cli replay <copy> --stamp <that commit>, then pnpm cli replay <copy> --tasks <the
+//      tasks this checkout's world has>: their entries are made here, the frozen tasks' kept from
+//      step 1, and summary --require replay=all reads one file. results/runs/final-1/README.md
+//      Reproduce has the commands.
 // Exit 0 when every trial replayed here matches and every kept verdict is a match; 1 otherwise
 // (a world_mismatch too); 2 on a usage error.
 import { existsSync, readFileSync } from 'node:fs';
@@ -49,13 +62,14 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { gradeTrajectory } from '../packages/core/run.ts';
-import { envChanged, judgeMissed, replayEnvVerdict, replayStateOf, replayVerdict, whyStale, type ReplayedAt, type ReplayVerdict } from '../packages/core/replay.ts';
+import { runWorldHash } from '../packages/core/explain-context.ts';
+import { envChanged, judgeMissed, replayEnvVerdict, replayStateOf, replayVerdict, whyOutcomesDiffer, whyStale, type ReplayedAt, type ReplayVerdict } from '../packages/core/replay.ts';
 import { trialName } from '../packages/core/summary.ts';
 import { taskVersions, type TaskSource, type TaskVersions } from '../packages/core/tasks.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import type { Grade } from '../packages/grader/grade.ts';
 import { JudgeCacheMiss } from '../packages/grader/judge.ts';
-import { settledRecords, trajectoryOf, writeJson, type StoredRecord } from './adapters/result-sink-node.ts';
+import { readManifest, settledRecords, trajectoryOf, writeJson, type StoredRecord } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
 import { gitState, REPO, repoWorld, taskChecks } from './run.ts';
 
@@ -66,7 +80,7 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli replay <run> [--tasks <id,...>] [--overwrite] [--json]';
+const USAGE = 'usage: pnpm cli replay <run> [--tasks <id,...>] [--overwrite] [--json] | pnpm cli replay <run> --stamp <commit>';
 
 export type Regraded = { stored: StoredRecord; grade: Grade } | { stored: StoredRecord; miss: string } | { stored: StoredRecord; error: string };
 
@@ -120,8 +134,65 @@ function priorEntries(dir: string): Record<string, ReplayVerdict> {
   return (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, ReplayVerdict> }).trials ?? {};
 }
 
-// The task a replay.json entry belongs to: its name starts with the task id (trialName).
-const taskOf = (name: string) => (name.includes('/') ? name.slice(0, name.indexOf('/')) : name);
+// --stamp <commit> (header): stamps the unstamped entries of the run's settled records.
+function stampFile(dir: string, commit: string, deps: Deps): number {
+  const file = join(dir, 'replay.json');
+  if (!existsSync(file)) {
+    deps.err(`replay: ${file} is missing; nothing to stamp`);
+    return 1;
+  }
+  const manifest = readManifest(dir);
+  const prior = priorEntries(dir);
+  const records = new Map(settledRecords(dir).map((s) => [trialName(s.record), s.record]));
+  const stamped: string[] = [];
+  const already: string[] = [];
+  const orphans: string[] = [];
+  const refused: string[] = [];
+  const next: Record<string, ReplayVerdict> = {};
+  for (const [name, entry] of Object.entries(prior)) {
+    const r = records.get(name);
+    if (r === undefined) {
+      orphans.push(name);
+      next[name] = entry;
+      continue;
+    }
+    if (typeof entry.replayed_at === 'object' && entry.replayed_at !== null) {
+      already.push(name);
+      next[name] = entry;
+      continue;
+    }
+    const why = whyOutcomesDiffer(entry, r);
+    if (why !== null) {
+      refused.push(`replay: ${name}: not stamped: its entry is not this record's verdict (${why})`);
+      continue;
+    }
+    const world = runWorldHash(manifest, r.task_id);
+    if (world === null) {
+      refused.push(`replay: ${name}: not stamped: the run manifest names no world for ${r.task_id}`);
+      continue;
+    }
+    if (typeof r.env_version !== 'string') {
+      refused.push(`replay: ${name}: not stamped: the record has no env_version`);
+      continue;
+    }
+    stamped.push(name);
+    next[name] = { ...entry, verdict: replayStateOf(entry), replayed_at: { commit, dirty: null, world_hash: world, env_version: r.env_version } };
+  }
+  if (refused.length > 0) {
+    for (const line of refused) deps.err(line);
+    deps.err(`replay: ${refused.length} ${refused.length === 1 ? 'entry' : 'entries'} not stamped; nothing written`);
+    return 1;
+  }
+  writeJson(file, { trials: next });
+  const parts = [
+    `stamped ${stamped.length} ${stamped.length === 1 ? 'entry' : 'entries'} with commit ${commit.slice(0, 12)}${stamped.length === 0 ? '' : ` (${stamped.join(', ')})`}`,
+    ...(already.length === 0 ? [] : [`${already.length} ${already.length === 1 ? 'entry' : 'entries'} already stamped`]),
+    ...(orphans.length === 0 ? [] : [`${orphans.length} ${orphans.length === 1 ? 'entry' : 'entries'} of no settled record left as ${orphans.length === 1 ? 'it is' : 'they are'} (${orphans.join(', ')})`]),
+    `wrote ${file}`,
+  ];
+  deps.out(`replay: ${parts.join('; ')}`);
+  return 0;
+}
 
 // Where a record of another world is reproduced when results/tasks-final.json names no replay_at
 // for its task (R37): the run directory's README.md, named as the repository holds the directory
@@ -135,12 +206,19 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   let json = false;
   let overwrite = false;
   let tasksArg: string | undefined;
+  let stampArg: string | undefined;
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--json') json = true;
     else if (a === '--overwrite') overwrite = true;
-    else if (a === '--tasks') {
+    else if (a === '--stamp') {
+      if (args[i + 1] === undefined || !/^[0-9a-f]{40}$/.test(args[i + 1] as string)) {
+        deps.err(`replay: --stamp needs a 40-hex commit\n${USAGE}`);
+        return 2;
+      }
+      stampArg = args[++i] as string;
+    } else if (a === '--tasks') {
       if (args[i + 1] === undefined) {
         deps.err(`replay: --tasks needs a list of task ids\n${USAGE}`);
         return 2;
@@ -161,6 +239,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   if (!existsSync(join(dir, 'trials'))) {
     deps.err(`replay: ${dir} has no trials/ directory`);
     return 1;
+  }
+  if (stampArg !== undefined) {
+    if (held !== null || overwrite || json) {
+      deps.err(`replay: --stamp takes no --tasks, --overwrite or --json\n${USAGE}`);
+      return 2;
+    }
+    return stampFile(dir, stampArg, deps);
   }
   const records = settledRecords(dir);
   if (held !== null) {
@@ -219,8 +304,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (note !== undefined) notes.push(`replay: ${name}: ${note}`);
     trials[name] = { ...v, replayed_at: stamps.get(res.stored.record.task_id)! };
   }
-  // --tasks: every other task's entry is kept as it is; without it the file is the run's records alone.
-  const kept = held === null ? {} : Object.fromEntries(Object.entries(prior).filter(([name]) => !held.includes(taskOf(name))));
+  // --tasks: every entry that is not a chosen record's is kept as it is (an entry's task is the
+  // settled record it names); without it the file is the run's records alone.
+  const chosenNames = new Set(chosen.map((s) => trialName(s.record)));
+  const taskByName = new Map(records.map((s) => [trialName(s.record), s.record.task_id]));
+  const kept = held === null ? {} : Object.fromEntries(Object.entries(prior).filter(([name]) => !chosenNames.has(name)));
   const merged = Object.fromEntries([...Object.entries(kept), ...Object.entries(keptOwn), ...Object.entries(trials)].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
   writeJson(join(dir, 'replay.json'), { trials: merged });
   const replayed = Object.entries(trials);
@@ -232,13 +320,16 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const n of stale) say(`replay: ${n}: its replay.json entry was not a verdict of this record (stale), so it is replaced`);
   for (const [name, t] of [...bad, ...other]) say(`replay: ${name}: ${t.error}`);
   for (const [name, t] of keptBad) say(`replay: ${name}: kept as made at its own commit, where it did not reproduce: ${t.error}`);
-  const keptTasks = [...new Set(Object.keys(kept).map(taskOf))].sort();
+  const keptOfRecords = Object.keys(kept).filter((name) => taskByName.has(name));
+  const keptTasks = [...new Set(keptOfRecords.map((name) => taskByName.get(name) as string))].sort();
+  const keptOrphans = Object.keys(kept).filter((name) => !taskByName.has(name));
   const own = Object.keys(keptOwn).length;
   const parts = [
     `${replayed.length - bad.length - other.length} of ${replayed.length} ${held === null ? 'trials' : `replayed trials`} reproduced${held === null ? '' : ` (${held.join(', ')})`}`,
     ...(other.length === 0 ? [] : [`${other.length} ran on another world (${other.map(([name]) => name).join(', ')}): replay ${other.length === 1 ? 'it at its own commit' : 'them at their own commits'} with --tasks, then this checkout's tasks here`]),
     ...(own === 0 ? [] : [`${own} ${own === 1 ? 'entry of a record' : 'entries of records'} of another world kept as made at ${own === 1 ? 'its' : 'their'} own commit (${Object.keys(keptOwn).join(', ')})`]),
-    ...(keptTasks.length === 0 ? [] : [`${Object.keys(kept).length} ${Object.keys(kept).length === 1 ? 'entry' : 'entries'} of another task kept (${keptTasks.join(', ')})`]),
+    ...(keptTasks.length === 0 ? [] : [`${keptOfRecords.length} ${keptOfRecords.length === 1 ? 'entry' : 'entries'} of another task kept (${keptTasks.join(', ')})`]),
+    ...(keptOrphans.length === 0 ? [] : [`${keptOrphans.length} ${keptOrphans.length === 1 ? 'entry' : 'entries'} of no settled record kept (${keptOrphans.join(', ')})`]),
     `wrote ${join(dir, 'replay.json')}`,
   ];
   say(`replay: ${parts.join('; ')}`);

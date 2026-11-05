@@ -36,10 +36,36 @@ const stamped = (env: string) => (e: Entry): Entry => ({ ...e, replayed_at: { co
 const RECORD_ENV = 'e-t-alpha';
 
 describe('a stale replay.json entry (S2)', () => {
-  it('the clean fixture: every entry is the record\'s verdict, stamped with its env_version or not', async () => {
+  it('the clean fixture: every entry is the record\'s verdict, stamped with its env_version', async () => {
     expect((await cli(summary, [run((e) => e), '--require', REQUIRE])).code).toBe(0);
     const r = await cli(summary, [run(stamped(RECORD_ENV)), '--require', REQUIRE]);
     expect(r.code, r.text).toBe(0);
+  });
+
+  // verifier-phase-P17i-TWOW-229-2-1 S1 (P5b): an entry with no replayed_at says nothing about which
+  // record it was made on, so a record rewritten under the same name with the same outcomes (a v2
+  // trial that grades as v1's did) would inherit its match. Such an entry is stale; pnpm cli replay
+  // <run> --stamp <commit> stamps a file written before verdicts were stamped.
+  it('an unstamped entry is stale even when its outcomes are the record\'s (P5b)', async () => {
+    const r = await cli(summary, [run((e) => { const { replayed_at: _, ...rest } = e; return rest; }), '--require', REQUIRE]);
+    expect(r.code).toBe(1);
+    expect(r.text).toContain('replay: not replayed t-alpha/3');
+    expect(r.text).toContain('t-alpha/3 (no replayed_at: written before verdicts were stamped; pnpm cli replay <run> --stamp <commit> stamps it)');
+    const a = await cli(auditCheck, [run((e) => { const { replayed_at: _, ...rest } = e; return rest; })]);
+    expect(a.code).toBe(1);
+    expect(a.text).toContain('violation: t-alpha/3: replay.json holds no verdict of this record as it is now (its entry is stale: no replayed_at: written before verdicts were stamped; pnpm cli replay <run> --stamp <commit> stamps it); replay the task again');
+  });
+
+  it('a record rewritten at another env_version with the same outcomes is stale by the stamp (P5b, P5c)', async () => {
+    for (const env of ['e-head', 'e'.repeat(64)]) {
+      const dir = run((e) => e);
+      const file = join(dir, 'trials/t-alpha/3.json');
+      writeFileSync(file, JSON.stringify({ ...(JSON.parse(readFileSync(file, 'utf8')) as object), env_version: env }, null, 2));
+      const r = await cli(summary, [dir, '--require', REQUIRE]);
+      expect(r.code).toBe(1);
+      expect(r.text).toContain(`t-alpha/3 (made at env_version ${RECORD_ENV}, the record's ${env})`);
+      expect((await cli(auditCheck, [dir])).text).toContain(`t-alpha/3: replay.json holds no verdict of this record as it is now (its entry is stale: made at env_version ${RECORD_ENV}, the record's ${env}); replay the task again`);
+    }
   });
 
   it.each([

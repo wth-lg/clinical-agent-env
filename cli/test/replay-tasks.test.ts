@@ -40,7 +40,7 @@ async function cli(args: string[]) {
 type File = { trials: Record<string, ReplayVerdict> };
 const readFile = (d: string): File => JSON.parse(readFileSync(join(d, 'replay.json'), 'utf8')) as File;
 const foreign: ReplayVerdict = { match: true, verdict: 'match', outcome: 'PASS', recorded_outcome: 'PASS', current_outcome: 'PASS', replayed_at: { commit: 'c'.repeat(40), dirty: false, world_hash: 'w'.repeat(64), env_version: 'e'.repeat(64) } };
-const record = (d: string, i: number) => JSON.parse(readFileSync(join(d, 'trials', '_toy', `${i}.json`), 'utf8')) as { env_version: string; regrades?: unknown };
+const record = (d: string, i: number) => JSON.parse(readFileSync(join(d, 'trials', '_toy', `${i}.json`), 'utf8')) as { env_version: string; outcome: string; regrades?: unknown };
 
 describe('replay --tasks', () => {
   it('replays only the named tasks, merges into replay.json, and stamps each verdict with the commit, world and env_version it was made at', async () => {
@@ -56,7 +56,7 @@ describe('replay --tasks', () => {
     for (const name of ['_toy/0', '_toy/1']) {
       expect(j.trials[name]).toMatchObject({ match: true, verdict: 'match', replayed_at: { commit: sha, dirty: dirty === null ? null : dirty.length > 0, world_hash: repoWorld().worldHash, env_version: record(copy, 0).env_version } });
     }
-    expect(r.text).toContain('replay: 2 of 2 replayed trials reproduced (_toy); 1 entry of another task kept (other)');
+    expect(r.text).toContain('replay: 2 of 2 replayed trials reproduced (_toy); 1 entry of no settled record kept (other/0)');
   });
 
   it('without --tasks writes the file from the run\'s records alone, as before', async () => {
@@ -194,5 +194,96 @@ describe('reproducePointer', () => {
     expect(reproducePointer('results/pilot-4a')).toBe('reproduce at the commit in results/pilot-4a/README.md');
     expect(reproducePointer('./results/pilot-4a/')).toBe('reproduce at the commit in results/pilot-4a/README.md');
     expect(reproducePointer('/tmp/final-1-copy')).toBe('reproduce at the commit in /tmp/final-1-copy/README.md');
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-2-1 S1: an entry with no replayed_at is stale (P5b, P5c: a record
+// rewritten under the same name with the same outcomes would inherit it), so a file written
+// before verdicts were stamped (results/runs/final-1/replay.json as tag final-1-t3t5 writes it,
+// step 1 of the two-step replay) is stamped at the head with `--stamp <commit>`: each unstamped
+// entry of a settled record gets its verdict and replayed_at {that commit, dirty null, the
+// manifest's world for the task, the record's env_version}, after its outcomes are checked
+// against the record.
+describe('replay --stamp', () => {
+  const COMMIT = 'e8ef8c4d9bedce9e93d1a6d2031785c295e5caae';
+  const unstamp = (copy: string) => {
+    const j = readFile(copy);
+    for (const [name, e] of Object.entries(j.trials)) {
+      const { replayed_at: _at, verdict: _v, ...rest } = e;
+      j.trials[name] = rest as ReplayVerdict;
+    }
+    writeFileSync(join(copy, 'replay.json'), JSON.stringify(j, null, 2));
+  };
+
+  it('an unstamped entry with the record\'s outcomes is stale: replaced by world_mismatch on a record of another world (P5c), and the plain replay remakes it', async () => {
+    const copy = join(tempDir('replay-stamp-stale'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    unstamp(copy);
+    const file = join(copy, 'trials', '_toy', '0.json');
+    writeFileSync(file, JSON.stringify({ ...record(copy, 0), env_version: 'e'.repeat(64) }, null, 2));
+    const r = await cli([copy, '--tasks', '_toy']);
+    expect(r.code).toBe(1);
+    expect(readFile(copy).trials['_toy/0']).toMatchObject({ verdict: 'world_mismatch' });
+    expect(r.text).toContain('replay: _toy/0: its replay.json entry was not a verdict of this record (stale), so it is replaced');
+  });
+
+  it('stamps every unstamped entry of a settled record with the commit, the manifest world and the record\'s env_version, and leaves a stamped one alone', async () => {
+    const copy = join(tempDir('replay-stamp'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    const made = readFile(copy);
+    unstamp(copy);
+    writeFileSync(join(copy, 'replay.json'), JSON.stringify({ trials: { ...readFile(copy).trials, 'other/0': foreign } }, null, 2));
+    const r = await cli([copy, '--stamp', COMMIT]);
+    expect(r.code, r.text).toBe(0);
+    const j = readFile(copy);
+    for (const name of ['_toy/0', '_toy/1']) {
+      expect(j.trials[name]).toEqual({ ...made.trials[name], replayed_at: { commit: COMMIT, dirty: null, world_hash: repoWorld().worldHash, env_version: record(copy, 0).env_version } });
+    }
+    expect(j.trials['other/0']).toEqual(foreign);
+    expect(r.text).toContain(`replay: stamped 2 entries with commit ${COMMIT.slice(0, 12)} (_toy/0, _toy/1); 1 entry of no settled record left as it is (other/0); wrote ${join(copy, 'replay.json')}`);
+    // Again: nothing to stamp.
+    const again = await cli([copy, '--stamp', 'a'.repeat(40)]);
+    expect(again.code).toBe(0);
+    expect(readFile(copy)).toEqual(j);
+    expect(again.text).toContain('replay: stamped 0 entries with commit aaaaaaaaaaaa; 2 entries already stamped');
+    // The stamped file is what summary --require replay=all accepts.
+    expect(j.trials['_toy/0']!.verdict).toBe('match');
+  });
+
+  it('refuses to stamp an entry whose outcomes are not the record\'s, and writes nothing', async () => {
+    const copy = join(tempDir('replay-stamp-refuse'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    unstamp(copy);
+    const j = readFile(copy);
+    j.trials['_toy/1'] = { ...j.trials['_toy/1']!, recorded_outcome: 'GRADER_ERROR' };
+    writeFileSync(join(copy, 'replay.json'), JSON.stringify(j, null, 2));
+    const before = readFileSync(join(copy, 'replay.json'), 'utf8');
+    const r = await cli([copy, '--stamp', COMMIT]);
+    expect(r.code).toBe(1);
+    expect(r.text).toContain(`replay: _toy/1: not stamped: its entry is not this record's verdict (recorded GRADER_ERROR, the record ${record(copy, 1).outcome})`);
+    expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(before);
+    expect((await cli([copy, '--stamp', 'nothex'])).code).toBe(2);
+    expect((await cli([copy, '--stamp', COMMIT, '--tasks', '_toy'])).code).toBe(2);
+    expect((await cli([copy, '--stamp', COMMIT, '--overwrite'])).code).toBe(2);
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-2-1 m1: --tasks tells an entry's task by the record it names,
+// not by the text before '/', so an entry of no settled record (a trial the run no longer holds)
+// is kept as it is and named, whatever its name starts with.
+describe('replay --tasks maps entries to tasks through the records', () => {
+  it('keeps an entry of no record, whatever its prefix, and says so', async () => {
+    const copy = join(tempDir('replay-tasks-orphan'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    writeFileSync(join(copy, 'replay.json'), JSON.stringify({ trials: { '_toy/7': foreign, 'other/0': foreign } }, null, 2));
+    const r = await cli([copy, '--tasks', '_toy']);
+    expect(r.code, r.text).toBe(0);
+    const j = readFile(copy);
+    expect(Object.keys(j.trials).sort()).toEqual(['_toy/0', '_toy/1', '_toy/7', 'other/0']);
+    expect(j.trials['_toy/7']).toEqual(foreign);
+    expect(r.text).toContain('replay: 2 of 2 replayed trials reproduced (_toy); 2 entries of no settled record kept (_toy/7, other/0)');
   });
 });

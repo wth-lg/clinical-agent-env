@@ -371,7 +371,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <tbody>
 <tr><th scope="row">A: the assignment</th><td><span class="nw">6</span></td><td><span class="nw">0</span></td><td><span class="nw">6</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td></tr>
 <tr><th scope="row">N: what it needs</th><td><span class="nw">14</span></td><td><span class="nw">14</span></td><td><span class="nw">14</span></td><td><span class="nw">0</span></td><td><span class="nw">1</span></td></tr>
-<tr><th scope="row">W: what we want to see</th><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">1</span></td><td><span class="nw">2</span></td></tr>
+<tr><th scope="row">W: what we want to see</th><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">10</span></td><td><span class="nw">0</span></td><td><span class="nw">2</span></td></tr>
 <tr><th scope="row">H: handing it over</th><td><span class="nw">2</span></td><td><span class="nw">0</span></td><td><span class="nw">2</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td></tr>
 <tr><th scope="row">U: user modifications</th><td><span class="nw">37</span></td><td><span class="nw">19</span></td><td><span class="nw">37</span></td><td><span class="nw">0</span></td><td><span class="nw">3</span></td></tr>
 </tbody>
@@ -391,7 +391,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </tbody>
 </table>
 </div>
-<p>Rows with a path a later phase builds: W4.</p>
+<p>No row waits on a later phase.</p>
 <!-- docs-gen:end trace -->
 <h2 id="how-the-environment-differs-from-a-real-ehr" data-src="docs/writeup/80-ehr.md:1">How the environment differs from a real EHR</h2>
 <p data-src="docs/writeup/80-ehr.md:3">The store is an in-memory FHIR R4 store behind eighteen typed tools, nine that read and nine that write. The tools are MCP-shaped definitions: a name, a description and an input schema, in the fixed order the model sees. No MCP server ships; a stdio adapter is a next step. The simplifications below are deliberate and kept.</p>

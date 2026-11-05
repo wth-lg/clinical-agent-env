@@ -18,11 +18,13 @@
 // to replay it (pre-audit-2 B4).
 //
 // An entry in replay.json is a verdict of a record only while the record is the one it was made
-// on (isVerdictOf): its recorded and current outcomes are the record's, and a match or mismatch
-// stamped with replayed_at was made at the record's env_version. A record rewritten under the
-// same trial name (a task's new version entering the run, R42) with no replay since leaves a
-// stale entry, which summary and audit-check count as not replayed and replay replaces
-// (verifier-phase-P17i-TWOW-229-1 S2).
+// on (isVerdictOf): its recorded and current outcomes are the record's, it is stamped with
+// replayed_at, and a match or mismatch was made at the record's env_version. A record rewritten
+// under the same trial name (a task's new version entering the run, R42) with no replay since
+// leaves a stale entry, which summary and audit-check count as not replayed and replay replaces
+// (verifier-phase-P17i-TWOW-229-1 S2). An unstamped entry says nothing about which record it was
+// made on, so it is stale whatever its outcomes (verifier-phase-P17i-TWOW-229-2-1 S1); a file
+// written before verdicts were stamped is stamped by `pnpm cli replay <run> --stamp <commit>`.
 import { currentGrade, type RegradeGrade, type ReplayState } from './summary.ts';
 
 export interface ReplayRecord {
@@ -108,16 +110,27 @@ export function replayStateOf(entry: ReplayEntry): ReplayState {
   return states.includes(entry.verdict) ? (entry.verdict as ReplayState) : entry.match === true ? 'match' : 'mismatch';
 }
 
-// Why an entry is not a verdict of this record as it is now (header), or null when it is. A
-// world_mismatch entry is stamped with the replaying checkout's env_version, which is not the
-// record's by definition, so only its outcomes are checked.
-export function whyStale(entry: ReplayEntry, r: ReplayRecord): string | null {
+export const UNSTAMPED = 'no replayed_at: written before verdicts were stamped; pnpm cli replay <run> --stamp <commit> stamps it';
+
+// Why an entry's outcomes are not this record's, or null when they are (the part of whyStale
+// that --stamp checks before it stamps).
+export function whyOutcomesDiffer(entry: ReplayEntry, r: ReplayRecord): string | null {
   const cur = currentGrade(r).outcome;
   if (entry.recorded_outcome === undefined && entry.current_outcome === undefined) return 'no recorded or current outcome in the entry';
   if (entry.recorded_outcome !== r.outcome) return `recorded ${String(entry.recorded_outcome)}, the record ${r.outcome}`;
   if (entry.current_outcome !== cur) return `current ${String(entry.current_outcome)}, the record's current grade ${cur}`;
+  return null;
+}
+
+// Why an entry is not a verdict of this record as it is now (header), or null when it is. A
+// world_mismatch entry is stamped with the replaying checkout's env_version, which is not the
+// record's by definition, so only its outcomes and its stamp are checked.
+export function whyStale(entry: ReplayEntry, r: ReplayRecord): string | null {
+  const outcomes = whyOutcomesDiffer(entry, r);
+  if (outcomes !== null) return outcomes;
   const at = entry.replayed_at;
-  if (replayStateOf(entry) === 'world_mismatch' || typeof at !== 'object' || at === null) return null;
+  if (typeof at !== 'object' || at === null) return UNSTAMPED;
+  if (replayStateOf(entry) === 'world_mismatch') return null;
   const env = (at as { env_version?: unknown }).env_version;
   return env === (r.env_version ?? null) ? null : `made at env_version ${String(env)}, the record's ${r.env_version ?? '(none)'}`;
 }

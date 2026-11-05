@@ -443,6 +443,9 @@ export interface SupersededInput {
   task: string;
   version: string;
   trials: readonly SummaryTrial[];
+  // The version's own audit labels (superseded/<key>/audit.jsonl, as cli supersede moves them);
+  // without them the run's labels are read, by trial name.
+  audit?: Readonly<Record<string, string | null>> | null;
 }
 
 export interface SupersededSummary {
@@ -593,7 +596,7 @@ export function summarize(input: SummaryInput): Summary {
   for (const id of ids) tasks[id] = taskSummary(input.trials.filter((t) => t.task_id === id), input.requeued.filter((t) => t.task_id === id), input.audit ?? null);
   const superseded: Record<string, SupersededSummary> = {};
   for (const v of input.superseded ?? []) {
-    superseded[v.key] = { task: v.task, version: v.version, dir: `superseded/${v.key}`, initial_state_hashes: sorted(v.trials.flatMap((t) => (t.state_hash.initial === null ? [] : [t.state_hash.initial]))), summary: taskSummary(v.trials, [], input.audit ?? null) };
+    superseded[v.key] = { task: v.task, version: v.version, dir: `superseded/${v.key}`, initial_state_hashes: sorted(v.trials.flatMap((t) => (t.state_hash.initial === null ? [] : [t.state_hash.initial]))), summary: taskSummary(v.trials, [], v.audit ?? input.audit ?? null) };
   }
   const all = [...input.trials, ...input.requeued];
   const replay = input.replay;

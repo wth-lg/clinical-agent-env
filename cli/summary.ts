@@ -110,8 +110,9 @@ export function readReplay(dir: string, records: ReadonlyArray<ReplayRecord>): {
 }
 
 // The run's superseded task versions (R42): each <run>/superseded/<task>-v<n>/ with a trials/
-// directory, its settled records as summary reads them. Throws on a directory not named so, or
-// whose records are of another task.
+// directory, its settled records as summary reads them, and its own audit labels when it holds
+// an audit.jsonl (cli supersede moves the version's rows there). Throws on a directory not named
+// so, or whose records are of another task.
 export function readSuperseded(dir: string): SupersededInput[] {
   const base = join(dir, 'superseded');
   if (!existsSync(base)) return [];
@@ -126,7 +127,8 @@ export function readSuperseded(dir: string): SupersededInput[] {
       const trials = settledRecords(join(base, key)).map((x) => toTrial(x.record));
       const other = [...new Set(trials.map((t) => t.task_id).filter((id) => id !== task))];
       if (other.length > 0) throw new Error(`${base}/${key}: holds records of ${other.join(', ')}, not of ${task}`);
-      return { key, task, version: `v${m[2]}`, trials };
+      const own = join(base, key);
+      return { key, task, version: `v${m[2]}`, trials, ...(existsSync(join(own, 'audit.jsonl')) ? { audit: readAuditLabels(own) } : {}) };
     });
 }
 

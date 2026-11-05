@@ -4,13 +4,13 @@
 // same value works from the repo root and from `pnpm --filter web`; default the repo root):
 //   results/official.json and, from the run directory it names ({"run": "runs/<id>"},
 //   relative to results/), trials/, trajectories/, summary.json, manifest.json, audit.jsonl, matrix.json, regrade/trials/
-//   and superseded/ (a task's superseded versions, R42: each <task>-v<n>/ with its trials, trajectories and README);
+//   and superseded/ (a task's superseded versions, R42: each <task>-v<n>/ with its trials, trajectories, replay.json,
+//   audit.jsonl and README, as cli supersede moves them);
 //   each pilot run, results/pilot-<n>/ or results/runs/pilot-<n>/ with a trials/ directory (not
 //   counted in the results; the Runs view lists them), with the same entries;
 //   docs/findings.md; results/tasks-final.json (the per-task freeze: each frozen task's world and
-//   the commit that reproduces its records, which the trial State diff reads, R37); fixtures/world.ndjson.gz and fixtures/manifest.json.
-//   docs/findings.md; fixtures/world.ndjson.gz and fixtures/manifest.json; and docs/writeup.html,
-//   published at data/writeup.html (the Findings view links it there; P24).
+//   the commit that reproduces its records, which the trial State diff reads, R37); fixtures/world.ndjson.gz and
+//   fixtures/manifest.json; and docs/writeup.html, published at data/writeup.html (the Findings view links it there; P24).
 // A missing source is skipped, so a tree with no results/ yields an empty index.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -21,8 +21,6 @@ import type { Plugin } from 'vite';
 // regrade of the run's records, its trials only) for the line that says whether a later grader changes them.
 const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'manifest.json', 'audit.jsonl', 'matrix.json', 'regrade/trials', 'superseded'];
 const FIXED_FILES = ['results/official.json', 'results/tasks-final.json', 'docs/findings.md', 'fixtures/world.ndjson.gz', 'fixtures/manifest.json'];
-const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'manifest.json', 'audit.jsonl', 'matrix.json', 'regrade/trials'];
-const FIXED_FILES = ['results/official.json', 'docs/findings.md', 'fixtures/world.ndjson.gz', 'fixtures/manifest.json'];
 // Files published under another path: source, relative to the root, to its path under data/.
 const RENAMED: ReadonlyArray<[string, string]> = [['docs/writeup.html', 'writeup.html']];
 
