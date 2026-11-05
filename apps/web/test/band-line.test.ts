@@ -114,11 +114,30 @@ describe('verdictLabel', () => {
 });
 
 describe('officialRunLabel', () => {
-  it('is (final) only when every task of the run has the final sample of valid trials', () => {
-    expect(officialRunLabel({ a: { trials: 20 }, b: { trials: 21 } })).toBe('(final)');
-    expect(officialRunLabel({ a: { trials: 20 }, b: { trials: 12 } })).toBe('(official, in progress)');
-    expect(officialRunLabel({ a: { trials: 12 } })).toBe('(official, in progress)');
-    expect(officialRunLabel({})).toBe('(official, in progress)');
+  const at = (trials: number) => ({ trials });
+
+  it('is (final) only when the run covers every task of the environment and each has the final sample of valid trials', () => {
+    expect(officialRunLabel(Object.fromEntries(ALL.map((t) => [t, at(20)])), ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), 'crc-care-gap': at(21) }, ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), 'crc-care-gap': at(12) }, ALL)).toBe('(official, in progress)');
+    expect(officialRunLabel({}, ALL)).toBe('(official, in progress)');
+  });
+
+  it('a run that covers only some tasks of the environment is in progress, even when every task it holds has the final sample (UIBAND-219-4 M1: final-1 at 2 of 6)', () => {
+    expect(officialRunLabel({ 'contrast-ct-prep': at(20), 'crc-care-gap': at(20) }, ALL)).toBe('(official, in progress)');
+    expect(officialRunLabel(Object.fromEntries(ALL.slice(1).map((t) => [t, at(20)])), ALL)).toBe('(official, in progress)');
+  });
+
+  it('a task the run holds beyond the environment list counts too, as in bandCount', () => {
+    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), _toy: at(20) }, ALL)).toBe('(final)');
+    expect(officialRunLabel({ ...Object.fromEntries(ALL.map((t) => [t, at(20)])), _toy: at(3) }, ALL)).toBe('(official, in progress)');
+  });
+
+  it('while the task list loads (null), only the run\'s own tasks decide, as in bandCount', () => {
+    expect(officialRunLabel({ a: at(20), b: at(21) }, null)).toBe('(final)');
+    expect(officialRunLabel({ a: at(20), b: at(12) }, null)).toBe('(official, in progress)');
+    expect(officialRunLabel({ a: at(12) }, null)).toBe('(official, in progress)');
+    expect(officialRunLabel({}, null)).toBe('(official, in progress)');
   });
 });
 
