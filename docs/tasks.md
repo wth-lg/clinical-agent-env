@@ -897,7 +897,7 @@ Run it with `pnpm cli oracle --task message-queue`. It must print PASS with scor
 
 ## Repo-to-Harbor name map
 
-Harbor is a task format and runner for agent benchmarks. Its task layout is in the Harbor docs: [task overview](https://docs.harborframework.com/tasks/overview) and [task configuration](https://docs.harborframework.com/tasks/configuration), read 2026-10-27. The last release we compared against is [Harbor v0.24.0](https://github.com/harbor-framework/harbor/releases/tag/v0.24.0), 2026-10-05.
+Harbor is a task format and runner for agent benchmarks. Its task layout is in the Harbor docs: [task overview](https://docs.harborframework.com/tasks/overview) and [task configuration](https://docs.harborframework.com/tasks/configuration), read 2026-10-27. The last release we compared against is [Harbor v0.25.0](https://github.com/harbor-framework/harbor/releases/tag/v0.25.0), 2026-10-25 (task.toml schema 1.4, more than one solution per task, and `harbor lint`), checked on 2026-11-05. This map is a name map, not a runnable export: the repo does not produce Harbor tasks.
 
 | This repo (`tasks/<id>/`) | Harbor | Difference |
 |---|---|---|
@@ -908,7 +908,7 @@ Harbor is a task format and runner for agent benchmarks. Its task layout is in t
 | `task.toml` `[[catalog]]` | no equivalent | The orderable codes the order tools accept. |
 | `overlay.ts`, `fixtures/world.ndjson.gz` | `environment/` (for example a `Dockerfile`) | This repo has no container. `pnpm fixtures:build` writes the overlays onto a synthetic FHIR R4 world, and each trial loads a fresh in-process store from it. |
 | `packages/env/tools/` | `task.toml` `[[environment.mcp_servers]]` | The tools are MCP-shaped definitions that run in-process. No MCP server ships. |
-| `solution/solve.ts`, `solution/steps.ts` | `solution/solve.sh` | The oracle is a list of scripted tool calls, run by `pnpm cli oracle`. |
+| `solution/solve.ts`, `solution/steps.ts` | `solution/solve.sh` | The oracle is a list of scripted tool calls, run by `pnpm cli oracle`. Harbor v0.25.0 allows more than one solution per task; this repo has one oracle per task, and its alternatives live in `tests/alternatives.ts`. |
 | `tests/grader.ts` (gates), `tests/rubric.ts` | `tests/test.sh` | Harbor's verifier writes a reward to `/logs/verifier/reward.txt` or `reward.json`. This repo writes an outcome (PASS or FAIL), the gate checks and a rubric score into the trial record. |
 | `tests/judge-cache.json` | no equivalent | Cached judge answers for offline grading. |
 | `tests/mutants.ts`, `tests/alternatives.ts`, `tests/agents.ts` | no equivalent | Scripted wrong and alternative solutions. `pnpm cli matrix` checks that each mutant fails and each alternative passes. |

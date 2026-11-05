@@ -38,13 +38,17 @@ describe('the Pages build', () => {
     expect(mode).toBe('pages');
   });
 
+  // The pages of a build: its .html files outside data/, where copy-data publishes the committed
+  // results and docs/writeup.html (a document the Findings view links, not a page of the app).
+  const pages = (files: string[]) => files.filter((f) => f.endsWith('.html') && !f.startsWith('data/')).sort();
+
   it('holds index.html and its assets, and no test page', () => {
     const files = build(['--mode', mode ?? '']);
-    expect(files.filter((f) => f.endsWith('.html'))).toEqual(['index.html']);
+    expect(pages(files)).toEqual(['index.html']);
     expect(files.filter((f) => /probe|harness|worker/.test(f))).toEqual([]);
   });
 
   it('the default build, which the e2e runs serve, still has the test pages', () => {
-    expect(build([]).filter((f) => f.endsWith('.html')).sort()).toEqual(['harness.html', 'index.html', 'probe.html', 'relay-probe.html']);
+    expect(pages(build([]))).toEqual(['harness.html', 'index.html', 'probe.html', 'relay-probe.html']);
   });
 });

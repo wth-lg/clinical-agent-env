@@ -1,0 +1,71 @@
+# Words the writeup and README must not use (ASD-STE 100 and plain English), each with its
+# approved replacement. One entry per line: word: replacement. A phrase may hold spaces.
+# scripts/ste-check.ts matches each entry as whole words, in any case, outside code.
+utilize: use
+utilise: use
+leverage: use
+facilitate: help
+implement: build
+in order to: to
+prior to: before
+subsequent to: after
+in the event that: if
+due to the fact that: because
+it is important to note that: (delete)
+additionally: also
+furthermore: also
+moreover: also
+however: but
+therefore: so
+thus: so
+hence: so
+whilst: while
+amongst: among
+e.g.: for example
+i.e.: that is
+etc.: (name the items)
+via: through
+approximately: about
+numerous: many
+commence: start
+initiate: start
+terminate: stop
+ensure: make sure
+enable: let
+perform: do
+execute: run
+simply: (delete)
+easily: (delete)
+quickly: (delete)
+seamless: (delete)
+robust: (say what it does)
+delve: look
+crucial: important
+pivotal: important
+enhance: improve
+showcase: show
+underscore: show
+landscape: (name the things)
+tapestry: (name the things)
+testament: (name the fact)
+vibrant: (delete)
+intricate: detailed
+interplay: relation
+foster: help
+garner: get
+nexus: link
+substrate: base
+vector: way
+paradigm: design
+modality: kind
+scaffolding: base
+north star: goal
+flywheel: loop
+endgame: last phase
+ratchet: limit
+evacuate: move out
+gold-plating: more than the job needs
+please: (delete)
+click here: (name the page)
+and/or: a, b, or both
+etc: (name the items)

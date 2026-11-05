@@ -45,8 +45,11 @@
 // record's current grade after any offline regrade and prints grader_error_history for
 // disclosure.
 //
+// Clause (7) runs `pnpm docs:check` (scripts/docs-check.ts) and reads its exit code.
+//
 // Test hooks, honored only when NODE_ENV=test: DONEWHEN_CLI replaces `node cli/index.ts`
-// (space-separated command prefix); DONEWHEN_MIN_TASKS replaces the minimum of 5 tasks;
+// (space-separated command prefix); DONEWHEN_DOCS_CHECK replaces `node scripts/docs-check.ts`
+// (a space-separated command line); DONEWHEN_MIN_TASKS replaces the minimum of 5 tasks;
 // DONEWHEN_INCLUDE_UNDERSCORE=1 makes clause (3) count _-prefixed task directories (tasks/_toy),
 // so the real oracle can be checked before any real task exists.
 import { spawnSync } from 'node:child_process';
@@ -54,6 +57,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../packages/core/cost.ts';
+import { WRITEUP_SECTIONS } from './docs-lib.ts';
 
 const FINAL_RUN = 'results/runs/final-1';
 const TASKS_FINAL = 'results/tasks-final.json';
@@ -61,7 +65,6 @@ const MODEL = 'claude-opus-5-5';
 const HOSTED_URL = 'https://wth-lg.github.io/clinical-agent-env/';
 const MIN_TASKS = 5;
 const TASK_FILES = ['instruction.md', 'task.toml', 'tests/grader.ts', 'solution/solve.ts'];
-const README_SECTIONS = ['findings', 'surprises', 'changes', 'next steps'];
 const CORE_RUN = 'packages/core/run.ts';
 // The entry points clause (2) follows to packages/core/run.ts.
 const RUN_ENTRIES = ['cli/run-one.ts', 'cli/run.ts', 'apps/runner/main.ts'];
@@ -339,22 +342,21 @@ function clause6(): Verdict {
   };
 }
 
+// Clause (7) is `pnpm docs:check` (scripts/docs-check.ts): docs/writeup.html with its sections,
+// dated references and generated blocks equal to a fresh regeneration, and README.md with its
+// Quick start, LOCAL_START_COMMAND and the writeup link, both under the ASD-STE 100 rules. The
+// clause reads its exit code and counts its error and warning lines. Test hook, honored only
+// when NODE_ENV=test: DONEWHEN_DOCS_CHECK replaces `node scripts/docs-check.ts` (a space-separated
+// command line).
 function clause7(): Verdict {
-  const readme = read('README.md');
-  const missing = README_SECTIONS.filter((s) => !new RegExp(`^#{1,6}\\s+.*\\b${s}\\b`, 'im').test(readme));
-  const refs = /^(#{1,6})\s+.*\b(references|sources|bibliography)\b.*$/im.exec(readme);
-  let dated = 0;
-  if (refs) {
-    const after = readme.slice(refs.index + refs[0].length);
-    const next = new RegExp(`^#{1,${refs[1]!.length}}\\s`, 'm').exec(after);
-    const body = next ? after.slice(0, next.index) : after;
-    dated = body.split('\n').filter((l) => /\b(19|20)\d{2}-\d{2}(-\d{2})?\b/.test(l)).length;
-  }
-  const parts = [
-    missing.length ? `missing section(s): ${missing.join(', ')}` : 'all writeup sections present',
-    refs ? `${dated} dated reference line(s)` : 'no references section',
-  ];
-  return { pass: missing.length === 0 && dated > 0, evidence: `README: ${parts.join('; ')}` };
+  const override = isTest ? process.env.DONEWHEN_DOCS_CHECK : undefined;
+  const [cmd, ...args] = override ? override.split(' ') : [process.execPath, join(root, 'scripts/docs-check.ts')];
+  const r = spawnSync(cmd!, args, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 });
+  const lines = (r.stdout ?? '').split('\n').filter((l) => l !== '');
+  const warnings = lines.filter((l) => l.startsWith('warning:')).length;
+  const errors = lines.filter((l) => !l.startsWith('warning:') && !l.startsWith('info:')).length;
+  const exit = r.status === NOT_BUILT ? 'command not built' : `exit ${r.status}`;
+  return { pass: r.status === 0, evidence: `docs:check: ${exit}; ${errors} error line(s), ${warnings} warning(s)` };
 }
 
 const CLAUSES: Array<[string, () => Verdict]> = [
@@ -364,7 +366,7 @@ const CLAUSES: Array<[string, () => Verdict]> = [
   ["every trial starts from its task's frozen world", clause4],
   [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, at its frozen versions`, clause5],
   ['every failure attributed, none to environment or grader, no current GRADER_ERROR', clause6],
-  ['README writeup and dated references', clause7],
+  [`docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check`, clause7],
 ];
 
 let passed = 0;
