@@ -6,7 +6,7 @@
 // the projection it makes 0 calls and writes no row; a recorded verdict is not asked again.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { scriptedTransport, type MockTurn } from '../../apps/web/src/harness/scenarios.ts';
 import type { Transport } from '../../packages/core/anthropic.ts';
 import { PROJECTED_CAP_USD } from '../../packages/core/ledger.ts';
@@ -46,6 +46,9 @@ function harness(fetch: Transport, env: Record<string, string> = {}) {
 
 // "model, grader or environment": the allowed labels as a refusal lists them.
 const listed = (xs: readonly string[]) => `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`;
+// A transport no test may reach. It answers, so a run that wrongly calls it finishes at once and
+// the test fails on its request count, not on a timeout (the client retries a transport that throws).
+const unreached = () => scriptedTransport(() => ({ text: verdict('model') }));
 const projectionOf = (text: string) => Number(/^LIVE_PROJECTION_USD=(\d+\.\d{6})$/m.exec(text)![1]);
 
 describe('audit-llm', () => {
@@ -57,11 +60,11 @@ describe('audit-llm', () => {
   });
 
   it('--dry-run makes no call, opens no ledger, writes nothing and prints the projection', async () => {
-    const fetch = vi.fn<Transport>();
+    const t = unreached();
     const dir = run();
-    const h = harness(fetch);
+    const h = harness(t.transport);
     expect(await h.audit([dir, '--dry-run'])).toBe(0);
-    expect(fetch).not.toHaveBeenCalled();
+    expect(t.bodies).toHaveLength(0);
     expect(h.text()).toMatch(/^audit-llm dry run: 11 trials \(10 failures, 1 PASS with a penalty\), 11 to ask, worst case \$\d+\.\d\d each at most$/m);
     expect(h.text()).toMatch(/^projection \$\d+\.\d\d$/m);
     expect(projectionOf(h.text())).toBeGreaterThan(0);
@@ -71,10 +74,20 @@ describe('audit-llm', () => {
 
   it('the rendered prompt holds every FAULT_DEFINITIONS sentence and criterion, the trajectory by step, the grade, and no builder label', async () => {
     const dir = run();
+    // Every note of audit.jsonl (failure rows, PASS rows and the task-validity reviews), read before the run.
+    const notes = rows(dir).map((r) => r.note as string);
+    expect(notes).toContain(BUILDER_NOTE);
+    expect(notes.length).toBeGreaterThan(12);
     const t = scriptedTransport((n) => ({ text: verdict(n === 1 ? 'pass' : 'model') }));
     const h = harness(t.transport, { ANTHROPIC_API_KEY: fakeKey('A') });
     expect(await h.audit([dir])).toBe(0);
     expect(t.bodies).toHaveLength(11);
+    // Blind: nothing of the builder's audit rows reaches the auditor, in any request.
+    for (const b of t.bodies) {
+      const text = JSON.stringify(b.messages);
+      for (const note of notes) expect(text, note).not.toContain(note);
+      for (const field of ['taxonomy', 'model_fault', 'llm_auditor_agrees', 'adjudicated_label', 'fixture-auditor']) expect(text, field).not.toContain(field);
+    }
     const first = t.bodies[0]!;
     expect(first.max_tokens).toBeGreaterThan(0);
     const body = JSON.stringify(first.messages);
@@ -91,11 +104,6 @@ describe('audit-llm', () => {
     holds('step 2: write_note');
     // The grade of the trial: the first body is t-alpha/0, the PASS with the penalty.
     holds('harm_item');
-    // Blind: nothing of the builder's audit row reaches the auditor.
-    expect(body).not.toContain(BUILDER_NOTE);
-    expect(body).not.toContain('taxonomy');
-    expect(body).not.toContain('model_fault');
-    expect(body).not.toContain('llm_auditor_agrees');
     // A failure's body names its failed check.
     expect(JSON.stringify(t.bodies[1]!.messages)).toContain('G1');
   });
@@ -133,8 +141,10 @@ describe('audit-llm', () => {
     expect(readFileSync(join(dir, 'audit.jsonl'), 'utf8')).toBe(before);
     expect(h.text()).toMatch(/^audit-llm: 11 of 11 verdicts, 0 calls/m);
     // The dry run after it projects nothing.
-    const dry = harness(vi.fn<Transport>());
+    const unasked = unreached();
+    const dry = harness(unasked.transport);
     expect(await dry.audit([dir, '--dry-run'])).toBe(0);
+    expect(unasked.bodies).toHaveLength(0);
     expect(dry.text()).toMatch(/^audit-llm dry run: 11 trials \(10 failures, 1 PASS with a penalty\), 0 to ask/m);
     expect(projectionOf(dry.text())).toBe(0);
   });
@@ -163,16 +173,16 @@ describe('audit-llm', () => {
   });
 
   it('with ledger + projection = PROJECTED_CAP_USD + $0.01 it is refused with 0 calls and no ledger row', async () => {
-    const fetch = vi.fn<Transport>();
+    const t = unreached();
     const dir = run();
-    const dry = harness(fetch);
+    const dry = harness(t.transport);
     expect(await dry.audit([dir, '--dry-run'])).toBe(0);
     const projection = projectionOf(dry.text());
     const ledger = tempDir('audit-llm-ledger');
     write(ledger, 'spend.jsonl', seed(Number((PROJECTED_CAP_USD + 0.01 - projection).toFixed(6))));
-    const h = harness(fetch, { SPEND_LEDGER: join(ledger, 'spend.jsonl'), ANTHROPIC_API_KEY: fakeKey('A') });
+    const h = harness(t.transport, { SPEND_LEDGER: join(ledger, 'spend.jsonl'), ANTHROPIC_API_KEY: fakeKey('A') });
     expect(await h.audit([dir])).toBe(1);
-    expect(fetch).not.toHaveBeenCalled();
+    expect(t.bodies).toHaveLength(0);
     expect(h.text()).toContain(`audit-llm: refused before any call (ledger + projection would pass PROJECTED_CAP_USD $${PROJECTED_CAP_USD})`);
     expect(h.text()).toContain(`= $${(PROJECTED_CAP_USD + 0.01).toFixed(2)} > $${PROJECTED_CAP_USD}`);
     expect(readFileSync(join(ledger, 'spend.jsonl'), 'utf8').split('\n').filter(Boolean)).toHaveLength(2);
@@ -208,12 +218,21 @@ describe('audit-llm', () => {
     expect(parseVerdict(verdict('model', { decisive_step: 9 }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('decisive_step 9') });
     expect(parseVerdict(verdict('model', { clinically_acceptable: 'maybe' }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('clinically_acceptable') });
     expect(parseVerdict(verdict('model', { evidence_ids: 'Patient/pt-1' }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('evidence_ids') });
+    // At least one evidence id on a failure and on a false PASS; a confirmed PASS may give none.
+    expect(parseVerdict(verdict('model', { evidence_ids: [] }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('evidence_ids') });
+    expect(parseVerdict(verdict('grader', { evidence_ids: [] }), 'PASS', 2)).toMatchObject({ problem: expect.stringContaining('evidence_ids') });
+    expect(parseVerdict(verdict('pass', { evidence_ids: [], decisive_step: null }), 'PASS', 2)).toMatchObject({ verdict: { label: 'pass', evidence_ids: [] } });
+    // A clinically acceptable solution that was failed is never the model's fault (R14-31).
+    expect(parseVerdict(verdict('model', { clinically_acceptable: 'no' }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('clinically_acceptable no') });
+    expect(parseVerdict(verdict('grader', { clinically_acceptable: 'no' }), 'FAIL', 2)).toMatchObject({ verdict: { label: 'grader' } });
   });
 
   it('usage errors exit 2 and a run without trials exits 1', async () => {
-    const h = harness(vi.fn<Transport>());
+    const t = unreached();
+    const h = harness(t.transport);
     expect(await h.audit([])).toBe(2);
     expect(await h.audit(['a', 'b'])).toBe(2);
     expect(await h.audit([tempDir('audit-llm-empty')])).toBe(1);
+    expect(t.bodies).toHaveLength(0);
   });
 });

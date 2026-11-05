@@ -119,6 +119,28 @@ describe('judge-agreement', () => {
     expect(r.out).toContain('n_judge=40');
   });
 
+  it('a (trial, key) pair labelled twice is a violation and counts once, so repeats cannot meet the floors', async () => {
+    const dir = run();
+    const one = { trial: 't-alpha/10', key: 't-alpha-10-j1', kind: 'judge', answer: { verdict: 'met' } };
+    const two = { trial: 't-alpha/10', key: 't-alpha-10-e1', kind: 'extract', answer: { value: 42 } };
+    const file = join(dir, 'repeats.jsonl');
+    put(file, [...Array.from({ length: 40 }, () => one), ...Array.from({ length: 20 }, () => two)]);
+    const r = await check([dir, '--labels', file]);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('violation: t-alpha/10 t-alpha-10-j1: labelled twice');
+    expect(r.out).toContain('violation: t-alpha/10 t-alpha-10-e1: labelled twice');
+    expect(r.out).toContain(`violation: 1 judge labels, need ${MIN_JUDGE_LABELS}`);
+    expect(r.out).toContain(`violation: 1 extraction labels, need ${MIN_EXTRACT_LABELS}`);
+    expect(r.out).toContain('n_judge=1 agree=1 (1.000), n_extract=1 agree=1 (1.000)');
+    // One repeat in a full file: the counts stay 40 and 20, and the repeat is a violation.
+    const full = readFileSync(handLabels(dir), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Row);
+    put(file, [...full, full[1]!]);
+    const again = await check([dir, '--labels', file]);
+    expect(again.code).toBe(1);
+    expect(again.out).toContain('violation: t-alpha/10 t-alpha-10-j1: labelled twice');
+    expect(again.out).toContain('n_judge=40 agree=38');
+  });
+
   it('--write puts the agreement into <run>/summary.json and leaves the rest of it as it was', async () => {
     const dir = run();
     writeFileSync(join(dir, 'summary.json'), `${JSON.stringify({ schema_version: 10, run_id: 'final-1', tasks: {} }, null, 2)}\n`);

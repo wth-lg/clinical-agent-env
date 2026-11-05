@@ -45,7 +45,7 @@ Each executed tool call is one step, numbered from 1 in the order the calls ran:
 Decide:
 - label: whose fault the current grade is, from the labels above. On a failure: model, environment or grader. On a PASS: pass when the PASS is right, grader when the grader passed work the policy fails (a false PASS).
 - clinically_acceptable: is the recorded outcome clinically right? yes or no. On a failure, no means a clinically acceptable solution was failed, which is the grader's or the environment's fault, never the model's. On a PASS, no means the PASS is not clinically right.
-- tool_rejections_correct: was every tool rejection in the trajectory right? yes or no. no means a tool refused a valid call; name that step as decisive_step. A refusal of input that breaks the tool's schema, or of a tool the environment does not have, was right.
+- tool_rejections_correct: was every tool rejection in the trajectory right? yes or no. no means a tool refused a valid call (criterion E6 says what counts); name that step as decisive_step.
 - decisive_step: the step that decided the outcome (the write that set the wrong value, the refused call, or the last step before a write that never came), or null on a PASS.
 - evidence_ids: the resource ids your verdict rests on (Type/id, as the trajectory shows them); at least one on a failure or a false PASS.
 - criteria: the ids of the criteria above you find holding.

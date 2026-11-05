@@ -15,7 +15,7 @@
 //   verdicts are equal, an extraction when the values are equal; quotes are not compared, and a
 //   cached entry with no answer never agrees. A row the run cannot answer (no such trial, no such
 //   key, a cached entry of the other kind or with no answer, a malformed row) is a violation and
-//   is not counted. It prints n_judge, n_extract and both agreement rates, each disagreement, and
+//   is not counted, and so is a (trial, key) pair labelled twice: the floors count distinct items. It prints n_judge, n_extract and both agreement rates, each disagreement, and
 //   exits 1 below MIN_JUDGE_LABELS judge or MIN_EXTRACT_LABELS extraction items or on a violation.
 //   --double-label: <run>/double-labels.jsonl, written by a labeller who saw the trajectories and
 //   grades but not the builder labels or the auditor's verdicts:
@@ -28,7 +28,10 @@
 //   the builder label of every audit.jsonl row (pass on a PASS row with no label) against the
 //   verdict cli/audit-llm.ts wrote under <run>/auditor/, over the rows that have one. Exit 1 when
 //   either kappa is below KAPPA_FLOOR, fewer than MIN_DOUBLE_LABELS rows count, no auditor verdict
-//   exists, or on a violation. --sample --seed <n> prints the sample as a template (the sample
+//   exists, or on a violation. MIN_DOUBLE_LABELS is set for the complete final run (every planned
+//   task's 20 trials after W5-F, so well over 20 valid failures), not for a run of two tasks
+//   (coordinator ruling on verifier-phase-P17i-P23CODE-226-1 m2): on a partial run the floor
+//   fails by design, and the data PR runs the gate on the complete run. --sample --seed <n> prints the sample as a template (the sample
 //   line, then one row per trial with label null) and nothing else.
 //   Cohen's kappa (cohenKappa): (po - pe) / (1 - pe), po the observed agreement and pe the chance
 //   agreement from each rater's label frequencies. When both raters use one category only, pe is
@@ -163,6 +166,7 @@ export function agreement(records: ReadonlyMap<string, BatchRecord>, file: strin
   const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, labels: file, disagreements: [], violations };
   if (!existsSync(file)) violations.push(`${file} is missing`);
   const rows = existsSync(file) ? readJsonl(file, violations) : [];
+  const seen = new Set<string>();
   for (const { line, row } of rows) {
     if (row.kind === 'sample') continue;
     const where = `${basename(file)} line ${line}`;
@@ -179,6 +183,11 @@ export function agreement(records: ReadonlyMap<string, BatchRecord>, file: strin
       violations.push(`${where}: an extraction answer needs value`);
       continue;
     }
+    if (seen.has(`${l.trial}\n${l.key}`)) {
+      violations.push(`${l.trial} ${l.key}: labelled twice`);
+      continue;
+    }
+    seen.add(`${l.trial}\n${l.key}`);
     const r = records.get(l.trial);
     if (r === undefined) {
       violations.push(`${l.trial}: the run has no such trial`);
@@ -306,7 +315,7 @@ export function doubleLabel(dir: string, records: ReadonlyMap<string, BatchRecor
     }
   }
   const double = cohenKappa(pairs);
-  if (double.n < MIN_DOUBLE_LABELS) violations.push(`${double.n} double labels, need ${MIN_DOUBLE_LABELS}`);
+  if (double.n < MIN_DOUBLE_LABELS) violations.push(`${double.n} double labels, need ${MIN_DOUBLE_LABELS} (the floor is set for the complete final run, every planned task's trials; a run of fewer tasks cannot meet it)`);
   if (double.kappa !== null && double.kappa < KAPPA_FLOOR) violations.push(`double label kappa ${double.kappa.toFixed(3)} is below ${KAPPA_FLOOR}`);
   // The builder labels against the auditor's verdicts, over every audited trial with both.
   const auditorPairs: Array<[string, string]> = [];

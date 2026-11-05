@@ -290,8 +290,11 @@ const isAnswer = (v: unknown): v is AuditAnswer => v === 'yes' || v === 'no';
 const listed = (xs: readonly string[]): string => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.trim() !== '');
 
-// The verdict in the auditor's answer (header), or why it is not one. steps is the number of
-// executed calls, which a decisive_step must not exceed.
+// The verdict in the auditor's answer (header), or why it is not one: a label the outcome allows,
+// yes or no to both questions, a decisive_step that is a step (steps is the number of executed
+// calls) or null, at least one evidence id unless the label confirms a PASS, and never model with
+// clinically_acceptable no (a clinically acceptable solution that was failed is not the model's
+// fault, R14-31).
 export function parseVerdict(text: string, outcome: string, steps: number): { verdict: Verdict } | { problem: string } {
   const v = lastJsonObject(text, (x) => typeof x.label === 'string');
   if (v === null) return { problem: `the last answer is not the verdict JSON: ${JSON.stringify(text.slice(0, 200))}` };
@@ -302,6 +305,8 @@ export function parseVerdict(text: string, outcome: string, steps: number): { ve
   const step = v.decisive_step ?? null;
   if (step !== null && !(Number.isSafeInteger(step) && (step as number) >= 1 && (step as number) <= steps)) return { problem: `decisive_step ${JSON.stringify(step)} is not a step of the trajectory (1-${steps}) or null` };
   if (!strings(v.evidence_ids)) return { problem: 'evidence_ids must be a list of resource ids' };
+  if (v.evidence_ids.length === 0 && label !== PASS_CONFIRMED) return { problem: 'evidence_ids must name at least one resource id on a failure or a false PASS' };
+  if (label === 'model' && v.clinically_acceptable === 'no') return { problem: "label model with clinically_acceptable no: a clinically acceptable solution that was failed is the grader's or the environment's fault, never the model's" };
   const criteria = v.criteria === undefined ? [] : v.criteria;
   if (!strings(criteria)) return { problem: 'criteria must be a list of criterion ids' };
   return { verdict: { label, clinically_acceptable: v.clinically_acceptable as AuditAnswer, tool_rejections_correct: v.tool_rejections_correct as AuditAnswer, decisive_step: step as number | null, evidence_ids: v.evidence_ids, criteria, reason: typeof v.reason === 'string' ? v.reason : '' } };
