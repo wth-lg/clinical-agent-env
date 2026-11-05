@@ -4,7 +4,9 @@
 // exiting 1 when a projection breaks a budget line. Fixture runs have a known peak and a known
 // quadratic cost (fixtures/context-budget/make-run.ts); the last block is the W0-B gate on the
 // committed pilot-2 run.
-import { describe, expect, it } from 'vitest';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CONTEXT_WINDOW_TOKENS, PER_TRIAL_BUDGET_USD, RERUN_FACTOR } from '../../packages/core/cost.ts';
 import { MAX_WALL_MS } from '../../packages/core/run.ts';
 import { expected as crcExpected } from '../../tasks/crc-care-gap/expected.ts';
@@ -38,8 +40,19 @@ const taskItems: Deps['taskItems'] = async (id) => ITEMS[id] ?? null;
 const sameEnv: Partial<Deps> = { checkoutEnv: async (id) => `ev-${id}`, taskItems };
 
 // The projection correction counts the final run's trials under RESULTS_ROOT (results/runs/final-1,
-// as spend --final-reserve does). Tests point RESULTS_ROOT at their own root, so the checkout's
-// committed final run never moves them.
+// as spend --final-reserve does). Every case in this file runs under its own root with no final
+// run (the hooks below), so the checkout's committed final run never moves a --project case
+// (P22-218-2 N2); a case that needs a final run points RESULTS_ROOT at one with withResultsRoot.
+let checkoutRoot: string | undefined;
+beforeEach(() => {
+  checkoutRoot = process.env.RESULTS_ROOT;
+  process.env.RESULTS_ROOT = tempDir('context-budget-no-final');
+});
+afterEach(() => {
+  if (checkoutRoot === undefined) delete process.env.RESULTS_ROOT;
+  else process.env.RESULTS_ROOT = checkoutRoot;
+});
+
 async function withResultsRoot<T>(root: string, f: () => Promise<T>): Promise<T> {
   const was = process.env.RESULTS_ROOT;
   process.env.RESULTS_ROOT = root;
@@ -218,6 +231,17 @@ describe('pnpm cli context-budget <run> (fit)', () => {
 
 describe('pnpm cli context-budget <run> --project --items <n>', () => {
   const T36 = 2 + (26 / 14) * 36;
+
+  it('every case of this block runs under a RESULTS_ROOT with no final run, never the checkout\'s results (P22-218-2 N2)', async () => {
+    const root = process.env.RESULTS_ROOT;
+    expect(root).toBeDefined();
+    expect(existsSync(join(root!, 'results/runs/final-1'))).toBe(false);
+    // With no final run, all 20 final trials remain in the correction; the checkout's
+    // results/runs/final-1 would count its crc-care-gap trials as already run.
+    const dir = fixture('hermetic');
+    const { json } = await run([dir, '--task', 'crc-care-gap', '--project', '--items', '36', '--json']);
+    expect(json!.correction_usd).toBeCloseTo(20 * RERUN_FACTOR * (json!.tasks['crc-care-gap']!.projection!.p90_usd - quadCost(CRC[2]!)), 9);
+  });
 
   it('projects median and p90 cost, peak, T and working time from the model, and exits 1 over the $3.00 line', async () => {
     const { code, json, lines } = await run([fixture('over'), '--task', 'crc-care-gap', '--project', '--items', '36', '--json']);
