@@ -427,7 +427,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const replay = readReplay(dir);
   for (const [name, r] of records) {
     if (r.state_hash.final === null || r.state_hash.replay_final !== r.state_hash.final) v.push(`${name}: replay_final ${r.state_hash.replay_final} is not final ${r.state_hash.final}`);
-    if (replay !== null && replay[name] !== true) v.push(`${name}: replay.json says it did not reproduce`);
+    if (replay !== null && replay[name] !== 'match') v.push(`${name}: replay.json says it did not reproduce${replay[name] === 'world_mismatch' ? ' (it ran on another world than the replaying checkout\'s: replay its task at its own commit, cli/replay.ts header)' : ''}`);
   }
   for (const task of [...new Set([...records.values()].map((r) => r.task_id))].sort()) {
     const passes = [...records.values()].filter((r) => r.task_id === task && currentGrade(r).outcome === 'PASS');

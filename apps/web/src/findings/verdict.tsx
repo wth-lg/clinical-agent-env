@@ -36,22 +36,27 @@ function ratesOf(run: RunData): Record<string, { passes: number; trials: number 
   return Object.fromEntries(pilotRates(run).map((r) => [r.task, { passes: r.passes, trials: r.valid }]));
 }
 
-// One row per task, one column per run, oldest first (the pilots by number, then the official run,
-// "(final)" only once every task in it has the final sample, else "(official, in progress)"):
-// k/n and the verdict in each cell.
+// A run's column heading: the official run's label, a superseded version's task and version (R42).
+const columnLabel = (run: RunData): string => (run.superseded !== null ? `${run.runId} (${run.superseded.task} ${run.superseded.version}, superseded)` : `${run.runId}${run.official && run.summary !== null ? ` ${officialRunLabel(run.summary.tasks)}` : ''}`);
+
+// One row per task, one column per run, oldest first (the pilots by number, then each superseded
+// task version beside the official run that replaced it, then the official run, "(final)" only
+// once every task in it has the final sample, else "(official, in progress)"): k/n and the verdict
+// in each cell.
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
   const tasks = [...new Set(cols.flatMap((c) => Object.keys(c.rates ?? {})))].sort();
   if (runs.length === 0 || tasks.length === 0) return null;
+  const superseded = runs.some((r) => r.superseded !== null);
   return (
     <Card title="Difficulty history" testId="difficulty-history">
-      <p className="text-xs text-ink-muted">Each task's pass count and verdict in every committed run, oldest first. Pilots are not counted in the results; they show how hard each task was before the final run.</p>
+      <p className="text-xs text-ink-muted">Each task's pass count and verdict in every committed run, oldest first. Pilots are not counted in the results; they show how hard each task was before the final run.{superseded && ' A superseded version is a task as it was before it was changed, beside the version that replaced it; it is not counted either.'}</p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-xs text-ink-muted">
             <tr>
               <th scope="col" className="py-1 pr-3 font-medium">Task</th>
-              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run">{c.run.runId}{c.run.official && c.run.summary !== null ? ` ${officialRunLabel(c.run.summary.tasks)}` : ''}</th>)}
+              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run" data-superseded={c.run.superseded === null ? undefined : `${c.run.superseded.task} ${c.run.superseded.version}`}>{columnLabel(c.run)}</th>)}
             </tr>
           </thead>
           <tbody>

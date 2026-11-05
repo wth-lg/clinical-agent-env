@@ -288,3 +288,28 @@ describe('cli result-card', () => {
     expect(row(r.out, 'message-queue')).toMatch(/\| 6\/6 \| \[0\.61, 1\.00\] \| Above band \|/);
   });
 });
+
+// R42: a task's superseded version in the run (<run>/superseded/<task>-v<n>/) gets its own section
+// and a column of the difficulty history, beside the current version, and never changes the task's row.
+describe('superseded versions', () => {
+  it('lists each superseded version with its k/n, verdict and world, and a history column', async () => {
+    const root = tempDir('card-superseded');
+    const dir = join(root, 'final-x');
+    writeRun(dir, 'final-x', { 't-a': { n: 20, passes: 8 } });
+    writeRun(join(dir, 'superseded', 't-a-v1'), 't-a-v1', { 't-a': { n: 20, passes: 18 } });
+    const lines: string[] = [];
+    const code = await resultCard([dir, '--out', join(root, 'card.md')], { out: (l) => lines.push(l), err: (l) => lines.push(l) });
+    expect(code, lines.join('\n')).toBe(0);
+    const card = readFileSync(join(root, 'card.md'), 'utf8');
+    expect(card).toContain('## Superseded versions');
+    expect(card).toMatch(/\| t-a v1 \| t-a \| 18\/20 \| [^|]+ \| Above band \| h-initial \| final-x\/superseded\/t-a-v1 \(t-a-v1\) \|/);
+    expect(card).toContain('| task | t-a-v1 (t-a v1, superseded) | final-x |');
+    expect(card).toContain('| t-a | 18/20 Above band | 8/20 In band |');
+    // The task's own row is the current version's.
+    expect(card).toMatch(/\| t-a \| 8\/20 \|/);
+    const none = tempDir('card-none');
+    writeRun(join(none, 'r'), 'r', { 't-a': { n: 20, passes: 8 } });
+    expect(await resultCard([join(none, 'r'), '--out', join(none, 'card.md')], { out: () => {}, err: () => {} })).toBe(0);
+    expect(readFileSync(join(none, 'card.md'), 'utf8')).toContain('## Superseded versions\n\nNone.');
+  });
+});

@@ -116,7 +116,7 @@
         }
       },
       "phase": "P14",
-      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (the writeup\u2019s next steps section)."
+      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (the writeup’s next steps section)."
     },
     {
       "id": "A4",
@@ -618,7 +618,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run \u00d71 on Live trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
+        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run ×1 on Live trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
         "surface": "local"
       },
       "evidence": [
@@ -657,7 +657,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "Open a task on Tasks and press Run trial: the Live trial launcher shows the task and the model claude-opus-5-5, and Run \u00d71 hands back one graded trial record; the CLI one-liner is pnpm cli run-one --task <id> --model claude-opus-5-5.",
+        "action": "Open a task on Tasks and press Run trial: the Live trial launcher shows the task and the model claude-opus-5-5, and Run ×1 hands back one graded trial record; the CLI one-liner is pnpm cli run-one --task <id> --model claude-opus-5-5.",
         "surface": "local"
       },
       "evidence": [
@@ -761,7 +761,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "pnpm cli replay results/runs/final-1 --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },
@@ -1042,7 +1042,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1 && pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,replay=all,valid=20",
+            "cmd": "pnpm cli replay results/runs/final-1 --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue && pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,replay=all,valid=20",
             "exit": 0
           }
         },
@@ -1489,7 +1489,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli replay results/runs/final-1",
+            "cmd": "pnpm cli replay results/runs/final-1 --tasks renal-dose-review,results-inbox,crc-care-gap,discharge-medrec,message-queue",
             "exit": 0
           }
         },
@@ -1951,7 +1951,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "On the local runner open a task on Tasks, press Run trial, then Run \u00d71: the trial runs in the runner through run() and its events stream back into the live view.",
+        "action": "On the local runner open a task on Tasks, press Run trial, then Run ×1: the trial runs in the runner through run() and its events stream back into the live view.",
         "surface": "local"
       },
       "evidence": [

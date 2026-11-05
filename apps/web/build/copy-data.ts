@@ -3,10 +3,12 @@
 // Sources, relative to the source root (env RESULTS_ROOT, resolved against the repo root so the
 // same value works from the repo root and from `pnpm --filter web`; default the repo root):
 //   results/official.json and, from the run directory it names ({"run": "runs/<id>"},
-//   relative to results/), trials/, trajectories/, summary.json, manifest.json, audit.jsonl, matrix.json and regrade/trials/;
+//   relative to results/), trials/, trajectories/, summary.json, manifest.json, audit.jsonl, matrix.json, regrade/trials/
+//   and superseded/ (a task's superseded versions, R42: each <task>-v<n>/ with its trials, trajectories and README);
 //   each pilot run, results/pilot-<n>/ or results/runs/pilot-<n>/ with a trials/ directory (not
 //   counted in the results; the Runs view lists them), with the same entries;
-//   docs/findings.md; fixtures/world.ndjson.gz and fixtures/manifest.json.
+//   docs/findings.md; results/tasks-final.json (the per-task freeze: each frozen task's world and
+//   the commit that reproduces its records, which the trial State diff reads, R37); fixtures/world.ndjson.gz and fixtures/manifest.json.
 // A missing source is skipped, so a tree with no results/ yields an empty index.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -15,8 +17,8 @@ import type { Plugin } from 'vite';
 
 // manifest.json (its world_hash, for M3) and matrix.json (pnpm cli matrix --out) for the criteria, and regrade/ (an offline
 // regrade of the run's records, its trials only) for the line that says whether a later grader changes them.
-const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'manifest.json', 'audit.jsonl', 'matrix.json', 'regrade/trials'];
-const FIXED_FILES = ['results/official.json', 'docs/findings.md', 'fixtures/world.ndjson.gz', 'fixtures/manifest.json'];
+const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'manifest.json', 'audit.jsonl', 'matrix.json', 'regrade/trials', 'superseded'];
+const FIXED_FILES = ['results/official.json', 'results/tasks-final.json', 'docs/findings.md', 'fixtures/world.ndjson.gz', 'fixtures/manifest.json'];
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 

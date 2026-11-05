@@ -12,6 +12,7 @@ import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
+import type { Summary } from '../../../../packages/core/summary.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -114,11 +115,31 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
       </ul>
       <MarkLegend />
       <p className="text-xs text-ink-muted">Each task links to its trials in Runs.{block === null && <> <PassKLink /> <VerdictLink /></>}</p>
+      <SupersededLines summary={summary!} />
       <Card title="Who is at fault, all tasks">
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
       </Card>
     </Page>
+  );
+}
+
+// R42: each superseded task version in the run (summary.json superseded), one line beside the
+// table: its k/n and verdict, the world it ran on, and the link to its trials in Runs.
+function SupersededLines({ summary }: { summary: Summary }) {
+  const entries = Object.entries(summary.superseded);
+  if (entries.length === 0) return null;
+  return (
+    <ul className="space-y-1 text-xs text-ink-muted" data-testid="superseded-lines">
+      {entries.map(([key, v]) => (
+        <li key={key} data-testid="superseded-line" data-task={v.task} data-version={v.version} className="break-words">
+          <span className="font-medium text-ink">{v.task} {v.version}</span> (superseded, not counted): <span data-testid="k-of-n">{v.summary.passes}/{v.summary.trials}</span>{' '}
+          <Verdict task={`${v.task}-${v.version}`} passes={v.summary.passes} trials={v.summary.trials} />
+          {v.initial_state_hashes.length > 0 && <>, on world {v.initial_state_hashes.map((h) => `${h.slice(0, 4)}…`).join(', ')}</>}.{' '}
+          <a href={hrefWith({ view: 'runs', run: key, task: null, label: null, trial: null, check: null, audit: null })} onClick={onNav({ view: 'runs', run: key, task: null, label: null, trial: null, check: null, audit: null })} className={link}>Its trials are in Runs</a>.
+        </li>
+      ))}
+    </ul>
   );
 }
 

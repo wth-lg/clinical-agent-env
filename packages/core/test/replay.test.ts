@@ -15,26 +15,28 @@ describe('replayEnvVerdict', () => {
     expect(replayEnvVerdict(record(), ENV)).toBeNull();
   });
 
-  it('does not match a record of another environment, or one with none', () => {
-    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ match: false, outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: `${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; reproduce at the commit in results/<run>/README.md` });
+  it('gives a record of another environment, or one with none, the named verdict world_mismatch', () => {
+    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ match: false, verdict: 'world_mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: `${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; reproduce at the commit in results/<run>/README.md` });
     expect(replayEnvVerdict(record({ env_version: null }), ENV)?.error).toMatch(/^environment changed: run at env_version \(none: recorded before env_version, task_version v1\)/);
     const { env_version: _, ...none } = record();
-    expect(replayEnvVerdict(none, ENV)?.match).toBe(false);
+    expect(replayEnvVerdict(none, ENV)).toMatchObject({ match: false, verdict: 'world_mismatch' });
   });
 
-  it('R37: points at the commit the run directory\'s README.md names', () => {
+  it('R37: points at the commit the run directory\'s README.md names, or at the reproduce pointer the caller gives', () => {
     expect(replayEnvVerdict(record({ env_version: 'old', run_id: 'probe-1' }), ENV)?.error).toMatch(/^environment changed: run at env_version old, checkout at e{64}; reproduce at the commit in results\/probe-1\/README\.md$/);
+    expect(replayEnvVerdict(record({ env_version: 'old', run_id: 'final-1' }), ENV, 'replay it at tag final-1-t3t5 (e8ef8c4d): pnpm cli replay <copy> --tasks t')?.error)
+      .toBe(`${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; replay it at tag final-1-t3t5 (e8ef8c4d): pnpm cli replay <copy> --tasks t`);
   });
 });
 
 describe('replayVerdict', () => {
   it('matches when outcome, score and check results equal the current grade', () => {
-    expect(replayVerdict(record(), graded())).toEqual({ match: true, outcome: 'FAIL', recorded_outcome: 'FAIL', current_outcome: 'FAIL' });
+    expect(replayVerdict(record(), graded())).toEqual({ match: true, verdict: 'match', outcome: 'FAIL', recorded_outcome: 'FAIL', current_outcome: 'FAIL' });
   });
 
   it('does not match on another outcome, score or check result, and says what the grade was', () => {
     expect(replayVerdict(record({ outcome: 'GRADER_ERROR', score: null, checks: null }), graded({ score: 1 }))).toEqual({
-      match: false, outcome: 'FAIL', recorded_outcome: 'GRADER_ERROR', current_outcome: 'GRADER_ERROR', error: 'regrade gives FAIL score 1, the record GRADER_ERROR score null',
+      match: false, verdict: 'mismatch', outcome: 'FAIL', recorded_outcome: 'GRADER_ERROR', current_outcome: 'GRADER_ERROR', error: 'regrade gives FAIL score 1, the record GRADER_ERROR score null',
     });
     expect(replayVerdict(record(), graded({ score: 1 })).match).toBe(false);
     expect(replayVerdict(record(), graded({ checks: [{ id: 'G1', met: true }, { id: 'G2', met: true }] })).match).toBe(false);
@@ -60,8 +62,8 @@ describe('replayVerdict', () => {
 
   it('never matches a judge cache miss or a regrade that threw', () => {
     const miss = replayVerdict(record(), { miss: 'judge cache miss abc123 for G3' });
-    expect(miss).toEqual({ match: false, outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: judgeMissed('judge cache miss abc123 for G3', record()) });
+    expect(miss).toEqual({ match: false, verdict: 'mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: judgeMissed('judge cache miss abc123 for G3', record()) });
     expect(miss.error).toMatch(/^judge cache miss abc123: /);
-    expect(replayVerdict(record(), { error: 'boom' })).toEqual({ match: false, outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: 'boom' });
+    expect(replayVerdict(record(), { error: 'boom' })).toEqual({ match: false, verdict: 'mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: 'boom' });
   });
 });

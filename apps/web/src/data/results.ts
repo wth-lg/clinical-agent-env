@@ -25,8 +25,15 @@
 // and the run's matrix.json, which M1's reachability reads, so its criteria equal audit-check's.
 //
 // A run's grading: the grader versions its records were graded at, whether they started from
-// another world than today's manifest, and, when the run holds regrade/ (an offline regrade of
-// its records with a later grader), how many keep their outcome.
+// another world than today's manifest (a frozen task's own world, results/tasks-final.json, is
+// counted apart: its records are historical, reproduced at the commit the freeze names, R37),
+// and, when the run holds regrade/ (an offline regrade of its records with a later grader), how
+// many keep their outcome.
+//
+// The official run's superseded task versions (R42: results/<run>/superseded/<task>-v<n>/, a
+// version's trials moved there byte-identical when a later version's entered the run) load as
+// runs of their own, never counted: Runs lists them under the official run, the difficulty
+// history shows each beside the current version, and a trial of one opens like any other.
 import { explainContext } from '../../../../packages/core/explain-context.ts';
 import { auditAnswerOf, explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
 import { trialName, validateSummary, wilson, type Interval, type Summary } from '../../../../packages/core/summary.ts';
@@ -65,11 +72,22 @@ export interface BadRecord {
 export interface Grading {
   // The grader versions the records were graded at, sorted.
   graders: string[];
-  // Records whose initial state hash is not today's manifest's.
+  // Records whose initial state hash is not today's manifest's, nor their task's frozen world.
   olderWorld: number;
+  // Records that started from their task's frozen world (results/tasks-final.json), when that
+  // is not today's manifest's.
+  frozenWorld: number;
   // The run's offline regrade, when it holds one: its grader version and the records whose
   // outcome it changes.
   regrade: { graders: string[]; records: number; changed: string[] } | null;
+}
+
+// A frozen task's entry in results/tasks-final.json, as the views read it: its world and the tag
+// and commit that reproduce its records (replay_at, else the freeze tag alone).
+export interface FrozenTask {
+  world_hash: string;
+  frozen_at: { tag: string };
+  replay_at: { tag: string; commit: string } | null;
 }
 
 export interface RunData {
@@ -77,6 +95,9 @@ export interface RunData {
   // The run's directory under data/, e.g. results/pilot-0.
   dir: string;
   official: boolean;
+  // Set on a superseded version of a task of the official run (header): which run and task it
+  // supersedes under, and its version (v1).
+  superseded: { of: string; task: string; version: string } | null;
   // The run's parsed manifest.json, or null when it has none.
   manifest: unknown;
   grading: Grading;
@@ -90,7 +111,7 @@ export interface RunData {
 
 export type Results =
   | { kind: 'error'; message: string }
-  | { kind: 'ready'; official: RunData | null; officialError: string | null; pilots: RunData[]; findings: string | null; files: ReadonlySet<string> };
+  | { kind: 'ready'; official: RunData | null; officialError: string | null; superseded: RunData[]; pilots: RunData[]; frozen: Readonly<Record<string, FrozenTask>>; findings: string | null; files: ReadonlySet<string> };
 
 async function fetchText(rel: string): Promise<string> {
   const res = await fetch(dataUrl(rel));
@@ -113,7 +134,7 @@ export const readsEvents = (r: Pick<ExplainRecord, 'outcome' | 'detail'>, audit:
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null): Promise<RunData> {
+async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null, frozen: Readonly<Record<string, FrozenTask>>, superseded: RunData['superseded'] = null): Promise<RunData> {
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
@@ -163,15 +184,22 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
     for (const id of new Set(trials.map((x) => x.task))) if (!(id in summary.tasks)) warnings.push(`${id}: the run holds records of a task that summary.json does not list`);
   }
   const runId = summary?.run_id ?? runDir.split('/').at(-1)!;
-  return { runId, dir: runDir, official: summary !== null, manifest, grading: await gradingOf(files, runDir, trials, warnings), summary, trials, bad, warnings };
+  return { runId, dir: runDir, official: summary !== null, superseded, manifest, grading: await gradingOf(files, runDir, trials, warnings, frozen), summary, trials, bad, warnings };
 }
 
-async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[]): Promise<Grading> {
+// Whether a trial started from its task's frozen world, when that is not today's.
+export const onFrozenWorld = (t: Pick<Trial, 'task' | 'record'>, frozen: Readonly<Record<string, FrozenTask>>): boolean => {
+  const f = frozen[t.task];
+  return f !== undefined && f.world_hash !== MANIFEST.world.state_hash && t.record.state_hash.initial === f.world_hash;
+};
+
+async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[], frozen: Readonly<Record<string, FrozenTask>>): Promise<Grading> {
   const graders = [...new Set(trials.map((t) => t.record.grader_version ?? 'unknown'))].sort();
-  const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash).length;
+  const frozenWorld = trials.filter((t) => onFrozenWorld(t, frozen)).length;
+  const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash && !onFrozenWorld(t, frozen)).length;
   const prefix = `${runDir}/regrade/trials/`;
   const regraded = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
-  if (regraded.length === 0) return { graders, olderWorld, regrade: null };
+  if (regraded.length === 0) return { graders, olderWorld, frozenWorld, regrade: null };
   const byFile = new Map(trials.map((t) => [t.file.slice(`${runDir}/trials/`.length), t]));
   const rows = await Promise.all(regraded.map(async (f) => {
     try {
@@ -186,6 +214,7 @@ async function gradingOf(files: readonly string[], runDir: string, trials: Trial
   return {
     graders,
     olderWorld,
+    frozenWorld,
     regrade: {
       graders: [...new Set(ok.map((x) => String(x.g.grader_version ?? 'unknown')))].sort(),
       records: ok.length,
@@ -196,9 +225,11 @@ async function gradingOf(files: readonly string[], runDir: string, trials: Trial
 
 // One plain line on how a run was graded, when it is not plainly today's grader on today's world:
 // "Graded with grader 3 on an older world; a regrade with grader 4 gives the same outcomes."
+// Trials on their task's frozen world are said so, apart from an older world (R37).
 export function gradingLine(g: Grading): string | null {
-  if (g.olderWorld === 0 && g.regrade === null) return null;
-  const graded = `Graded with grader ${g.graders.join(' and ')}${g.olderWorld > 0 ? ' on an older world than today\'s' : ''}`;
+  if (g.olderWorld === 0 && g.frozenWorld === 0 && g.regrade === null) return null;
+  const worlds = [...(g.olderWorld > 0 ? ['an older world than today\'s'] : []), ...(g.frozenWorld > 0 ? [`the frozen world of ${g.frozenWorld === 1 ? 'its task' : 'their tasks'} (${g.frozenWorld} trial${g.frozenWorld === 1 ? '' : 's'}, results/tasks-final.json)`] : [])];
+  const graded = `Graded with grader ${g.graders.join(' and ')}${worlds.length > 0 ? ` on ${worlds.join(' and ')}` : ''}`;
   if (g.regrade === null) return `${graded}.`;
   const changed = g.regrade.changed;
   return `${graded}; a regrade with grader ${g.regrade.graders.join(' and ')} gives ${changed.length === 0 ? 'the same outcomes' : `a different outcome for ${changed.join(', ')}`}.`;
@@ -238,19 +269,40 @@ export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<s
 }
 
 const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;
+// A superseded version's directory under the official run: superseded/<task>-v<n>/trials/.
+const SUPERSEDED_DIR = /^superseded\/((.+)-(v\d+))\/trials\//;
+
+// results/tasks-final.json as the views read it: each frozen task's world and reproduce pointer;
+// {} without the file or when it cannot be read (a warning the loader does not raise: the freeze
+// is a hint for the State diff, never a count).
+async function loadFrozen(has: ReadonlySet<string>): Promise<Record<string, FrozenTask>> {
+  if (!has.has('results/tasks-final.json')) return {};
+  try {
+    const doc = await fetchJson<{ tasks?: Record<string, { world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown } }> }>('results/tasks-final.json');
+    return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, t]) => {
+      if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return [];
+      const replay_at = typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? { tag: t.replay_at.tag, commit: t.replay_at.commit } : null;
+      return [[id, { world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at }]];
+    }));
+  } catch {
+    return {};
+  }
+}
 
 async function load(): Promise<Results> {
   const res = await fetch(dataUrl('index.json'));
   // A build always writes data/index.json. Only its absence, a 404 (vite dev answers one for every
   // data/ path, vite.config.ts), means no results; any other HTTP error is a failed load.
-  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() };
+  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], frozen: {}, findings: null, files: new Set() };
   if (!res.ok) throw new Error(`data/index.json: HTTP ${res.status}`);
   const { files } = (await res.json()) as { files: string[] };
   const has = new Set(files);
   const findings = has.has('docs/findings.md') ? await fetchText('docs/findings.md') : null;
+  const frozen = await loadFrozen(has);
   let official: RunData | null = null;
   let officialError: string | null = null;
   let officialDir: string | null = null;
+  const superseded: RunData[] = [];
   if (has.has('results/official.json')) {
     const { run } = await fetchJson<{ run: string }>('results/official.json');
     officialDir = `results/${run.replace(/^\.\//, '').replace(/\/$/, '')}`;
@@ -258,7 +310,18 @@ async function load(): Promise<Results> {
       const summary = await fetchJson<unknown>(`${officialDir}/summary.json`);
       const errors = validateSummary(summary);
       if (errors.length > 0) officialError = `${officialDir}/summary.json is not a summary: ${errors.slice(0, 3).join('; ')}`;
-      else official = await loadRun(files, has, officialDir, summary as Summary);
+      else {
+        official = await loadRun(files, has, officialDir, summary as Summary, frozen);
+        const prefix = `${officialDir}/`;
+        const keys = [...new Set(files.flatMap((f) => {
+          const m = f.startsWith(prefix) ? SUPERSEDED_DIR.exec(f.slice(prefix.length)) : null;
+          return m === null ? [] : [`${m[1]}\u0000${m[2]}\u0000${m[3]}`];
+        }))].sort();
+        for (const k of keys) {
+          const [key, task, version] = k.split('\u0000') as [string, string, string];
+          superseded.push(await loadRun(files, has, `${officialDir}/superseded/${key}`, null, frozen, { of: official.runId, task, version }));
+        }
+      }
     }
   }
   // By the pilot's number, so the last pilot is the latest: pilot-9 before pilot-10, under results/
@@ -267,11 +330,11 @@ async function load(): Promise<Results> {
   const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort((a, b) => pilotName(a).localeCompare(pilotName(b), 'en', { numeric: true }) || a.localeCompare(b));
   // Every pilot settles before the first failure is reported, so nothing is still fetching when
   // the load settles (ViewBody's data-preload signal relies on it).
-  const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null)));
+  const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null, frozen)));
   const failed = settled.find((s) => s.status === 'rejected');
   if (failed) throw failed.reason;
   const pilots = settled.map((s) => (s as PromiseFulfilledResult<RunData>).value);
-  return { kind: 'ready', official, officialError, pilots, findings, files: has };
+  return { kind: 'ready', official, officialError, superseded, pilots, frozen, findings, files: has };
 }
 
 let cached: Promise<Results> | undefined;

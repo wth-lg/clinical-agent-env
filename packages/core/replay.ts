@@ -10,7 +10,13 @@
 // outcome and score only, with a note. A record with no env_version, a judge cache miss and a
 // regrade that threw never match. An excluded record (ENV_ERROR, INFRA) is not graded by
 // gradeTrajectory, so it matches when its outcome comes back unchanged.
-import { currentGrade, type RegradeGrade } from './summary.ts';
+//
+// Each verdict is named (ReplayState): match; mismatch, a regrade that differs, a judge cache
+// miss or an error; and world_mismatch, a record of another environment than the checkout's,
+// which this checkout cannot replay at all (R37: it is historical data, reproduced at its own
+// commit). summary --require replay=all lists the last apart from the mismatches and says where
+// to replay it (pre-audit-2 B4).
+import { currentGrade, type RegradeGrade, type ReplayState } from './summary.ts';
 
 export interface ReplayRecord {
   task_id: string;
@@ -32,14 +38,28 @@ export type ReplayGraded =
   | { miss: string }
   | { error: string };
 
+// Where a verdict was made, as cli/replay.ts stamps it: the checkout's commit (null outside
+// git) and whether its tracked paths were dirty, its world and its env_version of the record's
+// task. A two-step replay (cli/replay.ts header) leaves each task's verdicts stamped with the
+// commit that made them.
+export interface ReplayedAt {
+  commit: string | null;
+  dirty: boolean | null;
+  world_hash: string;
+  env_version: string;
+}
+
 // One trial's entry in replay.json, plus a note the CLI prints and does not write.
 export interface ReplayVerdict {
+  // verdict === 'match'. Kept beside verdict so readers of an older replay.json read the same field.
   match: boolean;
+  verdict: ReplayState;
   outcome: string | null;
   recorded_outcome: string;
   current_outcome: string;
   error?: string;
   note?: string;
+  replayed_at?: ReplayedAt;
 }
 
 // Why a record's trial is not this checkout's environment. A record written before env_version
@@ -62,18 +82,19 @@ export const judgeMissed = (miss: string, r: Pick<ReplayRecord, 'task_id' | 'mod
 const base = (r: ReplayRecord) => ({ recorded_outcome: r.outcome, current_outcome: currentGrade(r).outcome });
 
 // The verdict for a record run in another environment than the checkout's; null when it is the
-// same one and the trajectory is to be regraded.
-export function replayEnvVerdict(r: ReplayRecord, checkoutEnv: string): ReplayVerdict | null {
-  // R37: a record of another environment is historical data, reproduced at its run's commit.
-  return r.env_version === checkoutEnv ? null : { match: false, outcome: null, ...base(r), error: `${envChanged(r, checkoutEnv)}; reproduce at the commit in results/${r.run_id || '<run>'}/README.md` };
+// same one and the trajectory is to be regraded. reproduce: where to replay it, after the
+// reason; by default the commit the run's README.md names (R37). cli/replay.ts passes the task's
+// replay_at from results/tasks-final.json when the freeze names one.
+export function replayEnvVerdict(r: ReplayRecord, checkoutEnv: string, reproduce = `reproduce at the commit in results/${r.run_id || '<run>'}/README.md`): ReplayVerdict | null {
+  return r.env_version === checkoutEnv ? null : { match: false, verdict: 'world_mismatch', outcome: null, ...base(r), error: `${envChanged(r, checkoutEnv)}; ${reproduce}` };
 }
 
 const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | null | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));
 
 // The verdict for a record whose trajectory was regraded (or failed to be).
 export function replayVerdict(r: ReplayRecord, res: ReplayGraded): ReplayVerdict {
-  if ('miss' in res) return { match: false, outcome: null, ...base(r), error: judgeMissed(res.miss, r) };
-  if ('error' in res) return { match: false, outcome: null, ...base(r), error: res.error };
+  if ('miss' in res) return { match: false, verdict: 'mismatch', outcome: null, ...base(r), error: judgeMissed(res.miss, r) };
+  if ('error' in res) return { match: false, verdict: 'mismatch', outcome: null, ...base(r), error: res.error };
   const g = res.grade;
   const cur = currentGrade(r);
   const checksKnown = !cur.regraded || cur.checks !== null;
@@ -81,6 +102,7 @@ export function replayVerdict(r: ReplayRecord, res: ReplayGraded): ReplayVerdict
   const was = `the ${cur.regraded ? 'current grade' : 'record'} ${cur.outcome} score ${cur.score}`;
   return {
     match,
+    verdict: match ? 'match' : 'mismatch',
     outcome: g.outcome,
     ...base(r),
     ...(match ? {} : { error: g.error?.message ?? `regrade gives ${g.outcome} score ${g.score}, ${was}` }),

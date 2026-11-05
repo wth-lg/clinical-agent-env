@@ -16,6 +16,10 @@
         "tag": "freeze-t3t5"
       },
       "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "replay_at": {
+        "tag": "final-1-t3t5",
+        "commit": "e8ef8c4d9bedce9e93d1a6d2031785c295e5caae"
+      },
       "regrades": [
         {
           "grader_version": "22",
@@ -36,6 +40,10 @@
         "tag": "freeze-t3t5"
       },
       "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "replay_at": {
+        "tag": "final-1-t3t5",
+        "commit": "e8ef8c4d9bedce9e93d1a6d2031785c295e5caae"
+      },
       "regrades": [
         {
           "grader_version": "22",

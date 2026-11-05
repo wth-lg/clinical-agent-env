@@ -9,7 +9,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { BAND_VERDICT_RULE, bandVerdict } from '../../../packages/core/summary.ts';
 import { browseFrom } from './browse.ts';
-import { bandBase, OFFICIAL, PILOT, PILOT_ID, RUN_ID, summary } from './fixtures/band-verdict/band.ts';
+import { bandBase, OFFICIAL, PILOT, PILOT_ID, RUN_ID, summary, SUPERSEDED, SUPERSEDED_KEY } from './fixtures/band-verdict/band.ts';
 
 const browse = browseFrom(bandBase);
 const WANT: Record<string, string> = { 'message-queue': 'Saturated', 'discharge-medrec': 'Above band', 'contrast-ct-prep': 'In band' };
@@ -60,20 +60,53 @@ for (const size of SIZES) {
     await expect(clean).toHaveAttribute('data-task', 'message-queue');
     await expect(clean.getByTestId('no-failures-text')).toHaveText('No failures in 20 trials.');
     const history = page.getByTestId('difficulty-history');
-    await expect(history.getByTestId('history-run')).toHaveText([PILOT_ID, `${RUN_ID} (final)`]);
+    // R42: the superseded version of contrast-ct-prep is a column beside the official run.
+    await expect(history.getByTestId('history-run')).toHaveText([PILOT_ID, `${SUPERSEDED_KEY} (contrast-ct-prep v1, superseded)`, `${RUN_ID} (final)`]);
     for (const id of Object.keys(WANT)) {
       const cells = history.locator(`[data-testid="history-row"][data-task="${id}"] [data-testid="history-cell"]`);
       const p = PILOT[id]!;
       const o = OFFICIAL[id]!;
+      const v1 = SUPERSEDED[id];
       // A pilot's 8 trials are short of the final sample, so its verdict is provisional (UIBAND-219 N1).
       await expect(cells.nth(0)).toHaveText(`${p.passes}/${p.trials} ${bandVerdict(p.passes, p.trials)}, provisional (${p.trials} of 20 valid trials)`);
-      await expect(cells.nth(1)).toHaveText(`${o.passes}/${o.trials} ${WANT[id]}`);
+      await expect(cells.nth(1)).toHaveText(v1 === undefined ? 'none' : `${v1.passes}/${v1.trials} ${bandVerdict(v1.passes, v1.trials)}`);
+      await expect(cells.nth(2)).toHaveText(`${o.passes}/${o.trials} ${WANT[id]}`);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await clean.getByRole('link', { name: 'See the strictness evidence' }).click();
     await expect(page).toHaveURL(/view=tasks.*task=message-queue.*tab=grader-validation|view=tasks.*tab=grader-validation.*task=message-queue/);
   });
 }
+
+// R42: a task's superseded version is shown beside the current one on Overview, in the history
+// and in Runs, never counted: summary.json carries it under superseded, apart from tasks.
+test('a superseded task version shows beside the current one on Overview and in Runs, and is not counted', async ({ page }) => {
+  const v1 = SUPERSEDED['contrast-ct-prep']!;
+  expect(summary.superseded[SUPERSEDED_KEY]).toMatchObject({ task: 'contrast-ct-prep', version: 'v1', summary: { passes: v1.passes, trials: v1.trials, band_verdict: bandVerdict(v1.passes, v1.trials) } });
+  expect(summary.tasks['contrast-ct-prep']).toMatchObject({ passes: OFFICIAL['contrast-ct-prep']!.passes, trials: OFFICIAL['contrast-ct-prep']!.trials });
+  await browse(page, './?view=overview');
+  await expect(page.getByTestId('overview-row')).toHaveCount(Object.keys(OFFICIAL).length);
+  const line = page.getByTestId('superseded-line');
+  await expect(line).toHaveCount(1);
+  await expect(line).toHaveAttribute('data-task', 'contrast-ct-prep');
+  await expect(line).toHaveAttribute('data-version', 'v1');
+  await expect(line.getByTestId('k-of-n')).toHaveText(`${v1.passes}/${v1.trials}`);
+  await expect(line.getByTestId('band-verdict')).toHaveText(bandVerdict(v1.passes, v1.trials)!);
+  await line.getByRole('link', { name: 'Its trials are in Runs' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Runs');
+  const section = page.getByTestId('superseded-runs');
+  await expect(section.getByRole('heading', { level: 2 })).toHaveText('Superseded task versions (not counted in the results)');
+  const run = section.locator(`[data-testid="run"][data-run="${SUPERSEDED_KEY}"]`);
+  await expect(run).toHaveAttribute('data-official', 'false');
+  await expect(run).toHaveAttribute('data-superseded', 'contrast-ct-prep v1');
+  await expect(run.getByTestId('run-header')).toHaveText(`contrast-ct-prep v1 (superseded in ${RUN_ID}): ${v1.passes}/${v1.trials} pass · ${v1.trials - v1.passes} failures`);
+  // The official run's own count stays its own.
+  await expect(page.getByTestId('runs-stat')).toHaveText(`${Object.values(OFFICIAL).reduce((n, t) => n + t.passes, 0)}/${Object.values(OFFICIAL).reduce((n, t) => n + t.trials, 0)}`);
+  // A superseded trial opens like any other, and says what it is.
+  await run.getByTestId('trial-row').first().getByRole('button').click();
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-run', SUPERSEDED_KEY);
+  await expect(page.getByText(`the superseded v1 of contrast-ct-prep in ${RUN_ID}, not counted in the results`)).toBeVisible();
+});
 
 test('the glossary gives the verdict rule, and Findings links to it', async ({ page }) => {
   await browse(page, './?view=findings');

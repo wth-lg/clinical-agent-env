@@ -88,6 +88,10 @@ export interface BatchEntry {
   // The commit the batch ran on (BatchSpec.envGitSha), also in each trial record it writes; a
   // resume adds its own entry and never rewrites an earlier one or a settled record.
   env_git_sha: string | null;
+  // The world the batch's trials started from and the tasks it ran (pre-audit-2 S16); absent on
+  // an entry written before builder-317.
+  world_hash?: string;
+  tasks?: string[];
 }
 
 // manifest.json. The caller adds its own fields (cli/run.ts: env_git_sha, env_dirty, of the
@@ -101,11 +105,16 @@ export interface RunManifest {
   world_hash: string;
   api_version: string;
   trials: number;
-  // Each task's versions at the latest batch (packages/core/tasks.ts); env_versions and
-  // grader_task_versions are absent from a manifest written before the split.
+  // Each task's versions at the latest batch that ran it (packages/core/tasks.ts); env_versions
+  // and grader_task_versions are absent from a manifest written before the split. A batch sets the
+  // entries of its own tasks and keeps every other task's, so a run whose tasks ran on two worlds
+  // (T3/T5 frozen on one, the rest appended on a later one, R40) keeps both; world_hash above is
+  // the latest batch's world, and world_hashes names each task's (absent before builder-317).
+  // Readers take a task's world from world_hashes first (explain-context.ts runWorldHash).
   task_versions: Record<string, string>;
   env_versions?: Record<string, string>;
   grader_task_versions?: Record<string, string>;
+  world_hashes?: Record<string, string>;
   batches: BatchEntry[];
   [k: string]: unknown;
 }
@@ -261,7 +270,7 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
   result.batch_id = grant.batch_id;
   const entry: BatchEntry = {
     batch_id: grant.batch_id, started: iso(deps.now()), ended: null, projection: plan.projection.total, remaining: plan.remaining.length,
-    settled: 0, requeued: 0, stopped: null, cancelled: false, env_git_sha: spec.envGitSha ?? null,
+    settled: 0, requeued: 0, stopped: null, cancelled: false, env_git_sha: spec.envGitSha ?? null, world_hash: deps.worldHash, tasks: [...new Set(spec.taskIds)].sort(),
   };
   const prior = await deps.sink.manifest();
   const pick = (k: keyof TaskVersions) => Object.fromEntries(Object.entries(plan.versions).map(([id, v]) => [id, v[k]]));
@@ -269,6 +278,7 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
     ...prior, ...spec.manifest, run_id: spec.runId, model: spec.model, effort: spec.effort, mode: spec.mode, world_hash: deps.worldHash,
     api_version: ANTHROPIC_VERSION, trials: Math.max(spec.trials, prior?.trials ?? 0), task_versions: { ...prior?.task_versions, ...pick('task_version') },
     env_versions: { ...prior?.env_versions, ...pick('env_version') }, grader_task_versions: { ...prior?.grader_task_versions, ...pick('grader_task_version') },
+    world_hashes: { ...prior?.world_hashes, ...Object.fromEntries(Object.keys(plan.versions).map((id) => [id, deps.worldHash])) },
     batches: [...(prior?.batches ?? []), entry],
   };
 

@@ -85,6 +85,33 @@ const unsettled = (rows: readonly LedgerRow[]) => {
 };
 const keysOf = async (sink: ResultSink) => (await sink.settled()).map((r) => `${r.task_version}/${r.model_requested}/${r.effort}/${r.index}`);
 
+// Pre-audit-2 S16: the manifest names the world each task ran on. A batch adds its own tasks to
+// world_hashes, env_versions, task_versions and grader_task_versions and never rewrites another
+// task's entry, and its BatchEntry carries its world and tasks, so a run whose tasks ran on two
+// worlds (T3/T5 frozen on one, the rest appended on a later one) keeps both.
+describe('manifest per task', { timeout: 120_000 }, () => {
+  it('a batch adds its tasks\' world and versions beside another batch\'s, and its entry names its world and tasks', async () => {
+    const store = new MemoryStore();
+    const sink = memorySink();
+    const prior = {
+      run_id: 'run-1', model: MODEL, effort: 'high' as const, mode: 'mock-toy', world_hash: 'w-frozen', api_version: 'v', trials: 1,
+      task_versions: { frozen: 't-f' }, env_versions: { frozen: 'e-f' }, grader_task_versions: { frozen: 'g-f' }, world_hashes: { frozen: 'w-frozen' },
+      batches: [{ batch_id: 'b0', started: 's', ended: 'e', projection: 1, remaining: 1, settled: 1, requeued: 0, stopped: null, cancelled: false, env_git_sha: 'c0', world_hash: 'w-frozen', tasks: ['frozen'] }],
+    };
+    await sink.writeManifest(prior);
+    const result = await runBatch(spec({ trials: 1 }), deps(store, sink, newCalls()));
+    expect(result.settled).toBe(1);
+    const m = (await sink.manifest())!;
+    expect(m.world_hash).toBe(WORLD_HASH);
+    expect(m.world_hashes).toEqual({ frozen: 'w-frozen', _toy: WORLD_HASH });
+    expect(m.task_versions.frozen).toBe('t-f');
+    expect(m.env_versions!.frozen).toBe('e-f');
+    expect(m.grader_task_versions!.frozen).toBe('g-f');
+    expect(typeof m.env_versions!._toy).toBe('string');
+    expect(m.batches.map((b) => [b.world_hash, b.tasks])).toEqual([['w-frozen', ['frozen']], [WORLD_HASH, ['_toy']]]);
+  });
+});
+
 // Each mocked trial loads and hashes the world (about 0.5 s), so the 60-trial cases get 8 minutes (125 s seen under a parallel run).
 describe('runBatch', { timeout: 480_000 }, () => {
   it('60 mocked trials complete, each key once, five calls each, and the batch closes', async () => {

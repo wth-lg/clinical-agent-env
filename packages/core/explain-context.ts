@@ -2,7 +2,7 @@
 // holds, so cli/audit-check.ts and the web Runs view (apps/web/src/data/results.ts) give
 // explainTrial the same context and show the same M1-M5 criteria for every trial. Pure: the
 // callers read the files (Node or fetch) and pass their parsed contents.
-//   world_state_hash  the run's manifest.json world_hash, null when the run has no manifest
+//   world_state_hash  the run's manifest.json world for the record's task (runWorldHash), null when the run has no manifest
 //                     (pilot-0, the sample run): M3 is then pending, never compared with today's
 //                     fixtures/manifest.json, which answers another question (is it today's world)
 //   matrix            the run's matrix.json entry for the grader_task_version of the current grade
@@ -53,8 +53,16 @@ export interface ContextInput {
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
 
-// The run manifest's world_hash, or null.
-export const runWorldHash = (manifest: unknown): string | null => (isRecord(manifest) && typeof manifest.world_hash === 'string' ? manifest.world_hash : null);
+// The world a run's task started from: the manifest's world_hashes entry for the task (a run whose
+// batches ran on two worlds names each task's, packages/core/batch.ts RunManifest; pre-audit-2
+// S16), else its top-level world_hash (a manifest written before the map, or a task it does not
+// name); null without either. Without a task, the top-level world_hash.
+export const runWorldHash = (manifest: unknown, task?: string): string | null => {
+  if (!isRecord(manifest)) return null;
+  const per = task !== undefined && isRecord(manifest.world_hashes) ? manifest.world_hashes[task] : undefined;
+  if (typeof per === 'string') return per;
+  return typeof manifest.world_hash === 'string' ? manifest.world_hash : null;
+};
 
 // matrix.json's verdict for one grader_task_version, or null.
 export function matrixFor(matrix: unknown, grader_task_version: string | null): MatrixResult | null {
@@ -87,8 +95,8 @@ export function recomputedExposure(record: ExplainRecord, checks: readonly TaskC
 // world_hash, probes[].reachable_ids and as_expected). A mutant or a probe agent does not count:
 // it is not a correct solution. A matrix whose oracle or an alternative failed (oracle_pass or
 // alternatives_pass false) gives no evidence either way. unchecked says why the matrix cannot answer.
-export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null, env_version: string | null): { exposable: (id: string) => boolean } | { unchecked: string } {
-  const run = runWorldHash(manifest);
+export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null, env_version: string | null, task?: string): { exposable: (id: string) => boolean } | { unchecked: string } {
+  const run = runWorldHash(manifest, task);
   if (run === null) return { unchecked: 'the run has no manifest world_hash' };
   const entry = grader_task_version !== null && isRecord(matrix) && isRecord(matrix.grader_task_versions) ? matrix.grader_task_versions[grader_task_version] : undefined;
   if (!isRecord(entry)) return { unchecked: `the run has no matrix.json entry for ${grader_task_version ?? 'its grader_task_version'}` };
@@ -114,10 +122,10 @@ export function reachability(manifest: unknown, matrix: unknown, grader_task_ver
 
 export function explainContext(input: ContextInput): ExplainContext {
   const checks = input.checks ?? null;
-  const reach = reachability(input.manifest, input.matrix, currentGrade(input.record).grader_task_version, input.record.env_version ?? null);
+  const reach = reachability(input.manifest, input.matrix, currentGrade(input.record).grader_task_version, input.record.env_version ?? null, input.record.task_id);
   return {
     events: input.events,
-    world_state_hash: runWorldHash(input.manifest),
+    world_state_hash: runWorldHash(input.manifest, input.record.task_id),
     ...('exposable' in reach ? { exposable: reach.exposable } : { exposability_unchecked: reach.unchecked }),
     exposure: recomputedExposure(input.record, checks, input.events),
     matrix: matrixFor(input.matrix, currentGrade(input.record).grader_task_version),
