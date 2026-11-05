@@ -1053,10 +1053,7 @@
           }
         }
       ],
-      "phase": "P22",
-      "pending": [
-        "results/official.json"
-      ]
+      "phase": "P22"
     },
     {
       "id": "W5",
