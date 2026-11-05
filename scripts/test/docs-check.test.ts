@@ -89,6 +89,13 @@ describe('docs-gen', () => {
     expect(writeup.match(/<\/table>\n?<\/div>/g) ?? []).toHaveLength(tables.length);
   });
 
+  it('lets prose wrap anywhere but keeps table cells whole, so a table scrolls in its box (P24A-227-2 F1)', () => {
+    const { writeup } = generate(docsRoot());
+    expect(writeup).toMatch(/body \{[^}]*overflow-wrap: anywhere/);
+    expect(writeup).toMatch(/\.table-wrap table \{[^}]*overflow-wrap: normal/);
+    expect(writeup).toMatch(/\.table-wrap (th, )?td[^{]*\{[^}]*min-width/);
+  });
+
   it('rejects a docs-gen:begin or docs-gen:end comment in a source (P24A-227 F2)', () => {
     const root = docsRoot();
     edit(root, 'docs/findings.md', /\n\n/, '\n\n<!-- docs-gen:begin pass-rates -->\nThe model passed 19/20 trials.\n<!-- docs-gen:end pass-rates -->\n\n');
@@ -172,6 +179,45 @@ describe('docs-check', () => {
     const r = check(root);
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/README\.md:\d+: .*\$900/);
+  });
+
+  it('catches "k of N", a Unicode slash or percent sign, and a claim phrase (P24A-227-2 F5)', () => {
+    const root = docsRoot();
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nThe model passed 12 of 20 trials.\n\n');
+    const r = check(regenerated(root));
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/number in prose: "12 of 20"/);
+    const root2 = docsRoot();
+    edit(root2, 'docs/findings.md', /\n\n/, '\n\nIt passed 12\u204420 trials, a rate of 60\uFF05.\n\n');
+    const r2 = check(regenerated(root2));
+    expect(r2.status).toBe(1);
+    expect(r2.stdout).toMatch(/number in prose: "12\/20"/);
+    expect(r2.stdout).toMatch(/number in prose: "60%"/);
+    for (const phrase of ['MCP support', 'Harbor compatible', 'first clinical']) {
+      const root3 = docsRoot();
+      edit(root3, 'docs/findings.md', /\n\n/, `\n\nThis is about ${phrase} here.\n\n`);
+      const r3 = check(regenerated(root3));
+      expect(r3.status, phrase).toBe(1);
+      expect(r3.stdout).toMatch(new RegExp(`claim phrase: "${phrase}"`, 'i'));
+    }
+  });
+
+  it('catches every form of a dollar amount in README.md outside the caps block (P24A-227-2 F6)', () => {
+    for (const amount of ['900 USD', '&#36;900', '$.50', '`$900`', 'USD 900', '900 dollars']) {
+      const root = regenerated(docsRoot());
+      edit(root, 'README.md', /\n## Links/, `\nA trial costs about ${amount} here.\n\n## Links`);
+      const r = check(root);
+      expect(r.status, amount).toBe(1);
+      expect(r.stdout, amount).toMatch(/dollar amount outside the caps block/);
+    }
+  });
+
+  it('every h2 the trace greps for is a required section (P24A-227-2 F3)', () => {
+    const trace = JSON.parse(readFileSync(join(repoRoot, 'docs/requirements/trace.json'), 'utf8')) as { rows: Array<{ expect: unknown }> };
+    const greps = trace.rows.flatMap((row) => (Array.isArray(row.expect) ? row.expect : [row.expect]) as Array<{ command?: { cmd: string } }>)
+      .flatMap((e) => [...(e.command?.cmd ?? '').matchAll(/grep -qF '>([^<]+)<\/h2>' docs\/writeup\.html/g)].map((m) => m[1]!));
+    expect(greps.length).toBeGreaterThan(1);
+    for (const h of greps) expect(WRITEUP_SECTIONS as readonly string[], h).toContain(h);
   });
 
   it('fails on a 30-word step in README.md', () => {

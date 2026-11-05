@@ -44,8 +44,8 @@ The table reads each repository at its latest release on 2026-11-05, or at its l
 
 What this environment can claim, against these six systems and as of 2026-11-05:
 
-- It is the only one of them that grades by turn-ordered exposure. A write counts as informed only when the deciding record was shown in an earlier turn.
-- It is the only one that delivers chart arrivals between the agent's writes. It grades whether the agent noticed and amended. tau2-bench has a dynamic user, but no unannounced arrivals.
+- It differs from MedAgentBench, CHI-Bench and FHIR-AgentEval in grading by turn-ordered exposure. A write counts as informed only when the deciding record was shown in an earlier turn.
+- Among the clinical systems compared, it is the only one that delivers chart arrivals between the agent's writes. It grades whether the agent noticed and amended. tau2-bench has a dynamic user, but no unannounced arrivals.
 - Among the clinical systems, it is the only one where every task ships mutants that must fail and alternatives that must pass. The matrix checks them before any trial.
 - It runs without a container and without a live FHIR server. Every clinical comparator depends on a HAPI image or containers, and those HAPI images are tagged latest.
 - Its judged rubric items need a verbatim quote and are cached for offline regrading, and pass or fail is decided by code gates alone. CHI-Bench's pass depends on its judge.
@@ -53,9 +53,9 @@ What this environment can claim, against these six systems and as of 2026-11-05:
 
 What it does not claim:
 
-- MCP support or an MCP server. The tools are MCP-shaped definitions sent as Messages API tools.
-- Harbor compatibility. The repository has a name map, not a runnable export.
-- The first clinical agent benchmark, or any claim of scale. It has six tasks and 68 patients, against 300 tasks in MedAgentBench.
+- That it speaks MCP or ships an MCP server. The tools are MCP-shaped definitions sent as Messages API tools.
+- That Harbor can run its tasks. The repository has a name map, not a runnable export.
+- That it came before other clinical agent benchmarks, or any claim of scale. It has six tasks and 68 patients, against 300 tasks in MedAgentBench.
 - Full determinism. The model's sampling is not deterministic. The environment, the grading and the cached judging are.
 - Novelty over private or unpublished environments.
 

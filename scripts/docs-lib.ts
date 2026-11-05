@@ -25,7 +25,7 @@ export interface Unit {
 
 // The h2 sections docs/writeup.html must carry, in reading order: docs-gen reports the ones its
 // sources lack, docs-check fails on them and donewhen names them (pre-audit-2 S19, one list).
-export const WRITEUP_SECTIONS = ['Instructions', 'Findings', 'Surprises', 'Changes', 'Next steps', 'How failures are attributed', 'Pass rates', 'How the environment differs from a real EHR', 'Audit against research and public environments', 'References'] as const;
+export const WRITEUP_SECTIONS = ['Instructions', 'Findings', 'What is new in this design', 'Surprises', 'Changes', 'Next steps', 'How failures are attributed', 'Pass rates', 'How the environment differs from a real EHR', 'Audit against research and public environments', 'References'] as const;
 
 export const GENERATED_BEGIN = /<!-- docs-gen:begin ([a-z-]+) -->/g;
 export const GENERATED_END = /<!-- docs-gen:end ([a-z-]+) -->/g;

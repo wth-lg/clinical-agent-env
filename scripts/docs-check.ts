@@ -46,6 +46,14 @@ const MODEL = 'claude-opus-5-5';
 const DATE = /\b20\d\d-\d\d-\d\d\b/;
 const PERCENT = /\d+(\.\d+)?\s?%/;
 const K_OF_N = /\b\d+\s?\/\s?\d+\b/;
+const K_OF_N_WORDS = /\b\d+ of \d+\b/;
+// Unicode forms of a slash or a percent sign read as the ASCII ones (verifier P24A-227-2 F5).
+const normalizeSigns = (s: string) => s.replace(/[\u2044\u2215\uFF0F]/g, '/').replace(/[\uFF05\u066A]/g, '%');
+// Phrases the writeup and README may not make as claims (researcher-16, the do-not-claim list).
+const CLAIM_PHRASES = ['MCP support', 'Harbor compatible', 'first clinical'];
+// A dollar amount in any form: a dollar sign (or its entity) before a number, or a number before USD
+// or dollars, or USD before a number (verifier P24A-227-2 F6).
+const DOLLAR = /(?:\$|&#36;|&dollar;)\s?\.?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?\s?(?:USD|dollars?)\b|\bUSD\s?\.?\d[\d,]*(?:\.\d+)?/gi;
 
 export interface Problem {
   file: string;
@@ -106,14 +114,22 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
   let prose = html.replace(/<!-- docs-gen:begin [a-z-]+ -->[\s\S]*?<!-- docs-gen:end [a-z-]+ -->/g, blank);
   for (const m of prose.matchAll(/<!-- docs-check:allow-numbers ([^>]*?) -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g)) infos.push(`info: ${file}:${lineOf(prose, m.index)}: numbers allowed: ${m[1]!.trim()}`);
   prose = prose.replace(/<!-- docs-check:allow-numbers [^>]*? -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g, blank);
-  prose = prose.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank);
+  prose = normalizeSigns(prose.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank));
   for (const a of allow) prose = prose.split(a).join(' '.repeat(a.length));
-  for (const re of [PERCENT, K_OF_N]) {
+  for (const re of [PERCENT, K_OF_N, K_OF_N_WORDS]) {
     for (const m of prose.matchAll(new RegExp(re.source, 'g'))) {
       const line = lineOf(prose, m.index);
       const srcLine = sourceAt(html, m.index);
       const where = srcLine ?? { file, line };
       problems.push({ ...where, problem: `number in prose: "${m[0]}"`, fix: 'render it from a generated block, or allow it in scripts/ste/numbers-allow.txt or a docs-check:allow-numbers region' });
+    }
+  }
+  // Claims the writeup may not make, in its prose (generated blocks, code and allowed regions included: a
+  // claim is a claim wherever it stands).
+  const text = decodeEntities(html.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank));
+  for (const phrase of CLAIM_PHRASES) {
+    for (const m of text.matchAll(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'))) {
+      problems.push({ ...(sourceAt(html, m.index) ?? { file, line: lineOf(text, m.index) }), problem: `claim phrase: "${m[0]}"`, fix: 'the writeup makes no such claim (researcher-16); reword the sentence' });
     }
   }
   // Self-contained.
@@ -182,17 +198,19 @@ function checkReadme(root: string, text: string, problems: Problem[]): void {
   for (const b of blocks) if (b.kind === 'table') add(b.line, 'a table in README.md', 'move it to the writeup');
   const prose = blocks.flatMap((b) => (b.kind === 'paragraph' ? [{ text: b.text, line: b.line }] : b.kind === 'list' ? b.items : []));
   for (const { text: t, line } of prose) {
-    const plain = t.replace(/`[^`]*`/g, ' ').replace(/https?:\/\/\S+/g, ' ');
-    for (const re of [PERCENT, K_OF_N]) {
+    const plain = normalizeSigns(t.replace(/`[^`]*`/g, ' ').replace(/https?:\/\/\S+/g, ' '));
+    for (const re of [PERCENT, K_OF_N, K_OF_N_WORDS]) {
       const m = re.exec(plain);
       if (m) add(line, `number in README.md: "${m[0]}"`, 'README.md carries no findings or number tables; move it to the writeup');
     }
+    for (const phrase of CLAIM_PHRASES) if (new RegExp(phrase, 'i').test(t)) add(line, `claim phrase: "${phrase}"`, 'README.md makes no such claim (researcher-16); reword the sentence');
   }
   const caps = /<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/.exec(text);
   if (!caps) add(1, 'README.md has no caps block', 'add <!-- docs-gen:begin caps --> and <!-- docs-gen:end caps --> under Key handling');
-  // A dollar figure outside the caps block could differ from the caps (verifier P24A-227 F4).
-  const outside = text.replace(/<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/g, (m) => m.replace(/[^\n]/g, ' ')).replace(/`[^`]*`/g, (m) => ' '.repeat(m.length));
-  for (const m of outside.matchAll(/\$\s?\d[\d,]*(?:\.\d+)?/g)) add(lineOf(outside, m.index), `dollar amount outside the caps block: "${m[0]}"`, 'the caps block renders both caps from packages/core/ledger.ts; state no other amount in README.md');
+  // A dollar figure outside the caps block could differ from the caps (verifier P24A-227 F4), in any
+  // form and in code spans too (P24A-227-2 F6).
+  const outside = text.replace(/<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/g, (m) => m.replace(/[^\n]/g, ' '));
+  for (const m of outside.matchAll(DOLLAR)) add(lineOf(outside, m.index), `dollar amount outside the caps block: "${m[0]}"`, 'the caps block renders both caps from packages/core/ledger.ts; state no other amount in README.md');
   void root;
 }
 

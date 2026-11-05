@@ -8,7 +8,7 @@ The headline numbers are in the Pass rates section of the writeup and on the Ove
 
 **Most failures are retrieval failures.** In the contrast CT task, every failure in the final run is one slip. The model opened the arrived creatinine and compared it with an older value. It never searched for the second value filed beside it. The policy's rule turns on the rise between the two values. In the colorectal task, the two failures that stand are page-one reads of a long result list. The model stopped at the first page and never fetched the next.
 
-**No failure in the final run is the environment's or the grader's.** The audit labels every failure model, with evidence ids the trajectory exposed. The grader faults we did find came out in the clinician read of the colorectal task's first grade. We fixed them in the grader and regraded the run offline. The Pass rates section says what changed.
+**No failure in the final run is the environment's or the grader's.** The audit labels every failure model, with evidence ids the trajectory exposed. The grader faults we did find came out in an LLM clinical read of the colorectal task's first grade. We fixed them in the grader and regraded the run offline. The Pass rates section says what changed.
 
 **The judge adds score, never a verdict.** Judged rubric items change the score of a trial and never decide a pass. The judge is the same model as the agent, and its calibration measures stability on authored answers, not clinician agreement.
 
@@ -27,7 +27,7 @@ Each claim here names its nearest prior art. The Audit section of the writeup co
 
 **Saturation came early.** The first full pilot on the cleaned world passed almost every trial. We had planned difficulty levers that sit in the chart. They did not bite. Change during the trial did, so the plan moved to mid-trial events and then to record-integrity items.
 
-**The grader was stricter than the policy, twice.** A clinician read of the colorectal task's first grade found twelve trials that had reviewed every record of the window. Nine of them split the window into two complete searches, and the grader refused the join. Three showed every record by page totals or by the tool's documented default order. The rule had been written by the shape of a search, not by what the model saw. We rewrote it by exposure of the target set and regraded the run offline with no model call.
+**The grader was stricter than the policy, twice.** An LLM clinical read of the colorectal task's first grade found twelve trials that had reviewed every record of the window. Nine of them split the window into two complete searches, and the grader refused the join. Three showed every record by page totals or by the tool's documented default order. The rule had been written by the shape of a search, not by what the model saw. We rewrote it by exposure of the target set and regraded the run offline with no model call.
 
 **The planted records were visible.** A classifier told planted records from generated ones by field shape, timestamp precision and id range. Cleaning that took a world rebuild and a test that fails when any feature separates the two with balanced accuracy above a cap.
 

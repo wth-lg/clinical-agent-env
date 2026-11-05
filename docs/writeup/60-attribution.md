@@ -6,13 +6,13 @@ Every trial gets one outcome. A trial that did not pass gets the fault whose cri
 
 ## Who did the clinical reads
 
-Every clinician read of a trajectory and every task-validity verdict in this run came from LLM sessions, not from a human clinician. The rulings those reads rest on, R1 to R41, are recorded in the run's decision log. Each grader fault they found was fixed and regraded. A review of the same failures by a human clinician is listed under Next steps.
+Every clinical read of a trajectory and every task-validity verdict in this run came from LLM sessions, not from a human clinician. Three rulings moved grades, and each is in the results changelog. The S-0 fixes G1 to G4 went into grader 19. The G5 continuation rule went into grader 20. R41, window completeness by exposure of the target set, went into grader 22. Each was fixed in the grader, and the affected run was regraded. A review of the same failures by a human clinician is listed under Next steps.
 
 ## How we told grader faults apart
 
 A grader fault never comes from the grader alone. Three checks stand between a task and its first live trial. The reference solution must score full marks. Every declared alternative route must pass. Every mutant, one per clinical trap, must fail on its item alone with the label it declares. The matrix runs on every pull request, and a judge cache miss fails the build.
 
-After a run, a clinician reads every failure and every penalised pass from the trajectory and writes an audit row with the evidence ids. A script refuses an id the trajectory never exposed. The criteria M1 to M5 then confirm the label, or contradict it, from the record, the manifest, the matrix and the audit row.
+After a run, an LLM clinical read goes through every failure and every penalised pass from the trajectory. It writes an audit row with the evidence ids. A script refuses an id the trajectory never exposed. The criteria M1 to M5 then confirm the label, or contradict it, from the record, the manifest, the matrix and the audit row.
 
 Two grader faults came out of the final run of the colorectal task. Both refused a complete review because the search had a shape the rule did not list. We ruled both grader faults, rewrote the rule by exposure of the target set, bumped the grader version and regraded the run offline. The records keep the first grade and carry the regrade. No trial was rerun.
 

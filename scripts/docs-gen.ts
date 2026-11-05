@@ -328,6 +328,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 pre { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 4px; padding: 0.75rem; overflow-x: auto; }
 pre code { border: 0; padding: 0; background: none; }
 table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 4px; font-size: 0.875rem; }
+/* Cells break at spaces only and keep a minimum width, so a wide table scrolls inside its box instead of breaking its cells per character (verifier P24A-227-2 F1). */
+.table-wrap table { overflow-wrap: normal; }
+.table-wrap th, .table-wrap td { min-width: 6rem; max-width: 24rem; }
 caption { text-align: left; color: var(--color-ink-muted); font-size: 0.75rem; padding: 0.5rem 0.5rem 0.25rem; caption-side: top; }
 th, td { text-align: left; vertical-align: top; padding: 0.375rem 0.5rem; border-top: 1px solid var(--color-line); }
 thead th { color: var(--color-ink-muted); font-weight: 500; font-size: 0.75rem; border-top: 0; }
