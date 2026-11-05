@@ -1,0 +1,4 @@
+{
+  "exit": 1,
+  "stdout": "warning: docs/writeup.html:141: TODO-W5F: waits for the W5 final results\ndocs/writeup.html:12: differs from a fresh regeneration; fix: run node scripts/docs-gen.ts\nREADME.md:9: step length: \"Open the terminal and ...\"; fix: 30 words, at most 20: split the step\n"
+}
