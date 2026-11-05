@@ -108,11 +108,11 @@ function objectEnd(text: string, start: number): number {
   return -1;
 }
 
-// The last balanced JSON object in an answer that holds a findings array (the one that ends
-// last; of two that end together, the outer one), so prose, fences and examples around it are
-// fine.
-function lastFindingsObject(text: string): { findings: unknown[] } | null {
-  let best: { end: number; value: { findings: unknown[] } } | null = null;
+// The last balanced JSON object in an answer that `wanted` accepts (the one that ends last; of
+// two that end together, the outer one), so prose, fences and examples around it are fine.
+// cli/audit-llm.ts reads the auditor's verdict with it too.
+export function lastJsonObject(text: string, wanted: (value: Record<string, unknown>) => boolean): Record<string, unknown> | null {
+  let best: { end: number; value: Record<string, unknown> } | null = null;
   for (let start = text.indexOf('{'); start >= 0; start = text.indexOf('{', start + 1)) {
     const end = objectEnd(text, start);
     if (end < 0 || (best !== null && end <= best.end)) continue;
@@ -122,10 +122,13 @@ function lastFindingsObject(text: string): { findings: unknown[] } | null {
     } catch {
       continue;
     }
-    if (Array.isArray((value as { findings?: unknown }).findings)) best = { end, value: value as { findings: unknown[] } };
+    if (typeof value === 'object' && value !== null && !Array.isArray(value) && wanted(value as Record<string, unknown>)) best = { end, value: value as Record<string, unknown> };
   }
   return best?.value ?? null;
 }
+
+// The last balanced JSON object in an answer that holds a findings array.
+const lastFindingsObject = (text: string): { findings: unknown[] } | null => lastJsonObject(text, (v) => Array.isArray(v.findings)) as { findings: unknown[] } | null;
 
 // The text of the probe's last answer, null when it gave none.
 export function lastAnswer(events: readonly TrialEvent[]): string | null {
