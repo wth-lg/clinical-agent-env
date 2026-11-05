@@ -3,7 +3,7 @@
 // checkout's and the regrade has the outcome, score and check results of the record's current
 // grade; a judge cache miss or a thrown regrade never matches.
 import { describe, expect, it } from 'vitest';
-import { envChanged, judgeMissed, replayEnvVerdict, replayVerdict, type ReplayRecord } from '../replay.ts';
+import { envChanged, isVerdictOf, judgeMissed, replayEnvVerdict, replayStateOf, replayVerdict, type ReplayRecord } from '../replay.ts';
 
 const ENV = 'e'.repeat(64);
 const checks = [{ id: 'G1', met: true }, { id: 'G2', met: false }];
@@ -16,10 +16,12 @@ describe('replayEnvVerdict', () => {
   });
 
   it('gives a record of another environment, or one with none, the named verdict world_mismatch', () => {
-    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ match: false, verdict: 'world_mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: `${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; reproduce at the commit in results/<run>/README.md` });
+    // S1 (verifier-phase-P17i-TWOW-229-1): the verdict is named; no match field, which would read as a plain mismatch.
+    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ verdict: 'world_mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: `${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; reproduce at the commit in results/<run>/README.md` });
     expect(replayEnvVerdict(record({ env_version: null }), ENV)?.error).toMatch(/^environment changed: run at env_version \(none: recorded before env_version, task_version v1\)/);
     const { env_version: _, ...none } = record();
-    expect(replayEnvVerdict(none, ENV)).toMatchObject({ match: false, verdict: 'world_mismatch' });
+    expect(replayEnvVerdict(none, ENV)).toMatchObject({ verdict: 'world_mismatch' });
+    expect(replayEnvVerdict(none, ENV)).not.toHaveProperty('match');
   });
 
   it('R37: points at the commit the run directory\'s README.md names, or at the reproduce pointer the caller gives', () => {
@@ -65,5 +67,44 @@ describe('replayVerdict', () => {
     expect(miss).toEqual({ match: false, verdict: 'mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: judgeMissed('judge cache miss abc123 for G3', record()) });
     expect(miss.error).toMatch(/^judge cache miss abc123: /);
     expect(replayVerdict(record(), { error: 'boom' })).toEqual({ match: false, verdict: 'mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: 'boom' });
+  });
+});
+
+// S2 (verifier-phase-P17i-TWOW-229-1): whether a replay.json entry is a verdict of the record as it
+// is now, the rule summary, audit-check and replay's keep share.
+describe('isVerdictOf', () => {
+  const at = (env: string) => ({ commit: 'c'.repeat(40), dirty: false, world_hash: 'w'.repeat(64), env_version: env });
+  const entry = { match: true, verdict: 'match' as const, outcome: 'PASS', recorded_outcome: 'FAIL', current_outcome: 'PASS' };
+  const r = record({ outcome: 'FAIL', regrades: [{ grader_task_version: 'g2', outcome: 'PASS', score: 1, valid: true, checks: [], changed: true }] });
+
+  it('holds when the recorded and current outcomes are the record\'s, stamped at its env_version or not stamped', () => {
+    expect(isVerdictOf(entry, r)).toBe(true);
+    expect(isVerdictOf({ ...entry, replayed_at: at(ENV) }, r)).toBe(true);
+  });
+
+  it('fails on another recorded or current outcome, or a match or mismatch stamped at another env_version', () => {
+    expect(isVerdictOf({ ...entry, recorded_outcome: 'PASS' }, r)).toBe(false);
+    expect(isVerdictOf({ ...entry, current_outcome: 'FAIL' }, r)).toBe(false);
+    expect(isVerdictOf({ ...entry, replayed_at: at('other') }, r)).toBe(false);
+    expect(isVerdictOf({ ...entry, verdict: 'mismatch', match: false, replayed_at: at('other') }, r)).toBe(false);
+  });
+
+  it('a world_mismatch entry is stamped with the replaying checkout\'s env_version, so only its outcomes are checked', () => {
+    expect(isVerdictOf({ verdict: 'world_mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'PASS', replayed_at: at('head') }, r)).toBe(true);
+    expect(isVerdictOf({ verdict: 'world_mismatch', outcome: null, recorded_outcome: 'PASS', current_outcome: 'PASS', replayed_at: at('head') }, r)).toBe(false);
+  });
+
+  it('an entry with no outcomes (not written by replay) is no verdict', () => {
+    expect(isVerdictOf({ match: true }, r)).toBe(false);
+  });
+});
+
+describe('replayStateOf', () => {
+  it('reads the named verdict, else match or mismatch from the match field of an older file', () => {
+    expect(replayStateOf({ verdict: 'world_mismatch' })).toBe('world_mismatch');
+    expect(replayStateOf({ verdict: 'mismatch', match: true })).toBe('mismatch');
+    expect(replayStateOf({ match: true })).toBe('match');
+    expect(replayStateOf({ match: false })).toBe('mismatch');
+    expect(replayStateOf({})).toBe('mismatch');
   });
 });

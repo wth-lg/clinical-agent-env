@@ -20,7 +20,9 @@ export interface ReplayTrial {
 export type ValidateRequest =
   | { op: 'oracle'; task: string }
   | { op: 'matrix'; task: string }
-  | { op: 'replay'; task: string; trials: ReplayTrial[] }
+  // dir: the run's directory as the repository holds it (results/runs/final-1), which a record of
+  // another world's verdict points at (R37) when results/tasks-final.json names no replay_at.
+  | { op: 'replay'; task: string; trials: ReplayTrial[]; dir?: string }
   // The trial detail's State diff (P16): the trajectory at this absolute URL replayed on the world.
   | { op: 'state'; task: string; trajectoryUrl: string };
 

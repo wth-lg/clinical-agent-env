@@ -404,7 +404,7 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
   const replayTrials = async () => {
     const r = await loadResults();
     if (r.kind !== 'ready' || r.official === null) return [];
-    return validate({ op: 'replay', task: id, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
+    return validate({ op: 'replay', task: id, dir: r.official.dir, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   const buttons = [
     { id: 'oracle', label: 'Run reference solution', Icon: Play, run: () => runOracle(() => validate({ op: 'oracle', task: id })) },
@@ -466,7 +466,7 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
               <p>Replay: {rows.filter((x) => x.match).length} of {rows.length} trials reproduced, by the rule <code className="text-xs">pnpm cli replay</code> uses: same environment, and the regrade gives the same outcome, score and check results as the published grade.{rows.some((x) => x.verdict === 'world_mismatch') && ` ${rows.filter((x) => x.verdict === 'world_mismatch').length} ran on another world than this build's, so this build cannot replay them: their records are reproduced at the commit the run's README names (R37).`}</p>
               <ul className="mt-1 space-y-0.5 text-xs">
                 {rows.map((x) => (
-                  <li key={x.name} data-testid="replay-row" data-trial={x.name} data-match={String(x.match)} data-verdict={x.verdict} data-outcome={x.outcome ?? ''} data-final={x.final ?? ''} className="break-words">
+                  <li key={x.name} data-testid="replay-row" data-trial={x.name} data-match={String(x.match === true)} data-verdict={x.verdict} data-outcome={x.outcome ?? ''} data-final={x.final ?? ''} className="break-words">
                     <span className="font-medium">{x.name}</span> {x.match ? `reproduced (${x.outcome})` : x.verdict === 'world_mismatch' ? `ran on another world than this build's, not replayed here: ${x.error ?? ''}` : `does not match: ${x.error ?? ''}`}{x.note ? ` (${x.note})` : ''}
                   </li>
                 ))}

@@ -34,6 +34,9 @@
 // the records whose replay_final is not their final) and lists the world mismatches apart in
 // other_world; replay=all fails on either, and on a world mismatch names the two-step replay
 // (cli/replay.ts header, pre-audit-2 B4): the task at its own commit with --tasks, the rest here.
+// The caller gives only the entries that are verdicts of the records as they are now
+// (cli/summary.ts readReplay, packages/core/replay.ts isVerdictOf); a stale entry's trial is
+// listed in missing (verifier-phase-P17i-TWOW-229-1 S2).
 //
 // A task's superseded version (R42: results/<run>/superseded/<task>-v<n>/, its records moved
 // there byte-identical when a later version's trials entered the run) is summarized under
@@ -421,6 +424,7 @@ export interface Summary {
   models: string[];
   initial_state_hashes: string[];
   // other_world: the trials replay.json marks world_mismatch (header), apart from mismatched.
+  // missing: the trials with no entry, or a stale one (header).
   replay: { ran: boolean; matched: number; mismatched: string[]; other_world: string[]; missing: string[] };
   // The run's superseded task versions by directory name (header); {} when it has none.
   superseded: Record<string, SupersededSummary>;

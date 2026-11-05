@@ -53,7 +53,8 @@ async function replay(id: string, trials: ValidateRequest & { op: 'replay' }): P
   const rows: ReplayRow[] = [];
   for (const t of trials.trials) {
     const r = t.record;
-    rows.push({ name: t.name, final: r.state_hash.final, ...(replayEnvVerdict(r, env_version) ?? replayVerdict(r, await regrade(id, t, checks, e))) });
+    const reproduce = trials.dir === undefined ? undefined : `reproduce at the commit in ${trials.dir}/README.md`;
+    rows.push({ name: t.name, final: r.state_hash.final, ...(replayEnvVerdict(r, env_version, reproduce) ?? replayVerdict(r, await regrade(id, t, checks, e))) });
   }
   return rows;
 }

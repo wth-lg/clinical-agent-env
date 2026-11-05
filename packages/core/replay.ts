@@ -16,6 +16,13 @@
 // which this checkout cannot replay at all (R37: it is historical data, reproduced at its own
 // commit). summary --require replay=all lists the last apart from the mismatches and says where
 // to replay it (pre-audit-2 B4).
+//
+// An entry in replay.json is a verdict of a record only while the record is the one it was made
+// on (isVerdictOf): its recorded and current outcomes are the record's, and a match or mismatch
+// stamped with replayed_at was made at the record's env_version. A record rewritten under the
+// same trial name (a task's new version entering the run, R42) with no replay since leaves a
+// stale entry, which summary and audit-check count as not replayed and replay replaces
+// (verifier-phase-P17i-TWOW-229-1 S2).
 import { currentGrade, type RegradeGrade, type ReplayState } from './summary.ts';
 
 export interface ReplayRecord {
@@ -51,8 +58,10 @@ export interface ReplayedAt {
 
 // One trial's entry in replay.json, plus a note the CLI prints and does not write.
 export interface ReplayVerdict {
-  // verdict === 'match'. Kept beside verdict so readers of an older replay.json read the same field.
-  match: boolean;
+  // verdict === 'match', kept beside verdict so a reader of an older replay.json reads the same
+  // field. Absent on world_mismatch: the checkout did not replay the trial, so it neither matched
+  // nor mismatched, and no reader takes it for a plain mismatch (verifier-phase-P17i-TWOW-229-1 S1).
+  match?: boolean;
   verdict: ReplayState;
   outcome: string | null;
   recorded_outcome: string;
@@ -86,8 +95,34 @@ const base = (r: ReplayRecord) => ({ recorded_outcome: r.outcome, current_outcom
 // reason; by default the commit the run's README.md names (R37). cli/replay.ts passes the task's
 // replay_at from results/tasks-final.json when the freeze names one.
 export function replayEnvVerdict(r: ReplayRecord, checkoutEnv: string, reproduce = `reproduce at the commit in results/${r.run_id || '<run>'}/README.md`): ReplayVerdict | null {
-  return r.env_version === checkoutEnv ? null : { match: false, verdict: 'world_mismatch', outcome: null, ...base(r), error: `${envChanged(r, checkoutEnv)}; ${reproduce}` };
+  return r.env_version === checkoutEnv ? null : { verdict: 'world_mismatch', outcome: null, ...base(r), error: `${envChanged(r, checkoutEnv)}; ${reproduce}` };
 }
+
+// A replay.json entry as a file holds it, before any check: a file written before verdicts were
+// named has match alone; one written before the outcomes were recorded has neither outcome.
+export type ReplayEntry = Partial<Record<'match' | 'verdict' | 'outcome' | 'recorded_outcome' | 'current_outcome' | 'error' | 'note' | 'replayed_at', unknown>>;
+
+// An entry's verdict: the named one, else match or mismatch from its match field.
+export function replayStateOf(entry: ReplayEntry): ReplayState {
+  const states: readonly unknown[] = ['match', 'mismatch', 'world_mismatch'];
+  return states.includes(entry.verdict) ? (entry.verdict as ReplayState) : entry.match === true ? 'match' : 'mismatch';
+}
+
+// Why an entry is not a verdict of this record as it is now (header), or null when it is. A
+// world_mismatch entry is stamped with the replaying checkout's env_version, which is not the
+// record's by definition, so only its outcomes are checked.
+export function whyStale(entry: ReplayEntry, r: ReplayRecord): string | null {
+  const cur = currentGrade(r).outcome;
+  if (entry.recorded_outcome === undefined && entry.current_outcome === undefined) return 'no recorded or current outcome in the entry';
+  if (entry.recorded_outcome !== r.outcome) return `recorded ${String(entry.recorded_outcome)}, the record ${r.outcome}`;
+  if (entry.current_outcome !== cur) return `current ${String(entry.current_outcome)}, the record's current grade ${cur}`;
+  const at = entry.replayed_at;
+  if (replayStateOf(entry) === 'world_mismatch' || typeof at !== 'object' || at === null) return null;
+  const env = (at as { env_version?: unknown }).env_version;
+  return env === (r.env_version ?? null) ? null : `made at env_version ${String(env)}, the record's ${r.env_version ?? '(none)'}`;
+}
+
+export const isVerdictOf = (entry: ReplayEntry, r: ReplayRecord): boolean => whyStale(entry, r) === null;
 
 const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | null | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));
 

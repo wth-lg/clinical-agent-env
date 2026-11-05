@@ -8,7 +8,8 @@ import { scenarioTransport, sse, turnEvents } from '../../../apps/web/src/harnes
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
 import { checks as toyChecks } from '../../../tasks/_toy/tests/grader.ts';
 import { MessagesClient, MODEL, type Transport } from '../anthropic.ts';
-import { BatchRefused, memorySink, runBatch, type BatchDeps, type BatchSpec, type ResultSink } from '../batch.ts';
+import { BatchRefused, memorySink, nextManifest, runBatch, type BatchDeps, type BatchSpec, type ResultSink } from '../batch.ts';
+import { runWorldHash } from '../explain-context.ts';
 import { JUDGE_ALLOWANCE_USD, PER_TRIAL_CAP_USD, PRICE_USD_PER_MTOK, RERUN_FACTOR } from '../cost.ts';
 import { run } from '../run.ts';
 import { ACTUAL_CAP_USD, admitStore, createLedger, PROJECTED_CAP_USD, SpendRefused, totals, type LedgerRow, type LedgerStore } from '../ledger.ts';
@@ -109,6 +110,44 @@ describe('manifest per task', { timeout: 120_000 }, () => {
     expect(m.grader_task_versions!.frozen).toBe('g-f');
     expect(typeof m.env_versions!._toy).toBe('string');
     expect(m.batches.map((b) => [b.world_hash, b.tasks])).toEqual([['w-frozen', ['frozen']], [WORLD_HASH, ['_toy']]]);
+  });
+
+  // verifier-phase-P17i-TWOW-229-1 B2: results/runs/final-1's manifest was written before
+  // world_hashes (its batch entry has no world_hash or tasks either). The first later-world batch
+  // must leave the frozen tasks on the prior's world, or runWorldHash falls back to the new one and
+  // audit-check labels their failures as environment faults.
+  it('a later-world batch appended to a manifest written before world_hashes keeps the earlier tasks on that manifest\'s world', async () => {
+    const store = new MemoryStore();
+    const sink = memorySink();
+    const prior = {
+      run_id: 'run-1', model: MODEL, effort: 'high' as const, mode: 'mock-toy', world_hash: 'w-frozen', api_version: 'v', trials: 1,
+      task_versions: { frozen: 't-f', other: 't-o' }, env_versions: { frozen: 'e-f', other: 'e-o' }, grader_task_versions: { frozen: 'g-f', other: 'g-o' },
+      batches: [{ batch_id: 'b0', started: 's', ended: 'e', projection: 1, remaining: 2, settled: 2, requeued: 0, stopped: null, cancelled: false, env_git_sha: 'c0' }],
+    };
+    await sink.writeManifest(prior);
+    const result = await runBatch(spec({ trials: 1 }), deps(store, sink, newCalls()));
+    expect(result.settled).toBe(1);
+    const m = (await sink.manifest())!;
+    expect(m.world_hash).toBe(WORLD_HASH);
+    expect(m.world_hashes).toEqual({ frozen: 'w-frozen', other: 'w-frozen', _toy: WORLD_HASH });
+    expect(runWorldHash(m, 'frozen')).toBe('w-frozen');
+    expect(runWorldHash(m, '_toy')).toBe(WORLD_HASH);
+    expect(m.batches.map((b) => [b.world_hash ?? null, b.tasks ?? null])).toEqual([[null, null], [WORLD_HASH, ['_toy']]]);
+  });
+
+  it('a task the prior\'s world_hashes does not name ran on the prior\'s world_hash', () => {
+    const prior = {
+      run_id: 'run-1', model: MODEL, effort: 'high' as const, mode: 'mock-toy', world_hash: 'w-frozen', api_version: 'v', trials: 1,
+      task_versions: { frozen: 't-f', named: 't-n' }, world_hashes: { named: 'w-named' }, batches: [],
+    };
+    const entry = { batch_id: 'b1', started: 's', ended: null, projection: 1, remaining: 1, settled: 0, requeued: 0, stopped: null, cancelled: false, env_git_sha: 'c1', world_hash: 'w-new', tasks: ['_toy'] };
+    const m = nextManifest(prior, { spec: spec({ trials: 1 }), versions: { _toy: { task_version: 't-t', env_version: 'e-t', grader_task_version: 'g-t' } }, worldHash: 'w-new', entry });
+    expect(m.world_hashes).toEqual({ frozen: 'w-frozen', named: 'w-named', _toy: 'w-new' });
+    expect(m.world_hash).toBe('w-new');
+    expect(m.task_versions).toEqual({ frozen: 't-f', named: 't-n', _toy: 't-t' });
+    expect(m.batches).toEqual([entry]);
+    // No prior: this batch's tasks alone.
+    expect(nextManifest(null, { spec: spec({ trials: 1 }), versions: { _toy: { task_version: 't-t', env_version: 'e-t', grader_task_version: 'g-t' } }, worldHash: 'w-new', entry }).world_hashes).toEqual({ _toy: 'w-new' });
   });
 });
 

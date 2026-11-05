@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
 import { main as resultCard, readClasses } from '../result-card.ts';
-import { tempDir } from '../../scripts/test/helpers.ts';
+import { repoRoot, tempDir } from '../../scripts/test/helpers.ts';
 
 type Outcome = 'PASS' | 'FAIL';
 
@@ -311,5 +311,29 @@ describe('superseded versions', () => {
     writeRun(join(none, 'r'), 'r', { 't-a': { n: 20, passes: 8 } });
     expect(await resultCard([join(none, 'r'), '--out', join(none, 'card.md')], { out: () => {}, err: () => {} })).toBe(0);
     expect(readFileSync(join(none, 'card.md'), 'utf8')).toContain('## Superseded versions\n\nNone.');
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-1 B3: the commands the committed READMEs give run on the committed
+// runs as they are: every summary.json they read is at the schema this reader reads, so the
+// final-1 card is regenerated as its README says, with the pilots as its history.
+describe('the committed runs', () => {
+  const at = (rel: string) => join(repoRoot, rel);
+
+  it('results/runs/final-1/README.md: result-card with --classes and the pilot-4a and pilot-4b history exits 0 and prints the history columns', async () => {
+    const r = await cli([at('results/runs/final-1'), '--classes', at('results/runs/final-1/classes.json'), '--history', `${at('results/pilot-4a')},${at('results/pilot-4b')}`]);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toContain('## Difficulty history');
+    const header = r.out.split('## Difficulty history')[1]!.split('\n').find((l) => l.startsWith('| task |')) ?? '';
+    expect(header).toContain('| pilot-4a |');
+    expect(header).toContain('| pilot-4b |');
+    expect(header).toContain('| final-1 |');
+    expect(r.out).toContain('## Superseded versions');
+  });
+
+  it.each(['results/pilot-4a', 'results/pilot-4b', 'results/runs/final-1'])('%s: result-card on the run alone exits 0 reading its committed summary.json', async (rel) => {
+    const r = await cli([at(rel)]);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).not.toContain('summary computed from the records');
   });
 });

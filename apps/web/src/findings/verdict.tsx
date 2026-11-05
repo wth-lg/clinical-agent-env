@@ -54,7 +54,10 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   return (
     <Card title="Difficulty history" testId="difficulty-history">
       <p className="text-xs text-ink-muted">Each task's pass count and verdict in every committed run, oldest first. Pilots are not counted in the results; they show how hard each task was before the final run.{superseded && ' A superseded version is a task as it was before it was changed, beside the version that replaced it; it is not counted either.'}</p>
-      <div className="mt-2 overflow-x-auto">
+      {/* Wider than a phone once a superseded column is in it, so the box that scrolls it is a
+          focusable, named region the keyboard can reach (axe scrollable-region-focusable; CI's
+          fonts overflow at 390 px, verifier-phase-P17i-TWOW-229-1 B1). */}
+      <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Difficulty history table">
         <table className="w-full text-left text-sm">
           <thead className="text-xs text-ink-muted">
             <tr>

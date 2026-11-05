@@ -118,6 +118,22 @@ test('the glossary gives the verdict rule, and Findings links to it', async ({ p
   await expect(page.getByTestId('band-verdict-rule')).toHaveText(BAND_VERDICT_RULE);
 });
 
+// verifier-phase-P17i-TWOW-229-1 B1: with the superseded column the Difficulty history table is wider
+// than a phone, so its scroll container must be a focusable, named region (axe
+// scrollable-region-focusable, serious), or the keyboard cannot reach what it hides. CI's fonts
+// overflow at 390 px where a Mac's do not, so the check forces the overflow at 320 px.
+test('the Difficulty history scrolls inside a focusable, named region that axe accepts, at 320 px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await browse(page, './?view=findings');
+  const region = page.getByTestId('difficulty-history').getByRole('region', { name: 'Difficulty history table' });
+  await expect(region).toHaveAttribute('tabindex', '0');
+  expect(await region.evaluate((el) => el.scrollWidth > el.clientWidth), 'the table overflows its box at 320 px, so the region scrolls').toBe(true);
+  await region.focus();
+  expect(await region.evaluate((el) => document.activeElement === el)).toBe(true);
+  const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+  expect(bad).toEqual([]);
+});
+
 test('Overview, Findings and Glossary with the band fixture: axe finds nothing serious or critical, light and dark, at 390 px and desktop', async ({ page }) => {
   test.setTimeout(180_000);
   for (const size of SIZES) {

@@ -57,7 +57,8 @@ import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
 import { readLabels, rowLabel } from './audit-check.ts';
-import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, type RegradeGrade, type ReplayState, type Requirements, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
+import { replayStateOf, whyStale, type ReplayEntry, type ReplayRecord } from '../packages/core/replay.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type RegradeGrade, type ReplayState, type Requirements, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -83,15 +84,29 @@ const toTrial = (r: BatchRecord & { regrades?: RegradeGrade[] }): SummaryTrial =
   ...(r.regrades ? { regrades: r.regrades } : {}),
 });
 
-// replay.json as trial -> verdict (packages/core/replay.ts ReplayVerdict.verdict; a file written
-// before verdicts were named gives match or mismatch from its match field); null when replay has
-// not run.
-export function readReplay(dir: string): Record<string, ReplayState> | null {
+// replay.json as trial -> verdict (packages/core/replay.ts replayStateOf: the named verdict, or
+// match or mismatch from the match field of a file written before verdicts were named), for the
+// entries that are verdicts of the run's settled records as they are now (isVerdictOf: the
+// outcomes the entry names are the record's, and a match or mismatch stamped with replayed_at
+// was made at the record's env_version). A stale entry, of a record rewritten under the same
+// trial name with no replay since (R42; verifier-phase-P17i-TWOW-229-1 S2), is left out of
+// states, so summary lists the trial as not replayed, and named in stale with why. An entry of
+// no settled record is left out too. null when replay has not run.
+export function readReplay(dir: string, records: ReadonlyArray<ReplayRecord>): { states: Record<string, ReplayState>; stale: Record<string, string> } | null {
   const file = join(dir, 'replay.json');
   if (!existsSync(file)) return null;
-  const trials = (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, { match?: unknown; verdict?: unknown }> }).trials ?? {};
-  const states: readonly unknown[] = ['match', 'mismatch', 'world_mismatch'];
-  return Object.fromEntries(Object.entries(trials).map(([k, v]) => [k, states.includes(v.verdict) ? (v.verdict as ReplayState) : v.match === true ? 'match' : 'mismatch']));
+  const trials = (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, ReplayEntry> }).trials ?? {};
+  const byName = new Map(records.map((r) => [trialName(r), r]));
+  const states: Record<string, ReplayState> = {};
+  const stale: Record<string, string> = {};
+  for (const [name, entry] of Object.entries(trials)) {
+    const r = byName.get(name);
+    if (r === undefined) continue;
+    const why = whyStale(entry, r);
+    if (why === null) states[name] = replayStateOf(entry);
+    else stale[name] = why;
+  }
+  return { states, stale };
 }
 
 // The run's superseded task versions (R42): each <run>/superseded/<task>-v<n>/ with a trials/
@@ -194,11 +209,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     deps.err(`summary: ${(e as Error).message}`);
     return 1;
   }
+  const settled = settledRecords(dir).map((x) => x.record);
+  const replay = readReplay(dir, settled);
   const s = summarize({
     run_id: manifest?.run_id ?? basename(dir),
-    trials: settledRecords(dir).map((x) => toTrial(x.record)),
+    trials: settled.map(toTrial),
     requeued: requeuedRecords(dir).map((x) => toTrial(x.record)),
-    replay: readReplay(dir),
+    replay: replay === null ? null : replay.states,
     superseded,
     mode: manifest?.mode ?? null,
     ...(expected ? { expected } : {}),
@@ -236,6 +253,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     say(`superseded ${key}: ${v.task} ${v.version}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ${t.band_verdict ?? 'no valid trials'}  world ${v.initial_state_hashes.map((h) => h.slice(0, 12)).join(',') || '(none)'}  env ${t.env_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}  grader ${t.grader_task_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}; not counted in the tasks above`);
   }
   if (s.replay.ran && s.replay.other_world.length > 0) say(`replay: ${s.replay.other_world.length} trial(s) ran on another world than the replaying checkout's (replay.json world_mismatch): ${s.replay.other_world.join(', ')}`);
+  const staleNames = Object.keys(replay?.stale ?? {}).sort();
+  if (staleNames.length > 0) say(`replay: ${staleNames.length} ${staleNames.length === 1 ? 'entry of replay.json is not a verdict of its record' : 'entries of replay.json are not verdicts of their records'} as it is now (stale; replay the task again): ${staleNames.map((n) => `${n} (${replay!.stale[n]})`).join(', ')}`);
   say(
     `GRADER_ERROR ${s.totals.grader_error} at the current grade; history ${s.totals.grader_error_history} (GRADER_ERROR in an earlier grade, disclosed only). ` +
       'A GRADER_ERROR is a grader bug, never re-queued as a model trial: fix the grader, regrade the whole run offline (pnpm cli regrade), and disclose the history; ' +
