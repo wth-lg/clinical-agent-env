@@ -73,10 +73,6 @@
         }
       },
       "phase": "P24",
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
-      ],
       "note": "The writeup states the shape we chose (an in-memory FHIR R4 store behind typed tools) and why."
     },
     {
@@ -220,10 +216,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md"
-      ]
+      "phase": "P24"
     },
     {
       "id": "N1",
@@ -1366,11 +1359,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md",
-        "scripts/test/docs-check.test.ts"
-      ]
+      "phase": "P24"
     },
     {
       "id": "W10",
@@ -1421,12 +1410,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md",
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
-      ]
+      "phase": "P24"
     },
     {
       "id": "H1",
@@ -1528,11 +1512,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts",
-        "scripts/test/ste-check.test.ts"
       ]
     },
     {
@@ -1693,10 +1672,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/test/docs-check.test.ts"
       ],
       "note": "docs:check fails when the dated reference list (2025-2026 research, datasets, tools) is missing from docs/writeup.html."
     },
@@ -2505,10 +2480,7 @@
           }
         }
       ],
-      "phase": "P24",
-      "pending": [
-        "docs/findings.md"
-      ]
+      "phase": "P24"
     },
     {
       "id": "U28",
@@ -2836,12 +2808,6 @@
       "phase": "P24",
       "done_when": [
         7
-      ],
-      "pending": [
-        "docs/writeup.html",
-        "scripts/ste-check.ts",
-        "scripts/test/docs-check.test.ts",
-        "scripts/test/ste-check.test.ts"
       ]
     },
     {

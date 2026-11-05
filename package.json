@@ -23,7 +23,7 @@
     "fixtures:verify": "node scripts/fixtures-verify.ts",
     "fixtures:lint": "node scripts/fixtures-lint.ts",
     "live:node": "node scripts/live-node.ts",
-    "docs:check": "echo 'docs:check is not built yet (writeup PR)' >&2 && exit 1"
+    "docs:check": "node scripts/docs-check.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

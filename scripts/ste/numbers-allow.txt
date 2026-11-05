@@ -1,0 +1,5 @@
+# Phrases with a percentage or a k/N that may appear in the writeup's prose outside a generated
+# block. docs-check removes each phrase before it looks for numbers. One phrase per line.
+Wilson 95%
+95% interval
+95% intervals

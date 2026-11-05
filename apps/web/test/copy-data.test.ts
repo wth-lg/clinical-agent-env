@@ -71,6 +71,16 @@ describe('copyData', () => {
     expect(existsSync(join(outDir, 'data/results/runs/final-1/scratch.tmp'))).toBe(false);
   });
 
+  it('publishes docs/writeup.html as data/writeup.html, where the Findings view links it', () => {
+    const root = resultsTree();
+    put(root, 'docs/writeup.html', '<!doctype html>\n');
+    const outDir = tmp('dist');
+    copyData({ root, outDir });
+    expect(index(outDir).files).toEqual([...EXPECTED, 'writeup.html'].sort());
+    expect(readFileSync(join(outDir, 'data/writeup.html'), 'utf8')).toBe('<!doctype html>\n');
+    expect(existsSync(join(outDir, 'data/docs/writeup.html'))).toBe(false);
+  });
+
   it('writes an empty index when there is no source data', () => {
     const outDir = tmp('dist');
     copyData({ root: tmp('empty-root'), outDir });
