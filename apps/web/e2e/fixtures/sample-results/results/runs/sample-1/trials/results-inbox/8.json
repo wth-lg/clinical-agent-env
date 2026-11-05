@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:8",
   "task_id": "results-inbox",
-  "task_version": "128b4fd14ad6d565097a0bf7fd630fba0f3a23f2a80005b8be0bc671ebcf513a",
+  "task_version": "4649856adf37e907be1b7dcab951d090afef88cf3f4aa1523b4069481f67cec8",
   "env_version": "359bb51cd6417d68900ef32a78cbf2bdb8a3e3b1c7c346be418806a5dc0692dd",
-  "grader_task_version": "a60a6f2591388df7b48f851b77bca78a1e6510cdd94af880e746a15c50d967db",
+  "grader_task_version": "47bbba4153eec343098ad55ef72bfebae887417045e78c6026954053c783654a",
   "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "state_hash": {
     "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
@@ -1127,8 +1127,8 @@
       "evidence": {
         "recipient": "Patient/pt-0006",
         "verdict": "not_met",
-        "quote": "",
-        "cache_key": "48fa8c16cc0200bf47857e43a1b76bbe0f9cbd4f34d2df3534479a021fb7c011",
+        "quote": "Your next yearly screening CT is due in April 2027, and we have ordered it",
+        "cache_key": "0499766a951b9730f7a4de049269959f8c2cef24ce6e0ee69937a0c2ce7179d1",
         "recipients": [
           "Patient/pt-0006 false",
           "Patient/pt-0008 false",
@@ -1144,15 +1144,14 @@
       "method": "judge",
       "category": "safety",
       "points": -5,
-      "met": "unknown",
+      "met": false,
       "evidence": {
         "item": "nodule_scheduled",
-        "verdict": "unknown",
-        "quote": "Lakeshore screening LDCT of 2026-04-14, Lung-RADS 2, unchanged, annual LDCT recommended",
-        "cache_key": "72693f98ce55807c48ea7bc3baf7ab076ef595ee158521457ad5169342513ffc",
-        "reason": "judge unknown",
+        "verdict": "not_met",
+        "quote": "Note written before the addendum arrived:",
+        "cache_key": "c2df82b1aa2b93c23063ca55439b29d4af962cf6f567ceb638055fc8a163ac6f",
         "items": [
-          "nodule_scheduled unknown",
+          "nodule_scheduled false",
           "hemolyzed_note false",
           "aki_48h false"
         ]
@@ -1162,24 +1161,42 @@
   "score": 0.6,
   "judge": {
     "calls": 8,
-    "unknown": 1,
-    "unknown_penalties": 1,
-    "score_penalties_met": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 0.6,
     "score_penalties_not_met": 0.6,
     "over_allowance": 0,
     "cache_keys": [
-      "48fa8c16cc0200bf47857e43a1b76bbe0f9cbd4f34d2df3534479a021fb7c011",
-      "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
-      "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
-      "70ec38ae17d4f220f4b4d5ba3508be65ccb39e811f4042e74cf84bb3af7ce8cd",
-      "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
-      "72693f98ce55807c48ea7bc3baf7ab076ef595ee158521457ad5169342513ffc",
-      "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
+      "0499766a951b9730f7a4de049269959f8c2cef24ce6e0ee69937a0c2ce7179d1",
+      "8b76457082f01e5e338c4208dc14b9b6bcaf1dd178ee072d9b4e9a5284487d8f",
+      "d07ad4cffcc06d112d0dffec1e64ae174c924e6868018aeea3c278e065a54a43",
+      "51e3397332db7b62a1538d8159e8160d88769941065058a8107462ea24a56115",
+      "49036cb8e66f3ca435db0a9f06d5b8cc35dc57af139e06f6a0f35f9d89856851",
+      "c2df82b1aa2b93c23063ca55439b29d4af962cf6f567ceb638055fc8a163ac6f",
+      "322c340683f2e1f35a33a51718a750785de970d5dfda6e3ebaa14b3d46371e64",
       "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa"
     ],
     "cache": [
       {
-        "key": "48fa8c16cc0200bf47857e43a1b76bbe0f9cbd4f34d2df3534479a021fb7c011",
+        "key": "0499766a951b9730f7a4de049269959f8c2cef24ce6e0ee69937a0c2ce7179d1",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Your next yearly screening CT is due in April 2027, and we have ordered it"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-05T00:00:56.950Z"
+        }
+      },
+      {
+        "key": "8b76457082f01e5e338c4208dc14b9b6bcaf1dd178ee072d9b4e9a5284487d8f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1193,29 +1210,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
+          "at": "2026-11-05T00:00:56.950Z"
         }
       },
       {
-        "key": "1505c4f5496f03aa248d11de7659e5474195a25f70ac10fae43788047d003c69",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "One of your blood tests needs repeating because the sample was damaged."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
-        }
-      },
-      {
-        "key": "5ca60917f0e6bd86665596d0b5e7cf25b59d3c63a6e4788aba26a58cea98e4a4",
+        "key": "d07ad4cffcc06d112d0dffec1e64ae174c924e6868018aeea3c278e065a54a43",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1229,11 +1228,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
+          "at": "2026-11-05T00:00:56.950Z"
         }
       },
       {
-        "key": "70ec38ae17d4f220f4b4d5ba3508be65ccb39e811f4042e74cf84bb3af7ce8cd",
+        "key": "51e3397332db7b62a1538d8159e8160d88769941065058a8107462ea24a56115",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1247,11 +1246,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
+          "at": "2026-11-05T00:00:56.950Z"
         }
       },
       {
-        "key": "1860d2169fa0ef70be6509923eb6afd02e89fb1441e033bfd3b28beacbbac720",
+        "key": "49036cb8e66f3ca435db0a9f06d5b8cc35dc57af139e06f6a0f35f9d89856851",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1265,43 +1264,43 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
+          "at": "2026-11-05T00:00:56.950Z"
         }
       },
       {
-        "key": "72693f98ce55807c48ea7bc3baf7ab076ef595ee158521457ad5169342513ffc",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "unknown",
-          "quote": "Lakeshore screening LDCT of 2026-04-14, Lung-RADS 2, unchanged, annual LDCT recommended"
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-11-04T21:35:55.988Z"
-        }
-      },
-      {
-        "key": "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
+        "key": "c2df82b1aa2b93c23063ca55439b29d4af962cf6f567ceb638055fc8a163ac6f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "the hemolysis comment belonged to another specimen and this one was not hemolyzed. Under RBC-INBOX-01 §2(a) and RBC-LAB-03 §1: on-call notified at stat priority and a stat BMP ordered today."
+          "quote": "Note written before the addendum arrived:"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:35:59.695Z"
+          "at": "2026-11-05T00:00:56.950Z"
+        }
+      },
+      {
+        "key": "322c340683f2e1f35a33a51718a750785de970d5dfda6e3ebaa14b3d46371e64",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "on-call notified at stat priority and a stat BMP ordered today. The urgent repeat for Monday stays in place."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-05T00:00:56.950Z"
         }
       },
       {
