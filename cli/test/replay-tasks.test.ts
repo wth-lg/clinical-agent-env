@@ -31,9 +31,9 @@ beforeAll(async () => {
   if (code !== 0) throw new Error(out.join('\n'));
 });
 
-async function cli(args: string[]) {
+async function cli(args: string[], tasksFinal?: string) {
   const lines: string[] = [];
-  const code = await replay(args, { out: (l) => lines.push(l), err: (l) => lines.push(l) });
+  const code = await replay(args, { out: (l) => lines.push(l), err: (l) => lines.push(l), ...(tasksFinal === undefined ? {} : { tasksFinal }) });
   return { code, text: lines.join('\n') };
 }
 
@@ -285,5 +285,83 @@ describe('replay --tasks maps entries to tasks through the records', () => {
     expect(Object.keys(j.trials).sort()).toEqual(['_toy/0', '_toy/1', '_toy/7', 'other/0']);
     expect(j.trials['_toy/7']).toEqual(foreign);
     expect(r.text).toContain('replay: 2 of 2 replayed trials reproduced (_toy); 2 entries of no settled record kept (_toy/7, other/0)');
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-3-1 m1 (P5c via stamp): a stamp names a commit, and a task frozen
+// in results/tasks-final.json with replay_at at that commit was replayed there at one
+// env_version, the freeze's. An entry whose record is at another env_version (a v2 record under
+// a v1 name, after supersede left step 1's v1 entries in the file) cannot be that commit's
+// verdict, so --stamp refuses it and writes nothing. A task the file does not freeze at that
+// commit is stamped as before. The freeze is the task's entry, or its superseded sub-entry
+// (builder-316's v2-pending shape), whichever names the commit.
+describe('replay --stamp against results/tasks-final.json', () => {
+  const COMMIT = 'e8ef8c4d9bedce9e93d1a6d2031785c295e5caae';
+  const unstamp = (copy: string) => {
+    const j = readFile(copy);
+    for (const [name, e] of Object.entries(j.trials)) {
+      const { replayed_at: _at, verdict: _v, ...rest } = e;
+      j.trials[name] = rest as ReplayVerdict;
+    }
+    writeFileSync(join(copy, 'replay.json'), JSON.stringify(j, null, 2));
+  };
+  const freeze = (root: string, env: string, shape: 'entry' | 'superseded') => {
+    const file = join(root, 'tasks-final.json');
+    const frozen = { task_version: 't', grader_task_version: 'g', env_version: env, world_hash: 'w', frozen_at: { tag: 'final-1-t3t5' }, frozen_from_branch: 'a'.repeat(40), replay_at: { tag: 'final-1-t3t5', commit: COMMIT } };
+    const entry = shape === 'entry' ? frozen : { status: 'v2-pending', reason: 'v2', superseded: { version: 'v1', ...frozen } };
+    writeFileSync(file, JSON.stringify({ schema_version: 1, tasks: { _toy: entry } }, null, 2));
+    return file;
+  };
+
+  it.each(['entry', 'superseded'] as const)('stamps a record at the freeze\'s env_version (%s shape), and refuses one at another env_version with nothing written', async (shape) => {
+    const copy = join(tempDir(`replay-stamp-guard-${shape}`), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    unstamp(copy);
+    const env = record(copy, 0).env_version;
+    const file = freeze(tempDir('replay-stamp-guard-final'), env, shape);
+    const ok = await cli([copy, '--stamp', COMMIT], file);
+    expect(ok.code, ok.text).toBe(0);
+    expect(readFile(copy).trials['_toy/0']).toMatchObject({ verdict: 'match', replayed_at: { commit: COMMIT, env_version: env } });
+    // P5c via stamp: _toy/1 rewritten at another env_version with the same outcomes.
+    unstamp(copy);
+    writeFileSync(join(copy, 'trials', '_toy', '1.json'), JSON.stringify({ ...record(copy, 1), env_version: 'e'.repeat(64) }, null, 2));
+    const before = readFileSync(join(copy, 'replay.json'), 'utf8');
+    const r = await cli([copy, '--stamp', COMMIT], file);
+    expect(r.code).toBe(1);
+    expect(r.text).toContain(`replay: _toy/1: not stamped: its record is at env_version ${'e'.repeat(64)}, and results/tasks-final.json records _toy at commit ${COMMIT.slice(0, 12)} at ${env}: no verdict of this record was made there`);
+    expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(before);
+  });
+
+  it('a task the file does not freeze at that commit is stamped as before', async () => {
+    const copy = join(tempDir('replay-stamp-guard-other'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    unstamp(copy);
+    const file = freeze(tempDir('replay-stamp-guard-final-other'), 'v-other-freeze', 'entry');
+    const other = await cli([copy, '--stamp', 'b'.repeat(40)], file);
+    expect(other.code, other.text).toBe(0);
+  });
+});
+
+// verifier-phase-P17i-TWOW-229-3-1 m2: a record of this checkout's env_version whose trajectory
+// started from another world than the checkout's (its initial state hash is not the world's) is
+// a world mismatch, not a regrade that differs: its verdict is world_mismatch (no match field)
+// and its error points at the run directory's README, as the env-changed verdict does.
+describe('replay: a record of another manifest world', () => {
+  it('gets the named verdict world_mismatch with the run directory\'s README, and exits 1', async () => {
+    const copy = join(tempDir('replay-other-world'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    const file = join(copy, 'trials', '_toy', '0.json');
+    const rec = JSON.parse(readFileSync(file, 'utf8')) as { state_hash: { initial: string } };
+    writeFileSync(file, JSON.stringify({ ...rec, state_hash: { ...rec.state_hash, initial: 'f'.repeat(64) } }, null, 2));
+    const r = await cli([copy]);
+    expect(r.code).toBe(1);
+    const j = readFile(copy);
+    expect(j.trials['_toy/0']).toMatchObject({ verdict: 'world_mismatch', outcome: null, replayed_at: { world_hash: repoWorld().worldHash } });
+    expect(j.trials['_toy/0']).not.toHaveProperty('match');
+    expect(j.trials['_toy/0']!.error).toBe(`world mismatch: run at ${'f'.repeat(64)}, checkout at ${repoWorld().worldHash}; reproduce at the commit in ${copy}/README.md`);
+    expect(j.trials['_toy/1']).toMatchObject({ match: true, verdict: 'match' });
+    expect(r.text).toContain('replay: 1 of 2 trials reproduced; 1 ran on another world (_toy/0): replay it at its own commit with --tasks, then this checkout\'s tasks here');
   });
 });

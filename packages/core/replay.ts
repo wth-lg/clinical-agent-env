@@ -27,6 +27,11 @@
 // written before verdicts were stamped is stamped by `pnpm cli replay <run> --stamp <commit>`.
 import { currentGrade, type RegradeGrade, type ReplayState } from './summary.ts';
 
+// The named error for a trajectory that started from another world than the checkout's
+// (packages/core/run.ts worldMismatch, R37) starts so; replayVerdict reads it as world_mismatch.
+export const WORLD_MISMATCH = 'world mismatch: ';
+export const isWorldMismatch = (message: string | null | undefined): boolean => typeof message === 'string' && message.startsWith(WORLD_MISMATCH);
+
 export interface ReplayRecord {
   task_id: string;
   task_version: string | null;
@@ -144,6 +149,9 @@ export function replayVerdict(r: ReplayRecord, res: ReplayGraded): ReplayVerdict
   if ('miss' in res) return { match: false, verdict: 'mismatch', outcome: null, ...base(r), error: judgeMissed(res.miss, r) };
   if ('error' in res) return { match: false, verdict: 'mismatch', outcome: null, ...base(r), error: res.error };
   const g = res.grade;
+  // A trajectory that started from another world than the checkout's (packages/core/run.ts
+  // worldMismatch, R37) is a world mismatch, not a regrade that differs (verifier-phase-P17i-TWOW-229-3-1 m2).
+  if (g.error !== null && isWorldMismatch(g.error.message)) return { verdict: 'world_mismatch', outcome: null, ...base(r), error: g.error.message };
   const cur = currentGrade(r);
   const checksKnown = !cur.regraded || cur.checks !== null;
   const match = g.outcome === cur.outcome && g.score === cur.score && (!checksKnown || metOf(g.checks) === metOf(cur.checks));
