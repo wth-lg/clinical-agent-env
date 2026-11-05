@@ -122,10 +122,10 @@ describe('docs-check', () => {
 
   it('fails on a pass rate written in prose', () => {
     const root = docsRoot();
-    edit(root, 'docs/writeup/30-surprises.md', /\n\n/, '\n\nThe model passed 12/20 trials, a rate of 60%.\n\n');
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nThe model passed 12/20 trials, a rate of 60%.\n\n');
     const r = check(regenerated(root));
     expect(r.status).toBe(1);
-    expect(r.stdout).toMatch(/docs\/writeup\/30-surprises\.md:\d+: .*number/);
+    expect(r.stdout).toMatch(/docs\/findings\.md:\d+: .*number/);
   });
 
   it('fails on a 30-word step in README.md', () => {
@@ -139,7 +139,7 @@ describe('docs-check', () => {
 
   it('fails on a denylisted word', () => {
     const root = docsRoot();
-    edit(root, 'docs/writeup/30-surprises.md', /\n\n/, '\n\nWe utilize the ledger.\n\n');
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nWe utilize the ledger.\n\n');
     const r = check(regenerated(root));
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/"utilize"/);
@@ -171,7 +171,7 @@ describe('docs-check', () => {
 
   it('fails on a broken relative link and on a missing anchor', () => {
     const root = docsRoot();
-    edit(root, 'docs/writeup/30-surprises.md', /\n\n/, '\n\nSee [the plan](../missing.md) and [the gap](#no-such-anchor).\n\n');
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nSee [the plan](../missing.md) and [the gap](#no-such-anchor).\n\n');
     const r = check(regenerated(root));
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/missing\.md/);
@@ -197,7 +197,7 @@ describe('docs-check', () => {
 
   it('TODO-W5F is a warning without results/official.json and an error with it; any other TODO is an error', () => {
     const root = docsRoot();
-    edit(root, 'docs/writeup/30-surprises.md', /\n\n/, '\n\nTODO-W5F the W5 tasks.\n\n');
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nTODO-W5F the W5 tasks.\n\n');
     regenerated(root);
     const r = check(root);
     expect(r.status).toBe(0);
@@ -208,7 +208,7 @@ describe('docs-check', () => {
     expect(r2.status).toBe(1);
     expect(errors(r2).some((l) => l.includes('TODO-W5F'))).toBe(true);
     const root3 = docsRoot();
-    edit(root3, 'docs/writeup/30-surprises.md', /\n\n/, '\n\nTODO-XYZ later.\n\n');
+    edit(root3, 'docs/findings.md', /\n\n/, '\n\nTODO-XYZ later.\n\n');
     expect(check(regenerated(root3)).status).toBe(1);
   });
 
