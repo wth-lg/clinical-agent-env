@@ -6,8 +6,12 @@
 import { describe, expect, it } from 'vitest';
 import type { GateCheck, GateCtx, Step, StepNotes, StepSearch } from '../../packages/grader/check.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
-import { CLASSES, classOf, DELIVERED, expected, ORDERED, SCREENING, type Absence } from './expected.ts';
-import { ref } from './ids.ts';
+import { CLASSES, classOf, DELIVERED as ALL_DELIVERED, expected, LEVER, ORDERED, SCREENING, type Absence } from './expected.ts';
+import { ACTIVE } from './events.ts';
+// The delivered members whose event is active in this LEVER state (crc-b3's only while A is on).
+const DELIVERED = Object.fromEntries(Object.entries(ALL_DELIVERED).filter(([spec]) => ACTIVE.includes(spec)));
+import { idOf, ref, refOf } from './ids.ts';
+import { HOSTS } from './lever-keys.ts';
 import { absenceShownAt, checks, filtersCover, notesCover, notesShownAt } from './tests/grader.ts';
 
 const gates = checks.filter((c): c is GateCheck => c.kind === 'gate');
@@ -20,15 +24,16 @@ const run = (id: string) => gates.find((g) => g.id === id)!.fn(NOTHING);
 describe('T3 worklist after the PW4-E3 list cut', () => {
   // n = 4 cannot hold one member of each of the six probe classes and the filler (coordinator,
   // builder-283 design check); the four kept classes each keep one member.
-  it('holds one member of each of four probe classes, each member once', () => {
-    expect(Object.keys(CLASSES).sort()).toEqual(['collection_vs_report_date', 'colonoscopy_never_done', 'frailty_advanced_illness', 'hospice_revoked']);
+  it('holds one member of each of four probe classes and one of each lever class on the panel, each member once', () => {
+    expect(Object.keys(CLASSES).sort()).toEqual(['collection_vs_report_date', 'colonoscopy_never_done', 'frailty_advanced_illness', 'hospice_revoked', 'outside_fit_reissued', ...(LEVER.includes('reserve') ? ['hospice_referral_cancelled'] : [])].sort());
     expect(Object.values(CLASSES).flat().sort()).toEqual(PATIENTS.slice().sort());
     expect(expected.items.map((x) => classOf(x.patient)).filter((c) => c === undefined)).toEqual([]);
   });
 
-  it('no member needs an order or a message at base; every delivered member needs both', () => {
-    expect(ORDERED).toEqual([]);
-    expect(expected.items.filter((x) => x.order !== false || x.message !== false).map((x) => x.patient)).toEqual([]);
+  it("no member but the reserve's host needs an order or a message at base; every delivered member needs both", () => {
+    const reserve = LEVER.includes('reserve') ? expected.items.filter((x) => x.reason === 'hospice_not_counted').map((x) => x.patient) : [];
+    expect(ORDERED).toEqual(reserve);
+    expect(expected.items.filter((x) => x.order !== false || x.message !== false).map((x) => x.patient)).toEqual(reserve);
     for (const [spec, x] of Object.entries(DELIVERED)) expect([spec, x.status, x.order, x.message]).toEqual([spec, 'gap', true, true]);
   });
 });
@@ -44,6 +49,10 @@ describe('T3 decisive ids (R1)', () => {
       'Patient/pt-0020': [ref('EpisodeOfCare/eoc-t3-8215')],
       'Patient/pt-0022': [ref('Observation/obs-t3-3906')],
       'Patient/pt-0024': [ref('Observation/obs-t3-1279')],
+      // T3 v2: the A host's Harbor FIT; the reserve's host, a gap at base named by his cancelled
+      // referral (seen by his absence review, as hospice_before_period's episode is) and his Patient (R33).
+      [`Patient/${idOf(HOSTS.A)}`]: [refOf('Observation/obs-t3-quintero-fit')],
+      ...(LEVER.includes('reserve') ? { [`Patient/${idOf(HOSTS.reserve)}`]: [refOf('EpisodeOfCare/eoc-t3-baptiste-hospice'), `Patient/${idOf(HOSTS.reserve)}`] } : {}),
     });
   });
 });
@@ -60,21 +69,31 @@ describe('T3 gates over expected.items', () => {
     const decisive = [...new Set(expected.items.flatMap((x) => x.decisive))];
     const own = Object.values(DELIVERED).map((y) => y.patient);
     const withOwn = [...new Set([...decisive, ...own])];
-    expect(gates.filter((g) => BASE_GATES.includes(g.id)).map((g) => [g.id, g.decisive_ids])).toEqual([
-      ['fit_orders', withOwn], ['outreach_messages', decisive], ['nothing_for_others', decisive], ['gap_seen_before_order', withOwn], ['no_contact_reviewed', decisive],
+    const sorted = (ids: readonly string[]) => [...ids].sort();
+    // nothing_for_others and no_contact_reviewed name the records of the members who need no order
+    // (a base gap member's review is fit_orders').
+    const noOrder = [...new Set(expected.items.filter((x) => x.order === false).flatMap((x) => x.decisive))];
+    expect(gates.filter((g) => BASE_GATES.includes(g.id)).map((g) => [g.id, sorted(g.decisive_ids)])).toEqual([
+      ['fit_orders', sorted(withOwn)], ['outreach_messages', sorted(decisive)], ['nothing_for_others', sorted(noOrder)], ['gap_seen_before_order', sorted(withOwn)], ['no_contact_reviewed', sorted(noOrder)],
     ]);
   });
 
-  it('a trial that does nothing passes fit_orders, outreach_messages, nothing_for_others and gap_seen_before_order', () => {
-    for (const id of ['fit_orders', 'outreach_messages', 'nothing_for_others', 'gap_seen_before_order']) expect(run(id).met, id).toBe(true);
+  // A member who needs an order at base (the reserve's host while on) fails fit_orders and
+  // outreach_messages on a trial that does nothing; every other member passes them.
+  it('a trial that does nothing passes fit_orders, outreach_messages, nothing_for_others and gap_seen_before_order on every member who needs no order', () => {
+    for (const id of ['fit_orders', 'outreach_messages', 'nothing_for_others', 'gap_seen_before_order']) {
+      const v = run(id);
+      expect(v.items!.filter((i) => !i.met).map((i) => i.item), id).toEqual(['fit_orders', 'outreach_messages'].includes(id) ? ORDERED : []);
+    }
   });
 
   // Ruling R32 (verifier-W1T-190-falsepass F1): the null agent passes no item. A member who needs no
-  // contact fails no_contact_reviewed until their deciding records are seen.
-  it('and fails no_contact_reviewed on every member, each naming what decides them', () => {
+  // contact fails no_contact_reviewed until their deciding records are seen (a base gap member's
+  // review is fit_orders').
+  it('and fails no_contact_reviewed on every member who needs no contact, each naming what decides them', () => {
     const v = run('no_contact_reviewed');
-    expect(v.items!.filter((i) => !i.met).map((i) => [i.item, i.ids])).toEqual(expected.items.map((x) => [x.patient, x.decisive]));
-    expect(v.evidence).toEqual({ unreviewed: PATIENTS });
+    expect(v.items!.filter((i) => !i.met).map((i) => [i.item, i.ids])).toEqual(expected.items.filter((x) => x.order === false).map((x) => [x.patient, x.decisive]));
+    expect(v.evidence).toEqual({ unreviewed: PATIENTS.filter((p) => !ORDERED.includes(p)) });
     expect(v.items!.find((i) => i.item === 'Patient/pt-0020')!.why).toBe(`needs no order or message (excluded: hospice), but the trial never saw ${ref('EpisodeOfCare/eoc-t3-8215')}, what decides that`);
   });
   it('a trial that never orders or messages any member still fails some gate on every member (R32)', () => {
@@ -121,8 +140,11 @@ describe('absence rules of a delivered gap (R20, R27, R31, R36)', () => {
       { type: 'Observation', from: '2024-01-01', codes: LOINC(['77354-9', '77353-1']), categories: LAB, statuses: TESTS },
     ];
     expect(SCREENING).toEqual(screening);
-    for (const x of Object.values(DELIVERED)) expect(x.absences, x.patient).toEqual(screening);
-    expect(expected.items.filter((x) => x.absences.length > 0)).toEqual([]);
+    for (const x of Object.values(ALL_DELIVERED)) expect(x.absences, x.patient).toEqual(screening);
+    // A base gap (the reserve's host while on) rests on the four screening kinds and on the
+    // exclusion its reason turns on (policy.ts EXCLUSION_ABSENCES): a counted care episode.
+    for (const x of expected.items.filter((y) => y.status === 'gap')) expect(x.absences.slice(0, 4), x.patient).toEqual(screening);
+    expect(expected.items.filter((x) => x.status !== 'gap' && x.absences.length > 0)).toEqual([]);
   });
 
   const d1 = DELIVERED['crc-b2']!;
@@ -405,11 +427,14 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
     expect(item('fit_orders', withoutPatient, G1).met).toBe(false);
   });
   it('declares seen_at for each event focus on the event gates; on the base gates, a seen rule only for the members an amend event can turn into a gap, each seen by that rule alone', () => {
-    const amendable = [...new Set([...expected.items.filter((x) => Object.values(DELIVERED).some((y) => y.patient === x.patient)).flatMap((x) => x.decisive), ...Object.values(DELIVERED).map((y) => y.patient)])].sort();
+    // The members with a seen rule: the ones an active amend event can turn into a gap, and a base
+    // gap member (the reserve's host while on), whose absences are his rule.
+    const amendable = [...new Set([...expected.items.filter((x) => Object.values(DELIVERED).some((y) => y.patient === x.patient) || x.absences.length > 0).flatMap((x) => x.decisive), ...Object.values(DELIVERED).map((y) => y.patient)])].sort();
     for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order']) {
       expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual(amendable);
       expect(gates.find((x) => x.id === g)!.decisive_phrases ?? {}, g).toEqual(Object.fromEntries(amendable.map((d) => [d, ''])));
     }
-    expect(Object.keys(gates.find((x) => x.id === 'event_seen')!.seen_at ?? {}).sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402', FIT].sort());
+    // crc-b3's seen resource is its silent sibling, the re-issued FIT (R39(b)), not the packet's cover.
+    expect(Object.keys(gates.find((x) => x.id === 'event_seen')!.seen_at ?? {}).sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402', FIT, ...(LEVER.includes('A') ? ['Observation/obs-05001'] : [])].sort());
   });
 });

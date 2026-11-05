@@ -32,6 +32,7 @@ import { expected as T1_EXPECTED, LEVER_ITEMS as T1_LEVER_ITEMS } from '../../ta
 import { expected as T2_EXPECTED, LEVER_ITEMS as T2_LEVER_ITEMS } from '../../tasks/results-inbox/expected.ts';
 import { ITEMS as T6_ITEMS, LEVER_ITEMS as T6_LEVER_ITEMS } from '../../tasks/message-queue/expected.ts';
 import { expected as T4_EXPECTED, LEVER_ITEMS as T4_LEVER_ITEMS } from '../../tasks/discharge-medrec/expected.ts';
+import { classOf as t3ClassOf, expected as T3_EXPECTED, LEVER_ITEMS as T3_LEVER_ITEMS } from '../../tasks/crc-care-gap/expected.ts';
 import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -422,6 +423,10 @@ const LEVER_TABLES: ReadonlyArray<{ items: ReadonlyArray<{ item: string; patient
   // while its item is on; its item A is on a cohort patient (Webb). Its LEVER_ITEMS name the patient
   // as a Patient reference and its items (ITEMS) carry `klass`.
   { items: T6_LEVER_ITEMS, list: T6_ITEMS.map((x) => ({ patient: x.patient, class: x.klass })) },
+  // T3's (builder-316, T3 v2, R42): pt-0073 Quintero (A, on the panel in every state) and pt-0074
+  // Baptiste (the reserve, in the world only while on). Its LEVER_ITEMS name the patient by bare
+  // id and its panel members carry their class through classOf.
+  { items: T3_LEVER_ITEMS, list: T3_EXPECTED.items.map((x) => ({ patient: x.patient, class: t3ClassOf(x.patient) })) },
 ];
 const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
   [...ADDED_PATIENTS].sort().map((p) => {

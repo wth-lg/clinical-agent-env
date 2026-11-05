@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:8",
   "task_id": "crc-care-gap",
-  "task_version": "db86befc9ca9a39614de3446f3ad9426155d805ebdabfe87b3e5ec25a211ef89",
-  "env_version": "edb2c1114e1dfd06e67bd6e3386bba2ca3a1402cc699420517701b9cf064b31a",
-  "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
-  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "task_version": "eea788e25dc5e426ec8b7e55ac237dd97b09c9a3090c85e32884aa084943c5ab",
+  "env_version": "b15d9a8dc2b942a9c5b434b23cbaf7b0be70768e2a85b38472a40f21fbefcc3f",
+  "grader_task_version": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d",
+  "fixture_hash": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
   "state_hash": {
-    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
-    "final": "df4f44fbf4208a444506443c10a1a87f4c8616090af600823de2db89da15f3b2",
-    "replay_final": "df4f44fbf4208a444506443c10a1a87f4c8616090af600823de2db89da15f3b2"
+    "initial": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
+    "final": "080bf25eab85047e629c6c967159237a33fb4e61e1f4ff86da27aefbd4bc5fa1",
+    "replay_final": "080bf25eab85047e629c6c967159237a33fb4e61e1f4ff86da27aefbd4bc5fa1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:58:56.000Z",
+  "started": "2026-10-23T13:01:56.000Z",
   "turns": 15,
-  "tool_calls": 50,
+  "tool_calls": 63,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 3 FIT kits ordered and 3 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
+  "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 4 FIT kits ordered and 4 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |\n| Marisol Quintero | Open gap: FIT kit ordered, outreach sent | Harbor laboratory cancelled and re-issued her FIT report: the re-issued result is collected December 28, 2025, before the measurement period, so it does not count; no other screening |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:01:49.000Z",
+  "ended": "2026-10-23T13:05:18.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "FAIL",
@@ -61,7 +61,8 @@
         "want": [
           "Patient/pt-0009",
           "Patient/pt-0022",
-          "Patient/pt-0024"
+          "Patient/pt-0024",
+          "Patient/pt-0073"
         ],
         "ordered": {
           "Patient/pt-0009": [
@@ -69,6 +70,9 @@
           ],
           "Patient/pt-0024": [
             "ServiceRequest/sr-t0003"
+          ],
+          "Patient/pt-0073": [
+            "ServiceRequest/sr-t0005"
           ]
         },
         "missing": [
@@ -81,7 +85,8 @@
       },
       "ids": [
         "ServiceRequest/sr-t0001",
-        "ServiceRequest/sr-t0003"
+        "ServiceRequest/sr-t0003",
+        "ServiceRequest/sr-t0005"
       ],
       "items": [
         {
@@ -115,6 +120,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         },
@@ -137,7 +150,8 @@
         "missing": [],
         "messaged": [
           "Patient/pt-0009",
-          "Patient/pt-0024"
+          "Patient/pt-0024",
+          "Patient/pt-0073"
         ],
         "not_about_order": [],
         "about_own_record": [],
@@ -145,7 +159,8 @@
       },
       "ids": [
         "Communication/comm-t0002",
-        "Communication/comm-t0004"
+        "Communication/comm-t0004",
+        "Communication/comm-t0006"
       ],
       "items": [
         {
@@ -179,6 +194,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -231,6 +254,14 @@
           "evidence": {}
         },
         {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
+          ],
+          "evidence": {}
+        },
+        {
           "item": "outside",
           "met": true,
           "decisive_ids": [],
@@ -249,11 +280,11 @@
         "seen": [
           {
             "patient": "Patient/pt-0009",
-            "first_order": 46,
+            "first_order": 57,
             "exposed": [
               {
                 "id": "Patient/pt-0009",
-                "step": 12
+                "step": 14
               }
             ],
             "missing_kinds": []
@@ -264,17 +295,28 @@
             "exposed": [
               {
                 "id": "Patient/pt-0022",
-                "step": 14
+                "step": 16
               }
             ]
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 48,
+            "first_order": 59,
             "exposed": [
               {
                 "id": "Patient/pt-0024",
-                "step": 15
+                "step": 17
+              }
+            ],
+            "missing_kinds": []
+          },
+          {
+            "patient": "Patient/pt-0073",
+            "first_order": 61,
+            "exposed": [
+              {
+                "id": "Patient/pt-0073",
+                "step": 18
               }
             ],
             "missing_kinds": []
@@ -315,6 +357,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -363,6 +413,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -428,6 +486,19 @@
           "evidence": {
             "fired": [
               "crc-d1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
             ],
             "not_fired": []
           }
@@ -497,6 +568,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -563,6 +647,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -624,6 +721,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -677,6 +787,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -720,7 +843,7 @@
         "reason": "frailty_entered_in_error",
         "verdict": "met",
         "quote": "| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |",
-        "cache_key": "c0439036923c658fa93261603912b9371b46fa07c8cbfb7d331e33ce60df01dc"
+        "cache_key": "463577f3276b970acd460f66bfde7840896d38c223e1ddee6ba37fba8c220427"
       }
     },
     {
@@ -736,7 +859,7 @@
         "reason": "hospice",
         "verdict": "met",
         "quote": "| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |",
-        "cache_key": "b4b683002b410929d4e2ba63720ef138b7a7a15e7636939e6ee7eb483cd9bfe9"
+        "cache_key": "324aeda348ff84ea9581d3ca26c0d3846b637e4e2aac4b470adc635b3313bc4e"
       }
     },
     {
@@ -752,7 +875,7 @@
         "reason": "fit_collected_before_period",
         "verdict": "met",
         "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |",
-        "cache_key": "f01e2927cf6d488df3f31e8519e7fd4927e335f52ba9bde88b9e719e864348ba"
+        "cache_key": "08402c9dd7ca6c1d8ca1ac6b8077793ae368b9297d7a38805765cdc27bdeb575"
       }
     },
     {
@@ -768,7 +891,23 @@
         "reason": "sdna_withdrawn",
         "verdict": "met",
         "quote": "| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
-        "cache_key": "aa360ebc1c3fb353735ebaef543dfbfff894418a01af71b88a4a405e32aa0e5f"
+        "cache_key": "824b57ed3e9f2d4c8054719a74ea88e678d730410a5d9ee45a94feebc64143e3"
+      }
+    },
+    {
+      "id": "table_pt_0073",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "named": true,
+        "status": "gap",
+        "reason": "fit_reissued_before_period",
+        "verdict": "met",
+        "quote": "Marisol Quintero | Open gap: FIT kit ordered, outreach sent | Harbor laboratory cancelled and re-issued her FIT report: the re-issued result is collected December 28, 2025, before the measurement period, so it does not count; no other screening",
+        "cache_key": "f7647a4797600e6a099c3189248ddffc6e427beba680ed9ec1e00b04d0307f67"
       }
     },
     {
@@ -831,7 +970,8 @@
         "cache_key": "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
         "patients": [
           "Patient/pt-0009 false",
-          "Patient/pt-0024 false"
+          "Patient/pt-0024 false",
+          "Patient/pt-0073 false"
         ]
       }
     },
@@ -849,14 +989,15 @@
         "cache_key": "4c9d9b2c8480760f965aac78c11ffba497730a410fa2793f711f90d50a620501",
         "patients": [
           "Patient/pt-0009 false",
-          "Patient/pt-0024 false"
+          "Patient/pt-0024 false",
+          "Patient/pt-0073 false"
         ]
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 7,
+    "calls": 9,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -866,10 +1007,12 @@
       "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
       "4c9d9b2c8480760f965aac78c11ffba497730a410fa2793f711f90d50a620501",
       "6ff46bfded3b37f623e08b9da796b3b2692ad7f2f5baede89454285163e541e5",
-      "c0439036923c658fa93261603912b9371b46fa07c8cbfb7d331e33ce60df01dc",
-      "b4b683002b410929d4e2ba63720ef138b7a7a15e7636939e6ee7eb483cd9bfe9",
-      "f01e2927cf6d488df3f31e8519e7fd4927e335f52ba9bde88b9e719e864348ba",
-      "aa360ebc1c3fb353735ebaef543dfbfff894418a01af71b88a4a405e32aa0e5f"
+      "668a73957d8e8842fc520b0bfde3ff86c829a74db4fe0edaa03c91bf63c94f7f",
+      "463577f3276b970acd460f66bfde7840896d38c223e1ddee6ba37fba8c220427",
+      "324aeda348ff84ea9581d3ca26c0d3846b637e4e2aac4b470adc635b3313bc4e",
+      "08402c9dd7ca6c1d8ca1ac6b8077793ae368b9297d7a38805765cdc27bdeb575",
+      "824b57ed3e9f2d4c8054719a74ea88e678d730410a5d9ee45a94feebc64143e3",
+      "f7647a4797600e6a099c3189248ddffc6e427beba680ed9ec1e00b04d0307f67"
     ],
     "cache": [
       {
@@ -927,7 +1070,25 @@
         }
       },
       {
-        "key": "c0439036923c658fa93261603912b9371b46fa07c8cbfb7d331e33ce60df01dc",
+        "key": "668a73957d8e8842fc520b0bfde3ff86c829a74db4fe0edaa03c91bf63c94f7f",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-05T17:48:05.401Z"
+        }
+      },
+      {
+        "key": "463577f3276b970acd460f66bfde7840896d38c223e1ddee6ba37fba8c220427",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -941,11 +1102,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:14:24.857Z"
+          "at": "2026-11-05T17:51:14.238Z"
         }
       },
       {
-        "key": "b4b683002b410929d4e2ba63720ef138b7a7a15e7636939e6ee7eb483cd9bfe9",
+        "key": "324aeda348ff84ea9581d3ca26c0d3846b637e4e2aac4b470adc635b3313bc4e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -959,11 +1120,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:14:24.857Z"
+          "at": "2026-11-05T17:51:14.238Z"
         }
       },
       {
-        "key": "f01e2927cf6d488df3f31e8519e7fd4927e335f52ba9bde88b9e719e864348ba",
+        "key": "08402c9dd7ca6c1d8ca1ac6b8077793ae368b9297d7a38805765cdc27bdeb575",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -977,11 +1138,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:14:24.857Z"
+          "at": "2026-11-05T17:51:14.238Z"
         }
       },
       {
-        "key": "aa360ebc1c3fb353735ebaef543dfbfff894418a01af71b88a4a405e32aa0e5f",
+        "key": "824b57ed3e9f2d4c8054719a74ea88e678d730410a5d9ee45a94feebc64143e3",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -995,7 +1156,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:14:24.857Z"
+          "at": "2026-11-05T17:51:14.238Z"
+        }
+      },
+      {
+        "key": "f7647a4797600e6a099c3189248ddffc6e427beba680ed9ec1e00b04d0307f67",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Marisol Quintero | Open gap: FIT kit ordered, outreach sent | Harbor laboratory cancelled and re-issued her FIT report: the re-issued result is collected December 28, 2025, before the measurement period, so it does not count; no other screening"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-05T17:51:14.238Z"
         }
       }
     ]
@@ -1003,12 +1182,12 @@
   "attribution": {
     "auto": "reasoning",
     "first_failed": "amended",
-    "decisive_step": 50,
+    "decisive_step": 63,
     "exposure": [
       {
         "id": "Observation/obs-01732",
-        "first_exposed_step": 14,
-        "first_seen_step": 43
+        "first_exposed_step": 16,
+        "first_seen_step": 52
       }
     ],
     "items": [
@@ -1019,8 +1198,8 @@
         "exposure": [
           {
             "id": "Observation/obs-01732",
-            "first_exposed_step": 14,
-            "first_seen_step": 43
+            "first_exposed_step": 16,
+            "first_seen_step": 52
           }
         ]
       }

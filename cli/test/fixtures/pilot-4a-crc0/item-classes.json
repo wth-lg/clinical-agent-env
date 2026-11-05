@@ -1,0 +1,365 @@
+{
+  "schema_version": 1,
+  "commit": "e6a76a6a04e4078aeb3f92ccc90ab361da0d4fdd",
+  "note": "Item classes, event specs and the lever table (none: the run predates lever items, W5-H) of crc-care-gap at the commit results/pilot-4a ran on, for pnpm cli classes on this fixture copy of pilot-4a crc-care-gap/0 (cli/test/regrade-attribution.test.ts) once crc-care-gap declares LEVER_ITEMS (T3 v2, R42). Copied from results/pilot-4a/item-classes.json by builder-316.",
+  "tasks": {
+    "crc-care-gap": {
+      "items": [
+        {
+          "key": "Patient/pt-0009",
+          "class": "frailty_advanced_illness",
+          "label": "Elly Shyla Trantow"
+        },
+        {
+          "key": "Patient/pt-0020",
+          "class": "hospice_revoked",
+          "label": "Kelsie Wanetta Rohan"
+        },
+        {
+          "key": "Patient/pt-0022",
+          "class": "collection_vs_report_date",
+          "label": "Tiny Darline Koss"
+        },
+        {
+          "key": "Patient/pt-0024",
+          "class": "colonoscopy_never_done",
+          "label": "Delaine Evelyn MacGyver"
+        }
+      ],
+      "events": {
+        "SPECS": [
+          {
+            "id": "crc-b1",
+            "item": "Patient/pt-0009",
+            "class": "B",
+            "trigger": {
+              "kind": "after_exposed",
+              "ids": [
+                "Condition/cond-00189"
+              ]
+            },
+            "resources": [
+              {
+                "resourceType": "Communication",
+                "id": "comm-00301",
+                "status": "completed",
+                "priority": "routine",
+                "subject": {
+                  "reference": "Patient/pt-0009"
+                },
+                "topic": {
+                  "text": "Problem list correction: Elly Trantow"
+                },
+                "about": [
+                  {
+                    "reference": "Condition/cond-00189"
+                  }
+                ],
+                "sender": {
+                  "reference": "Practitioner/pr-lin"
+                },
+                "recipient": [
+                  {
+                    "reference": "Practitioner/pr-okafor"
+                  }
+                ],
+                "payload": [
+                  {
+                    "contentString": "Maya, while reviewing problem lists for the frailty registry I found that the Frailty entry on Mrs. Trantow's chart, dated 09/16/2025, was meant for another patient seen that morning and was put on her chart in error. I have marked it entered in error. She walks without an aid and does her own daily care; no frailty assessment was ever done for her. Daniel Lin, MD"
+                  }
+                ]
+              },
+              {
+                "resourceType": "Condition",
+                "id": "cond-00189",
+                "verificationStatus": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                      "code": "entered-in-error",
+                      "display": "Entered in Error"
+                    }
+                  ]
+                },
+                "category": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+                        "code": "problem-list-item",
+                        "display": "Problem List Item"
+                      }
+                    ]
+                  }
+                ],
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://snomed.info/sct",
+                      "code": "248279007",
+                      "display": "Frailty"
+                    }
+                  ],
+                  "text": "Frailty"
+                },
+                "subject": {
+                  "reference": "Patient/pt-0009"
+                },
+                "onsetDateTime": "2025-09-16T10:47:10-04:00",
+                "recordedDate": "2025-09-16T10:47:10-04:00",
+                "recorder": {
+                  "reference": "Practitioner/pr-okafor"
+                },
+                "note": [
+                  {
+                    "text": "Entered in error: belongs to another patient (Daniel Lin, MD)."
+                  }
+                ]
+              }
+            ],
+            "stampFields": [
+              "Communication/comm-00301.sent"
+            ]
+          },
+          {
+            "id": "crc-b2",
+            "item": "Patient/pt-0022",
+            "class": "B",
+            "trigger": {
+              "kind": "after_exposed",
+              "ids": [
+                "Observation/obs-01732"
+              ]
+            },
+            "resources": [
+              {
+                "resourceType": "Observation",
+                "id": "obs-01732",
+                "status": "corrected",
+                "category": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                        "code": "laboratory",
+                        "display": "Laboratory"
+                      }
+                    ]
+                  }
+                ],
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "29771-3",
+                      "display": "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay"
+                    }
+                  ],
+                  "text": "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay"
+                },
+                "subject": {
+                  "reference": "Patient/pt-0022"
+                },
+                "effectiveDateTime": "2025-12-31T08:59:53-05:00",
+                "performer": [
+                  {
+                    "reference": "Organization/org-riverbend"
+                  }
+                ],
+                "valueCodeableConcept": {
+                  "coding": [
+                    {
+                      "system": "http://snomed.info/sct",
+                      "code": "260385009",
+                      "display": "Negative"
+                    }
+                  ],
+                  "text": "Negative"
+                },
+                "note": [
+                  {
+                    "text": "Corrected report: collection date corrected to 12/31/2025, as written on the kit card. The date first reported, 01/05/2026, was the date the laboratory received the specimen. Result unchanged."
+                  }
+                ]
+              }
+            ],
+            "stampFields": [
+              "Observation/obs-01732.issued"
+            ]
+          },
+          {
+            "id": "crc-o1",
+            "item": "Patient/pt-0024",
+            "class": "O",
+            "trigger": {
+              "kind": "after_exposed",
+              "ids": [
+                "Observation/obs-01871"
+              ]
+            },
+            "resources": [
+              {
+                "resourceType": "DocumentReference",
+                "id": "doc-00401",
+                "status": "current",
+                "docStatus": "final",
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "11502-2",
+                      "display": "Laboratory report"
+                    }
+                  ],
+                  "text": "Laboratory report"
+                },
+                "category": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+                        "code": "clinical-note",
+                        "display": "Clinical Note"
+                      }
+                    ]
+                  }
+                ],
+                "subject": {
+                  "reference": "Patient/pt-0024"
+                },
+                "custodian": {
+                  "reference": "Organization/org-harbor-lab"
+                },
+                "description": "Outside record",
+                "content": [
+                  {
+                    "attachment": {
+                      "contentType": "text/plain; charset=utf-8",
+                      "data": "W091dHNpZGUgcmVjb3JkIC0gcmVjZWl2ZWQgYnkgZmF4IC0gdGV4dCBmcm9tIHNjYW5dCgpIYXJib3IgRGlhZ25vc3RpYyBMYWJvcmF0b3J5IC0gTm90aWNlIG9mIGNvcnJlY3RlZCByZXBvcnQKVG86IE1heWEgT2thZm9yLCBNRCwgUml2ZXJiZW5kIEZhbWlseSBNZWRpY2luZQpQYXRpZW50OiBEZWxhaW5lIEUuIE1hY0d5dmVyICAgRE9CIDA1LzE5LzE5NzUKClRlc3Q6IG11bHRpdGFyZ2V0IHN0b29sIEROQSB0ZXN0IHdpdGggaGVtb2dsb2JpbiBpbW11bm9hc3NheQpDb2xsZWN0ZWQgMDYvMTEvMjAyNDsgcmVwb3J0ZWQgMDYvMTMvMjAyNCBhcyBuZWdhdGl2ZS4KCkR1cmluZyBhbiBpbnRlcm5hbCBhdWRpdCB3ZSBmb3VuZCBhIHNwZWNpbWVuIGxhYmVsbGluZyBlcnJvciBhdCBvdXIgYWNjZXNzaW9uaW5nIGJlbmNoLgpUaGUgc3BlY2ltZW4gcmVwb3J0ZWQgdW5kZXIgTXMuIE1hY0d5dmVyJ3MgbmFtZSBiZWxvbmdzIHRvIGFub3RoZXIgcGF0aWVudC4KVGhlIHJlcG9ydCBoYXMgYmVlbiB3aXRoZHJhd24gZnJvbSBoZXIgcmVjb3JkLiBXZSBob2xkIG5vIG90aGVyIHN0b29sIHNwZWNpbWVuIGZvciBoZXIuCgpXZSBhcG9sb2dpemUgZm9yIHRoZSBlcnJvci4gUGxlYXNlIGNvbnRhY3QgY2xpZW50IHNlcnZpY2VzIHdpdGggYW55IHF1ZXN0aW9ucy4KSGFyYm9yIERpYWdub3N0aWMgTGFib3JhdG9yeSwgUXVhbGl0eSBBc3N1cmFuY2U=",
+                      "title": "Notice of corrected report (fax)"
+                    }
+                  }
+                ]
+              },
+              {
+                "resourceType": "Observation",
+                "id": "obs-01871",
+                "status": "entered-in-error",
+                "category": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                        "code": "laboratory",
+                        "display": "Laboratory"
+                      }
+                    ]
+                  }
+                ],
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "77354-9",
+                      "display": "Noninvasive colorectal cancer DNA and occult blood screening [Presence] in Stool"
+                    }
+                  ],
+                  "text": "Noninvasive colorectal cancer DNA and occult blood screening [Presence] in Stool"
+                },
+                "subject": {
+                  "reference": "Patient/pt-0024"
+                },
+                "effectiveDateTime": "2024-06-11T08:04:05-04:00",
+                "issued": "2024-06-13T10:37:21.020-04:00",
+                "performer": [
+                  {
+                    "reference": "Organization/org-harbor-lab"
+                  }
+                ],
+                "valueCodeableConcept": {
+                  "coding": [
+                    {
+                      "system": "http://snomed.info/sct",
+                      "code": "260385009",
+                      "display": "Negative"
+                    }
+                  ],
+                  "text": "Negative"
+                }
+              }
+            ],
+            "stampFields": [
+              "DocumentReference/doc-00401.date"
+            ]
+          },
+          {
+            "id": "crc-d1",
+            "item": "Patient/pt-0020",
+            "class": "D",
+            "trigger": {
+              "kind": "after_exposed",
+              "ids": [
+                "EpisodeOfCare/eoc-00002"
+              ]
+            },
+            "resources": [
+              {
+                "resourceType": "DocumentReference",
+                "id": "doc-00402",
+                "status": "current",
+                "docStatus": "final",
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "18842-5",
+                      "display": "Discharge summary"
+                    }
+                  ],
+                  "text": "Discharge summary"
+                },
+                "category": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+                        "code": "clinical-note",
+                        "display": "Clinical Note"
+                      }
+                    ]
+                  }
+                ],
+                "subject": {
+                  "reference": "Patient/pt-0020"
+                },
+                "custodian": {
+                  "reference": "Organization/org-st-brigid"
+                },
+                "description": "Outside record",
+                "content": [
+                  {
+                    "attachment": {
+                      "contentType": "text/plain; charset=utf-8",
+                      "data": "W091dHNpZGUgcmVjb3JkIC0gcmVjZWl2ZWQgYnkgZmF4IC0gdGV4dCBmcm9tIHNjYW5dCgpTdC4gQnJpZ2lkIEhvc3BpY2UgYW5kIFBhbGxpYXRpdmUgQ2FyZSAtIEhvc3BpY2UgZGlzY2hhcmdlIHN1bW1hcnkKUGF0aWVudDogS2Vsc2llIFcuIFJvaGFuICAgRE9CIDAzLzI3LzE5NzQKSG9zcGljZSBhZG1pc3Npb246IDA2LzE2LzIwMjYsIHBhbmNyZWF0aWMgY2FuY2VyCkRpc2NoYXJnZTogMDgvMjEvMjAyNgoKUmVhc29uIGZvciBkaXNjaGFyZ2U6IHRoZSBwYXRpZW50IHJldm9rZWQgdGhlIGhvc3BpY2UgYmVuZWZpdCB0byBiZWdpbiB0cmVhdG1lbnQgaW4gYSBjbGluaWNhbAp0cmlhbCBhdCBTdC4gQnJpZ2lkIENhbmNlciBDZW50ZXIuCkNvdXJzZTogc3ltcHRvbXMgY29udHJvbGxlZCBvbiBvcmFsIGFuYWxnZXNpY3M7IGZhbWlseSBzdXBwb3J0IGluIHBsYWNlLgpEaXNwb3NpdGlvbjogcmV0dXJuZWQgdG8gdGhlIGNhcmUgb2YgaGVyIG9uY29sb2dpc3QgYW5kIGhlciBwcmltYXJ5IGNhcmUgcGh5c2ljaWFuLgoKU3QuIEJyaWdpZCBIb3NwaWNlIGFuZCBQYWxsaWF0aXZlIENhcmU=",
+                      "title": "Hospice discharge summary (fax)"
+                    }
+                  }
+                ]
+              }
+            ],
+            "stampFields": [
+              "DocumentReference/doc-00402.date"
+            ]
+          }
+        ],
+        "ACTIVE": [
+          "crc-b1",
+          "crc-b2",
+          "crc-o1",
+          "crc-d1"
+        ]
+      },
+      "lever": null
+    }
+  }
+}

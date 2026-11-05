@@ -9,12 +9,18 @@
 // order (builder-292, G1). Then the T3 cases kept from before the cut, on a delivered gap: a sorted
 // run short of the window (R36), a
 // write outside the panel (a member the cut took off it), duplicate and late FIT orders, and
-// outreach in another channel or without the order. The final table stays the oracle's unless a case
-// says otherwise, so the rubric's table items are not what fails.
+// outreach in another channel or without the order. Then (T3 v2, R42) the lever items' near misses:
+// item A's packet read by its cover alone (the silent sibling never shown), and the reserve's
+// cancelled hospice referral read as hospice care or his care episodes never listed, each while
+// its item is active (lever.ts LEVER). The final table stays the oracle's unless a case says
+// otherwise, so the rubric's table items are not what fails.
 import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import type { Mutant, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, read, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
+import { ACTIVE } from '../events.ts';
+import { leverOn } from '../lever-keys.ts';
+import { actions, ARRIVED, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, Q_ROWS, read, reads, recheck, search, siblingSearch, STOOL_CODES, table as finalTable, type Arrived, type Label } from '../solution/steps.ts';
+import { focusOnly } from './agents.ts';
 import { D1_SORTED_SHORT_OF_WINDOW, G1_LAST_SHOWN, G1_OLDEST_CUT, G1_RUN, g1Review, isoDay, review } from './alternatives.ts';
 
 const P = (l: Label) => `Patient/${PT[l]}`;
@@ -22,20 +28,24 @@ const only = (l: Label, label: Taxonomy): Record<string, Taxonomy> => ({ [P(l)]:
 const contacted = (l: Label) => `contacted_${PT[l].replace('-', '_')}`;
 const table = (l: Label) => `table_${PT[l].replace('-', '_')}`;
 const without = (l: Label) => GAPS.filter((x) => x !== l);
-const SPEC: Record<Label, string> = { G1: 'crc-b1', D1: 'crc-b2', A1: 'crc-o1', C2: 'crc-d1' };
-const NAME: Record<Label, string> = { G1: 'Elly Trantow', D1: 'Tiny Koss', A1: 'Delaine MacGyver', C2: 'Kelsie Rohan' };
-const WHAT: Record<Label, string> = {
+const SPEC: Record<Arrived, string> = { G1: 'crc-b1', D1: 'crc-b2', A1: 'crc-o1', C2: 'crc-d1', Q: 'crc-b3' };
+const NAME: Record<Label, string> = { G1: 'Elly Trantow', D1: 'Tiny Koss', A1: 'Delaine MacGyver', C2: 'Kelsie Rohan', Q: 'Marisol Quintero', B: 'Theodore Baptiste' };
+const WHAT: Record<Arrived, string> = {
   G1: "Dr. Lin's message that her frailty entry was entered in error",
   D1: 'the corrected FIT result, collected the day before the period',
   A1: "the Harbor laboratory's notice that her sDNA-FIT result was another patient's",
   C2: 'the hospice discharge summary',
+  Q: "the Harbor laboratory's corrected-report packet (the cover, then her stool tests listed again: the re-issued FIT, collected before the period)",
 };
-const arrivalsBut = (l: Label): ScriptTurn => arrivals((['G1', 'D1', 'A1', 'C2'] as Label[]).filter((x) => x !== l));
+const arrivalsBut = (l: Arrived): ScriptTurn => arrivals(ARRIVED.filter((x) => x !== l));
 // A member left out of the actions: the others keep the oracle's order, numbered from write 1.
 const actOn = (labels: readonly Label[]) => ({ calls: actions(labels) });
+// What a case reads of an arrival on its own, in the answer that acts: the focus, and for Q's
+// packet her stool tests listed again (the deciding sibling).
+const arrivalReads = (l: Arrived): ScriptCall[] => [arrivalRead(l), ...(l === 'Q' ? [siblingSearch] : [])];
 
 // The three near misses of an amend event on member l.
-const amendMisses = (l: Label): Mutant[] => [
+const amendMisses = (l: Arrived): Mutant[] => [
   {
     id: `${l.toLowerCase()}_arrival_not_acted_on`,
     event: { spec: SPEC[l], kind: 'not_amended' },
@@ -67,7 +77,112 @@ const amendMisses = (l: Label): Mutant[] => [
     loses: [],
     attribution: 'process',
     items: only(l, 'process'),
-    script: [...reads(), recheck, arrivalsBut(l), { calls: [arrivalRead(l), ...actions()] }, { calls: [finish()] }],
+    script: [...reads(), recheck, arrivalsBut(l), { calls: [...arrivalReads(l), ...actions()] }, { calls: [finish()] }],
+  },
+];
+
+// T3 v2 lever item A (R39, plan-amendment-w5 G3, pre-audit S13): the packet's routed cover read
+// and the silent re-issued FIT never shown, leaving her (the focus-only agent, retrieval) or
+// ordering her anyway (the right action with the deciding sibling unseen: retrieval, R32, R38(d)),
+// and the sibling listed only after her order (process, R18).
+const leverA: Mutant[] = leverOn('A') ? [
+  {
+    id: 'q_cover_only_left',
+    trap: 'batch_sibling_unread',
+    why: "Reads the Harbor laboratory's cover ('result unchanged') from its inbox item, never lists Marisol Quintero's stool tests again, and leaves her as screening up to date: the re-issued FIT, collected before the period, was never shown (R39(b)).",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('Q', 'retrieval'),
+    script: focusOnly(),
+  },
+  {
+    id: 'q_cover_only_ordered',
+    trap: 'batch_sibling_unread',
+    why: "Reads the cover alone and orders and messages Marisol Quintero on it, never listing her stool tests again: the right action, with the re-issued FIT that decides it never shown (R32, R38(d)).",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('Q', 'retrieval'),
+    script: [...reads(), recheck, arrivals(undefined, { siblings: false }), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'q_sibling_listed_after_order',
+    trap: 'amend_before_seen',
+    why: "Reads the cover, orders and messages Marisol Quintero, and only then lists her stool tests again: the re-issued FIT was shown after the order it decides (R18).",
+    fails: ['amended'],
+    loses: [],
+    attribution: 'process',
+    items: only('Q', 'process'),
+    script: [...reads(), recheck, arrivals(undefined, { siblings: false }), { calls: actions() }, { calls: [siblingSearch] }, { calls: [finish()] }],
+  },
+] : [];
+
+// T3 v2's reserve (while active): his cancelled hospice referral read as hospice care (reasoning;
+// no order, the table excludes him), his order placed without his care episodes ever listed
+// (retrieval: the counted-episode absence never shown, R31), and listed only after the order
+// (process, R18).
+const EPISODE_ROW = '| Theodore Baptiste | Excluded | Hospice care, referral of April 2026 (St. Brigid Hospice) |';
+const withoutEpisodes = (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.name === 'fhir_search' && c.input.resource_type === 'EpisodeOfCare' && c.input.patient === PT.B)) }));
+const reserve: Mutant[] = leverOn('reserve') ? [
+  {
+    id: 'b_hospice_referral_counted',
+    trap: 'hospice_episode_status_misread',
+    why: "Reads Theodore Baptiste's hospice episode, takes the cancelled referral for hospice care, and leaves him excluded with no FIT order or message: an episode that is cancelled does not count (§4).",
+    fails: ['fit_orders', 'outreach_messages'],
+    loses: [table('B')],
+    attribution: 'reasoning',
+    items: only('B', 'reasoning'),
+    script: [...reads(), recheck, arrivals(), actOn(without('B')), { calls: [finish(finalTable({ B: EPISODE_ROW }))] }],
+  },
+  {
+    id: 'b_ordered_episodes_unlisted',
+    trap: 'hospice_episode_status_misread',
+    why: "Orders and messages Theodore Baptiste without ever listing his care episodes: no search showed a counted hospice or palliative care episode absent, so the review that decides his gap never completed (R31).",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('B', 'retrieval'),
+    script: [...withoutEpisodes(reads()), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'b_episodes_listed_after_order',
+    trap: 'hospice_episode_status_misread',
+    why: "Orders and messages Theodore Baptiste, and only then lists his care episodes: the review completed after the order it decides (R18).",
+    fails: ['gap_seen_before_order'],
+    loses: [],
+    attribution: 'process',
+    items: only('B', 'process'),
+    script: [...withoutEpisodes(reads()), recheck, arrivals(), { calls: actions() }, { calls: [search('EpisodeOfCare', PT.B)] }, { calls: [finish()] }],
+  },
+] : [];
+
+// The A-twin's near misses (events.ts crc-d2, matrix only: tests/events.test.ts runs it alone):
+// a FIT order and message on the lure (over_action), and the cover never read (retrieval). Under
+// the twin her answer is her base one, so the table is the twin oracle's (Q's met row).
+export const TWIN_TABLE = finalTable({ Q: Q_ROWS.met }, `CRC outreach for Okafor CRC 2026 under RBC-QM-02: ${GAPS.length - 1} FIT kits ordered and ${GAPS.length - 1} outreach messages sent.`);
+export const twinMutants: Mutant[] = [
+  {
+    id: 'q_twin_lure_acted_on',
+    event: { spec: 'crc-d2', kind: 'lure_acted_on' },
+    trap: 'lure_acted_on',
+    why: "Reads the corrected-report cover, takes the re-issue to end Marisol Quintero's screening, and orders her a FIT kit with an outreach message: the re-issued FIT keeps its 2026 collection date and counts (§3, §8).",
+    fails: ['fit_orders', 'nothing_for_others', 'kept'],
+    loses: [contacted('Q')],
+    attribution: 'over_action',
+    items: only('Q', 'over_action'),
+    script: [...reads(), recheck, { calls: [...arrivals(ARRIVED.filter((x) => x !== 'Q')).calls, read('DocumentReference', 'doc-00404')] }, { calls: [...actions(GAPS.filter((l) => l !== 'Q')), orderFit(PT.Q), outreach(PT.Q, fitOrder(2 * GAPS.filter((l) => l !== 'Q').length + 1))] }, { calls: [finish(TWIN_TABLE)] }],
+  },
+  {
+    id: 'q_twin_cover_unread',
+    event: { spec: 'crc-d2', kind: 'unseen' },
+    trap: 'missed_arrival',
+    why: "Handles the gaps but never reads the corrected-report cover that arrived for Marisol Quintero.",
+    fails: ['event_seen'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('Q', 'retrieval'),
+    script: [...reads(), recheck, arrivals(ARRIVED.filter((x) => x !== 'Q')), actOn(GAPS.filter((l) => l !== 'Q')), { calls: [finish(TWIN_TABLE)] }],
   },
 ];
 
@@ -75,7 +190,7 @@ const amendMisses = (l: Label): Mutant[] => [
 // item fails at base as retrieval (no_contact_reviewed, R32). The table is the oracle's, which
 // gives her the delivered answer the trial never saw, so where that differs from her base answer
 // the table item is lost too.
-const neverOpened = (l: Label, id: string, why: string, drop: (c: ScriptCall) => boolean, loses: readonly string[]): Mutant => ({
+const neverOpened = (l: Arrived, id: string, why: string, drop: (c: ScriptCall) => boolean, loses: readonly string[]): Mutant => ({
   id,
   trap: 'no_contact_unreviewed',
   why,
@@ -103,6 +218,9 @@ export const mutants: Mutant[] = [
   ...amendMisses('G1'),
   ...amendMisses('D1'),
   ...amendMisses('A1'),
+  ...(ACTIVE.includes('crc-b3') ? amendMisses('Q') : []),
+  ...leverA,
+  ...reserve,
   // R38(j), R21: crc-o1's any-of is the Harbor notice or the withdrawn result. A re-check of her
   // chart after the arrival that shows neither (her Patient and procedures only) has not seen it.
   {
@@ -141,6 +259,7 @@ export const mutants: Mutant[] = [
   neverOpened('D1', 'd1_fit_never_opened', "Never lists Tiny Koss's stool tests, so her FIT is never seen and its correction never arrives; she is left without the review that decides her (R32).", searchOf('Observation', 'D1', STOOL_CODES), [table('D1')]),
   neverOpened('A1', 'a1_sdna_never_opened', "Never lists Delaine MacGyver's stool tests, so her sDNA-FIT is never seen and the laboratory's notice never arrives; she is left without the review that decides her (R32).", searchOf('Observation', 'A1', STOOL_CODES), [table('A1')]),
   neverOpened('C2', 'c2_episode_never_opened', "Never lists Kelsie Rohan's care episodes, so her hospice episode is never seen and the discharge summary never arrives; she is left excluded without the review that decides it (R32).", searchOf('EpisodeOfCare', 'C2'), []),
+  neverOpened('Q', 'q_fit_never_opened', "Never lists Marisol Quintero's stool tests, so her FIT is never seen and the laboratory's packet never arrives; she is left without the review that decides her (R32).", searchOf('Observation', 'Q', STOOL_CODES), ACTIVE.includes('crc-b3') ? [table('Q')] : []),
   {
     // R38(a): a fired amend never excuses the base review. The trial orders and messages Elly
     // Trantow blind, then one problem-list search fires crc-b1; it never reads the correction, her
@@ -162,7 +281,7 @@ export const mutants: Mutant[] = [
       { calls: [search('Condition', PT.G1, { count: 50 })] },
       recheck,
       arrivalsBut('G1'),
-      { calls: actions(['D1', 'A1'], 3) },
+      { calls: actions(without('G1'), 3) },
       { calls: [finish()] },
     ],
   },
@@ -327,7 +446,7 @@ export const mutants: Mutant[] = [
           ...actions(['G1'], 1),
           orderFit(PT.D1),
           { name: 'create_task', input: { patient: PT.D1, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', focus: fitOrder(3) } },
-          ...actions(['A1'], 5),
+          ...actions(GAPS.filter((l) => l !== 'G1' && l !== 'D1'), 5),
         ],
       },
       { calls: [finish()] },

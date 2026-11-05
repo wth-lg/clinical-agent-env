@@ -81,6 +81,16 @@ describe('matrix oracle final hash', () => {
     expect(bad.text).toMatch(/^matrix: .*tasks-final\.json: tasks\.a world_hash must be 64 lowercase hex digits$/m);
   });
 
+  // R42: a task whose freeze a new version superseded (status v2-pending, the freeze kept under
+  // `superseded`) pins nothing until its new freeze is written.
+  it('prints the hash of a v2-pending task unchecked, whatever its superseded freeze pinned', async () => {
+    const file = tasksFinal({ tasks: { a: { status: 'v2-pending', reason: 'R42', superseded: { version: 'v1', oracle_final_hash: WRONG, world_hash: WORLD } }, b: { oracle_final_hash: HASH } } });
+    const { code, text } = await matrix(['--task', 'all'], file);
+    expect(code).toBe(0);
+    expect(text).toContain(`oracle final hash: ${HASH} (no expected hash)`);
+    expect(text).toContain(`oracle final hash: ${HASH} matches results/tasks-final.json`);
+  });
+
   it('exits 2 on a tasks-final.json it cannot read', async () => {
     for (const bad of ['{', { tasks: [] }, { tasks: [{ id: 'a', oracle_final_hash: HASH }] }, { tasks: { a: {} } }, { tasks: { a: { oracle_final_hash: 'abc' } } }, { tasks: { 'not a task id': { oracle_final_hash: HASH } } }]) {
       const { code, text } = await matrix(['--task', 'a'], tasksFinal(bad));

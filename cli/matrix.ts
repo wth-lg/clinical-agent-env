@@ -22,7 +22,8 @@
 // {tasks: {<id>: {oracle_final_hash, world_hash?, ...}}}, the hashes 64 lowercase hex digits; a file
 // that does not hold that, lists no task, or pins an id that is not a task (a typo or a renamed
 // task, which would leave a task unchecked) is a usage error (exit 2). Without the file, or for a
-// task it does not list (one not frozen yet), the oracle's final hash is printed, unchecked. A pin
+// task it does not list (one not frozen yet), or lists with `status: "v2-pending"` (a freeze
+// superseded by a new version, R42), the oracle's final hash is printed, unchecked. A pin
 // made at another world (its world_hash is not fixtures/manifest.json's: the shared world was
 // rebuilt after the freeze, R40) is printed unchecked too, since the oracle's final state follows
 // the world; the pin binds at the frozen world, where the task's final run ran.
@@ -105,8 +106,11 @@ export function oracleFinalHashes(file: string): Map<string, Pin> | { problem: s
   if (entries.length === 0) return { problem: `${name}: tasks lists no task` };
   const hashes = new Map<string, Pin>();
   for (const [id, t] of entries) {
-    const { oracle_final_hash: hash, world_hash: world } = (t ?? {}) as { oracle_final_hash?: unknown; world_hash?: unknown };
     if (!TASK_ID.test(id)) return { problem: `${name}: tasks.${JSON.stringify(id)} is not a task id` };
+    // A task whose freeze was superseded by a new version (R42: `status: "v2-pending"`, its earlier
+    // freeze kept under `superseded`) pins nothing until its new freeze is written.
+    if ((t as { status?: unknown } | null)?.status === 'v2-pending') continue;
+    const { oracle_final_hash: hash, world_hash: world } = (t ?? {}) as { oracle_final_hash?: unknown; world_hash?: unknown };
     if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return { problem: `${name}: tasks.${id} oracle_final_hash must be 64 lowercase hex digits` };
     if (world !== undefined && (typeof world !== 'string' || !/^[0-9a-f]{64}$/.test(world))) return { problem: `${name}: tasks.${id} world_hash must be 64 lowercase hex digits` };
     hashes.set(id, { hash, ...(typeof world === 'string' ? { world } : {}) });

@@ -31,9 +31,10 @@ import { READ_TOOLS, type ReadContext } from '../../../packages/env/tools/read/i
 import { callTool } from '../../../packages/env/tools/registry.ts';
 import { seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
 import { cases, trial } from '../../../packages/grader/matrix/matrix.ts';
-import { SPECS } from '../events.ts';
+import { ACTIVE, SPECS } from '../events.ts';
 import { DELIVERED, expected } from '../expected.ts';
-import { id, ref } from '../ids.ts';
+import { id, idOf, ref } from '../ids.ts';
+import { HOSTS } from '../lever-keys.ts';
 
 const env = matrixEnv();
 const store = await loadStore(env.world);
@@ -69,6 +70,9 @@ const HARD_STEP: Record<string, { step: 'reasoning' | 'retrieval'; why: string }
   'Patient/pt-0020': { step: 'reasoning', why: 'the hospice episode is her one care episode; the test is that part of the period counts, before and after the discharge summary' },
   'Patient/pt-0022': { step: 'reasoning', why: 'the FIT is in her stool tests; the test is its collection date, before and after the correction' },
   'Patient/pt-0024': { step: 'reasoning', why: 'the sDNA-FIT is in her stool tests; the test is that it counts, until the laboratory withdraws it' },
+  // T3 v2 (R42): the lever hosts, each while on the panel (lever-keys.ts hostsOf).
+  [`Patient/${idOf(HOSTS.A)}`]: { step: 'reasoning', why: 'her Harbor FIT is in her stool tests; the test is that it counts, until the laboratory re-issues it with a collection date before the period, filed silently behind the packet cover (the hard step of crc-b3 is the sibling review, event_seen)' },
+  [`Patient/${idOf(HOSTS.reserve)}`]: { step: 'reasoning', why: 'his cancelled hospice referral is his one care episode, plain on any listing; the test is that a cancelled episode does not count (§4)' },
 };
 const DECISIVE = expected.items.flatMap((x) => x.decisive.map((d) => ({ patient: x.patient, id: d })));
 // Ruling R19: lures, records that tempt a wrong reading but cannot decide an action, may show on page
@@ -95,7 +99,7 @@ const hitsOf = (r: { exposed_ids: readonly string[]; referenced_ids: readonly st
 describe('crc-care-gap discoverability', () => {
   it('every member names decisive ids and a hard step', () => {
     expect(expected.items.filter((x) => x.decisive.length === 0).map((x) => x.patient)).toEqual([]);
-    expect(Object.keys(HARD_STEP).sort()).toEqual(expected.items.map((x) => x.patient).sort());
+    for (const x of expected.items) expect(Object.keys(HARD_STEP), x.patient).toContain(x.patient);
   });
 
   it.each(BROAD.map(([name, input]) => [`${name} ${JSON.stringify(input)}`, name, input] as const))('broad %s shows no retrieval-hard decisive id on page 1', (label, name, input) => {
@@ -142,7 +146,7 @@ describe('crc-care-gap discoverability', () => {
     expect(late).toEqual([]);
     // Every member an event turns into a gap is written about (the order and the message), so the
     // check above is not met by the finish alone for them.
-    expect(Object.values(DELIVERED).filter((x) => firstWrite(x.patient.slice(8)) === finish).map((x) => x.patient)).toEqual([]);
+    expect(Object.entries(DELIVERED).filter(([spec, x]) => ACTIVE.includes(spec) && firstWrite(x.patient.slice(8)) === finish).map(([, x]) => x.patient)).toEqual([]);
   });
 
   // The mid-trial events (events.ts): nothing an event brings is in the world before its trigger.
@@ -151,7 +155,7 @@ describe('crc-care-gap discoverability', () => {
   // arrival comes at the step that first exposed its trigger record, never earlier.
   const NEW = SPECS.flatMap((s) => s.resources.filter((r) => store.get(r.resourceType, r.id!) === undefined).map((r) => `${r.resourceType}/${r.id}`));
   it('the arrivals are absent from the world before their triggers', () => {
-    expect(NEW.sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402']);
+    expect(NEW.sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402', 'DocumentReference/doc-00403', 'DocumentReference/doc-00404', 'Observation/obs-05001', 'Observation/obs-05002']);
     for (const [name, input] of [...BROAD, ...POLICY_WORD, ['list_inbox', { queue: 'results' }], ['list_inbox', { queue: 'messages' }]] as const) {
       const r = tool(name, input);
       expect([...r.exposed_ids, ...r.referenced_ids].filter((k) => NEW.includes(k)), `${name} ${JSON.stringify(input)}`).toEqual([]);
@@ -161,12 +165,13 @@ describe('crc-care-gap discoverability', () => {
     expect(at('Condition', id('cond-t3-6027')).verificationStatus).toMatchObject({ coding: [{ code: 'confirmed' }] });
     expect(at('Observation', id('obs-t3-3906'))).toMatchObject({ status: 'final', effectiveDateTime: expect.stringMatching(/^2026-01-05/) });
     expect(at('Observation', id('obs-t3-1279')).status).toBe('final');
+    expect(at('Observation', idOf('obs-t3-quintero-fit'))).toMatchObject({ status: 'final', effectiveDateTime: expect.stringMatching(/^2026-01-08/) });
   });
 
   it("in the oracle's trajectory each event arrives at the step that first exposed its trigger record", async () => {
     const task = await loadMatrixTask('crc-care-gap');
     const steps = stepsOf((await trial(env, task, cases(task).find((c) => c.id === 'oracle')!)).events);
-    for (const spec of SPECS) {
+    for (const spec of SPECS.filter((s) => ACTIVE.includes(s.id))) {
       const trigger = spec.trigger.kind === 'after_exposed' ? spec.trigger.ids[0]! : '';
       const first = steps.find((s) => s.exposed_ids.includes(trigger))?.n;
       const arrived = steps.find((s) => (s.arrivals ?? []).some((a) => a.spec === spec.id))?.n;

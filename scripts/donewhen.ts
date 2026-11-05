@@ -206,7 +206,10 @@ function clause3(): Verdict {
 
 // The per-task freeze, results/tasks-final.json: each frozen task's versions. Read once per run.
 type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: { tag: string }; frozen_from_branch: string; regrades?: Array<{ grader_task_version: string }> };
-type Frozen = { tasks: Record<string, FrozenTask> };
+// A task whose freeze a new version superseded (R42: `status: "v2-pending"`, the earlier freeze
+// kept under `superseded` as history) is not frozen: clause (5) names it as pending and holds no
+// records to it until its new freeze is written.
+type Frozen = { tasks: Record<string, FrozenTask>; pending: string[] };
 const STRING_FIELDS = ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'frozen_from_branch'] as const;
 // The commit a freeze tag names on this checkout, or null when the tag is not here yet.
 function resolveTag(tag: string): string | null {
@@ -221,11 +224,17 @@ function readFrozen(): { frozen: Frozen | null; problem: string } {
   const file = join(root, TASKS_FINAL);
   if (!existsSync(file)) return (frozenRead = { frozen: null, problem: `${TASKS_FINAL}: missing` });
   try {
-    const doc = JSON.parse(readFileSync(file, 'utf8')) as Frozen;
-    if (doc === null || typeof doc !== 'object' || doc.tasks === null || typeof doc.tasks !== 'object' || Array.isArray(doc.tasks)) throw new Error('tasks must be an object keyed by task id');
-    for (const [id, t] of Object.entries(doc.tasks)) {
+    const raw = JSON.parse(readFileSync(file, 'utf8')) as { tasks: Record<string, FrozenTask & { status?: string }> };
+    if (raw === null || typeof raw !== 'object' || raw.tasks === null || typeof raw.tasks !== 'object' || Array.isArray(raw.tasks)) throw new Error('tasks must be an object keyed by task id');
+    const doc: Frozen = { tasks: {}, pending: [] };
+    for (const [id, t] of Object.entries(raw.tasks)) {
+      if (t?.status === 'v2-pending') {
+        doc.pending.push(id);
+        continue;
+      }
       for (const k of STRING_FIELDS) if (typeof t?.[k] !== 'string') throw new Error(`tasks.${id}.${k} must be a string`);
       if (typeof t?.frozen_at?.tag !== 'string') throw new Error(`tasks.${id}.frozen_at.tag must be a string`);
+      doc.tasks[id] = t;
     }
     return (frozenRead = { frozen: doc, problem: '' });
   } catch (e) {
@@ -276,7 +285,7 @@ function clause5(): Verdict {
   if (frozen === null) return { pass: false, evidence: problem };
   const ids = taskIds();
   const frozenList = frozenIds();
-  const notFrozen = ids.filter((id) => !(id in frozen.tasks));
+  const notFrozen = ids.filter((id) => !(id in frozen.tasks)).map((id) => (frozen.pending.includes(id) ? `${id} (v2 pending, its v1 freeze superseded)` : id));
   const notTasks = frozenList.filter((id) => !ids.includes(id));
   const parts = [`frozen ${frozenList.length - notTasks.length}/${ids.length}${notFrozen.length ? `, not frozen: ${notFrozen.join(', ')}` : ''}${notTasks.length ? `, frozen but not a task: ${notTasks.join(', ')}` : ''}`];
   let pass = notFrozen.length === 0 && notTasks.length === 0;

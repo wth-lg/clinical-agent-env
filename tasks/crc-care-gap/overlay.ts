@@ -34,10 +34,25 @@
 // Since the PW4-E3 list cut the panel group holds four of them, pt-0009, pt-0020, pt-0022 and
 // pt-0024, each the item of one mid-trial event (events.ts); every chart above stays as built.
 //
+// T3 v2 (R42; plan-amendment-w5 G1): the lever hosts, Patients the overlay adds at T3's fixed slots
+// (packages/env/overlay.ts TASKS added, pt-0073 on; lever-keys.ts HOSTS and SLOT): Marisol Quintero,
+// the A item's host, on the panel in every LEVER state (her FIT from the outside Harbor laboratory
+// is screening up to date until events.ts crc-b3 re-issues it), and Theodore Baptiste, the reserve's
+// host, in the world and on the panel only while the reserve is active (a hospice referral of 2026
+// in the status cancelled, which §4 says does not count: an open gap). Each takes the shape of a
+// generated Patient from one of T3's own slots (a patient id written here pins that slot's visits
+// in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask, so no other task's patient is
+// named). Their records carry codes T3 or another task already plants (a newly planted code would
+// change the generated records that share it, packages/env/profile.ts).
+//
 // Ids (P19 hygiene): the resources this overlay adds carry the task tag the isolation rule needs
-// (packages/env/overlay.ts) and an opaque number, never a case label or what the resource is.
+// (packages/env/overlay.ts) and an opaque number, never a case label or what the resource is; the
+// lever hosts' keys name the host, as the other lever tasks' do (fixtures:build numbers them in the
+// host's block, so no world id shows a key).
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS, hostsOf, SLOT } from './lever-keys.ts';
 
 // The panel members, by class and instance (expected.ts CLASSES).
 const E = {
@@ -48,7 +63,9 @@ const SLOTS: readonly string[] = Object.values(E).sort();
 // The panel after the PW4-E3 list cut (plan-amendment-w4 "Sizing and per-task targets": n = 4):
 // the four members that host the task's mid-trial events (events.ts). The other nine keep their
 // charts as the overlay builds them; only their group membership goes.
-const PANEL: readonly string[] = [E.G1, E.C2, E.D1, E.A1].sort();
+// T3 v2: the lever hosts join the panel while in the world (lever-keys.ts hostsOf).
+const panelOf = (lever: readonly string[]): string[] => [E.G1, E.C2, E.D1, E.A1, ...hostsOf(lever)].sort();
+const PANEL: readonly string[] = panelOf(LEVER);
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
@@ -532,8 +549,116 @@ const dischargeSummary: Resource = {
   content: [{ attachment: { contentType: 'text/plain; charset=utf-8', data: base64(DISCHARGE_SUMMARY), title: 'SNF discharge summary' } }],
 };
 
+// ---- T3 v2 lever hosts (lever-keys.ts HOSTS) -------------------------------------------------
+// A Patient with the shape of the generated ones (scripts/test/world-tells.test.ts
+// addedPatientTells): the same fields, extensions and identifier forms as a base Patient of the
+// same sex, which the overlay reads, with this patient's own identity, home and birthplace. No
+// identifier: fixtures:build assigns the rule's MRN (packages/env/mrn.ts). The templates are T3's
+// own slots (D1 for a woman, A2 for a man).
+type Pt = Extract<Resource, { resourceType: 'Patient' }>;
+function patient(world: WorldReader, template: string, id: string, family: string, given: string[], birthDate: string, gender: 'male' | 'female', phone: string, line: string, city: string, postalCode: string, marital: ['M' | 'S' | 'W' | 'D', string], mother: string, born: string, geo: [number, number]): Resource {
+  const t = world.get('Patient', template) as Pt;
+  const { identifier: _mrn, ...rest } = t;
+  const ext = (t.extension ?? []).map((e) => {
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName') return { ...e, valueString: mother };
+    if (e.url === 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace') return { ...e, valueAddress: { ...e.valueAddress, city: born } };
+    return e;
+  });
+  const home = t.address?.[0];
+  return {
+    ...rest,
+    id,
+    extension: ext,
+    name: [{ use: 'official', family, given, prefix: [gender === 'female' ? 'Ms.' : 'Mr.'] }],
+    telecom: [{ system: 'phone', value: phone, use: 'home' }],
+    gender,
+    birthDate,
+    address: [{ ...home, extension: (home?.extension ?? []).map((e) => (e.url === 'http://hl7.org/fhir/StructureDefinition/geolocation' ? { ...e, extension: [{ url: 'latitude', valueDecimal: geo[0] }, { url: 'longitude', valueDecimal: geo[1] }] } : e)), line: [line], city, state: 'MA', postalCode, country: 'US' }],
+    maritalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus', code: marital[0], display: marital[1] }], text: marital[1] },
+    generalPractitioner: [OKAFOR],
+  };
+}
+const hostMedication = (id: string, pt: string, rx: [string, string], dose: number, reason: string, authoredOn: string): Resource => ({
+  resourceType: 'MedicationRequest',
+  id,
+  status: 'active',
+  intent: 'order',
+  category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: 'community', display: 'Community' }], text: 'Community' }],
+  medicationCodeableConcept: { coding: [{ system: RXNORM, code: rx[0], display: rx[1] }], text: rx[1] },
+  subject: subject(pt),
+  authoredOn,
+  requester: OKAFOR,
+  reasonCode: [{ text: reason }],
+  dosageInstruction: [
+    {
+      text: `${dose} mg by mouth once daily`,
+      timing: { code: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation', code: 'QD' }], text: 'once daily' }, repeat: { frequency: 1, period: 1, periodUnit: 'd' } },
+      route: { coding: [{ system: SNOMED, code: '26643006', display: 'Oral route' }], text: 'oral' },
+      doseAndRate: [{ doseQuantity: { value: dose, unit: 'mg', system: UCUM, code: 'mg' } }],
+    },
+  ],
+  dispenseRequest: { numberOfRepeatsAllowed: 3, expectedSupplyDuration: { value: 90, unit: 'days', system: UCUM, code: 'd' } },
+});
+const hostVisit = (id: string, pt: string, start: string, end: string, reason: string): Resource => ({
+  resourceType: 'Encounter',
+  id,
+  status: 'finished',
+  class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'AMB' },
+  type: [{ coding: [{ system: SNOMED, code: '185347001', display: 'Encounter for problem (procedure)' }], text: 'Encounter for problem (procedure)' }],
+  subject: subject(pt),
+  participant: [{ individual: OKAFOR }],
+  period: { start, end },
+  reasonCode: [{ text: reason }],
+  serviceProvider: CLINIC,
+});
+// Marisol Quintero, the A host: hypertension on amlodipine; a FIT through her health plan's mailed
+// kit program, performed by the outside Harbor laboratory, reported as collected 2026-01-08 (the
+// day the laboratory received the kit) and so screening up to date at base; events.ts crc-b3
+// brings Harbor's corrected-report packet.
+const QUINTERO_FIT = 'obs-t3-quintero-fit';
+const quintero = (world: WorldReader): Resource[] => [
+  patient(world, E.D1, HOSTS.A, 'Quintero', ['Marisol', 'Elena'], '1968-03-14', 'female', '555-0168', '41 Linden Street', 'Northampton', '01060', ['M', 'Married'], 'Pilar Ochoa', 'Springfield', [42.3251, -72.6412]),
+  condition('cond-t3-quintero-htn', HOSTS.A, ['59621000', 'Essential hypertension (disorder)'], '2019-04-16T14:20:00-04:00'),
+  hostMedication('mr-t3-quintero-amlodipine', HOSTS.A, ['197361', 'amlodipine 5 MG Oral Tablet'], 5, 'Essential hypertension', '2025-09-09T14:40:00-04:00'),
+  hostVisit('enc-t3-quintero-visit', HOSTS.A, '2025-09-09T14:15:00-04:00', '2025-09-09T14:45:00-04:00', 'Hypertension follow-up'),
+  stoolTest(QUINTERO_FIT, HOSTS.A, ['29771-3', 'Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay'], '2026-01-08T09:12:00-05:00', '2026-01-09T15:30:00-05:00', HARBOR_LAB),
+];
+// Theodore Baptiste, the reserve host: heart failure since 2024; a hospice referral in April 2026,
+// cancelled a week later when he chose to continue treatment, so his one care episode is in a
+// status §4 does not count; no screening on his chart.
+const baptiste = (world: WorldReader): Resource[] => [
+  patient(world, E.A2, HOSTS.reserve, 'Baptiste', ['Theodore', 'James'], '1963-07-02', 'male', '555-0163', '9 Pine Hollow Road', 'Greenfield', '01301', ['W', 'Widowed'], 'Celestine Marchand', 'Holyoke', [42.5876, -72.5995]),
+  condition('cond-t3-baptiste-htn', HOSTS.reserve, ['59621000', 'Essential hypertension (disorder)'], '2012-06-05T14:30:00-04:00'),
+  condition('cond-t3-baptiste-hf', HOSTS.reserve, ['84114007', 'Heart failure'], '2024-02-20T15:10:00-05:00'),
+  hostMedication('mr-t3-baptiste-lisinopril', HOSTS.reserve, ['314076', 'lisinopril 10 MG Oral Tablet'], 10, 'Heart failure', '2024-03-05T14:50:00-05:00'),
+  hostVisit('enc-t3-baptiste-visit', HOSTS.reserve, '2026-05-12T14:05:00-04:00', '2026-05-12T14:40:00-04:00', 'Heart failure follow-up after a hospital stay'),
+  {
+    resourceType: 'EpisodeOfCare',
+    id: 'eoc-t3-baptiste-hospice',
+    status: 'cancelled',
+    statusHistory: [
+      { status: 'planned', period: { start: '2026-04-21', end: '2026-04-29' } },
+      { status: 'cancelled', period: { start: '2026-04-29' } },
+    ],
+    type: [{ coding: [{ system: SNOMED, code: '385763009', display: 'Hospice care' }], text: 'Hospice care' }],
+    diagnosis: [{ condition: { reference: 'Condition/cond-t3-baptiste-hf' }, rank: 1 }],
+    patient: subject(HOSTS.reserve),
+    managingOrganization: HOSPITAL,
+    period: { start: '2026-04-21', end: '2026-04-29' },
+    careManager: OKAFOR,
+  },
+];
+// The hosts a LEVER state puts: the A host always, the reserve host while active
+// (tests/lever.test.ts runs this for every state on the committed world).
+export function leverHosts(world: WorldReader, lever: readonly string[]): Resource[] {
+  return [...quintero(world), ...(lever.includes('reserve') ? baptiste(world) : [])];
+}
+
 const overlay: Overlay = {
   task: 'T3',
+  // The fixed slot of each host in T3's added range (TASKS added, pt-0073 on; lever-keys.ts SLOT),
+  // present in a build or not: a toggle moves no id (the central W5 slots).
+  added: { [HOSTS.A]: SLOT.A, [HOSTS.reserve]: SLOT.reserve },
   names: {
     'grp-t3-okafor-crc': 'grp-okafor-crc',
     'org-t3-3147': 'org-cedar-hill',
@@ -625,22 +750,30 @@ const overlay: Overlay = {
       housingStatus('obs-t3-8852', E.H2, '2026-06-04T09:40:00-04:00', [LOINC, 'LA18839-3', 'Patient lives in own home'], 'enc-t3-9902'),
       ...e15Chart(world),
       ...e16Chart,
+      // T3 v2: the lever hosts (lever-keys.ts hostsOf).
+      ...leverHosts(world, LEVER),
     ];
+    const hosts = hostsOf(LEVER);
     return {
       put,
       remove,
+      // Every key a LEVER toggle can add: each host and every record of their charts, present in
+      // this build or not (OverlayEdits.lever; scripts/test/lever-invariant.test.ts).
+      lever: [...quintero(world), ...baptiste(world)].map((r) => r.id!),
       lint: {
         // Age today against the thresholds.
         ages: [
           ...[E.A1, E.A2, E.B1, E.B2, E.C1, E.C2, E.D1, E.D2, E.FILLER].map((patient) => ({ patient, threshold: 46 })),
           ...[E.G1, E.G2].map((patient) => ({ patient, threshold: 66 })),
           ...[E.H1, E.H2].flatMap((patient) => [66, 76].map((threshold) => ({ patient, threshold }))),
+          ...hosts.flatMap((patient) => [46, 66].map((threshold) => ({ patient, threshold }))),
         ],
         windows: [
           { name: 'sDNA-FIT 2024-2026', boundary: '2024-01-01', resources: ['obs-t3-7342'], traps: { 'obs-t3-7342': 'sdna_collected_before_window' } },
           // D1's FIT sits 4 days inside the period on purpose: the lab's correction (events.ts) moves
-          // its collection to the day before the period starts.
-          { name: 'FOBT 2026', boundary: '2026-01-01', resources: ['obs-t3-3906'], traps: { 'obs-t3-3906': 'fit_collection_corrected' } },
+          // its collection to the day before the period starts. The A host's FIT sits 7 days inside
+          // it: the laboratory's re-issue (events.ts crc-b3) moves its collection to 2025-12-28.
+          { name: 'FOBT 2026', boundary: '2026-01-01', resources: ['obs-t3-3906', QUINTERO_FIT], traps: { 'obs-t3-3906': 'fit_collection_corrected', [QUINTERO_FIT]: 'fit_reissued_before_period' } },
         ],
       },
     };

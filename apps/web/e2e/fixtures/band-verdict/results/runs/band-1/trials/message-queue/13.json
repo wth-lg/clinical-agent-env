@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:message-queue/13",
   "task_id": "message-queue",
-  "task_version": "b759f5a29688c70f08c1c656b61f1911ceb12f5766a95a3d1cda3386872cb3c6",
-  "env_version": "970fe35aef67cb5b8f64480d109647c728333b63f3e5704e863064cb576c93d4",
+  "task_version": "01a302e968bd6c49fc01032bbca267bb0abe4f17264bc09c22d901f2d55dbe91",
+  "env_version": "5b292130f9d829c2d83b4660b5c9da60b04e5e6d05a5f308a9514579158e210d",
   "grader_task_version": "076ed39cad117c8640a4b78f507ab9e173b89d94419af6cd9ed5ed7a9ca9df70",
-  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "fixture_hash": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
   "state_hash": {
-    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
-    "final": "6fcb96ce22af0402d6e956c102b3a423750772bb9409fa292e1c336a3879265e",
-    "replay_final": "6fcb96ce22af0402d6e956c102b3a423750772bb9409fa292e1c336a3879265e"
+    "initial": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
+    "final": "74e6136f4d8cb804fdb790658b46c3d3a2fad9678bdbd118ab13d46dfa6da96d",
+    "replay_final": "74e6136f4d8cb804fdb790658b46c3d3a2fad9678bdbd118ab13d46dfa6da96d"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:49:16.000Z",
+  "started": "2026-10-23T13:54:12.000Z",
   "turns": 16,
   "tool_calls": 62,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 7 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8) and Price (corrected creatinine, 35% rise) and Kaplan (creatinine 46% above the value before the dose increase), each with a task to Dr. Okafor and any earlier order cancelled; Webb's lisinopril renewed for 90 days once his redrawn panel came in; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:52:59.000Z",
+  "ended": "2026-10-23T13:57:55.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
