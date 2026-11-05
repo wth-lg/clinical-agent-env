@@ -61,7 +61,8 @@
 //     A check-defect verdict meets the check and is printed as a grader finding: the check is
 //     fixed and the run regraded, as for any grader bug;
 //   - with --final (P17i C6, R14-33: the final audit, never a pilot audit), every valid failure's
-//     label has an LLM auditor verdict: llm_auditor_agrees true or false, not null or missing;
+//     label has an LLM auditor verdict: llm_auditor_agrees true or false, not null or missing
+//     (cli/audit-llm.ts writes it from the blinded auditor's verdict under <run>/auditor/);
 //   - a label's clinically_acceptable ("is the recorded outcome clinically right?"),
 //     tool_rejections_correct ("was every tool rejection right?") and their adjudicated_ answers
 //     (explain.ts AuditRow), when given, are yes or no. The answer after adjudication decides
@@ -114,7 +115,7 @@ import { explainContext as contextOf, type TaskCheck } from '../packages/core/ex
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, m1ToM4Met, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, hasNote, PASS_CONFIRMED, passConfirmationBreaks, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
-import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
+import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag, type CurrentGrade } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
 import { sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
@@ -148,6 +149,11 @@ type Line = { raw: string; label: AuditLabel | null; review?: TaskValidityReview
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const MIN_AUDITED_PASSES = 2;
+// The penalties of a grade met or unknown: the rubric items with negative points whose met is true
+// or 'unknown'. A PASS with one needs an audit row with evidence ids (P17j JG5), and cli/audit-llm.ts
+// sends it to the LLM auditor.
+export const metPenalties = (grade: Pick<CurrentGrade, 'checks'>): Array<{ id: string; points: number; met: true | 'unknown' }> =>
+  (grade.checks ?? []).flatMap((c) => (c.kind === 'rubric' && (c.points ?? 0) < 0 && (c.met === true || c.met === 'unknown') ? [{ id: c.id, points: c.points as number, met: c.met }] : []));
 const isLabel = (l: string | null | undefined): boolean => (AUDIT_LABELS as readonly (string | null | undefined)[]).includes(l);
 const isTaxonomy = (t: unknown): boolean => (TAXONOMY as readonly unknown[]).includes(t);
 // A row's label as explainTrial reads it: an adjudicated_label that is not an audit label is
@@ -393,7 +399,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const r of valid.filter((x) => currentGrade(x).outcome === 'PASS')) {
     const name = trialName(r);
     const row = byTrial.get(name);
-    const penalties = (currentGrade(r).checks ?? []).filter((c) => c.kind === 'rubric' && (c.points ?? 0) < 0 && (c.met === true || c.met === 'unknown'));
+    const penalties = metPenalties(currentGrade(r));
     if (penalties.length > 0 && (row?.evidence_ids.length ?? 0) === 0) {
       v.push(`${name}: PASS with penalty ${penalties.map((c) => `${c.id} (${c.points} points) ${c.met === true ? 'met' : 'unknown'}`).join(', ')} has no audit row with evidence ids`);
     }
