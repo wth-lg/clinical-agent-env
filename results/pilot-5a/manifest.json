@@ -1,5 +1,5 @@
 {
-  "env_git_sha": "d318656535fbe75937333c42fda789be4343323f",
+  "env_git_sha": "1e61eeaac42cfb69de522c15feee29c08b6f534b",
   "env_dirty": false,
   "run_id": "pilot-5a",
   "model": "claude-opus-5-5",
@@ -7,7 +7,7 @@
   "mode": "live",
   "world_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
   "api_version": "2026-10-21",
-  "trials": 4,
+  "trials": 8,
   "task_versions": {
     "renal-dose-review": "c6d1cd72efc0c84a3f209ca44335d25554b10d017c876cdf912999777a6c3ba6",
     "results-inbox": "4649856adf37e907be1b7dcab951d090afef88cf3f4aa1523b4069481f67cec8",
@@ -38,6 +38,18 @@
       "stopped": null,
       "cancelled": false,
       "env_git_sha": "d318656535fbe75937333c42fda789be4343323f"
+    },
+    {
+      "batch_id": "ba41d848-a555-4f80-b714-074e039792d1",
+      "started": "2026-11-05T20:25:51.469Z",
+      "ended": "2026-11-05T20:44:57.036Z",
+      "projection": 111.39999999999999,
+      "remaining": 16,
+      "settled": 16,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "1e61eeaac42cfb69de522c15feee29c08b6f534b"
     }
   ]
 }
