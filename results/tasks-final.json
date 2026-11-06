@@ -40,6 +40,10 @@
         "tag": "freeze-w5h5"
       },
       "frozen_from_branch": "f673fc75e7fd34e1535a3f6c16788061293fc69d",
+      "replay_at": {
+        "tag": "final-1-w5",
+        "commit": "fdc7635aea01dd4a3a9b9e14c51ef91730816ed0"
+      },
       "evidence": "results/pilot-5t (T3 v2 pilot, 2026-11-06, grader 22, world 2ce2ed71): 8 trials on v2 {A}, 3/8 PASS, lever A (crc-b3) 8/8, base 3/8 (four window-completeness misses after the crc-b2 and crc-o1 arrivals and one over-action from a page-one stop); lever-select on the run: {A} 0.360 in band, PASS 3/8 inside 2-5 of 8",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5t) and R42's pre-registered rule for T3 v2 (freeze if 2-5 of 8): pilot-5t landed 3/8, so v2 {A} freezes; frozen on the W5-H5 world (results-inbox's A toggle rebuilt it), where its own files are unchanged since pilot-5t. The v1 freeze stays whole under superseded as history (its 20 final-1 trials reproduced at its tags; at W5-F they move to results/runs/final-1/superseded/crc-care-gap-v1/)",
       "regrades": [],
@@ -79,6 +83,10 @@
         "tag": "freeze-w5h5"
       },
       "frozen_from_branch": "f673fc75e7fd34e1535a3f6c16788061293fc69d",
+      "replay_at": {
+        "tag": "final-1-w5",
+        "commit": "fdc7635aea01dd4a3a9b9e14c51ef91730816ed0"
+      },
       "evidence": "results/pilot-5b (W5-P2, 2026-11-06, grader 22, world 2ce2ed71): 8 trials on {B}, 8/8 PASS, lever B (pruitt-metformin) 8/8, base 8/8; pilot-5a on {A,B}: 0/8, A 0/8, B 8/8; lever-select on pilot-5b: {B} 0.810 above the band",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b): results-inbox and message-queue, nearer 0.45, take the one retune round of at most 2 tasks, so discharge-medrec, the third, freezes on its latest gated version {B} under S5-5/S5-8 (expected above the band; it goes to the user with its card after W5-F); frozen on the W5-H5 world, where its own files are unchanged since pilot-5b",
       "regrades": []
@@ -93,23 +101,50 @@
         "tag": "freeze-t2t6"
       },
       "frozen_from_branch": "40d31865eaf521a3279ff88306d2c552619e7bee",
+      "replay_at": {
+        "tag": "final-1-w5",
+        "commit": "fdc7635aea01dd4a3a9b9e14c51ef91730816ed0"
+      },
       "evidence": "results/pilot-5c (W5-H5 retune, 2026-11-06, grader 22, world 32515f6a): 8 trials on v3 ({A} with the inbox summary \"Results (9)\"), 8/8 PASS, lever A (webb-a1) 8/8, base 8/8, every trial searched the panel report dr-00602 after the softened inbox row and re-ordered 90 days; pilot-5b on {A} unsoftened: 1/8, A 1/8; lever-select on the run: {A} 0.810 above the band",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b, where {A} undershot at 1/8 and the fairness audit found A a fair trap): S5-3's pre-declared softening applied once as v3, its wording per R47 (\"Results (<n>)\", n counted from the spec), and each retuned version freezes on its pilot-5c result whatever it is (one round only), so v3 freezes above the band; frozen on the W5-H5 world, where its own files are unchanged since pilot-5c",
-      "regrades": []
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "09e775242cf6c5a229f60ebd1af34c5ac6d102bdbf83a81fe70a243acb677421",
+          "task_version": "1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17",
+          "at": "regrade-r48",
+          "reason": "R48 grader bug fix and its addendum (gate W5F-238 F1, builder-321, PR #238): for a hold item the amended gate counted only entered-in-error, cancelled and stopped as voiding a renewal sent before the arrival, and required the PCP Task to focus the chart order; RBC-RX-05 section 2 allows holding the order and section 7 says to change, hold or stop it, so an on-hold renewal counts as held and a PCP Task focused on that held renewal (the current order for the drug once it exists) or on the chart order counts (tasks/message-queue/tests/grader.ts HELD, holdTasks; tests/event-cases.ts alternatives and the task_wrong_focus mutants). final-1 message-queue/10 FAIL -> PASS (19/20 -> 20/20, still Saturated); every other record of the run unchanged by the offline regrade over all 120. No task file changed: only tasks/message-queue/tests/** (grader-side), so env_version is unchanged."
+        }
+      ]
     },
     "renal-dose-review": {
-      "task_version": "0e0a13f62447fd9d3042ee78bdb5bcc4458ee429b30b6f6cc0572e79109ec069",
+      "task_version": "4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575",
       "grader_task_version": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
-      "env_version": "b5e3ee2e79569b19eb63699372b830aee889cabe2f8e9395107fb4f2e0cfbf43",
-      "world_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
-      "oracle_final_hash": "4e363b9ac231d5cedc925d3cf5ed1ef9c91b4cc5a94cd89fa50a9bbdda696a55",
+      "env_version": "88c8dbe7f11d96f469dd8e132184fb175568d7ac7f69055e903641475d23d358",
+      "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+      "oracle_final_hash": "4a3756e991dbe1c4a44e39ed8d913b89fdf8b97a998c0a905be11110b3148f57",
       "frozen_at": {
-        "tag": "freeze-t1"
+        "tag": "freeze-t2t6"
       },
-      "frozen_from_branch": "662f7378d97fe7b683555c224dcd423dd1bcd5df",
+      "frozen_from_branch": "a7db4dbea51c7ac94b82e3321d095bf000468e32",
+      "replay_at": {
+        "tag": "final-1-w5",
+        "commit": "fdc7635aea01dd4a3a9b9e14c51ef91730816ed0"
+      },
       "evidence": "results/pilot-5a (W5-P1, 2026-11-05, grader 22): 8 trials on v2 with A and B active, 6/8 PASS, lever A 6/8, lever B 8/8, base 8/8; lever-select with the measured item costs (evidence/builder-315/30-lever-select.txt) predicts {A,B} 0.567, in band and nearest 0.45",
-      "reason": "S5-2 (decisions.tsv 2026-11-05T20:54Z) and R44: the selected set {A,B} is the one the task ran in pilot-5a, so S5-4 does not apply and the task freezes on v2 under S5-8; frozen on the W5-S world (message-queue's B toggle rebuilt it), where its own files are unchanged since pilot-5a",
-      "regrades": []
+      "reason": "S5-2 (decisions.tsv 2026-11-05T20:54Z) and R44: the selected set {A,B} is the one the task ran in pilot-5a, so S5-4 does not apply and the task freezes on v2 under S5-8; frozen on the W5-S world (message-queue's B toggle rebuilt it), where its own files are unchanged since pilot-5a. Re-frozen 2026-11-06 on the W5-H5 world 32515f6a (tag freeze-t2t6, a7db4dbe) before its final run (coordinator message msg_c926371a4627 answering builder-321 msg_182107f4d565; R40): the W5-H5 rebuild (results-inbox's A toggle) moved the shared world after the W5-S freeze and before this task's final-1 records existed; its own files and grader_task_version are unchanged since pilot-5a (the freeze test's at-frozen-world clause and matrix --task renal-dose-review PASS, oracle 1.000, on this world), as discharge-medrec was frozen on this world with its files unchanged since its pilot; the W5-S freeze is kept under previous",
+      "regrades": [],
+      "previous": {
+        "world_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+        "env_version": "b5e3ee2e79569b19eb63699372b830aee889cabe2f8e9395107fb4f2e0cfbf43",
+        "task_version": "0e0a13f62447fd9d3042ee78bdb5bcc4458ee429b30b6f6cc0572e79109ec069",
+        "oracle_final_hash": "4e363b9ac231d5cedc925d3cf5ed1ef9c91b4cc5a94cd89fa50a9bbdda696a55",
+        "frozen_at": {
+          "tag": "freeze-t1"
+        },
+        "frozen_from_branch": "662f7378d97fe7b683555c224dcd423dd1bcd5df",
+        "note": "the W5-S freeze (R44/S5-8) on the W5-S world bae157e6, tag freeze-t1; superseded by the re-freeze on the W5-H5 world above before any final-1 record of the task existed"
+      }
     },
     "results-inbox": {
       "task_version": "3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2",
@@ -121,6 +156,10 @@
         "tag": "freeze-t2t6"
       },
       "frozen_from_branch": "40d31865eaf521a3279ff88306d2c552619e7bee",
+      "replay_at": {
+        "tag": "final-1-w5",
+        "commit": "fdc7635aea01dd4a3a9b9e14c51ef91730816ed0"
+      },
       "evidence": "results/pilot-5c (W5-H5 retune, 2026-11-06, grader 22, world 32515f6a): 8 trials on {A}, 4/8 PASS, lever A (marchetti-cr-batch) 4/8, base 8/8, every failure the silent creatinine obs-06210 never exposed (retrieval); lever-select on the run: {A} 0.450 in band, PASS 4/8 inside 3-5 of 8; pooled pilot-5a and pilot-5b had predicted {A} 0.361",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b, where {B} overshot at 7/8): the one retune round toggled results-inbox to {A}, and each retuned version freezes on its pilot-5c result whatever it is; frozen on the W5-H5 world, where its own files are unchanged since pilot-5c",
       "regrades": []

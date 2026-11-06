@@ -1,0 +1,31 @@
+{
+  "trial": "contrast-ct-prep/19",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "f9840a55678308f85234efbb9b65233e0b1f04aa57e39869e727854f4471c51c",
+  "at": "2026-11-06T17:44:47.425Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 90,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Patient/pt-0047",
+      "Communication/comm-t0022"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "Event t5-mohr-scr delivered two results for Mr. Mohr (pt-0047), and the matrix shows obs-07501 was reachable. The agent read only obs-07502, never re-searched his creatinines, wrongly found no comparator for AKI, then told the patient no IV fluids were needed and omitted the saline prophylaxis, so event_seen and amended fail on the model's own work. The two INVALID_INPUT refusals (steps 57–58) were correct schema rejections, and no infrastructure, grader or environment criterion holds (M1–M4 met)."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 90, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Patient/pt-0047\", \"Communication/comm-t0022\"], \"criteria\": [\"MF1\"], \"reason\": \"Event t5-mohr-scr delivered two results for Mr. Mohr (pt-0047), and the matrix shows obs-07501 was reachable. The agent read only obs-07502, never re-searched his creatinines, wrongly found no comparator for AKI, then told the patient no IV fluids were needed and omitted the saline prophylaxis, so event_seen and amended fail on the model's own work. The two INVALID_INPUT refusals (steps 57–58) were correct schema rejections, and no infrastructure, grader or environment criterion holds (M1–M4 met).\"}",
+  "calls": 1,
+  "cost_usd": 0.290908,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

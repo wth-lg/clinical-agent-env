@@ -1,0 +1,30 @@
+{
+  "trial": "crc-care-gap/6",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "570972c6f7aff560d47c9a01ec87337190bb6388bc6e1e46ecf1f13805131628",
+  "at": "2026-11-06T17:45:58.308Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 84,
+    "evidence_ids": [
+      "ServiceRequest/sr-t0001",
+      "Patient/pt-0009",
+      "Condition/cond-00189",
+      "Communication/comm-00301"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent ordered pt-0009's FIT kit at step 84 without a complete review of her 2026 Observations: only category-narrowed pages (stopping short of all 55 results) and a code-narrowed search, against §5 and §7. The records were reachable and the reference solution passes, so the failed gates are the model's fault."
+  },
+  "problem": null,
+  "answer": "**Model fault: the FAIL is deserved.** The agent ordered a FIT kit for pt-0009 before it had reviewed all of her 2026 Observations.\n\n**pt-0009's review was incomplete.**\n- **Step 20:** a laboratory-only search reported 55 results.\n- **Step 65:** the agent paged once more, at offset 25. That second page apparently covered results 25–49 at most, and the agent never paged further.\n- **Step 64:** this search was narrowed to listed stool-test codes.\n\nNone of these is an unnarrowed, complete search. §7 forbids narrowing out any record that could count, and §5 requires review before the order. The order at step 84 therefore came before a complete screening review, which is the record both failed gates rest on.\n\n**The other three patients passed this check.** pt-0022 was reviewed at step 59, pt-0024 at step 50 and pt-0073 at step 72, each complete before their orders. So the grader applied the check consistently.\n\n**No other fault applies.**\n- The deciding records were reachable, so M1 is met.\n- The reference solution and all accepted alternatives pass the matrix, so M4 is met.\n- There were no internal tool errors and no tool rejections.\n- The start and final state hashes match.\n\nThat rules out environment and grader criteria, leaving MF1.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 84, \"evidence_ids\": [\"ServiceRequest/sr-t0001\", \"Patient/pt-0009\", \"Condition/cond-00189\", \"Communication/comm-00301\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent ordered pt-0009's FIT kit at step 84 without a complete review of her 2026 Observations: only category-narrowed pages (stopping short of all 55 results) and a code-narrowed search, against §5 and §7. The records were reachable and the reference solution passes, so the failed gates are the model's fault.\"}",
+  "calls": 1,
+  "cost_usd": 0.319572,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

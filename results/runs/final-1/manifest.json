@@ -1,24 +1,36 @@
 {
-  "env_git_sha": "1b120e8bbd380e48ba9f82094bf393b408c8efbf",
+  "env_git_sha": "30448f3a7abd17dfcda794ff6aecd2eb692ef1b7",
   "env_dirty": false,
   "run_id": "final-1",
   "model": "claude-opus-5-5",
   "effort": "high",
   "mode": "live",
-  "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
   "api_version": "2026-10-21",
   "trials": 20,
   "task_versions": {
-    "crc-care-gap": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
-    "contrast-ct-prep": "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc"
+    "crc-care-gap": "ee4d9690b859f098323029e1486d839dc272362ea546f38a68f88b92a8955c00",
+    "contrast-ct-prep": "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc",
+    "renal-dose-review": "4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575",
+    "results-inbox": "3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2",
+    "discharge-medrec": "59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2",
+    "message-queue": "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
   },
   "env_versions": {
-    "crc-care-gap": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-    "contrast-ct-prep": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
+    "crc-care-gap": "33891901cd8dc4e64536b9aaac0b6eaf2037073b2baeeb8d2903536834049570",
+    "contrast-ct-prep": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1",
+    "renal-dose-review": "88c8dbe7f11d96f469dd8e132184fb175568d7ac7f69055e903641475d23d358",
+    "results-inbox": "e69093009b4e9bc112a7c35ea4c292431ed741c3ddc6d2b4789db2fca6f433bf",
+    "discharge-medrec": "9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5",
+    "message-queue": "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
   },
   "grader_task_versions": {
-    "crc-care-gap": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
-    "contrast-ct-prep": "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca"
+    "crc-care-gap": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d",
+    "contrast-ct-prep": "d4a70655af9b69e03e246328ef5e686cacaf965a3d2cf2fede56af6d6dee98ca",
+    "renal-dose-review": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
+    "results-inbox": "ffee13db89e555206d518851f848a5641d43a7afa7499f0bec99e412f46ff00e",
+    "discharge-medrec": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
+    "message-queue": "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
   },
   "batches": [
     {
@@ -32,6 +44,34 @@
       "stopped": null,
       "cancelled": false,
       "env_git_sha": "1b120e8bbd380e48ba9f82094bf393b408c8efbf"
+    },
+    {
+      "batch_id": "5a45f225-2651-49de-9ee4-7390bc5d83ef",
+      "started": "2026-11-06T12:00:37.660Z",
+      "ended": "2026-11-06T13:34:27.456Z",
+      "projection": 222.08778059999997,
+      "remaining": 100,
+      "settled": 100,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "30448f3a7abd17dfcda794ff6aecd2eb692ef1b7",
+      "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+      "tasks": [
+        "crc-care-gap",
+        "discharge-medrec",
+        "message-queue",
+        "renal-dose-review",
+        "results-inbox"
+      ]
     }
-  ]
+  ],
+  "world_hashes": {
+    "crc-care-gap": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "contrast-ct-prep": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+    "renal-dose-review": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "results-inbox": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "discharge-medrec": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "message-queue": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
+  }
 }

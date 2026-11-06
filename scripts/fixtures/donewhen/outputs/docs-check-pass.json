@@ -1,4 +1,4 @@
 {
   "exit": 0,
-  "stdout": "info: docs/writeup.html:395: numbers allowed: published results of other benchmarks\nwarning: docs/writeup.html:141: TODO-W5F: waits for the W5 final results\nwarning: docs/writeup.html:417: TODO-R16: a researcher fills the comparison table\n"
+  "stdout": "info: docs/writeup.html:603: numbers allowed: published results of other benchmarks, each with its source and date\n"
 }

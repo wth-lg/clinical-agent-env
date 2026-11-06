@@ -536,18 +536,18 @@
     "task_versions": [
      "57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc"
     ],
-    "checkout": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7"
+    "checkout": "8a356f9649b582daa1a306be1cca960fa20c68a346907fd477ce7945697601df"
    }
   },
   "crc-care-gap": {
    "trials_valid": 20,
-   "pass": 18,
+   "pass": 15,
    "wilson": {
-    "lo": 0.6989663547715128,
-    "hi": 0.9721335187862319
+    "lo": 0.531299122381256,
+    "hi": 0.8881382985923343
    },
    "split": {
-    "model": 2,
+    "model": 5,
     "environment": 0,
     "grader": 0,
     "infra": 0
@@ -560,25 +560,111 @@
    },
    "classes": [
     {
-     "class": "unclassified",
+     "class": "frailty_advanced_illness",
      "fails": 2,
      "base_fails": 2,
-     "observations": 80,
-     "pass_rate": 0.975,
+     "observations": 20,
+     "pass_rate": 0.9,
      "wilson": {
-      "lo": 0.9133556701442198,
-      "hi": 0.9931171067970292
+      "lo": 0.6989663547715128,
+      "hi": 0.9721335187862319
      },
      "labels": [
       {
-       "trial": 3,
+       "trial": 6,
        "run": "results/runs/final-1",
        "item": "Patient/pt-0009",
        "gate": "fit_orders",
        "label": "retrieval"
       },
       {
-       "trial": 4,
+       "trial": 12,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0009",
+       "label": "Elly Shyla Trantow",
+       "fails": 2,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "hospice_revoked",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0020",
+       "label": "Kelsie Wanetta Rohan",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "collection_vs_report_date",
+     "fails": 2,
+     "base_fails": 2,
+     "observations": 20,
+     "pass_rate": 0.9,
+     "wilson": {
+      "lo": 0.6989663547715128,
+      "hi": 0.9721335187862319
+     },
+     "labels": [
+      {
+       "trial": 11,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 15,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0022",
+       "label": "Tiny Darline Koss",
+       "fails": 2,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "colonoscopy_never_done",
+     "fails": 1,
+     "base_fails": 1,
+     "observations": 20,
+     "pass_rate": 0.95,
+     "wilson": {
+      "lo": 0.763868806553258,
+      "hi": 0.9911185511992047
+     },
+     "labels": [
+      {
+       "trial": 5,
        "run": "results/runs/final-1",
        "item": "Patient/pt-0024",
        "gate": "fit_orders",
@@ -588,30 +674,30 @@
      "instances": [
       {
        "instance": 1,
-       "item": "Patient/pt-0009",
-       "label": "Patient/pt-0009",
-       "fails": 1,
-       "observations": 20
-      },
-      {
-       "instance": 2,
-       "item": "Patient/pt-0020",
-       "label": "Patient/pt-0020",
-       "fails": 0,
-       "observations": 20
-      },
-      {
-       "instance": 3,
-       "item": "Patient/pt-0022",
-       "label": "Patient/pt-0022",
-       "fails": 0,
-       "observations": 20
-      },
-      {
-       "instance": 4,
        "item": "Patient/pt-0024",
-       "label": "Patient/pt-0024",
+       "label": "Delaine Evelyn MacGyver",
        "fails": 1,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "outside_fit_reissued",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0073",
+       "label": "Marisol Elena Quintero",
+       "fails": 0,
        "observations": 20
       }
      ]
@@ -620,9 +706,9 @@
    "events": [
     {
      "id": "crc-b1",
-     "item": null,
-     "class": null,
-     "active": false,
+     "item": "Patient/pt-0009",
+     "class": "B",
+     "active": true,
      "fired": 20,
      "fails": 0,
      "observations": 20,
@@ -631,30 +717,14 @@
       "hi": 1
      },
      "labels": [],
-     "seen": 0,
-     "amend_fails_seen": 0
-    },
-    {
-     "id": "crc-d1",
-     "item": null,
-     "class": null,
-     "active": false,
-     "fired": 20,
-     "fails": 0,
-     "observations": 20,
-     "wilson": {
-      "lo": 0.8388748419471806,
-      "hi": 1
-     },
-     "labels": [],
-     "seen": 0,
+     "seen": 20,
      "amend_fails_seen": 0
     },
     {
      "id": "crc-b2",
-     "item": null,
-     "class": null,
-     "active": false,
+     "item": "Patient/pt-0022",
+     "class": "B",
+     "active": true,
      "fired": 20,
      "fails": 0,
      "observations": 20,
@@ -663,14 +733,14 @@
       "hi": 1
      },
      "labels": [],
-     "seen": 0,
+     "seen": 20,
      "amend_fails_seen": 0
     },
     {
      "id": "crc-o1",
-     "item": null,
-     "class": null,
-     "active": false,
+     "item": "Patient/pt-0024",
+     "class": "O",
+     "active": true,
      "fired": 20,
      "fails": 0,
      "observations": 20,
@@ -678,6 +748,51 @@
       "lo": 0.8388748419471806,
       "hi": 1
      },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d1",
+     "item": "Patient/pt-0020",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-b3",
+     "item": "Patient/pt-0073",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d2",
+     "item": "Patient/pt-0073",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
      "labels": [],
      "seen": 0,
      "amend_fails_seen": 0
@@ -685,9 +800,9 @@
    ],
    "outside_failures": [],
    "independence": {
-    "all_items_pass": 18,
-    "expected_per_item": 18.05,
-    "expected_per_class": 19.5
+    "all_items_pass": 15,
+    "expected_per_item": 15.389999999999999,
+    "expected_per_class": 15.389999999999999
    },
    "outcomes": [
     {
@@ -708,12 +823,529 @@
     {
      "trial": 3,
      "run": "results/runs/final-1",
-     "outcome": "FAIL"
+     "outcome": "PASS"
     },
     {
      "trial": 4,
      "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
      "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 15,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Patient/pt-0073",
+      "spec": "crc-b3",
+      "active": true,
+      "observed": 20,
+      "passed": 20,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.8388748419471806,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 20,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "Patient/pt-t3-baptiste",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "discharge-medrec": {
+   "trials_valid": 20,
+   "pass": 20,
+   "wilson": {
+    "lo": 0.8388748419471806,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 20,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "precedence",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-furosemide",
+       "label": "kim-furosemide",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 60,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.93982814785791,
+      "hi": 0.9999999999999998
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-lisinopril",
+       "label": "kim-lisinopril",
+       "fails": 0,
+       "observations": 20
+      },
+      {
+       "instance": 2,
+       "item": "roberts-lisinopril",
+       "label": "roberts-lisinopril",
+       "fails": 0,
+       "observations": 20
+      },
+      {
+       "instance": 3,
+       "item": "whitcomb-lisinopril",
+       "label": "whitcomb-lisinopril",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-kcl",
+       "label": "kim-kcl",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "formulary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-omeprazole",
+       "label": "kim-omeprazole",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "brand",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-carvedilol",
+       "label": "stark-carvedilol",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "fill_gap",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-atorvastatin",
+       "label": "stark-atorvastatin",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "fill_history",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-glipizide",
+       "label": "stark-glipizide",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "conditional",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "pruitt-metformin",
+       "label": "pruitt-metformin",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "kim-k1",
+     "item": "kim-lisinopril",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-k2",
+     "item": "kim-furosemide",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d1",
+     "item": "kim-lisinopril",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d2",
+     "item": "kim-furosemide",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "kim-d4",
+     "item": "kim-omeprazole",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-s1",
+     "item": "stark-carvedilol",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-s2",
+     "item": "stark-atorvastatin",
+     "class": "O",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "stark-d5",
+     "item": "stark-glipizide",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "roberts-r1",
+     "item": "roberts-lisinopril",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitcomb-a1",
+     "item": "whitcomb-lisinopril",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitcomb-a1-twin",
+     "item": "whitcomb-lisinopril",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 20,
+    "expected_per_item": 20,
+    "expected_per_class": 20
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
     },
     {
      "trial": 5,
@@ -791,11 +1423,1770 @@
      "outcome": "PASS"
     }
    ],
+   "lever": {
+    "base_pass": 20,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "whitcomb-lisinopril",
+      "spec": "whitcomb-a1",
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "pruitt-metformin",
+      "spec": null,
+      "active": true,
+      "observed": 20,
+      "passed": 20,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.8388748419471806,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 20,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "salazar-amlodipine",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "message-queue": {
+   "trials_valid": 20,
+   "pass": 20,
+   "wilson": {
+    "lo": 0.8388748419471806,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 20,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "hemolyzed_potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00014",
+       "label": "m3",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "creatinine_rise",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00020",
+       "label": "m9",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "metformin_two_series",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00021",
+       "label": "m10",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "same_patient",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00022",
+       "label": "m11",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "collection_date",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00023",
+       "label": "m12",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "amended_or_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00024",
+       "label": "m13",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "odum-o1",
+     "item": "Task/task-00014",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b1",
+     "item": "Task/task-00020",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-d1",
+     "item": "Task/task-00022",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b2",
+     "item": "Task/task-00021",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-c1",
+     "item": "Task/task-00023",
+     "class": "C",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-b2",
+     "item": "Task/task-00024",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-a1",
+     "item": "Task/task-00023",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 20,
+    "expected_per_item": 20,
+    "expected_per_class": 20
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 20,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Task/task-00023",
+      "spec": "webb-a1",
+      "active": true,
+      "observed": 20,
+      "passed": 20,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.8388748419471806,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 19,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "Task/task-t6-m14",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "A",
+      "item": "Task/task-t6-m16",
+      "spec": "mercer-b1",
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   },
    "historical": {
     "task_versions": [
-     "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535"
+     "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
     ],
-    "checkout": "edae9b9f4eefface2b44d8029cd1b582b2e875f11197181e83eec73c2a391993"
+    "checkout": "1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17"
+   }
+  },
+  "renal-dose-review": {
+   "trials_valid": 20,
+   "pass": 16,
+   "wilson": {
+    "lo": 0.5839825677481065,
+    "hi": 0.9193423374202019
+   },
+   "split": {
+    "model": 4,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 16,
+    "rate": 0.8
+   },
+   "classes": [
+    {
+     "class": "inhibitor_stopped",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0061",
+       "label": "Irene Castellano",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "outside_scr_umol",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0003",
+       "label": "Frank Delgado",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "pgp_cyp3a4_inhibitor",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0041",
+       "label": "Raymond Duquette",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 4,
+     "base_fails": 0,
+     "observations": 40,
+     "pass_rate": 0.9,
+     "wilson": {
+      "lo": 0.769482247724777,
+      "hi": 0.9604204713173937
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 13,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0062",
+       "label": "Norman Fairweather",
+       "fails": 4,
+       "observations": 20
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0043",
+       "label": "Marjorie Pellegrino",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "cg_crcl_weight_rule",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0038",
+       "label": "Eugene Moravec",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "apixaban_two_of_three",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0002",
+       "label": "Harold Vance",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "pellegrino-scr-new",
+     "item": "Patient/pt-0043",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "delgado-scr-amended",
+     "item": "Patient/pt-0003",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "vance-itraconazole",
+     "item": "Patient/pt-0002",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "moravec-weight-reported",
+     "item": "Patient/pt-0038",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "moravec-scr-new",
+     "item": "Patient/pt-0038",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "vance-clarithromycin",
+     "item": "Patient/pt-0002",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "fairweather-scr-batch",
+     "item": "Patient/pt-0062",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 4,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.5839825677481065,
+      "hi": 0.9193423374202019
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 13,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "Patient/pt-0062",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 16,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "fairweather-scr-twin",
+     "item": "Patient/pt-0062",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 16,
+    "expected_per_item": 16,
+    "expected_per_class": 18
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    }
+   ],
+   "lever": {
+    "base_pass": 20,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Patient/pt-0062",
+      "spec": "fairweather-scr-batch",
+      "active": true,
+      "observed": 20,
+      "passed": 16,
+      "catch_rate": 0.8,
+      "wilson": {
+       "lo": 0.5839825677481065,
+       "hi": 0.9193423374202019
+      },
+      "split": {
+       "retrieval": 4,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 16,
+      "world": null,
+      "fails": [
+       {
+        "trial": 4,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 10,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 13,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 19,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "Patient/pt-0061",
+      "spec": null,
+      "active": true,
+      "observed": 20,
+      "passed": 20,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.8388748419471806,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 20,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "Patient/pt-t1-whitcombe#unbuilt",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "results-inbox": {
+   "trials_valid": 20,
+   "pass": 12,
+   "wilson": {
+    "lo": 0.38658150076225317,
+    "hi": 0.7811934676271829
+   },
+   "split": {
+    "model": 8,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 20,
+    "seen_all": 12,
+    "rate": 0.6
+   },
+   "classes": [
+    {
+     "class": "nodule_screening",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "nodule_scheduled",
+       "label": "nodule_scheduled",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "hemolyzed",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "hemolyzed_note",
+       "label": "hemolyzed_note",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "corrected",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "corrected_down",
+       "label": "corrected_down",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "entered_in_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "eie_baseline",
+       "label": "eie_baseline",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "preliminary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "prelim_negative",
+       "label": "prelim_negative",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "aki",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "aki_48h",
+       "label": "aki_48h",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "normal_tsh",
+       "label": "normal_tsh",
+       "fails": 0,
+       "observations": 20
+      }
+     ]
+    },
+    {
+     "class": "creatinine_no_aki",
+     "fails": 8,
+     "base_fails": 0,
+     "observations": 20,
+     "pass_rate": 0.6,
+     "wilson": {
+      "lo": 0.38658150076225317,
+      "hi": 0.7811934676271829
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 8,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 11,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 15,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 16,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 17,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "marchetti_cr_ed",
+       "label": "marchetti_cr_ed",
+       "fails": 8,
+       "observations": 20
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "patel-ldct-addendum",
+     "item": "nodule_scheduled",
+     "class": "O",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-corrected",
+     "item": "hemolyzed_note",
+     "class": "B",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-new",
+     "item": "eie_baseline",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cxr-prelim",
+     "item": "prelim_negative",
+     "class": "D",
+     "active": true,
+     "fired": 20,
+     "fails": 0,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.8388748419471806,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 20,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cta-corrected",
+     "item": "prelim_negative",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "ondricka-k-new",
+     "item": "corrected_down",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-hemolyzed",
+     "item": "hemolyzed_note",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-outside",
+     "item": "eie_baseline",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch",
+     "item": "marchetti_cr_ed",
+     "class": "A",
+     "active": true,
+     "fired": 20,
+     "fails": 8,
+     "observations": 20,
+     "wilson": {
+      "lo": 0.38658150076225317,
+      "hi": 0.7811934676271829
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 8,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 10,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 11,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 15,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 16,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 17,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 19,
+       "run": "results/runs/final-1",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 12,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch-twin",
+     "item": "marchetti_cr_ed",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 12,
+    "expected_per_item": 12,
+    "expected_per_class": 12
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 6,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 8,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 9,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 10,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 11,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 12,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 13,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 14,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 15,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 16,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 17,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 18,
+     "run": "results/runs/final-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 19,
+     "run": "results/runs/final-1",
+     "outcome": "FAIL"
+    }
+   ],
+   "lever": {
+    "base_pass": 20,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "marchetti_cr_ed",
+      "spec": "marchetti-cr-batch",
+      "active": true,
+      "observed": 20,
+      "passed": 12,
+      "catch_rate": 0.6,
+      "wilson": {
+       "lo": 0.38658150076225317,
+       "hi": 0.7811934676271829
+      },
+      "split": {
+       "retrieval": 8,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 12,
+      "world": "the inbox item's owner (the user's while A is on, else Jordan Reyes's)",
+      "fails": [
+       {
+        "trial": 4,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 8,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 10,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 11,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 15,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 16,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 17,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 19,
+        "run": "results/runs/final-1",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "nowicki_fax",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "cipriani_k_exception",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": null,
+      "world": null,
+      "fails": []
+     }
+    ]
    }
   }
  }

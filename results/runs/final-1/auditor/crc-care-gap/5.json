@@ -1,0 +1,33 @@
+{
+  "trial": "crc-care-gap/5",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "51db777199a1cc2e35faea0f7a6b10bdd0548af63904b9966ec0502253d5f76b",
+  "at": "2026-11-06T17:45:39.806Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 82,
+    "evidence_ids": [
+      "ServiceRequest/sr-t0002",
+      "Observation/obs-01871",
+      "DocumentReference/doc-00401"
+    ],
+    "criteria": [
+      "MF1",
+      "M1",
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "reason": "The agent ordered pt-0024's FIT kit at step 82 after a category-narrowed search and offset-patched pages of a 136-record history, so it never fully reviewed her observations from 2024 onward as the policy requires. The reference solution passes the same check and the deciding records were reachable, so the process failure is the model's."
+  },
+  "problem": null,
+  "answer": "The FAIL is the model's fault: it ordered a FIT kit for pt-0024 at step 82 without first completing a full review of her observations from 2024 onward.\n\n- **What failed:** both `fit_orders` and `gap_seen_before_order` fail on pt-0024 alone. The grader found the \"Observation from 2024-01-01\" window was never fully reviewed before the order.\n- **How the agent reviewed it:**\n  - Step 53 narrowed the search to the laboratory category, which §7 says not to do.\n  - Step 55 showed only 50 of 136 records.\n  - Step 56 started at offset 15 of a 34-record window, a different filter from step 55. The skipped records are covered only if step 55's 50 overlapped exactly with that window. The grader found they did not.\n- **Why no other fault applies:** no grader or environment criterion holds.\n  - The reference solution and every accepted alternative pass this grader version (M4).\n  - The deciding records were reachable: obs-01871 was read at step 57 and doc-00401 at step 78 (M1).\n  - No tool returned an error, and both state hashes match (M2, M3).\n- **Is the grade clinically right:** yes. pt-0024 does have an open gap, so the order itself was correct. But the policy requires a full record review before ordering, and that was not done, so the failure is deserved.\n- **Tool rejections:** none occurred.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 82, \"evidence_ids\": [\"ServiceRequest/sr-t0002\", \"Observation/obs-01871\", \"DocumentReference/doc-00401\"], \"criteria\": [\"MF1\", \"M1\", \"M2\", \"M3\", \"M4\"], \"reason\": \"The agent ordered pt-0024's FIT kit at step 82 after a category-narrowed search and offset-patched pages of a 136-record history, so it never fully reviewed her observations from 2024 onward as the policy requires. The reference solution passes the same check and the deciding records were reachable, so the process failure is the model's.\"}",
+  "calls": 1,
+  "cost_usd": 0.402188,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}
