@@ -54,12 +54,12 @@ async function replay(id: string, trials: ValidateRequest & { op: 'replay' }): P
   for (const t of trials.trials) {
     const r = t.record;
     const reproduce = trials.dir === undefined ? undefined : `reproduce at the commit in ${trials.dir}/README.md`;
-    rows.push({ name: t.name, final: r.state_hash.final, ...(replayEnvVerdict(r, env_version, reproduce) ?? replayVerdict(r, await regrade(id, t, checks, e))) });
+    rows.push({ name: t.name, final: r.state_hash.final, ...(replayEnvVerdict(r, env_version, reproduce) ?? replayVerdict(r, await regrade(id, t, checks, e, reproduce))) });
   }
   return rows;
 }
 
-async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv): Promise<ReplayGraded> {
+async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv, reproduce?: string): Promise<ReplayGraded> {
   if (t.trajectoryUrl === null) return { error: `no trajectory is published for ${t.name}` };
   try {
     const res = await fetch(t.trajectoryUrl);
@@ -68,7 +68,7 @@ async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv
     // compareResults, as cli replay passes it: replayEnvVerdict has already checked that the record's
     // env_version is this build's, so each re-executed call's result must equal its recorded
     // tool_result (P17j JU13, C7); a difference ends the replay naming the call.
-    return { grade: await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events, record: t.record as unknown as GradeTrajectoryOptions['record'], compareResults: true, ...(e.definitions ? { definitions: e.definitions } : {}) }) };
+    return { grade: await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events, record: t.record as unknown as GradeTrajectoryOptions['record'], compareResults: true, ...(reproduce === undefined ? {} : { reproduce }), ...(e.definitions ? { definitions: e.definitions } : {}) }) };
   } catch (err) {
     return err instanceof JudgeCacheMiss ? { miss: err.message } : { error: (err as Error).message };
   }
