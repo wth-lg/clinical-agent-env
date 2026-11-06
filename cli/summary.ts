@@ -8,7 +8,8 @@
 //   valid=N          every task has exactly N valid trials (donewhen: trials=N)
 //   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b), or,
 //                    with a decimal point (band=0.2-0.7, the final run's FINAL_PASS_BAND), a
-//                    proportion of its valid trials, k/N inclusive (P21)
+//                    proportion of its valid trials, k/N inclusive (P21); band=0-1, counts or
+//                    proportions, is refused as ambiguous (write 0.0-1.0, or the aliases)
 //   env_error_raw=N  at most N ENV_ERROR attempts in the run, re-queued ones included
 //   env_limit=N      at most N attempts whose current grade is ENV_LIMIT (a stop at the context
 //                    window, or at a turn, cost or time cap that rule P-L does not find looping:

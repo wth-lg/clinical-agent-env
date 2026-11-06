@@ -16,7 +16,9 @@
 // A task exporting an empty LEVER_ITEMS is refused (the loop would pass it vacuously), and so is a
 // LEVER naming an id no item has or naming one twice, or a LEVER_ITEMS declaring an id twice
 // (SLOTS2-217 F2: the committed state is then the committed LEVER itself, in the items' order, and
-// no build repeats; the matrix's leverDeclarations refuses the same). The four W5 lever tasks
+// no build repeats). The matrix's leverDeclarations refuses the first two of those, an id no item
+// has and an item declared twice, not a LEVER naming an id twice (verifier HARD2-228-1 m3): this
+// harness is the one check of that. The four W5 lever tasks
 // (renal-dose-review, results-inbox, discharge-medrec, message-queue) export LEVER_ITEMS, so the
 // loop over this checkout's tasks builds each of them per state. The same harness (the task scan,
 // the lever.ts mock, assembleWorld with the
@@ -74,8 +76,9 @@ export async function leverTasks(root: string): Promise<LeverTask[]> {
     const items = mod.LEVER_ITEMS.map((i) => i.id);
     const lever = [...(mod.LEVER ?? [])];
     // The committed LEVER must be a set of the items (SLOTS2-217 F2): a stale id would never be
-    // built, a repeated one would repeat a build, and leverStates would pass a LEVER the matrix
-    // refuses.
+    // built, a repeated one would repeat a build (the matrix's leverDeclarations refuses the
+    // stale id and a twice-declared item, not the repeated LEVER id, m3), and leverStates would
+    // pass a LEVER the matrix refuses.
     const twice = (xs: readonly string[]) => xs.find((x, i) => xs.indexOf(x) !== i);
     const dupItem = twice(items);
     if (dupItem !== undefined) throw new Error(`${id}: lever item ${dupItem} is declared twice`);

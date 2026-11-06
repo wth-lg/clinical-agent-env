@@ -5,8 +5,9 @@
 // kind of failure (P17j JU7), with the run's fault box under the
 // table; a run with a trial that blocks it (DENOMINATOR_RULE) says so in place of the headline
 // pass rate, and names its false PASSes beside k/n. With none yet: the six tasks, the environment every trial starts from, and the
-// committed pilot runs, which are not counted in the results: the latest with its rates by task,
-// the older ones as one line each (ui-polish 2.1). Never an empty page. Both open with the intro
+// committed pilot runs, which are not counted in the results: each task at the latest pilot that
+// holds it, then every pilot as one line each with its rates folded (ui-polish 2.1, pre-audit-2
+// S24). Never an empty page. Both open with the intro
 // card: what this is in plain words, where to start, and how to run a trial.
 import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
@@ -25,7 +26,8 @@ import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
-import { PilotRateRows } from '../findings/pilot.tsx';
+import { LatestPilotRows, PilotRateRows } from '../findings/pilot.tsx';
+import { latestHolding } from '../data/pilot-order.ts';
 import { Verdict, VerdictLink } from '../findings/verdict.tsx';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
@@ -269,23 +271,28 @@ function pilotLine(p: RunData): string {
   return `${p.runId}: ${passes} of ${valid} pass.${total === 0 ? '' : ` ${where}`}`;
 }
 
-// The latest pilot first, with its rates by task; each older one's rates in a closed <details>.
-// A pilot a trial blocks has no rates: its line says why in their place.
+// Each task at the latest pilot that holds it first (data/pilot-order.ts latestHolding; pre-audit-2
+// S24: the latest pilot alone left the tasks it did not run at an older rate), one row per task
+// with the run named; then each pilot's line, newest first, its rates by task in a closed
+// <details>. A pilot a trial blocks has no rates: its line says why in their place.
 function PilotSummary({ pilots }: { pilots: RunData[] }) {
+  const tasks = [...new Set(pilots.flatMap((p) => p.trials.map((t) => t.task)))].sort();
+  const latest = tasks.map((task) => ({ task, run: latestHolding(pilots, task)! }));
   return (
     <Card title="Pilot runs (not counted in the results)">
-      <ul className="space-y-3" data-testid="overview-pilots">
-        {[...pilots].reverse().map((p, i) => (
+      <p className="text-xs text-ink-muted" data-testid="latest-pilot-lead">Each task at its latest pilot: the run, pass k of N valid trials, the Wilson 95% interval and the verdict against the target band.</p>
+      <div className="mt-2"><LatestPilotRows rows={latest} /></div>
+      <p className="mt-3 text-xs text-ink-muted">Every pilot, newest first.</p>
+      <ul className="mt-1 space-y-3" data-testid="overview-pilots">
+        {[...pilots].reverse().map((p) => (
           <li key={p.runId} data-testid="overview-pilot" data-run={p.runId} className="space-y-2">
             <p data-testid="pilot-line"><a href={hrefWith(toRuns(null))} onClick={onNav(toRuns(null))} className={`font-medium ${link}`}>{p.runId}</a><span className="text-ink-muted">{pilotLine(p).slice(p.runId.length)}</span></p>
-            {noPassCount(p.trials) !== null ? null : i === 0
-              ? <PilotRateRows run={p} />
-              : (
-                <details>
-                  <summary className="cursor-pointer text-xs text-ink-muted">Rates by task</summary>
-                  <div className="mt-2"><PilotRateRows run={p} /></div>
-                </details>
-              )}
+            {noPassCount(p.trials) !== null ? null : (
+              <details>
+                <summary className="cursor-pointer text-xs text-ink-muted">Rates by task</summary>
+                <div className="mt-2"><PilotRateRows run={p} /></div>
+              </details>
+            )}
           </li>
         ))}
       </ul>

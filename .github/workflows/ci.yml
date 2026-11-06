@@ -48,6 +48,28 @@ jobs:
       - name: keyscan working tree and build output
         run: pnpm keyscan
 
+  # The stated minimum (pre-audit-2 S17): README's prerequisites line and engines.node in
+  # package.json say Node 22.18, so one job runs on exactly that Node, with the pnpm the
+  # packageManager pin names (its major is engines.pnpm): the check-node script `pnpm start` runs
+  # first, the frozen install, the build, the runner's self-check and every task's oracle
+  # (offline, canned judge outputs). scripts/test/ci-workflow.test.ts pins the version and the
+  # steps to package.json.
+  node22:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.18.0
+          cache: pnpm
+      - run: pnpm check-node
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm cli runner-check --mock
+      - run: pnpm cli oracle --task all
+
   # The grader validation matrix (plan phase P9) runs beside check, one job per task with tests,
   # offline: canned judge outputs, no key, no live call; a judge cache miss fails that task's job.
   # The task list comes from the repo, so a new task needs no edit here.

@@ -4,7 +4,9 @@
 // charts line up and the Wilson column is as wide as its widest text, which never wraps. Below sm
 // the chart hides and the text stays, with "Wilson" left to screen readers, so a row is one line
 // on a phone. A pilot a trial blocks has no rate rows (data/failures.ts noPassCount); each card
-// says why in their place.
+// says why in their place. LatestPilotRows is the same row per task from the latest pilot that
+// holds it, with the run named (pre-audit-2 S24: one pilot's rows left the tasks it did not run
+// at an older rate).
 import type { ReactNode } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { noPassCount } from '../data/failures.ts';
@@ -15,6 +17,7 @@ import { hrefWith, onNav } from '../data/url.ts';
 
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 const toTask = (run: string, task: string) => ({ view: 'runs', run, task, label: null, trial: null, check: null, audit: null });
+const toRun = (run: string) => ({ view: 'runs', run, task: null, label: null, trial: null, check: null, audit: null });
 
 // The chart's key in words, once per card under the axis (ui-polish 2.4).
 export const CHART_KEY = `Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band ${FINAL_PASS_BAND[0] * 100}% to ${FINAL_PASS_BAND[1] * 100}%.`;
@@ -28,8 +31,24 @@ export function RateAxis({ col }: { col: string }) {
   );
 }
 
+type Rate = ReturnType<typeof pilotRates>[number];
+
+// A task's three rate cells in a run: k/N (a link to its trials when one failed), the interval
+// (sm and up) and the Wilson text with the verdict.
+function RateCells({ run, r }: { run: RunData; r: Rate }) {
+  return (
+    <>
+      {r.passes < r.valid
+        ? <a href={hrefWith(toTask(run.runId, r.task))} onClick={onNav(toTask(run.runId, r.task))} className={`whitespace-nowrap text-right ${link}`}>{r.passes}/{r.valid}</a>
+        : <span className="whitespace-nowrap text-right text-ink-muted">{r.passes}/{r.valid}</span>}
+      <span className="hidden sm:block"><IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (${run.runId})`} /></span>
+      <span className="text-right sm:text-left"><span data-testid="wilson" className="block whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span><Verdict task={r.task} passes={r.passes} trials={r.valid} className="block" /></span>
+    </>
+  );
+}
+
 // below: a line under a task's row (Findings: the trials its k/N leaves out); axis: the axis row.
-export function PilotRateRows({ run, below, axis = false }: { run: RunData; below?: (r: ReturnType<typeof pilotRates>[number]) => ReactNode; axis?: boolean }) {
+export function PilotRateRows({ run, below, axis = false }: { run: RunData; below?: (r: Rate) => ReactNode; axis?: boolean }) {
   if (noPassCount(run.trials) !== null) return null;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,12rem)_auto_1fr_auto]">
@@ -37,16 +56,36 @@ export function PilotRateRows({ run, below, axis = false }: { run: RunData; belo
         {pilotRates(run).map((r) => (
           <li key={r.task} data-testid="pilot-rate" data-task={r.task} className="col-span-full grid grid-cols-subgrid items-center gap-y-0.5">
             <span className="min-w-0 break-words font-medium">{r.task}</span>
-            {r.passes < r.valid
-              ? <a href={hrefWith(toTask(run.runId, r.task))} onClick={onNav(toTask(run.runId, r.task))} className={`whitespace-nowrap text-right ${link}`}>{r.passes}/{r.valid}</a>
-              : <span className="whitespace-nowrap text-right text-ink-muted">{r.passes}/{r.valid}</span>}
-            <span className="hidden sm:block"><IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (pilot)`} /></span>
-            <span className="text-right sm:text-left"><span data-testid="wilson" className="block whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span><Verdict task={r.task} passes={r.passes} trials={r.valid} className="block" /></span>
+            <RateCells run={run} r={r} />
             {below?.(r)}
           </li>
         ))}
       </ul>
       {axis && <RateAxis col="col-start-3" />}
+    </div>
+  );
+}
+
+// One row per task from the latest pilot that holds it (data/pilot-order.ts latestHolding): the
+// task, the run (a link to its trials in Runs), then the rate cells; a run a trial blocks says so
+// in place of them.
+export function LatestPilotRows({ rows }: { rows: ReadonlyArray<{ task: string; run: RunData }> }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,12rem)_auto_auto_1fr_auto]">
+      <ul className="col-span-full grid grid-cols-subgrid gap-y-2" data-testid="latest-pilot-chart">
+        {rows.map(({ task, run }) => {
+          const held = noPassCount(run.trials);
+          const r = pilotRates(run).find((x) => x.task === task);
+          return (
+            <li key={task} data-testid="latest-pilot-rate" data-task={task} data-run={run.runId} className="col-span-full grid grid-cols-subgrid items-center gap-y-0.5">
+              <span className="min-w-0 break-words font-medium">{task}</span>
+              <a href={hrefWith(toRun(run.runId))} onClick={onNav(toRun(run.runId))} className={`whitespace-nowrap text-xs ${link}`}>{run.runId}</a>
+              {held !== null || r === undefined ? <span className="col-span-2 text-xs text-ink-muted sm:col-span-3">{held ?? 'no valid trials'}</span> : <RateCells run={run} r={r} />}
+            </li>
+          );
+        })}
+      </ul>
+      <RateAxis col="col-start-4" />
     </div>
   );
 }

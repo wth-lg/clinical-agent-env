@@ -113,6 +113,22 @@ describe('copyData', () => {
     expect(index(out).files).toEqual(['results/pilot-0/trials/t1/0.json']);
   });
 
+  // pre-audit-2 S24: the probe and smoke runs (results/probe-<n>, results/smoke-<n>, under results/
+  // or results/runs/) ship like the pilots, so the difficulty history can show them; results/probe/
+  // (the judge-calibration probe files, no trials/) is not a run.
+  it('copies each committed probe and smoke run with trials, as it copies a pilot', () => {
+    const root = resultsTree();
+    put(root, 'results/probe-1/trials/t1/0.json');
+    put(root, 'results/smoke-w5/trials/t1/0.json');
+    put(root, 'results/runs/smoke-w6/trials/t1/0.json');
+    put(root, 'results/probe/t1.json');
+    const outDir = tmp('dist');
+    copyData({ root, outDir });
+    const extra = ['results/probe-1/trials/t1/0.json', 'results/runs/smoke-w6/trials/t1/0.json', 'results/smoke-w5/trials/t1/0.json'];
+    expect(index(outDir).files).toEqual([...EXPECTED, ...extra].sort());
+    expect(existsSync(join(outDir, 'data/results/probe'))).toBe(false);
+  });
+
   it('rejects an official.json run path that leaves results/', () => {
     const root = tmp('evil-root');
     put(root, 'results/official.json', JSON.stringify({ run: '../../etc' }));

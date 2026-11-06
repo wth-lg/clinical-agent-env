@@ -32,7 +32,7 @@ describe('ci workflow', () => {
   // pnpm test alone took 10-17 of check's 20 minutes on green runs and was cancelled at the
   // limit with every test passing (run 40319335481).
   it('gives check and each e2e shard, which runs after it, a 35 minute timeout', () => {
-    expect(Object.keys(workflow.jobs).sort()).toEqual(['check', 'e2e', 'e2e-ok', 'matrix', 'matrix-ok', 'tasks']);
+    expect(Object.keys(workflow.jobs).sort()).toEqual(['check', 'e2e', 'e2e-ok', 'matrix', 'matrix-ok', 'node22', 'tasks']);
     expect(check?.['runs-on']).toBe('ubuntu-latest');
     expect(check?.['timeout-minutes']).toBe(35);
     expect(e2e?.['timeout-minutes']).toBe(35);
@@ -119,6 +119,33 @@ describe('ci workflow', () => {
     expect(matrixOk?.if).toBe('always()');
     expect(matrixOk?.steps.at(-1)?.env).toEqual({ RESULT: '${{ needs.matrix.result }}' });
     expect(matrixOk?.steps.at(-1)?.run).toBe('test "$RESULT" = success');
+  });
+
+  // pre-audit-2 S17: the stated minimum (engines.node in package.json, README's prerequisites
+  // line) is tested, not only Node 26: one job on exactly that Node runs the check-node script,
+  // the frozen install, the build, the runner's self-check and every task's oracle. pnpm comes
+  // from the packageManager pin (pnpm/action-setup with no version), whose major is engines.pnpm.
+  it('runs the stated minimum Node, with the pinned pnpm, through install, build, runner-check and the oracle in node22', () => {
+    const root = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { engines: { node: string; pnpm: string }; packageManager: string };
+    const minimum = /^>=\s*(\d+\.\d+)$/.exec(root.engines.node)?.[1];
+    expect(minimum).toBe('22.18');
+    const node22 = workflow.jobs.node22;
+    expect(node22?.['runs-on']).toBe('ubuntu-latest');
+    expect(node22?.['timeout-minutes']).toBe(20);
+    expect(node22?.needs).toBeUndefined();
+    const setup = node22?.steps.find((s) => s.uses?.startsWith('actions/setup-node@'));
+    expect(setup?.with?.['node-version']).toBe(`${minimum}.0`);
+    const pnpm = node22?.steps.find((s) => s.uses?.startsWith('pnpm/action-setup@'));
+    expect(pnpm).toBeDefined();
+    expect(pnpm?.with).toBeUndefined();
+    expect(root.engines.pnpm).toBe(`>=${/^pnpm@(\d+)\./.exec(root.packageManager)?.[1]}`);
+    expect(runs(node22).filter((r) => r !== '')).toEqual([
+      'pnpm check-node',
+      'pnpm install --frozen-lockfile',
+      'pnpm build',
+      'pnpm cli runner-check --mock',
+      'pnpm cli oracle --task all',
+    ]);
   });
 
   // e2e-ok is to the e2e shards what matrix-ok is to the matrix.

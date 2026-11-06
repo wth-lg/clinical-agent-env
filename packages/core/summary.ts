@@ -695,7 +695,8 @@ const ALIASES: Record<string, string> = { trials: 'valid' };
 // --require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=M. donewhen's
 // form is accepted too: trials=N for valid=N, pass-min=a and pass-max=b for band=a-b. band=a-b
 // takes counts (2-7) or, with a decimal point in both, a proportion of each task's valid trials
-// (0.2-0.7, k/N inclusive, in [0, 1]). Throws on anything else.
+// (0.2-0.7, k/N inclusive, in [0, 1]); counts with both bounds 0 or 1 (0-1) could be either and
+// are refused (P21-213 m4): pass-min=0,pass-max=1 names those counts. Throws on anything else.
 export function parseRequire(spec: string): Requirements {
   const req: Requirements = {};
   let min: number | undefined;
@@ -725,6 +726,9 @@ export function parseRequire(spec: string): Requirements {
       const rates = /^(\d*\.\d+|\d+)-(\d*\.\d+|\d+)$/.exec(v);
       if (counts) {
         if (Number(counts[1]) > Number(counts[2])) throw new Error(`--require band=${v}: expected a-b with a <= b`);
+        // Both bounds 0 or 1 read as counts or as proportions (P21-213 m4): refused, with the
+        // plain form of each.
+        if (Number(counts[2]) <= 1) throw new Error(`--require band=${v}: ambiguous, counts or proportions; write a proportion with a decimal point (${Number(counts[1]).toFixed(1)}-${Number(counts[2]).toFixed(1)}, as 0.0-1.0) or counts as pass-min=${counts[1]},pass-max=${counts[2]}`);
         req.band = [Number(counts[1]), Number(counts[2])];
       } else if (rates && (rates[1]!.includes('.') || rates[2]!.includes('.'))) {
         const [lo, hi] = [Number(rates[1]), Number(rates[2])];

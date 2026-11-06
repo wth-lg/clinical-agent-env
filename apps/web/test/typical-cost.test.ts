@@ -36,4 +36,12 @@ describe('verifier JU6-1 F2 and F4', () => {
     const pilots = [run('pilot-10', [['t', 0.4, null]]), run('pilot-9', [['t', 9, null]])];
     expect(typicalCost(pilots, 't')).toEqual({ usd: 0.4, n: 1, run: 'pilot-10' });
   });
+
+  // pre-audit-2 S24: a lettered pilot (pilot-4b, pilot-5c) is later than a lower number and than
+  // an earlier letter, in any list order; the one order data/results.ts sorts the pilots by.
+  it('a lettered pilot counts by its number and letter: pilot-4b after pilot-3, pilot-5c after pilot-5a', () => {
+    expect(typicalCost([run('pilot-3', [['t', 9, null]]), run('pilot-4b', [['t', 0.4, null]])], 't')).toEqual({ usd: 0.4, n: 1, run: 'pilot-4b' });
+    expect(typicalCost([run('pilot-5c', [['t', 0.5, null]]), run('pilot-5a', [['t', 9, null]])], 't')).toEqual({ usd: 0.5, n: 1, run: 'pilot-5c' });
+    expect(typicalCost([run('pilot-4b', [['t', 0.4, null]]), run('pilot-10', [['t', 1, null]])], 't')).toEqual({ usd: 1, n: 1, run: 'pilot-10' });
+  });
 });
