@@ -108,7 +108,7 @@ display = "Hemoglobin A1c/Hemoglobin.total in Blood"
 # renewed), is declared here only while 'reserve' is in LEVER: a declared trap needs a mutant, and
 # the reserve's mutants exist only with its patient.
 [matrix]
-traps = ["hemolyzed_potassium", "amended_or_error", "collection_date", "metformin_two_series", "same_patient", "creatinine_rise", "closure", "scope", "patient_skipped", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend", "panel_member_unread", "same_day_baseline"]
+traps = ["hemolyzed_potassium", "amended_or_error", "collection_date", "metformin_two_series", "same_patient", "creatinine_rise", "closure", "scope", "patient_skipped", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend", "panel_member_unread"]
 status_only = true
 
 # The one judged item (reply_names_other_patient) reads the replies to one patient; medium as in T1.

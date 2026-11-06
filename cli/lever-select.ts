@@ -11,7 +11,8 @@
 // S5-2 picks the set nearest 0.45 inside [0.30, 0.60]; on a tie the larger set; between sets of one
 // size, the lower projected p90 by --item-cost when every item of both is priced, else the set with
 // more A items (the measured mechanism), else declaration order (ruling F4, decisions.tsv
-// 2026-11-03T08:29Z). When the both-active PASS count is 3-5 of 8 (as a rate, 0.375-0.625 of the
+// 2026-11-03T08:29Z); the same tie-break names the nearest set out of band, where two sets can be
+// equally far from 0.45 on opposite sides (R44), and the tie is printed there too. When the both-active PASS count is 3-5 of 8 (as a rate, 0.375-0.625 of the
 // valid trials) and the full active set is picked, the task freezes on it with no pilot-5b
 // (`freeze`). When no set is inside the band: every prediction above 0.60 activates the reserve,
 // the task's inactive item(s), alongside the set nearest 0.45 (`reserve`, v3; the reserve goes into
@@ -133,11 +134,15 @@ export function select(t: Pick<ClassesJson['tasks'][string], 'trials_valid' | 'p
     if (px !== null && py !== null && px !== py) return px - py;
     return aCount(y.set) - aCount(x.set);
   };
-  // `x` won over `y`; the two are named in enumeration order, the winner after the colon.
+  // `x` won over `y`; the two are named in enumeration order, the winner after the colon. Equal
+  // predictions tie at that value; predictions on both sides of 0.45 (a straddle, R44) tie at their
+  // distance from it, each named with its value so the text never reads as if one were nearer.
   const tieNote = (x: Prediction, y: Prediction): string | null => {
     if (Math.abs(near(x.pred) - near(y.pred)) > EPS || x.set.length !== y.set.length) return null;
     const [first, second] = predictions.indexOf(x) < predictions.indexOf(y) ? [x, y] : [y, x];
-    const pair = `${setText(first.set)} and ${setText(second.set)} tie at ${x.pred.toFixed(3)}: ${setText(x.set)}`;
+    const pair = Math.abs(x.pred - y.pred) <= EPS
+      ? `${setText(first.set)} and ${setText(second.set)} tie at ${x.pred.toFixed(3)}: ${setText(x.set)}`
+      : `${setText(first.set)} ${first.pred.toFixed(3)} and ${setText(second.set)} ${second.pred.toFixed(3)} tie at ${near(x.pred).toFixed(3)} from ${TARGET}: ${setText(x.set)}`;
     const [px, py] = [priced(x.set), priced(y.set)];
     if (px !== null && py !== null && px !== py) return `${pair} (lower projected p90 by --item-cost, ${money(px)} vs ${money(py)})`;
     if (aCount(x.set) !== aCount(y.set)) return `${pair} (the measured mechanism)`;
@@ -166,18 +171,24 @@ export function select(t: Pick<ClassesJson['tasks'][string], 'trials_valid' | 'p
     const tie = runnerUp === undefined ? null : tieNote(best!, runnerUp);
     if (tie !== null) notes.push(tie);
   } else {
-    selected = nearest(predictions)[0]!.set;
+    // Out of band the nearest set can still be a tie (R44: {A} 0.090 and {B} 0.810 are both 0.360
+    // from 0.45), broken the same way and named the same way (P5A-230 M1).
+    const [best, runnerUp] = nearest(predictions);
+    selected = best!.set;
+    const tie = runnerUp === undefined ? null : tieNote(best!, runnerUp);
+    const nearestText = `${setText(selected)} is nearest 0.45${tie === null ? '' : ', by the tie-break'}`;
     if (predictions.every((p) => p.pred > BAND[1])) {
       rule = 'S5-2 reserve';
       reserve = true;
-      notes.push(`every prediction is above 0.60: activate the reserve alongside ${setText(selected)}, v3`);
+      notes.push(`every prediction is above 0.60: activate the reserve alongside ${setText(selected)}, v3${tie === null ? '' : ` (${nearestText})`}`);
     } else if (predictions.every((p) => p.pred < BAND[0])) {
       rule = 'S5-3';
-      notes.push(`every prediction is below 0.30: S5-3 (fairness audit, then the pre-declared softening once, v3); ${setText(selected)} is nearest 0.45`);
+      notes.push(`every prediction is below 0.30: S5-3 (fairness audit, then the pre-declared softening once, v3); ${nearestText}`);
     } else {
       rule = 'S5-2 no set in band';
-      notes.push(`no set is inside [0.30, 0.60] and the predictions straddle it: coordinator ruling; ${setText(selected)} is nearest 0.45`);
+      notes.push(`no set is inside [0.30, 0.60] and the predictions straddle it: coordinator ruling; ${nearestText}`);
     }
+    if (tie !== null) notes.push(tie);
   }
   return { trials: n, pass: t.pass, base_pass: t.lever.base_pass, b_hat, items, predictions, selected, rule, freeze, reserve, notes };
 }

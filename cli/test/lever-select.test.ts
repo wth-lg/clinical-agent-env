@@ -163,6 +163,30 @@ describe('S5-2 band edges', () => {
     expect(t.notes.join('\n')).toMatch(/no set is inside \[0\.30, 0\.60\] and the predictions straddle it: coordinator ruling/);
   });
 
+  // R44 (pilot-5a discharge-medrec: b_hat 0.9, c_A 0.1, c_B 0.9): {A} 0.090 and {B} 0.810 are both
+  // 0.360 from 0.45, so the straddle pick is a tie, broken as F4 says (lower --item-cost, else {A}).
+  // The out-of-band branches print the tie note too (verifier-phase-P17i-P5A-230-1 M1), so the text
+  // never reads as if one set were nearer.
+  it('a straddle tie is named: the lower --item-cost wins, else {A}, and the note says both are equally far', async () => {
+    const spec: Spec = { n: 8, pass: 0, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 0, observed: 8 }, { id: 'B', kind: 'B', passed: 8, observed: 8 }] };
+    const plain = (await run(['--classes', file('straddle-tie', classesJson({ t: spec })), '--json'])).json!.tasks.t!;
+    expect(plain.predictions.map((p) => Number(p.pred.toFixed(6)))).toEqual([0.09, 0.81, 0.081]);
+    expect([plain.selected, plain.rule]).toEqual([['A'], 'S5-2 no set in band']);
+    expect(plain.notes.join('\n')).toMatch(/\{A\} 0\.090 and \{B\} 0\.810 tie at 0\.360 from 0\.45: \{A\} \(the measured mechanism\)/);
+    const priced = await run(['--classes', file('straddle-tie-cost', classesJson({ t: spec })), '--item-cost', 't.A=0.33,t.B=0.14', '--json']);
+    const t = priced.json!.tasks.t!;
+    expect([t.selected, t.rule, t.final]).toEqual([['B'], 'S5-2 no set in band', ['B']]);
+    expect(t.notes.join('\n')).toMatch(/\{A\} 0\.090 and \{B\} 0\.810 tie at 0\.360 from 0\.45: \{B\} \(lower projected p90 by --item-cost, \$0\.14 vs \$0\.33\)/);
+    const text = (await run(['--classes', file('straddle-tie-text', classesJson({ t: spec })), '--item-cost', 't.A=0.33,t.B=0.14'])).out.join('\n');
+    expect(text).toContain('selected {B}: S5-2 no set in band (no set is inside [0.30, 0.60] and the predictions straddle it: coordinator ruling; {B} is nearest 0.45, by the tie-break)');
+    expect(text).toContain('{A} 0.090 and {B} 0.810 tie at 0.360 from 0.45: {B} (lower projected p90 by --item-cost, $0.14 vs $0.33)');
+    // S5-3 (every prediction below 0.30) names a tie the same way: {A} 0.090 against {B} 0.090.
+    const s53: Spec = { n: 8, pass: 0, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 0, observed: 8 }, { id: 'B', kind: 'B', passed: 0, observed: 8 }] };
+    const low = (await run(['--classes', file('s53-tie', classesJson({ t: s53 })), '--json'])).json!.tasks.t!;
+    expect([low.selected, low.rule]).toEqual([['A'], 'S5-3']);
+    expect(low.notes.join('\n')).toMatch(/\{A\} and \{B\} tie at 0\.090: \{A\} \(the measured mechanism\)/);
+  });
+
   it('an inactive item is not a candidate; an active item with no observation is flagged', async () => {
     const spec: Spec = { n: 8, pass: 4, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 0, observed: 0 }, { id: 'B', kind: 'B', passed: 6, observed: 8 }, { id: 'R', kind: 'B', passed: 0, observed: 0, active: false }] };
     const { json } = await run(['--classes', file('inactive', classesJson({ t: spec })), '--json']);

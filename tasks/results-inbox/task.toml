@@ -177,7 +177,7 @@ display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoa
 # while 'reserve' is in LEVER (tests/lever.test.ts): a declared trap needs a mutant, and the reserve's
 # mutants exist only with its patient.
 [matrix]
-traps = ["nodule_screening_scheduled", "hemolyzed_on_result", "corrected_to_normal", "withdrawn_comparison", "preliminary_positive_final_negative", "aki_48_hours", "normal_control", "closed_without_link", "item_left_open", "patient_not_told", "nodule_screening_snippets", "decision_without_deciding_fact", "decision_before_deciding_fact", "page_without_patient", "call_task_on_order", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "batch_sibling_unread", "misfiled_record_acted_on"]
+traps = ["nodule_screening_scheduled", "hemolyzed_on_result", "corrected_to_normal", "withdrawn_comparison", "preliminary_positive_final_negative", "aki_48_hours", "normal_control", "closed_without_link", "item_left_open", "patient_not_told", "nodule_screening_snippets", "decision_without_deciding_fact", "decision_before_deciding_fact", "page_without_patient", "call_task_on_order", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "misfiled_record_acted_on"]
 status_only = true
 
 # Judged rubric items: reply_names_other_patient, note_contradicts_result and the judged branch of
