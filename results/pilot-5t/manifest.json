@@ -1,0 +1,41 @@
+{
+  "env_git_sha": "2ce2ed71c50cc400f2b7cb433639dbf227b8ef0e",
+  "env_dirty": false,
+  "run_id": "pilot-5t",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
+  "api_version": "2026-10-21",
+  "trials": 8,
+  "task_versions": {
+    "crc-care-gap": "41822d92b78faac5a3caf6fd29f9168d980bc0ee85124d2ba0883f2a4724417b"
+  },
+  "env_versions": {
+    "crc-care-gap": "de1d15d15e0d4aa349ae34d140ddfea9c3b4f7013eb2508ace788a04418b4fd8"
+  },
+  "grader_task_versions": {
+    "crc-care-gap": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d"
+  },
+  "world_hashes": {
+    "crc-care-gap": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5"
+  },
+  "batches": [
+    {
+      "batch_id": "4ce83e11-03e4-4f75-9da9-60ba3b562674",
+      "started": "2026-11-06T08:38:33.278Z",
+      "ended": "2026-11-06T08:45:50.174Z",
+      "projection": 56.199999999999996,
+      "remaining": 8,
+      "settled": 8,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "2ce2ed71c50cc400f2b7cb433639dbf227b8ef0e",
+      "world_hash": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
+      "tasks": [
+        "crc-care-gap"
+      ]
+    }
+  ]
+}
