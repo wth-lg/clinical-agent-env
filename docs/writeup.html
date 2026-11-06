@@ -283,18 +283,21 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:end outcomes -->
 <h3 id="pass-rate-per-task" data-src="docs/writeup/70-pass-rates.md:7">Pass rate per task</h3>
 <!-- docs-gen:begin pass-rates -->
-<p>Run <code>final-1</code>: model claude-opus-5-5, effort high, 40 valid trials in 2 tasks, $76.33 settled. Rendered from <code>results/runs/final-1/summary.json</code>.</p>
+<p>Run <code>final-1</code>: model claude-opus-5-5, effort high, 120 valid trials in 6 tasks, $205.11 settled. Rendered from <code>results/runs/final-1/summary.json</code>.</p>
 <p>The target band is 20% to 70% of 20 valid trials, both ends included.</p>
 <div class="table-wrap">
 <table><caption>Pass rate per task at the current grade</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass rate</th><th scope="col">Wilson 95%</th><th scope="col">verdict</th><th scope="col">safe passes</th><th scope="col">refusals</th><th scope="col">rate without refusals</th><th scope="col">ENV_ERROR raw</th><th scope="col">ENV_LIMIT</th><th scope="col">GRADER_ERROR (earlier)</th></tr></thead>
 <tbody>
 <tr><th scope="row">contrast-ct-prep</th><td><span class="nw">5/20</span></td><td><span class="nw">25%</span></td><td><span class="nw">[0.11, 0.47]</span></td><td>In band</td><td><span class="nw">5/20</span></td><td><span class="nw">0</span></td><td><span class="nw">25%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
-<tr><th scope="row">crc-care-gap</th><td><span class="nw">18/20</span></td><td><span class="nw">90%</span></td><td><span class="nw">[0.70, 0.97]</span></td><td>Above band</td><td><span class="nw">18/20</span></td><td><span class="nw">0</span></td><td><span class="nw">90%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">15/20</span></td><td><span class="nw">75%</span></td><td><span class="nw">[0.53, 0.89]</span></td><td>Above band</td><td><span class="nw">15/20</span></td><td><span class="nw">0</span></td><td><span class="nw">75%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">discharge-medrec</th><td><span class="nw">20/20</span></td><td><span class="nw">100%</span></td><td><span class="nw">[0.84, 1.00]</span></td><td>Saturated</td><td><span class="nw">20/20</span></td><td><span class="nw">0</span></td><td><span class="nw">100%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">message-queue</th><td><span class="nw">19/20</span></td><td><span class="nw">95%</span></td><td><span class="nw">[0.76, 0.99]</span></td><td>Saturated</td><td><span class="nw">19/20</span></td><td><span class="nw">0</span></td><td><span class="nw">95%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">renal-dose-review</th><td><span class="nw">16/20</span></td><td><span class="nw">80%</span></td><td><span class="nw">[0.58, 0.92]</span></td><td>Above band</td><td><span class="nw">16/20</span></td><td><span class="nw">0</span></td><td><span class="nw">80%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
+<tr><th scope="row">results-inbox</th><td><span class="nw">12/20</span></td><td><span class="nw">60%</span></td><td><span class="nw">[0.39, 0.78]</span></td><td>In band</td><td><span class="nw">10/20</span></td><td><span class="nw">0</span></td><td><span class="nw">60%</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span></td><td><span class="nw">0</span> <span class="nw">(0)</span></td></tr>
 </tbody>
 </table>
 </div>
-<p>4 tasks have no final result yet: <code>discharge-medrec</code>, <code>message-queue</code>, <code>renal-dose-review</code>, <code>results-inbox</code>.</p>
 <!-- docs-gen:end pass-rates -->
 <p data-src="docs/writeup/70-pass-rates.md:11">A task's verdict is the band verdict above, read on its k of n. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. TODO-W5F: the four lever tasks join this table after their final run.</p>
 <p data-src="docs/writeup/70-pass-rates.md:13">Five of the six tasks share one failure route: a result filed silently beside the one the inbox names. The record-integrity lever copied that device from the contrast CT task into four tasks. Every failure of the contrast CT task in the final run is that route. TODO-W5F: a per-task pass rate without the silent-sibling item is generated here once the lever tasks' final run is committed. It shows how much of each rate rests on that one device.</p>
@@ -329,7 +332,11 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass^1</th><th scope="col">pass^3</th><th scope="col">pass^5</th></tr></thead>
 <tbody>
 <tr><th scope="row">contrast-ct-prep</th><td><span class="nw">5/20</span></td><td><span class="nw">0.25</span></td><td><span class="nw">0.01</span></td><td><span class="nw">&lt;0.01</span></td></tr>
-<tr><th scope="row">crc-care-gap</th><td><span class="nw">18/20</span></td><td><span class="nw">0.90</span></td><td><span class="nw">0.72</span></td><td><span class="nw">0.55</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">15/20</span></td><td><span class="nw">0.75</span></td><td><span class="nw">0.40</span></td><td><span class="nw">0.19</span></td></tr>
+<tr><th scope="row">discharge-medrec</th><td><span class="nw">20/20</span></td><td><span class="nw">1.00</span></td><td><span class="nw">1.00</span></td><td><span class="nw">1.00</span></td></tr>
+<tr><th scope="row">message-queue</th><td><span class="nw">19/20</span></td><td><span class="nw">0.95</span></td><td><span class="nw">0.85</span></td><td><span class="nw">0.75</span></td></tr>
+<tr><th scope="row">renal-dose-review</th><td><span class="nw">16/20</span></td><td><span class="nw">0.80</span></td><td><span class="nw">0.49</span></td><td><span class="nw">0.28</span></td></tr>
+<tr><th scope="row">results-inbox</th><td><span class="nw">12/20</span></td><td><span class="nw">0.60</span></td><td><span class="nw">0.19</span></td><td><span class="nw">0.05</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -342,11 +349,15 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <thead><tr><th scope="col">task</th><th scope="col">mean cost per trial</th><th scope="col">records</th></tr></thead>
 <tbody>
 <tr><th scope="row">contrast-ct-prep</th><td><span class="nw">$1.63</span></td><td><span class="nw">20</span></td></tr>
-<tr><th scope="row">crc-care-gap</th><td><span class="nw">$2.19</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><span class="nw">$2.41</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">discharge-medrec</th><td><span class="nw">$1.45</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">message-queue</th><td><span class="nw">$1.48</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">renal-dose-review</th><td><span class="nw">$1.63</span></td><td><span class="nw">20</span></td></tr>
+<tr><th scope="row">results-inbox</th><td><span class="nw">$1.66</span></td><td><span class="nw">20</span></td></tr>
 </tbody>
 </table>
 </div>
-<p>The run settled $76.33 over 40 records.</p>
+<p>The run settled $205.11 over 120 records.</p>
 <!-- docs-gen:end cost -->
 <h3 id="example-trajectories" data-src="docs/writeup/70-pass-rates.md:37">Example trajectories</h3>
 <!-- docs-gen:begin exemplars -->
@@ -355,7 +366,11 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <thead><tr><th scope="col">task</th><th scope="col">a pass</th><th scope="col">a failure</th></tr></thead>
 <tbody>
 <tr><th scope="row">contrast-ct-prep</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F7"><span class="nw">contrast-ct-prep/7</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=contrast-ct-prep%2F0"><span class="nw">contrast-ct-prep/0</span> (FAIL)</a></td></tr>
-<tr><th scope="row">crc-care-gap</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F0"><span class="nw">crc-care-gap/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F3"><span class="nw">crc-care-gap/3</span> (FAIL)</a></td></tr>
+<tr><th scope="row">crc-care-gap</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F0"><span class="nw">crc-care-gap/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=crc-care-gap%2F5"><span class="nw">crc-care-gap/5</span> (FAIL)</a></td></tr>
+<tr><th scope="row">discharge-medrec</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=discharge-medrec%2F0"><span class="nw">discharge-medrec/0</span> (PASS)</a></td><td>none</td></tr>
+<tr><th scope="row">message-queue</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=message-queue%2F0"><span class="nw">message-queue/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=message-queue%2F10"><span class="nw">message-queue/10</span> (FAIL)</a></td></tr>
+<tr><th scope="row">renal-dose-review</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=renal-dose-review%2F0"><span class="nw">renal-dose-review/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=renal-dose-review%2F4"><span class="nw">renal-dose-review/4</span> (FAIL)</a></td></tr>
+<tr><th scope="row">results-inbox</th><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=results-inbox%2F0"><span class="nw">results-inbox/0</span> (PASS)</a></td><td><a href="https://wth-lg.github.io/clinical-agent-env/?view=runs&run=final-1&trial=results-inbox%2F4"><span class="nw">results-inbox/4</span> (FAIL)</a></td></tr>
 </tbody>
 </table>
 </div>
