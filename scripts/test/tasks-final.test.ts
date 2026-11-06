@@ -234,5 +234,14 @@ describe('results/tasks-final.json', () => {
         expect(r.status, `${id}.${where}.commit ${t.commit.slice(0, 12)} is not an ancestor of HEAD (${r.stderr.trim()})`).toBe(0);
       }
     }
+    // The run's replay.json names where each verdict was made; those commits must be on the line
+    // of this checkout too, or the verdicts cannot be re-made where they were.
+    const replay = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/replay.json'), 'utf8')) as { trials: Record<string, { replayed_at: { commit: string } }> };
+    const commits = [...new Set(Object.values(replay.trials).map((v) => v.replayed_at.commit))];
+    expect(commits.length).toBeGreaterThan(0);
+    for (const commit of commits) {
+      const r = spawnSync('git', ['-C', repoRoot, 'merge-base', '--is-ancestor', commit, 'HEAD'], { encoding: 'utf8' });
+      expect(r.status, `replay.json replayed_at.commit ${commit.slice(0, 12)} is not an ancestor of HEAD (${r.stderr.trim()})`).toBe(0);
+    }
   });
 });
