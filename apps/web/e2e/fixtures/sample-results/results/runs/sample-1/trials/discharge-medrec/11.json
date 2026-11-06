@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "b914c4e0f81813fadc47f4faa90b5d7e3752eee9928ee96a06105c701bd7df92",
-  "env_version": "51f6d65c330becbd0bc5cb398fdd87585be5ca094adbcf3d40db0c9bfa0a45da",
+  "task_version": "5cde58471d7dc00568b6a6c7798b5acf25ab81006068158c6249f627c1dc2f75",
+  "env_version": "063fbbc92044a0790f07be7fee9705280bab4b086d43c0c9742ef8444d8f7651",
   "grader_task_version": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
-  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+  "fixture_hash": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
   "state_hash": {
-    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
-    "final": "992f230304b9938dbc3f23560dbc43d3723335f0c8247000645ac0f8c5a57ee8",
-    "replay_final": "992f230304b9938dbc3f23560dbc43d3723335f0c8247000645ac0f8c5a57ee8"
+    "initial": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
+    "final": "594a855a903f5b7042e1128d6acc4f0ecd77484f1972651d8301aace59418d9c",
+    "replay_final": "594a855a903f5b7042e1128d6acc4f0ecd77484f1972651d8301aace59418d9c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:42:24.000Z",
+  "started": "2026-10-23T13:47:20.000Z",
   "turns": 8,
   "tool_calls": 58,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled the five post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:45:17.000Z",
+  "ended": "2026-10-23T13:50:13.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "FAIL",
