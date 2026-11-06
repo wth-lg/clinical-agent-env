@@ -7,7 +7,7 @@ claude-opus-5-5 at effort high. Two batches: fb524a47 (P22, 2026-11-03, tag free
 | renal-dose-review | v2 {A,B} | **16/20** | [0.58, 0.92] | Above band | A fairweather-scr-batch 16/20; B 20/20 |
 | results-inbox | {A} | **12/20** | [0.39, 0.78] | In band | A marchetti-cr-batch 12/20 |
 | discharge-medrec | {B} | **20/20** | [0.84, 1.00] | Saturated | B pruitt-metformin 20/20 |
-| message-queue | v3 {A} (inbox summary "Results (9)") | **19/20** | [0.76, 0.99] | Saturated | A webb-a1 20/20 (the one failure is on base items) |
+| message-queue | v3 {A} (inbox summary "Results (9)") | **20/20** (19/20 as recorded; trial 10 PASS at the R48 regrade) | [0.84, 1.00] | Saturated | A webb-a1 20/20 |
 | crc-care-gap | v2 {A} | **15/20** | [0.53, 0.89] | Above band | A crc-b3 20/20 (every failure is a base member's window review) |
 | contrast-ct-prep | v1 (P22, grader 22 regrade) | **5/20** | [0.11, 0.47] | In band | (no lever) |
 | crc-care-gap v1 (superseded, not counted) | v1 | 18/20 | [0.70, 0.97] | Above band | (no lever) |
@@ -16,7 +16,8 @@ Validity at grader 22 (every command on the committed run as it is; exit codes i
 - `pnpm cli summary results/runs/final-1 --require env_error_raw=0,env_limit=0,grader_error=0,model=claude-opus-5-5`: exit 0, every requirement holds, GRADER_ERROR 0 (history 0); the same with `--write` wrote summary.json (schema 11).
 - `pnpm cli replay results/runs/final-1 --tasks renal-dose-review,results-inbox,discharge-medrec,message-queue,crc-care-gap`: exit 0, 100 of 100 reproduced against the current grade, 0 live calls; the 20 contrast-ct-prep entries (made at tag final-1-t3t5, stamped) kept; replay.json holds 120 match verdicts.
 - `pnpm cli matrix --task <id> --out results/runs/final-1`, one task at a time: exit 0 for all five, oracle 1.000 and 0 judge unknowns each, every mutant failing as declared and every alternative passing; each oracle final hash "matches results/tasks-final.json" (renal-dose-review after its re-freeze on this world, below).
-- `pnpm cli audit-check results/runs/final-1`: exit 0, "33/33 failures labelled, environment 0, grader 0; every check holds" (15 contrast-ct-prep rows from P22 and the 33 rows of this read: 18 failures, 13 confirmed passes, 2 task-validity reviews).
+- `pnpm cli regrade results/runs/final-1 --grader-version 22` (R48, offline at this head): 100 regraded, 20 already at this version (contrast-ct-prep's R41 entries); outcome changed: message-queue/10 FAIL -> PASS only.
+- `pnpm cli audit-check results/runs/final-1`: exit 0, "32/32 failures labelled, environment 0, grader 0; every check holds" at the regrade (15 contrast-ct-prep rows from P22 and the 33 rows of this read: 17 failures, 14 confirmed passes, 2 task-validity reviews).
 - `pnpm cli context-budget results/runs/final-1 --task <the five>`: every budget line holds; measured per task below.
 
 renal-dose-review was frozen at W5-S on the W5-S world (bae157e6) and the W5-H5 rebuild moved the shared world before its final run, so it was re-frozen on this world (32515f6a) before the batch, with its files and grader_task_version unchanged since pilot-5a (R40; coordinator decision msg_c926371a4627 of 2026-11-06; the W5-S freeze kept under `previous` in results/tasks-final.json). Its oracle final hash on this world is pinned from `matrix --task renal-dose-review` (4a3756e9), and the freeze test's at-frozen-world clause holds.
@@ -37,9 +38,9 @@ Judged penalty reply_names_other_patient (-8, score only) met in 5 trials (0 and
 
 20/20 on {B}: Lorraine Pruitt's metformin (pt-0067, pruitt-metformin) left on hold with a Task to Dr. Okafor after her medication list and the creatinine of the stay (obs-67001) were read, in every trial; every arrival on Kim, Stark and Roberts handled. Two passes confirmed in audit.jsonl (trials 0, 1). Strictness evidence is the matrix (oracle 1.000, every mutant fails as declared).
 
-### message-queue: 1 failure (trial 10), the model's, on base items m3 and m9; lever A passed 20/20
+### message-queue: 0 failures at the R48 regrade (1 as recorded: trial 10, a grader fault, R48)
 
-Trial 10: the model saw both arrivals (Odum's St. Brigid repeat panel doc-00601, potassium 5.8; Price's corrected 10/06 creatinine obs-02219, 35% above the pre-uptitration 1.10), reasoned to the hold under RBC-RX-05 section 7, created the prescriber Tasks with the renewals as focus, corrected the messages and notes, but put the two renewals (mr-t0001, mr-t0005) on hold at steps 68-69 instead of voiding them (stopped, cancelled or entered in error), so each is still a live order the pharmacy can release without the review (the gate: "MedicationRequest/mr-t0001 is still live"). Reasoning (action form): the FAIL is right under the policy's void rule; the clinical intent matched the hold, and the 19 passes cancelled the renewals (trial 0 at steps 69-70). Webb (A): every trial searched his reports after the softened inbox row "Results (9)", found the panel report dr-00602 and re-ordered 90 days with 1 refill (the pilot-5c result holds at 20/20). G8 (lever items): not applicable, A never failed.
+Trial 10 as recorded (grader_task_version 270b7a47): the model saw both arrivals (Odum's St. Brigid repeat panel doc-00601, potassium 5.8; Price's corrected 10/06 creatinine obs-02219, 35% above the pre-uptitration 1.10), reasoned to the hold under RBC-RX-05 section 7, created the prescriber Tasks with the renewals as focus, corrected the messages and notes, but put the two renewals (mr-t0001, mr-t0005) on hold at steps 68-69 instead of voiding them (stopped, cancelled or entered in error), so each is still a live order the pharmacy can release without the review (the gate: "MedicationRequest/mr-t0001 is still live"). The gate W5F-238 verifier and ruling R48 read the policy the other way: RBC-RX-05 section 2 says holding or stopping the current order is allowed and section 7 says to correct the decision by changing, holding or stopping the order, so the on-hold renewals with the PCP Tasks focused on them (the drug's current order once it exists, the R48 addendum) are the hold the policy asks for; the rule that counted only a voided renewal and a Task on the chart order was a grader fault, fixed in tasks/message-queue/tests/grader.ts (HELD, holdTasks) with the hold routes as alternatives and a wrong-focus mutant, and the run regraded offline: trial 10 PASS, the other 119 records unchanged. Its audit row is relabelled PASS with the read kept. Webb (A): every trial searched his reports after the softened inbox row "Results (9)", found the panel report dr-00602 and re-ordered 90 days with 1 refill (the pilot-5c result holds at 20/20). G8 (lever items): not applicable, A never failed.
 
 ### crc-care-gap v2: 5 failures (trials 5, 6, 11, 12, 15), all the model's, all on base members' window reviews; lever A passed 20/20
 
@@ -51,6 +52,7 @@ Trial 4 (PASS) carries one judge "unknown" on outreach_on_topic (-3, score only)
 
 ## Faults found by this read (S5-0), and their status
 
+0. message-queue's hold rule (R48, found by the gate's clinician read of trial 10, not by this one, which had accepted the FAIL as an action-form miss): fixed, regraded over all 120 records (message-queue/10 FAIL -> PASS, nothing else), recorded in results/tasks-final.json as regrade-r48, disclosed here and in the README.
 1. results-inbox reply_names_other_patient: a judge false positive on the patient's own medication (5 trials, score only, no outcome change). Known since pilot-5a (builder-320 listed it for P23). Not fixed here (no grader edit in W5-F), not regraded; the fix is one phrase in the criterion (naproxen as Parisian's own matter, or "a medication on the patient's own list is their own matter") and a judge-calibrate pass, for P23 or the hardening list.
 2. crc-care-gap outreach_on_topic "unknown" on one PASS: the judge's quote was elided and failed the quote check (score only). For P23 (the judge prompt could ask for a verbatim quote of one sentence).
 Neither changes an outcome; E9 = E10 = 0; no GRADER_ERROR; every failure is model-attributed. No environment fault: 0 INTERNAL tool errors, 0 ENV_ERROR, 0 ENV_LIMIT.
@@ -58,9 +60,7 @@ Neither changes an outcome; E9 = E10 = 0; no GRADER_ERROR; every failure is mode
 ## Context and cost
 
 Per task (20 trials each): renal-dose-review median $1.60, p90 $1.81, mean $1.63; results-inbox $1.57 / $1.84 / $1.59; discharge-medrec $1.43 / $1.51 / $1.44; message-queue $1.45 / $1.53 / $1.45; crc-care-gap $2.26 / $2.64 / $2.32; contrast-ct-prep (P22) $1.57 / $1.85 / $1.60. Median peak context 108k-134k for the four W5 tasks, 218k for crc-care-gap; `context-budget` says every budget line holds. Dry-run projection for the batch $222.09 (p90 of the pilots x 1.15 + judge); settled $172.61.
-
-
-## Generated: `pnpm cli classes results/runs/final-1` (grader 22)
+## Generated: `pnpm cli classes results/runs/final-1` (grader 22, at the R48 regrade)
 
 grader 22
 
@@ -71,7 +71,7 @@ grader 22
 | contrast-ct-prep | 5/20 | [0.11, 0.47] | 15 | 0 | 0 | 0 | 5/20 | 0 |
 | crc-care-gap | 15/20 | [0.53, 0.89] | 5 | 0 | 0 | 0 | 20/20 | 0 |
 | discharge-medrec | 20/20 | [0.84, 1.00] | 0 | 0 | 0 | 0 | 20/20 | 0 |
-| message-queue | 19/20 | [0.76, 0.99] | 1 | 0 | 0 | 0 | 20/20 | 0 |
+| message-queue | 20/20 | [0.84, 1.00] | 0 | 0 | 0 | 0 | 20/20 | 0 |
 | renal-dose-review | 16/20 | [0.58, 0.92] | 4 | 0 | 0 | 0 | 16/20 | 0 |
 | results-inbox | 12/20 | [0.39, 0.78] | 8 | 0 | 0 | 0 | 12/20 | 0 |
 
@@ -174,12 +174,14 @@ base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
 
 ### message-queue
 
-20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 FAIL, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS
+historical run: items from records (task_version bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010, checkout 1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17)
+
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| hemolyzed_potassium | 1 (m3) | 1/20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
-| creatinine_rise | 1 (m9) | 1/20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
+| hemolyzed_potassium | 1 (m3) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| creatinine_rise | 1 (m9) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | metformin_two_series | 1 (m10) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | same_patient | 1 (m11) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | collection_date | 1 (m12) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
@@ -189,8 +191,8 @@ Outside-the-list failures: none.
 
 | event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
 |---|---|---|---|---|---|---|---|---|
-| odum-o1 | Task/task-00014 | O | yes | 1/20 | 20 | 1 | [0.76, 0.99] | #10: amended -> reasoning |
-| price-b1 | Task/task-00020 | B | yes | 1/20 | 20 | 1 | [0.76, 0.99] | #10: amended -> reasoning |
+| odum-o1 | Task/task-00014 | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| price-b1 | Task/task-00020 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
 | price-d1 | Task/task-00022 | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
 | price-b2 | Task/task-00021 | B | no | 0/0 | 0 | 0 |  |  |
 | webb-c1 | Task/task-00023 | C | no | 0/0 | 0 | 0 |  |  |
@@ -203,7 +205,7 @@ Outside-the-list failures: none.
 | B | B | Task/task-t6-m14 |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
 | reserve | A | Task/task-t6-m16 | mercer-b1 | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
 
-base_pass 19 / 20 valid trials passed every non-lever item (S5 b_t).
+base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
 
 ### renal-dose-review
 
@@ -285,6 +287,6 @@ base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
 | contrast-ct-prep | 20 | 5 | 5 | 5.00 | 16.25 |
 | crc-care-gap | 20 | 15 | 15 | 15.39 | 15.39 |
 | discharge-medrec | 20 | 20 | 20 | 20.00 | 20.00 |
-| message-queue | 20 | 19 | 19 | 18.05 | 18.05 |
+| message-queue | 20 | 20 | 20 | 20.00 | 20.00 |
 | renal-dose-review | 20 | 16 | 16 | 16.00 | 18.00 |
 | results-inbox | 20 | 12 | 12 | 12.00 | 12.00 |

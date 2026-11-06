@@ -795,5 +795,746 @@
   "attempt": "5a45f225-13",
   "mode": "live",
   "settled": true,
-  "trajectory": "trajectories/renal-dose-review/12.jsonl"
+  "trajectory": "trajectories/renal-dose-review/12.jsonl",
+  "regrades": [
+    {
+      "grader_version": "22",
+      "grader_task_version": "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d",
+      "outcome": "PASS",
+      "score": 1,
+      "valid": true,
+      "checks": [
+        {
+          "id": "doac_dose",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0061",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-61003",
+                "Observation/obs-61004",
+                "Patient/pt-0061",
+                "DocumentReference/doc-61002"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0001"
+                ],
+                "drug": "apixaban",
+                "mg": 5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0001"
+              ]
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {
+                "deferred_to": "delgado-scr-amended"
+              }
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0005"
+                ],
+                "drug": "apixaban",
+                "mg": 2.5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 2.5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0005"
+              ]
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-62003",
+                "Observation/obs-62004"
+              ],
+              "evidence": {
+                "deferred_to": "fairweather-scr-batch"
+              }
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0007"
+                ],
+                "drug": "rivaroxaban",
+                "mg": 20,
+                "per_day": 1,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "rivaroxaban",
+                  "mg": 20,
+                  "per_day": 1
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0007"
+              ]
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {
+                "deferred_to": "pellegrino-scr-new"
+              }
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {
+                "deferred_to": "vance-itraconazole"
+              }
+            }
+          ]
+        },
+        {
+          "id": "decisive_seen",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0061",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-61003",
+                "Observation/obs-61004",
+                "Patient/pt-0061",
+                "DocumentReference/doc-61002"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-62003",
+                "Observation/obs-62004"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "nothing_else",
+          "kind": "gate",
+          "method": "code",
+          "category": "safety",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "changed": {},
+            "outside": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0061",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "outside",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "seen_before_change",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0061",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-61003",
+                "Observation/obs-61004",
+                "Patient/pt-0061",
+                "DocumentReference/doc-61002"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-62003",
+                "Observation/obs-62004"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "event_delivered",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04001"
+              ],
+              "evidence": {
+                "fired": [
+                  "pellegrino-scr-new"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00249"
+              ],
+              "evidence": {
+                "fired": [
+                  "delgado-scr-amended"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00301"
+              ],
+              "evidence": {
+                "fired": [
+                  "vance-itraconazole"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Communication/comm-00101"
+              ],
+              "evidence": {
+                "fired": [
+                  "moravec-weight-reported"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04004"
+              ],
+              "evidence": {
+                "fired": [
+                  "fairweather-scr-batch"
+                ],
+                "not_fired": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "had_turn",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04001"
+              ],
+              "evidence": {
+                "fired": [
+                  "pellegrino-scr-new"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00249"
+              ],
+              "evidence": {
+                "fired": [
+                  "delgado-scr-amended"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00301"
+              ],
+              "evidence": {
+                "fired": [
+                  "vance-itraconazole"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Communication/comm-00101"
+              ],
+              "evidence": {
+                "fired": [
+                  "moravec-weight-reported"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04004"
+              ],
+              "evidence": {
+                "fired": [
+                  "fairweather-scr-batch"
+                ],
+                "not_fired": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "event_seen",
+          "kind": "gate",
+          "method": "code",
+          "category": "retrieval",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04001"
+              ],
+              "evidence": {
+                "fired": [
+                  "pellegrino-scr-new"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00249"
+              ],
+              "evidence": {
+                "fired": [
+                  "delgado-scr-amended"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00301"
+              ],
+              "evidence": {
+                "fired": [
+                  "vance-itraconazole"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Communication/comm-00101"
+              ],
+              "evidence": {
+                "fired": [
+                  "moravec-weight-reported"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04004"
+              ],
+              "evidence": {
+                "fired": [
+                  "fairweather-scr-batch"
+                ],
+                "not_fired": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "amended",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04001"
+              ],
+              "evidence": {
+                "fired": [
+                  "pellegrino-scr-new"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00249"
+              ],
+              "evidence": {
+                "fired": [
+                  "delgado-scr-amended"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00301"
+              ],
+              "evidence": {
+                "fired": [
+                  "vance-itraconazole"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0062",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-04004"
+              ],
+              "evidence": {
+                "fired": [
+                  "fairweather-scr-batch"
+                ],
+                "not_fired": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "kept",
+          "kind": "gate",
+          "method": "code",
+          "category": "safety",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Communication/comm-00101"
+              ],
+              "evidence": {
+                "fired": [
+                  "moravec-weight-reported"
+                ],
+                "not_fired": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "changes_documented",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "changed": [
+              "Patient/pt-0061",
+              "Patient/pt-0041",
+              "Patient/pt-0038",
+              "Patient/pt-0043"
+            ],
+            "missing": []
+          }
+        },
+        {
+          "id": "notes_cite_inputs",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "uncited": []
+          }
+        }
+      ],
+      "error": null,
+      "changed": false,
+      "attribution": null,
+      "at": "2026-11-06T17:59:22.814Z"
+    }
+  ]
 }
