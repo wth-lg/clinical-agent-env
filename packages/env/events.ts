@@ -56,6 +56,10 @@ export interface EventSpec {
   // '<Type>/<id>.<path>': a field of one of the resources set to the arrival stamp, e.g.
   // 'Observation/obs-x.issued' or 'DocumentReference/doc-x.date'.
   stampFields: readonly string[];
+  // The inbox Task's description in place of ARRIVAL_SUMMARY[focus type]: one line that names no
+  // deciding fact (R29), such as a pre-declared softening that names a count, "Outside results (2)"
+  // (plan-amendment-w5 S5-3; message-queue webb-a1 from v3, R45). Absent: the generic line.
+  summary?: string;
 }
 
 // One fire, as session.fired keeps it and the env_event trajectory event carries it.
@@ -116,6 +120,7 @@ export function checkSpec(spec: EventSpec): void {
   if (focus === undefined) throw new Error(`${at}: no resources`);
   if (!Object.hasOwn(ARRIVAL_SUMMARY, focus.resourceType)) throw new Error(`${at}: the first resource is a ${focus.resourceType}; it must be one of ${Object.keys(ARRIVAL_SUMMARY).join(', ')}`);
   if (patientOf(focus) === undefined) throw new Error(`${at}: the first resource has no Patient subject`);
+  if (spec.summary !== undefined && (typeof spec.summary !== 'string' || spec.summary.trim() === '' || spec.summary.includes('\n'))) throw new Error(`${at}: summary must be a non-empty line`);
   const keys = spec.resources.map(keyOf);
   if (new Set(keys).size !== keys.length) throw new Error(`${at}: a resource appears twice (${keys.join(', ')})`);
   for (const f of spec.stampFields) stampTarget(spec, f);
@@ -183,7 +188,7 @@ function fire(ctx: WriteContext, spec: EventSpec): void {
     for: { reference: patientOf(focus)! },
     authoredOn: stamp,
     owner: { reference: USER },
-    description: ARRIVAL_SUMMARY[type],
+    description: spec.summary ?? ARRIVAL_SUMMARY[type],
   };
   const all = [...resources, inbox];
   const keys = all.map(keyOf);

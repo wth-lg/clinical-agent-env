@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import type { Bundle, DocumentReference, Observation, Resource } from '@medplum/fhirtypes';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { clock, NOW_MS } from '../clock.ts';
-import { activeSpecs, ARRIVAL_SUMMARY, FINISH_GUARD_MESSAGE, type EventSpec } from '../events.ts';
+import { activeSpecs, ARRIVAL_SUMMARY, checkSpec, FINISH_GUARD_MESSAGE, type EventSpec } from '../events.ts';
 import { parseNdjson } from '../fixture-source.ts';
 import { stateHash } from '../hash.ts';
 import { Store } from '../store.ts';
@@ -188,6 +188,19 @@ describe('visibility', () => {
     });
     // R29: the summary holds no deciding atom.
     expect(ARRIVAL_SUMMARY.DocumentReference).not.toMatch(/creatinine|2\.4/i);
+  });
+
+  // A spec may name its own inbox summary (plan-amendment-w5 S5-3: the pre-declared softening
+  // "Outside results (2)", a count, never a deciding fact, R29); the Task's description and the
+  // list_inbox row carry it in place of the focus type's generic line. An empty one is refused.
+  it("a spec's own summary replaces the generic line on its inbox Task and in list_inbox; an empty one is refused", () => {
+    const softened: EventSpec = { ...afterSeen, id: 'evt-s', summary: 'Outside results (2)' };
+    const ctx = fresh([softened]);
+    ok(call(ctx, 'fhir_read', { resource_type: 'Patient', id: 'pt-0002' }));
+    const inbox = ok(call(ctx, 'list_inbox', { queue: 'results', count: 50 })) as { entries: Array<Record<string, unknown>> };
+    expect(inbox.entries.at(-1)).toMatchObject({ task: 'Task/inbox-a0001', focus: 'DocumentReference/doc-evt-test-1', summary: 'Outside results (2)' });
+    expect((ctx.world as Store).get('Task', 'inbox-a0001')).toMatchObject({ description: 'Outside results (2)' });
+    expect(() => checkSpec({ ...afterSeen, summary: '' })).toThrow(/evt-o: summary must be a non-empty line/);
   });
 
   it('a new result and a message go to their queues with generic summaries', () => {

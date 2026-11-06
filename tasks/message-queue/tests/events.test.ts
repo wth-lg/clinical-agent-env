@@ -107,6 +107,15 @@ describe('message-queue events', () => {
     expect(Object.values(ARRIVAL_SUMMARY)).toEqual(['New result', 'New result', 'Outside document received', 'New message']);
   });
 
+  // S5-3's pre-declared softening, applied once as v3 (plan-amendment-w5 S5-3; R45 after pilot-5b,
+  // where A caught 1 of 8 and the fairness audit found it a fair trap): webb-a1's inbox Task says
+  // "Outside results (2)", the count of outside results the packet files (the potassium notified and
+  // the panel filed silently), still no deciding fact (R29). Every other arrival keeps the generic
+  // summary of its focus type.
+  it("webb-a1's inbox summary is the pre-declared softening 'Outside results (2)' (S5-3, R45, v3); every other spec's is generic", () => {
+    for (const s of SPECS) expect(s.summary, s.id).toBe(s.id === 'webb-a1' ? 'Outside results (2)' : undefined);
+  });
+
   it('the policy carries the shared arrivals sentence word for word', async () => {
     const task = await base.get(ID);
     expect(task.policies.map((p) => p.text).join('\n')).toContain(POLICY_SENTENCE);

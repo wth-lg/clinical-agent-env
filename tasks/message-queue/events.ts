@@ -8,8 +8,9 @@
 // trial that skips a patient never fires its events and fails that patient's items on their base
 // gates (brief addendum 2; tests/mutants.ts patient_skipped_webb). The inbox Task says only "New
 // result", "Outside document received" or "New message" (packages/env/events.ts ARRIVAL_SUMMARY): no
-// deciding fact is in it (R29). Results and outside documents go to the results queue, the resent
-// request to the messages queue.
+// deciding fact is in it (R29); webb-a1's alone says "Outside results (2)", the pre-declared S5-3
+// softening applied once as v3 (R45: a count, still no deciding fact). Results and outside
+// documents go to the results queue, the resent request to the messages queue.
 //
 // Each event cites the RBC-RX-05 line that decides it (policy/rbc-rx-05.md). Amend events change the
 // action the policy gives; the lure does not (R19). policy.ts derives the same answer on the chart
@@ -437,12 +438,15 @@ export const SPECS: readonly EventSpec[] = [
   },
   { id: 'webb-b2', item: `Task/${id('task-t6-m13')}`, class: 'B', trigger: wrote('pt-0031'), resources: [webbB2], stampFields: [] },
   // W5-E A: the focus is the potassium; the panel is the second resource, the other analytes and
-  // the eGFR follow.
+  // the eGFR follow. From v3 (plan-amendment-w5 S5-3, R45 after pilot-5b's 1 of 8) its inbox Task
+  // says "Outside results (2)": the count of outside results the packet files (the potassium
+  // notified, the panel filed silently), no deciding fact (R29).
   {
     id: 'webb-a1',
     item: `Task/${id('task-t6-m12')}`,
     class: 'A',
     trigger: wrote('pt-0031'),
+    summary: 'Outside results (2)',
     resources: [webbA1K, webbA1Panel, ...webbA1Rest, webbA1Egfr],
     stampFields: [webbA1K, webbA1Panel, ...webbA1Rest, webbA1Egfr].map((r) => `${r.resourceType}/${r.id}.issued`),
   },
