@@ -171,7 +171,8 @@ const passRates = (d: Data) => {
   // k/n at the current grade; where a regrade moved it, the count as recorded beside it with the
   // regrade's tag (results/tasks-final.json), so the page states both (gate FINAL-238 F1).
   const counted = (t: TaskSummary, regrades: Array<{ at: string }> | undefined) => {
-    const recorded = t.recorded_outcomes?.['PASS'] ?? t.passes;
+    // recorded_outcomes present and without PASS: no pass was recorded (delta gate FINAL-238-2 n1).
+    const recorded = t.recorded_outcomes === undefined || t.recorded_outcomes === null ? t.passes : (t.recorded_outcomes['PASS'] ?? 0);
     if (recorded === t.passes) return `${t.passes}/${t.trials}`;
     return `${t.passes}/${t.trials} (${recorded}/${t.trials} as recorded; ${escapeHtml(regrades?.at(-1)?.at ?? 'regraded')})`;
   };
