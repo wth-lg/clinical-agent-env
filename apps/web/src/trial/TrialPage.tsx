@@ -18,7 +18,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
-import { fetchEvents, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
@@ -123,7 +123,7 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
   if (r.kind !== 'trial') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">{r.message}</Notice></Frame>;
-  return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} frozen={results.frozen[r.trial.task] ?? null} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
+  return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} frozen={frozenFor(results.frozen, r.trial.task, r.trial.record.env_version)} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
 }
 
 // The run's place in words: the official run, a superseded version of one of its tasks (R42), or a pilot.
