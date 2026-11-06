@@ -755,5 +755,39 @@
     "grader_error": 0,
     "model": "claude-opus-5-5"
   },
-  "violations": []
+  "violations": [],
+  "judge_agreement": {
+    "n_judge": 53,
+    "judge_agree": 48,
+    "judge_agreement": 0.90566,
+    "n_extract": 0,
+    "extract_agree": 0,
+    "extract_agreement": null,
+    "extract_cached": 0,
+    "labels": "/Users/ggs/orca/workspaces/clinical-agent-env/p23-data/results/judge-calibration/hand-labels.jsonl"
+  },
+  "kappa": {
+    "double_label": {
+      "n": 20,
+      "agree": 20,
+      "agreement": 1,
+      "kappa": 1,
+      "categories": [
+        "model"
+      ],
+      "note": "one category on both sides (model): chance agreement is 1, kappa taken as 1",
+      "seed": 323,
+      "sample_n": 20
+    },
+    "builder_vs_auditor": {
+      "n": 35,
+      "agree": 35,
+      "agreement": 1,
+      "kappa": 1,
+      "categories": [
+        "model",
+        "pass"
+      ]
+    }
+  }
 }
