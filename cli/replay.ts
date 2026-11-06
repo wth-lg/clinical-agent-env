@@ -36,8 +36,17 @@
 // final-1-t3t5 writes one): each unstamped entry of a settled record whose outcomes are the
 // record's gets its named verdict and replayed_at {that commit, dirty null, the manifest's
 // world for the task, the record's env_version}; an entry whose outcomes differ stops the
-// command with nothing written; a stamped entry and an entry of no settled record are left as
-// they are. No trial is replayed; --stamp takes no --tasks or --overwrite.
+// command with nothing written, and so does a record of a task results/tasks-final.json freezes
+// unless the commit is one of that task's replay_at commits (its entry's or its superseded
+// sub-entry's) and the record is at that freeze's env_version (a later version under the same
+// trial name has no verdict from there, verifier-phase-P17i-TWOW-229-3-1 m1, STAMP-231-1 S1);
+// a commit the repository does not hold is refused too. A stamped entry and an entry of no
+// settled record are left as they are. No trial is replayed; --stamp takes no --tasks or
+// --overwrite.
+//
+// A trajectory that started from another world than the checkout's (its initial state hash is
+// not the world's, packages/core/run.ts worldMismatch) is a world_mismatch too, with the same
+// reproduce pointer as the env-changed verdict (m2).
 //
 // --tasks <id,...> replays only those tasks' settled records (each must have some) and merges
 // into replay.json: their entries are made or kept as above, every other entry is kept as it is,
@@ -57,6 +66,7 @@
 //      Reproduce has the commands.
 // Exit 0 when every trial replayed here matches and every kept verdict is a match; 1 otherwise
 // (a world_mismatch too); 2 on a usage error.
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -77,6 +87,8 @@ export interface Deps {
   out: (line: string) => void;
   err: (line: string) => void;
   tasks?: TaskSource;
+  // results/tasks-final.json; the checkout's by default.
+  tasksFinal?: string;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
@@ -87,14 +99,17 @@ export type Regraded = { stored: StoredRecord; grade: Grade } | { stored: Stored
 // Grades each settled record of a run again from its trajectory and judge cache. compareResults:
 // also compare each re-executed call with its recorded tool_result (replay, on records of this
 // checkout's env_version; regrade leaves it off).
-export async function regradeRun(dir: string, tasks: TaskSource, records = settledRecords(dir), compareResults = false): Promise<Regraded[]> {
+// reproduce: where a record of another world is reproduced, by task, for the world-mismatch
+// error (packages/core/run.ts): replay gives the freeze's replay commit or the run directory's
+// README (reproduceFor); regrade leaves it to the error's default, results/<run_id>/README.md.
+export async function regradeRun(dir: string, tasks: TaskSource, records = settledRecords(dir), compareResults = false, reproduce?: (task: string, env: string | null | undefined) => string): Promise<Regraded[]> {
   const { world, definitions } = repoWorld();
   const out: Regraded[] = [];
   for (const stored of records) {
     const r = stored.record;
     try {
       const events = parseTrajectory(readFileSync(trajectoryOf(dir, r), 'utf8'));
-      out.push({ stored, grade: await gradeTrajectory(r.task_id, { tasks, world, checks: await taskChecks(r.task_id), events, record: r, definitions, compareResults }) });
+      out.push({ stored, grade: await gradeTrajectory(r.task_id, { tasks, world, checks: await taskChecks(r.task_id), events, record: r, definitions, compareResults, ...(reproduce === undefined ? {} : { reproduce: reproduce(r.task_id, r.env_version) }) }) });
     } catch (e) {
       if (e instanceof JudgeCacheMiss) out.push({ stored, miss: e.message });
       else out.push({ stored, error: (e as Error).message });
@@ -118,14 +133,31 @@ export { trialName };
 // regrade prints the same environment and judge-miss reasons; the match rule is packages/core/replay.ts.
 export { envChanged, judgeMissed };
 
-// Where a frozen task's records are reproduced (results/tasks-final.json replay_at, R37), by
-// task; {} without the file or the field.
-function replayAtOf(): Record<string, { tag: string; commit: string }> {
-  const file = join(REPO, 'results/tasks-final.json');
+// A task's freeze in results/tasks-final.json: its entry, or its superseded sub-entry (a task
+// with a version pending, builder-316), each with the env_version and replay_at it records.
+type Freeze = { env_version?: unknown; replay_at?: { tag?: unknown; commit?: unknown } };
+function freezesOf(file: string): Record<string, Freeze[]> {
   if (!existsSync(file)) return {};
-  const doc = JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, { replay_at?: { tag?: unknown; commit?: unknown } }> };
-  return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, t]) => (typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? [[id, { tag: t.replay_at.tag, commit: t.replay_at.commit }]] : [])));
+  const doc = JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, Freeze & { superseded?: Freeze }> };
+  return Object.fromEntries(Object.entries(doc.tasks ?? {}).map(([id, t]) => [id, [t, ...(t.superseded ? [t.superseded] : [])]]));
 }
+
+// A freeze with both a replay_at (tag and commit) and an env_version.
+type ReplayFreeze = { tag: string; commit: string; env_version: string };
+const replayFreezes = (fs: readonly Freeze[]): ReplayFreeze[] =>
+  fs.flatMap((x) => (typeof x.replay_at?.tag === 'string' && typeof x.replay_at.commit === 'string' && typeof x.env_version === 'string' ? [{ tag: x.replay_at.tag, commit: x.replay_at.commit, env_version: x.env_version }] : []));
+
+// Where a record of a frozen task is reproduced (results/tasks-final.json replay_at, R37): the
+// freeze whose env_version is the record's, entry or superseded, by task; a record of another
+// version of the task (v2 under a v2-pending entry whose superseded sub-entry freezes v1) has
+// none, and is pointed at the run directory's README (verifier-phase-P17i-STAMP-231-1 m1).
+function replayAtOf(file: string): (task: string, env: string | null | undefined) => { tag: string; commit: string } | undefined {
+  const freezes = freezesOf(file);
+  return (task, env) => replayFreezes(freezes[task] ?? []).find((f) => f.env_version === env);
+}
+
+// Whether the repository holds the commit.
+const commitExists = (commit: string): boolean => spawnSync('git', ['-C', REPO, 'cat-file', '-e', `${commit}^{commit}`], { encoding: 'utf8' }).status === 0;
 
 // replay.json's entries as the file holds them; {} without the file.
 function priorEntries(dir: string): Record<string, ReplayVerdict> {
@@ -141,6 +173,11 @@ function stampFile(dir: string, commit: string, deps: Deps): number {
     deps.err(`replay: ${file} is missing; nothing to stamp`);
     return 1;
   }
+  if (!commitExists(commit)) {
+    deps.err(`replay: --stamp ${commit}: no such commit in this repository; nothing written`);
+    return 1;
+  }
+  const freezes = freezesOf(deps.tasksFinal ?? join(REPO, 'results/tasks-final.json'));
   const manifest = readManifest(dir);
   const prior = priorEntries(dir);
   const records = new Map(settledRecords(dir).map((s) => [trialName(s.record), s.record]));
@@ -165,6 +202,22 @@ function stampFile(dir: string, commit: string, deps: Deps): number {
     if (why !== null) {
       refused.push(`replay: ${name}: not stamped: its entry is not this record's verdict (${why})`);
       continue;
+    }
+    // A frozen task's records were replayed at its replay_at commits alone (entry or superseded),
+    // each at that freeze's env_version: any other commit, or a record at another env_version (a
+    // later version under the same trial name), has no verdict from there (TWOW-229-3-1 m1,
+    // STAMP-231-1 S1).
+    const frozen = replayFreezes(freezes[r.task_id] ?? []);
+    if (frozen.length > 0) {
+      const at = frozen.find((f) => f.commit === commit);
+      if (at === undefined) {
+        refused.push(`replay: ${name}: not stamped: results/tasks-final.json freezes ${r.task_id}, and ${commit.slice(0, 12)} is not one of its replay_at commits (${frozen.map((f) => f.commit.slice(0, 12)).join(', ')}): no verdict of its records was made there`);
+        continue;
+      }
+      if (r.env_version !== at.env_version) {
+        refused.push(`replay: ${name}: not stamped: its record is at env_version ${r.env_version ?? '(none)'}, and results/tasks-final.json records ${r.task_id} at commit ${commit.slice(0, 12)} at ${at.env_version}: no verdict of this record was made there`);
+        continue;
+      }
     }
     const world = runWorldHash(manifest, r.task_id);
     if (world === null) {
@@ -261,7 +314,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const current = checkoutVersions(tasks);
   const git = gitState(REPO);
   const { worldHash } = repoWorld();
-  const replayAt = replayAtOf();
+  const replayAt = replayAtOf(deps.tasksFinal ?? join(REPO, 'results/tasks-final.json'));
+  // Where a record of another world is reproduced: the replay commit of the freeze at the
+  // record's env_version for a frozen task (results/tasks-final.json replay_at), else the run
+  // directory's README (R37).
+  const reproduceFor = (task: string, env: string | null | undefined) => {
+    const at = replayAt(task, env);
+    return at === undefined ? reproducePointer(dir) : `replay it at tag ${at.tag} (${at.commit.slice(0, 12)}, results/tasks-final.json replay_at): pnpm cli replay <copy of the run> at that commit, then --tasks the other tasks at this checkout (cli/replay.ts header)`;
+  };
   const stamp = (now: TaskVersions): ReplayedAt => ({ commit: git.sha, dirty: git.dirty === null ? null : git.dirty.length > 0, world_hash: worldHash, env_version: now.env_version });
   const same: StoredRecord[] = [];
   const stamps = new Map<string, ReplayedAt>();
@@ -279,9 +339,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       continue;
     }
     stamps.set(r.task_id, stamp(now));
-    const at = replayAt[r.task_id];
-    const reproduce = at === undefined ? reproducePointer(dir) : `replay it at tag ${at.tag} (${at.commit.slice(0, 12)}, results/tasks-final.json replay_at): pnpm cli replay <copy of the run> at that commit, then --tasks the other tasks at this checkout (cli/replay.ts header)`;
-    const changed = replayEnvVerdict(r, now.env_version, reproduce);
+    const changed = replayEnvVerdict(r, now.env_version, reproduceFor(r.task_id, r.env_version));
     if (changed === null) {
       same.push(stored);
       continue;
@@ -298,7 +356,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     trials[name] = { ...changed, replayed_at: stamp(now) };
   }
-  for (const res of await regradeRun(dir, tasks, same, true)) {
+  for (const res of await regradeRun(dir, tasks, same, true, reproduceFor)) {
     const name = trialName(res.stored.record);
     const { note, ...v } = replayVerdict(res.stored.record, res);
     if (note !== undefined) notes.push(`replay: ${name}: ${note}`);

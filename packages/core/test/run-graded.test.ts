@@ -266,6 +266,10 @@ describe('regrade checks the hashes', () => {
     const otherWorld = await regrade({ ...result.record, state_hash: { ...result.record.state_hash, initial: 'f'.repeat(64) } });
     expect(otherWorld).toMatchObject({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader', checks: [] });
     expect(otherWorld.error!.message).toMatch(/^world mismatch: run at f{64}, checkout at [0-9a-f]{64}; reproduce at the commit in results\/\S+\/README\.md$/);
+    // m2 (verifier-phase-P17i-TWOW-229-3-1): the caller names where the run is reproduced (its run
+    // directory's README, cli/replay.ts reproducePointer); the default stays the run_id form.
+    const pointed = await gradeTrajectory('_toy', { tasks, world, checks: CHECKS, events, record: { ...result.record, state_hash: { ...result.record.state_hash, initial: 'f'.repeat(64) } }, reproduce: 'reproduce at the commit in results/runs/final-1/README.md' });
+    expect(pointed.error!.message).toBe(`world mismatch: run at ${'f'.repeat(64)}, checkout at ${otherWorld.error!.message.match(/checkout at ([0-9a-f]{64})/)![1]}; reproduce at the commit in results/runs/final-1/README.md`);
     const otherFinal = await regrade({ ...result.record, state_hash: { ...result.record.state_hash, final: 'e'.repeat(64), replay_final: 'e'.repeat(64) } });
     expect(otherFinal).toMatchObject({ outcome: 'GRADER_ERROR', valid: false });
     expect(otherFinal.error!.message).toMatch(/replayed state hash .* is not the record's final e{64}/);
