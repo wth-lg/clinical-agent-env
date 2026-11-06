@@ -283,6 +283,31 @@ describe('docs-check', () => {
     const r3 = check(regenerated(root3));
     expect(r3.status).toBe(1);
     expect(r3.stdout).toMatch(/number in prose: "12 of 20"/);
+    // A rate after a count-like noun, or one followed by a count noun or verb, is a number
+    // (verifier HARD3-237-1 S1).
+    for (const [text, shown] of [['For this task 14 of 20 trials passed.', '14 of 20'], ['In the pilot 12 of 20 trials passed.', '12 of 20'], ['On the last day 9 of 20 runs passed.', '9 of 20'], ['In step 3 of 20 passed.', '3 of 20'], ['Of page 2 of 20 were kept.', '2 of 20']]) {
+      const root4 = docsRoot();
+      edit(root4, 'docs/findings.md', /\n\n/, `\n\n${text}\n\n`);
+      const r4 = check(regenerated(root4));
+      expect(r4.status, text).toBe(1);
+      expect(r4.stdout, text).toMatch(new RegExp(`number in prose: "${shown}"`));
+    }
+  });
+
+  // verifier HARD3-237-1 m1: only whitespace, a hyphen (ASCII, U+2010, U+2011) or markdown
+  // emphasis may stand between a claim's words, so "At first, clinical staff" is no claim.
+  it('a claim\'s words separated by punctuation are not a claim phrase (HARD3-237-1 m1)', () => {
+    for (const text of ['At first, clinical staff reviewed each trial.', 'The harbor. Compatible tools are listed.', 'It supports (MCP-shaped) tool definitions.']) {
+      const root = docsRoot();
+      edit(root, 'docs/findings.md', /\n\n/, `\n\n${text}\n\n`);
+      const r = check(regenerated(root));
+      expect(errors(r), text).toEqual([]);
+      expect(r.status, text).toBe(0);
+      const root2 = regenerated(docsRoot());
+      edit(root2, 'README.md', /\n## Links/, `\n${text}\n\n## Links`);
+      const r2 = check(root2);
+      expect(errors(r2).filter((l) => /claim phrase/.test(l)), text).toEqual([]);
+    }
   });
 
   it('reports a claim phrase at its own source line after entities in the text before it (R3-F4e)', () => {

@@ -51,7 +51,8 @@ const columnLabel = (run: RunData, all: readonly string[] | null): string => {
 // smoke runs by name, then each superseded task version beside the official run that replaced
 // it, then the official run, "(final)" only once it covers every task of the environment (the
 // task list, as the band line) at the final sample, else "(official, in progress)"): k/n and the
-// verdict in each cell.
+// verdict in each cell; a probe or smoke run's cell holds k/n alone, the band being no measure
+// of it (HARD3-237-1 m3).
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   const list = useTaskList().tasks;
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
@@ -83,7 +84,8 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
                     <td key={c.run.runId} data-testid="history-cell" data-run={c.run.runId} className="py-1.5 pr-3 align-top">
                       {c.rates === null ? <span className="text-xs text-ink-muted">blocked</span>
                         : r === undefined || r.trials === 0 ? <span className="text-xs text-ink-muted">none</span>
-                          : <><span className="whitespace-nowrap">{r.passes}/{r.trials}</span> <Verdict task={id} passes={r.passes} trials={r.trials} className="block" /></>}
+                          : c.run.kind === 'probe' || c.run.kind === 'smoke' ? <span className="whitespace-nowrap">{r.passes}/{r.trials}</span>
+                            : <><span className="whitespace-nowrap">{r.passes}/{r.trials}</span> <Verdict task={id} passes={r.passes} trials={r.trials} className="block" /></>}
                     </td>
                   );
                 })}

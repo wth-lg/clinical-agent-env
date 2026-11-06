@@ -17,12 +17,13 @@
 //     `<!-- docs-check:end-allow-numbers -->` (each region is printed as an info line, so a
 //     reviewer sees what was allowed); Unicode slashes and percent signs and a no-break space
 //     read as the ASCII ones; an ordinal "step 2 of 3" (ORDINAL: step, part, page, round, phase,
-//     stage, section, chapter, figure, table, item, turn, day, week, task, trial, pilot) is not a
-//     number. Limit: a rate written as a decimal ("0.95"), as "N percent" or in words
+//     stage, section, chapter, figure, table, item, turn, not followed by a count noun or verb)
+//     is not a number. Limit: a rate written as a decimal ("0.95"), as "N percent" or in words
 //     ("ninety-five percent") is not caught, and the reviewer reads for those;
 //   - none of the claim phrases appears (CLAIM_PATTERNS: "MCP support" or "supports MCP",
-//     "Harbor compatible" with any separator, "first clinical", "first FHIR agent benchmark",
-//     "fully deterministic"), reported at the source line of the raw HTML index;
+//     "Harbor compatible", "first clinical", "first FHIR agent benchmark", "fully deterministic",
+//     with whitespace, a hyphen or markdown emphasis between the words), reported at the source
+//     line of the raw HTML index;
 //   - the writeup loads nothing from outside: no script, link, img, iframe, object or embed
 //     element, no @import or url() in its style, and every theme token of apps/web with its value;
 //   - README.md has the sections Quick start, Key handling, Run from the CLI and Links, and only
@@ -63,12 +64,17 @@ const K_OF_N_WORDS = /\b\d+\s+(?:out\s+)?of\s+(?:the\s+)?\d+\b/;
 // no-break space as a space (R3-F4a).
 const normalizeSigns = (s: string) => s.replace(/[\u2044\u2215\uFF0F]/g, '/').replace(/[\uFF05\u066A\uFE6A]/g, '%').replace(/\u00A0/g, ' ');
 // An ordinal "step 2 of 3" is a place, not a rate (R3-F4d): blanked before the number rules run.
-const ORDINAL = /\b(?:step|part|page|round|phase|stage|section|chapter|figure|table|item|turn|day|week|task|trial|pilot)\s+\d+\s+(?:out\s+)?of\s+(?:the\s+)?\d+\b/gi;
+// Only nouns that never count trials (not task, trial, pilot, day), and not when a count noun or
+// verb follows ("step 3 of 20 passed" is a rate; verifier HARD3-237-1 S1).
+const ORDINAL = /\b(?:step|part|page|round|phase|stage|section|chapter|figure|table|item|turn)\s+\d+\s+(?:out\s+)?of\s+(?:the\s+)?\d+\b(?!\s+(?:trials?|runs?|tasks?|passed|failed|were)\b)/gi;
 const blankOrdinals = (s: string) => s.replace(ORDINAL, (m) => ' '.repeat(m.length));
 // Phrases the writeup and README may not make as claims (researcher-16, the do-not-claim list),
-// with their variants (R3-F4b): any run of non-word characters between the words, so a hyphen, a
-// no-break hyphen, markdown emphasis and the blanks a stripped tag leaves all match.
-const CLAIM_PATTERNS = [/MCP\W+support/gi, /supports\W+MCP/gi, /Harbor\W+compatible/gi, /first\W+clinical/gi, /first\W+FHIR\W+agent\W+benchmark/gi, /fully\W+deterministic/gi];
+// with their variants (R3-F4b): between the words, whitespace (the blanks a stripped tag or a
+// padded entity leaves too), a hyphen (ASCII, U+2010, U+2011) or markdown emphasis, never other
+// punctuation ("At first, clinical staff" is no claim; HARD3-237-1 m1).
+const GAP = '[\\s\\-\\u2010\\u2011*_]+';
+const claim = (...words: string[]) => new RegExp(words.join(GAP), 'gi');
+const CLAIM_PATTERNS = [claim('MCP', 'support'), claim('supports', 'MCP'), claim('Harbor', 'compatible'), claim('first', 'clinical'), claim('first', 'FHIR', 'agent', 'benchmark'), claim('fully', 'deterministic')];
 // A dollar amount in any form: a dollar sign (its entities and U+FF04 too) before a number, or a
 // number before USD or dollars, or USD before a number, a no-break space or &nbsp; as the gap
 // (verifier P24A-227-2 F6, P24A-227-3 R3-F4c).

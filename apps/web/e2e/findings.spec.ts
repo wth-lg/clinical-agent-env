@@ -141,10 +141,12 @@ test.describe('the real results build: pilot runs, no official run', () => {
       const kind = run.startsWith('probe-') ? 'probe' : 'smoke';
       const col = page.locator(`[data-testid="history-run"][data-kind="${kind}"]`, { hasText: run });
       await expect(col).toHaveText(`${run} (${kind}, not counted)`);
-      // Its cells hold a count or say so, never a blank.
+      // Its cells hold a count alone, or say so, never a blank and never a band verdict: the run
+      // is no pilot and the band is not its measure (HARD3-237-1 m3).
       const cells = page.locator(`[data-testid="history-cell"][data-run="${run}"]`);
       await expect(cells.first()).toBeVisible();
-      for (const text of await cells.allTextContents()) expect(text).toMatch(/^\d+\/\d+|^none$|^blocked$/);
+      for (const text of await cells.allTextContents()) expect(text).toMatch(/^\d+\/\d+$|^none$|^blocked$/);
+      await expect(cells.getByTestId('band-verdict')).toHaveCount(0);
     }
     await expect(page.getByTestId('difficulty-history')).toContainText('A probe or smoke run, labelled so, tested a grader or the pipeline before a pilot; it is not a pilot and is not counted either.');
   });

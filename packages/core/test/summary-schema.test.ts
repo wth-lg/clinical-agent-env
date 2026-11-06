@@ -89,7 +89,10 @@ describe('--require', () => {
   // pass-min and pass-max still name counts plainly.
   it('refuses a count band whose bounds are both 0 or 1 as ambiguous, and names both plain forms', () => {
     for (const v of ['0-1', '0-0', '1-1']) {
-      expect(() => parseRequire(`band=${v}`)).toThrow(new RegExp(`band=${v}: ambiguous.*0\\.0-1\\.0.*pass-min=${v.split('-')[0]},pass-max=${v.split('-')[1]}`));
+      const [a, b] = v.split('-');
+      // The message names each plain form once (HARD3-237-1 m5): the proportion with a decimal
+      // point and the count aliases.
+      expect(() => parseRequire(`band=${v}`)).toThrow(new RegExp(`^--require band=${v}: ambiguous, counts or proportions; write a proportion with a decimal point \\(${a}\\.0-${b}\\.0\\) or counts as pass-min=${a},pass-max=${b}$`));
     }
     expect(parseRequire('band=0-20')).toEqual({ band: [0, 20] });
     expect(parseRequire('band=1-7')).toEqual({ band: [1, 7] });
