@@ -1,0 +1,46 @@
+{
+  "env_git_sha": "40d31865eaf521a3279ff88306d2c552619e7bee",
+  "env_dirty": false,
+  "run_id": "pilot-5c",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+  "api_version": "2026-10-21",
+  "trials": 8,
+  "task_versions": {
+    "results-inbox": "3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2",
+    "message-queue": "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
+  },
+  "env_versions": {
+    "results-inbox": "e69093009b4e9bc112a7c35ea4c292431ed741c3ddc6d2b4789db2fca6f433bf",
+    "message-queue": "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
+  },
+  "grader_task_versions": {
+    "results-inbox": "ffee13db89e555206d518851f848a5641d43a7afa7499f0bec99e412f46ff00e",
+    "message-queue": "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
+  },
+  "world_hashes": {
+    "results-inbox": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "message-queue": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
+  },
+  "batches": [
+    {
+      "batch_id": "7042d5cb-7072-48d7-911e-a473b1e639c2",
+      "started": "2026-11-06T10:47:53.705Z",
+      "ended": "2026-11-06T11:04:26.194Z",
+      "projection": 111.39999999999999,
+      "remaining": 16,
+      "settled": 16,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "40d31865eaf521a3279ff88306d2c552619e7bee",
+      "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+      "tasks": [
+        "message-queue",
+        "results-inbox"
+      ]
+    }
+  ]
+}
