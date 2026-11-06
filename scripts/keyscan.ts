@@ -4,7 +4,10 @@
 //   pnpm keyscan --history [paths...]    every commit on every ref (`git log -p --all`), plus paths
 //   pnpm keyscan --range A..B [paths...] the commits in A..B (a bare revision means all its history)
 //
-// A hit is an sk-ant-shaped string or, when ANTHROPIC_API_KEY is set, its exact value.
+// A hit is an sk-ant-shaped string or, when ANTHROPIC_API_KEY is set, its exact value. In a
+// working-tree file under results/ or docs/, an absolute home path (/Users/ or /home/) is a hit
+// too (labelled file:line: absolute home path): a committed run or document must name files by
+// repository paths, never by a machine's home directory (gate R48-238).
 // Every file is scanned byte for byte, binary or not; a .gz file is also scanned decompressed
 // (labelled file.gz(gunzip):line), and a base64 "data" field, the way FHIR attachments carry a
 // note, is also scanned decoded (labelled file:line(base64)). A symlink in a build directory that
@@ -25,6 +28,9 @@ const KEY_SHAPE = /sk-ant-[A-Za-z0-9_-]{20,}/;
 // Build and test output that .gitignore hides from `git ls-files` but that can still ship or be uploaded.
 const BUILD_DIRS = ['apps/web/dist', 'apps/web/test-results', 'apps/web/playwright-report'];
 const SKIP_DIRS = new Set(['node_modules', '.git']);
+// The directories whose files may hold no absolute home path, and the shape of one.
+const HOME_PATH_DIRS = ['results', 'docs'];
+const HOME_PATH = /\/(?:Users|home)\//;
 const MIN_ENV_KEY_LENGTH = 8;
 // A JSON "data" string of base64, e.g. Attachment.data in an NDJSON resource.
 const BASE64_DATA = /"data"\s*:\s*"([A-Za-z0-9+/]+={0,2})"/g;
@@ -159,6 +165,11 @@ function scanFile(root: string, path: string, label: string, matches: (line: str
   if (!stat?.isFile()) return;
   const bytes = readFileSync(path);
   scanText(bytes.toString('latin1'), label, matches, hits);
+  if (HOME_PATH_DIRS.some((d) => label === d || label.startsWith(`${d}/`) || label.startsWith(`${d}${sep}`))) {
+    bytes.toString('utf8').split('\n').forEach((line, i) => {
+      if (HOME_PATH.test(line)) hits.push(`${label}:${i + 1}: absolute home path`);
+    });
+  }
   if (path.endsWith('.gz')) {
     let text: string;
     try {

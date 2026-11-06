@@ -79,6 +79,22 @@ describe('keyscan working tree and build output', () => {
     expectHit(keyscan(repo), 'apps/web/dist/data/world.ndjson.gz(gunzip):1', fakeKey('N'));
   });
 
+  it('flags an absolute home path (/Users/ or /home/) in a file under results/ or docs/, and not elsewhere', () => {
+    const repo = tempRepo();
+    write(repo, 'results/runs/x/summary.json', '{\n  "labels": "/Users/someone/checkout/results/judge-calibration/hand-labels.jsonl"\n}\n');
+    write(repo, 'docs/notes.md', 'Read the file at /home/someone/notes.txt first.\n');
+    write(repo, 'scripts/local.sh', 'cd /Users/someone/checkout\n');
+    const r = keyscan(repo);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain('results/runs/x/summary.json:2: absolute home path');
+    expect(r.stdout).toContain('docs/notes.md:1: absolute home path');
+    expect(r.stdout).not.toContain('scripts/local.sh');
+    expect(r.stdout + r.stderr).not.toContain('someone');
+    const clean = tempRepo();
+    write(clean, 'results/runs/x/summary.json', '{"labels": "results/judge-calibration/hand-labels.jsonl"}\n');
+    expect(keyscan(clean).status).toBe(0);
+  });
+
   it('flags a key inside a base64 attachment data field, plain or gzipped', () => {
     const repo = tempRepo();
     const data = Buffer.from(`Note for the chart. ${fakeKey('O')}`).toString('base64');

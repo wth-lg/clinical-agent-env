@@ -4,7 +4,8 @@
 // recomputed from the stored files. Exit 1 below 40 judge or 20 extraction labels, below 20 double
 // labels, or when either kappa is below 0.6. Mocked: fixture runs in temp dirs, no call.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { AUDIT_LABELS } from '../../packages/core/outcomes.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
@@ -175,6 +176,13 @@ describe('judge-agreement', () => {
     const s = readJson(join(dir, 'summary.json'));
     expect(s).toMatchObject({ schema_version: 10, run_id: 'final-1', judge_agreement: { n_judge: 40, judge_agreement: 0.95, n_extract: 20, extract_agreement: 0.95 } });
     expect(typeof (s.judge_agreement as Row).labels).toBe('string');
+    // The labels file is recorded by its repository-relative path, never the absolute path it
+    // was given: a machine path with a home directory must not land in a committed run.
+    const REPO = fileURLToPath(new URL('../../', import.meta.url));
+    const written = (s.judge_agreement as Row).labels as string;
+    expect(isAbsolute(written)).toBe(false);
+    expect(written.startsWith('/')).toBe(false);
+    expect(resolve(REPO, written)).toBe(resolve(handLabels(dir)));
     // Written twice, the file is the same.
     const text = readFileSync(join(dir, 'summary.json'), 'utf8');
     expect((await check([dir, '--labels', handLabels(dir), '--write'])).code).toBe(0);

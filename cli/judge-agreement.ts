@@ -47,7 +47,7 @@
 //   `pnpm cli summary <run> --write`, which rewrites the file without them.
 // Exit 2 on a usage error.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
@@ -65,6 +65,10 @@ const USAGE = [
 ].join('\n');
 const REPO = fileURLToPath(new URL('../', import.meta.url));
 export const DEFAULT_LABELS = join(REPO, 'results', 'judge-calibration', 'hand-labels.jsonl');
+// The labels file as summary.json records it: relative to the repository, with forward slashes,
+// whatever path the command was given. An absolute path would put a machine path with a home
+// directory into a committed run (gate R48-238; P24 part 2).
+export const repoRelative = (file: string): string => relative(REPO, resolve(file)).split(sep).join('/');
 export const MIN_JUDGE_LABELS = 40;
 export const MIN_EXTRACT_LABELS = 20;
 export const MIN_DOUBLE_LABELS = 20;
@@ -170,7 +174,7 @@ export interface Agreement {
 export function agreement(records: ReadonlyMap<string, BatchRecord>, file: string): Agreement {
   const violations: string[] = [];
   const extractCached = [...records.values()].reduce((n, r) => n + ((r as { judge?: { cache?: JudgeCacheEntry[] } }).judge?.cache ?? []).filter((e) => e.kind === 'extract').length, 0);
-  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, extract_cached: extractCached, labels: file, disagreements: [], violations };
+  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, extract_cached: extractCached, labels: repoRelative(file), disagreements: [], violations };
   if (!existsSync(file)) violations.push(`${file} is missing`);
   const rows = existsSync(file) ? readJsonl(file, violations) : [];
   const seen = new Set<string>();

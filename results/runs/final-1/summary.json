@@ -764,7 +764,7 @@
     "extract_agree": 0,
     "extract_agreement": null,
     "extract_cached": 0,
-    "labels": "/Users/ggs/orca/workspaces/clinical-agent-env/p23-data/results/judge-calibration/hand-labels.jsonl"
+    "labels": "results/judge-calibration/hand-labels.jsonl"
   },
   "kappa": {
     "double_label": {
