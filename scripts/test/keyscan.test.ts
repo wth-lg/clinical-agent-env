@@ -95,6 +95,20 @@ describe('keyscan working tree and build output', () => {
     expect(keyscan(clean).status).toBe(0);
   });
 
+  it('finds a home path under results/ or docs/ in a gzip file, in a base64 data field and in the Windows form (FINAL-238 m1)', () => {
+    const repo = tempRepo();
+    write(repo, 'results/x/world.ndjson.gz', gzipSync('{}\n{"note": "/home/someone/world"}\n'));
+    const data = Buffer.from('filed from /Users/someone/scans').toString('base64');
+    write(repo, 'docs/x.ndjson', `{"attachment":{"data":"${data}"}}\n`);
+    write(repo, 'results/notes.txt', 'copied from C:\\Users\\someone\\Desktop\n');
+    const r = keyscan(repo);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain('results/x/world.ndjson.gz(gunzip):2: absolute home path');
+    expect(r.stdout).toContain('docs/x.ndjson:1(base64): absolute home path');
+    expect(r.stdout).toContain('results/notes.txt:1: absolute home path');
+    expect(r.stdout + r.stderr).not.toContain('someone');
+  });
+
   it('flags a key inside a base64 attachment data field, plain or gzipped', () => {
     const repo = tempRepo();
     const data = Buffer.from(`Note for the chart. ${fakeKey('O')}`).toString('base64');

@@ -92,6 +92,9 @@ export interface Data {
   // The pilot runs s5.json names, by directory name under results/; null when not committed.
   pilots: Record<string, Run | null>;
   s5: S5 | null;
+  // results/tasks-final.json: the regrade tags per task (and per superseded version), for the
+  // pass-rate table's recorded count (gate FINAL-238 F1).
+  freeze: Record<string, { regrades?: Array<{ at: string }>; superseded?: { regrades?: Array<{ at: string }> } }>;
   tasks: string[];
   trace: { pdf_block_sha256: string; done_when_clauses: number; done_phases: string[]; rows: TraceRow[] } | null;
 }
@@ -148,7 +151,9 @@ export function readData(root: string): Data {
   const s5 = existsSync(s5File) ? (JSON.parse(readFileSync(s5File, 'utf8')) as S5) : null;
   const pilots: Record<string, Run | null> = {};
   for (const id of s5?.pilots ?? []) pilots[id] = readRunDir(join(root, 'results', id));
-  return { root, run: readRun(root), pilots, s5, tasks, trace };
+  const freezeFile = join(root, 'results/tasks-final.json');
+  const freeze = existsSync(freezeFile) ? ((JSON.parse(readFileSync(freezeFile, 'utf8')) as { tasks?: Data['freeze'] }).tasks ?? {}) : {};
+  return { root, run: readRun(root), pilots, s5, freeze, tasks, trace };
 }
 
 // --- the generated blocks ------------------------------------------------------------------
@@ -163,8 +168,15 @@ const runNote = (d: Data) => {
 const passRates = (d: Data) => {
   if (d.run === null) return NO_RUN;
   const s = d.run.summary;
+  // k/n at the current grade; where a regrade moved it, the count as recorded beside it with the
+  // regrade's tag (results/tasks-final.json), so the page states both (gate FINAL-238 F1).
+  const counted = (t: TaskSummary, regrades: Array<{ at: string }> | undefined) => {
+    const recorded = t.recorded_outcomes?.['PASS'] ?? t.passes;
+    if (recorded === t.passes) return `${t.passes}/${t.trials}`;
+    return `${t.passes}/${t.trials} (${recorded}/${t.trials} as recorded; ${escapeHtml(regrades?.at(-1)?.at ?? 'regraded')})`;
+  };
   const rows = Object.entries(s.tasks).map(([id, t]) => [
-    escapeHtml(id), `${t.passes}/${t.trials}`, t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
+    escapeHtml(id), counted(t, d.freeze[id]?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
     `${t.pass_no_harm}/${t.trials}`, String(t.refusals), t.refusal_excluded_rate === null ? 'n/a' : pct(t.refusal_excluded_rate), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
   ]);
   // A task's superseded version (R42: an earlier version's trials, moved out of the count when the
@@ -173,7 +185,7 @@ const passRates = (d: Data) => {
   for (const v of superseded) {
     const t = v.summary;
     rows.push([
-      `${escapeHtml(v.task)} ${escapeHtml(v.version)} (superseded, not counted)`, `${t.passes}/${t.trials}`, t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
+      `${escapeHtml(v.task)} ${escapeHtml(v.version)} (superseded, not counted)`, counted(t, d.freeze[v.task]?.superseded?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
       `${t.pass_no_harm}/${t.trials}`, String(t.refusals), t.refusal_excluded_rate === null ? 'n/a' : pct(t.refusal_excluded_rate), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
     ]);
   }

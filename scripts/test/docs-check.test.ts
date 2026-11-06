@@ -30,6 +30,8 @@ function docsRoot(): string {
   mkdirSync(join(root, 'results/runs'), { recursive: true });
   symlinkSync(join(repoRoot, 'results/runs/final-1'), join(root, 'results/runs/final-1'));
   for (const pilot of PILOTS) if (existsSync(join(repoRoot, 'results', pilot))) symlinkSync(join(repoRoot, 'results', pilot), join(root, 'results', pilot));
+  // The per-task freeze, for the pass-rate table's regrade tags.
+  symlinkSync(join(repoRoot, 'results/tasks-final.json'), join(root, 'results/tasks-final.json'));
   symlinkSync(join(repoRoot, 'tasks'), join(root, 'tasks'));
   return root;
 }
@@ -80,7 +82,7 @@ describe('docs-gen', () => {
     const { writeup, readme } = generate(docsRoot());
     for (const [id, t] of Object.entries(summary.tasks)) {
       const w = wilson(t.passes, t.trials)!;
-      expect(writeup).toContain(`<td><span class="nw">${t.passes}/${t.trials}</span></td>`);
+      expect(writeup).toContain(`<td><span class="nw">${t.passes}/${t.trials}</span>`);
       expect(writeup).toContain(`[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`);
       expect(writeup).toContain(`<th scope="row">${id}</th>`);
       const p3 = passK(t.passes, t.trials, 3)!;
@@ -183,11 +185,22 @@ describe('docs-gen', () => {
 
   // P24 part 2: the final numbers. The run's superseded version is shown beside the current one and
   // never counted (R42).
+  // A task regraded after its run shows the count as recorded beside the current one, with the
+  // regrade's tag from results/tasks-final.json (gate FINAL-238 F1).
+  it('shows the recorded count beside the current one where a regrade moved it, with the regrade tag', () => {
+    const block = blockOf(generate(docsRoot()).writeup, 'pass-rates');
+    expect(block).toContain(tr('message-queue', '20/20 (19/20 as recorded; regrade-r48)'));
+    expect(block).toContain(tr('crc-care-gap v1 (superseded, not counted)', '18/20 (6/20 as recorded; regrade-r41)'));
+    expect(block).toContain(tr('contrast-ct-prep', '5/20', '25%'));
+    expect(block).not.toContain('5/20 (5/20 as recorded');
+    expect(block).toContain('as recorded');
+  });
+
   it('renders the superseded crc-care-gap v1 beside v2 in the pass-rate table, marked not counted', () => {
     const block = blockOf(generate(docsRoot()).writeup, 'pass-rates');
-    const sup = (summary as unknown as { superseded: Record<string, { summary: { passes: number; trials: number } }> }).superseded['crc-care-gap-v1']!.summary;
+    const sup = (summary as unknown as { superseded: Record<string, { summary: { passes: number; trials: number; recorded_outcomes: Record<string, number> } }> }).superseded['crc-care-gap-v1']!.summary;
     const w = wilson(sup.passes, sup.trials)!;
-    expect(block).toContain(tr('crc-care-gap v1 (superseded, not counted)', `${sup.passes}/${sup.trials}`, `${Math.round((sup.passes / sup.trials) * 100)}%`, `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`));
+    expect(block).toContain(tr('crc-care-gap v1 (superseded, not counted)', `${sup.passes}/${sup.trials} (${sup.recorded_outcomes['PASS'] ?? 0}/${sup.trials} as recorded; regrade-r41)`, `${Math.round((sup.passes / sup.trials) * 100)}%`, `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`));
     expect(block).toContain('is shown and never counted');
   });
 

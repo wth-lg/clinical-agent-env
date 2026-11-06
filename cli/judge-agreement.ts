@@ -46,8 +46,8 @@
 //   Summary), only when every check holds, and leaves the rest of the file as it is; run after
 //   `pnpm cli summary <run> --write`, which rewrites the file without them.
 // Exit 2 on a usage error.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join, relative, resolve, sep } from 'node:path';
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
@@ -65,10 +65,16 @@ const USAGE = [
 ].join('\n');
 const REPO = fileURLToPath(new URL('../', import.meta.url));
 export const DEFAULT_LABELS = join(REPO, 'results', 'judge-calibration', 'hand-labels.jsonl');
-// The labels file as summary.json records it: relative to the repository, with forward slashes,
-// whatever path the command was given. An absolute path would put a machine path with a home
-// directory into a committed run (gate R48-238; P24 part 2).
-export const repoRelative = (file: string): string => relative(REPO, resolve(file)).split(sep).join('/');
+// The labels file as summary.json records it with --write: its real path relative to the
+// repository's real path, with forward slashes, whatever path (symlinked or absolute) the command
+// was given. A file outside the repository is refused: an absolute path would put a machine path
+// with a home directory into a committed run (gate R48-238; FINAL-238 m3). Without --write the
+// path is only printed, so any readable file serves.
+export function repoRelative(file: string): string {
+  const rel = relative(realpathSync(REPO), realpathSync(file)).split(sep).join('/');
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${file} is outside the repository; summary.json records the labels file by its repository path, so --write takes a file under results/`);
+  return rel;
+}
 export const MIN_JUDGE_LABELS = 40;
 export const MIN_EXTRACT_LABELS = 20;
 export const MIN_DOUBLE_LABELS = 20;
@@ -174,7 +180,7 @@ export interface Agreement {
 export function agreement(records: ReadonlyMap<string, BatchRecord>, file: string): Agreement {
   const violations: string[] = [];
   const extractCached = [...records.values()].reduce((n, r) => n + ((r as { judge?: { cache?: JudgeCacheEntry[] } }).judge?.cache ?? []).filter((e) => e.kind === 'extract').length, 0);
-  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, extract_cached: extractCached, labels: repoRelative(file), disagreements: [], violations };
+  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, extract_cached: extractCached, labels: file, disagreements: [], violations };
   if (!existsSync(file)) violations.push(`${file} is missing`);
   const rows = existsSync(file) ? readJsonl(file, violations) : [];
   const seen = new Set<string>();
@@ -421,7 +427,14 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   const a = agreement(records, labels);
   if (write && a.violations.length === 0) {
     const { disagreements: _d, violations: _v, ...fields } = a;
-    writeSummary(dir, { judge_agreement: fields }, a.violations);
+    let rel: string;
+    try {
+      rel = repoRelative(labels);
+    } catch (e) {
+      say(`summary.json not written: ${(e as Error).message}`);
+      return 1;
+    }
+    writeSummary(dir, { judge_agreement: { ...fields, labels: rel } }, a.violations);
   } else if (write) say('summary.json not written: a check does not hold');
   // A judge verdict reads bare, an extraction value as JSON.
   const shown = (kind: 'judge' | 'extract', v: unknown) => (kind === 'judge' && typeof v === 'string' ? v : canonical(v));
