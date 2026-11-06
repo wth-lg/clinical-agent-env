@@ -88,13 +88,19 @@ export interface Grading {
 // (R42, `status: "v2-pending"`), its superseded sub-entry; a trial's freeze is the one at the
 // trial's env_version (frozenFor), as cli/replay.ts replayAtOf matches it.
 export interface FrozenTask {
-  env_version: string;
+  // null when the entry records none: such a freeze stands for the task's trials at any version.
+  env_version: string | null;
   world_hash: string;
   frozen_at: { tag: string };
   replay_at: { tag: string; commit: string } | null;
 }
 export type Freezes = Readonly<Record<string, readonly FrozenTask[]>>;
-export const frozenFor = (frozen: Freezes, task: string, env: string | null | undefined): FrozenTask | null => (frozen[task] ?? []).find((f) => f.env_version === env) ?? null;
+// A trial's freeze: the task's freeze at the trial's env_version, else one that records no
+// env_version (a minimal entry), else none.
+export const frozenFor = (frozen: Freezes, task: string, env: string | null | undefined): FrozenTask | null => {
+  const fs = frozen[task] ?? [];
+  return fs.find((f) => f.env_version !== null && f.env_version === env) ?? fs.find((f) => f.env_version === null) ?? null;
+};
 
 export interface RunData {
   runId: string;
@@ -289,9 +295,9 @@ async function loadFrozen(has: ReadonlySet<string>): Promise<Freezes> {
     // Each task's freezes: its entry and, for a task with a version pending (R42), its superseded
     // sub-entry; a freeze needs its env_version, world and tag to be a hint.
     const freeze = (t: Entry): FrozenTask | null => {
-      if (typeof t.env_version !== 'string' || typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return null;
+      if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return null;
       const replay_at = typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? { tag: t.replay_at.tag, commit: t.replay_at.commit } : null;
-      return { env_version: t.env_version, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at };
+      return { env_version: typeof t.env_version === 'string' ? t.env_version : null, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at };
     };
     return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, e]) => {
       const fs = [e, ...(e.superseded ? [e.superseded] : [])].map(freeze).filter((f): f is FrozenTask => f !== null);
