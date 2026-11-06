@@ -19,8 +19,8 @@ None.
 
 | task | failures | model | environment | grader | infra (cli classes) | re-queued infra attempts (summary infra_reruns) | source |
 |---|---|---|---|---|---|---|---|
-| message-queue | 0 | 0 | 0 | 0 | 0 | 0 | cli classes |
-| results-inbox | 4 | 4 | 0 | 0 | 0 | 0 | cli classes |
+| message-queue | 0 | 0 | 0 | 0 | 0 | 0 | audit.jsonl |
+| results-inbox | 4 | 4 | 0 | 0 | 0 | 0 | audit.jsonl |
 
 ## Grader faults found and fixed
 
@@ -88,5 +88,5 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 ## No failures
 
-- message-queue: No failures in 8 trials. The run has no matrix.json; the evidence is `pnpm cli matrix --task message-queue` (the reference solution passes and every probe gives the verdict expected; the Tasks view runs the same probes).
+- message-queue: No failures in 8 trials. Strictness evidence, matrix.json at grader_task_version 270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631: the oracle passes, 32 of 32 mutants fail as declared, 41 of 41 alternatives pass, the null agent fails.
 
