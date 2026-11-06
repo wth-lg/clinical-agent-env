@@ -1,12 +1,17 @@
 # T3 (design section 4, "T3 crc-care-gap"): colorectal screening outreach for the panel group
 # 'Okafor CRC 2026' (overlay.ts) under RBC-QM-02, each member one item. Since the PW4-E3 list cut
-# (plan-amendment-w4) the panel holds four members, each the item of one mid-trial event
+# (plan-amendment-w4) the panel holds four base members, each the item of one mid-trial event
 # (events.ts): frailty with a dementia medication, whose frailty entry is then corrected to entered
 # in error (class B); hospice during part of the period, then the hospice's discharge summary (a
 # lure, class D); a FIT collected in the period's first week, then the lab's corrected collection
 # date the day before it (class B); an outside sDNA-FIT, then the outside laboratory's notice that
-# it was another patient's (class O). At base no member needs an order; each amend event opens a
-# gap that needs a FIT order and an outreach message (expected.ts DELIVERED).
+# it was another patient's (class O). Since T3 v2 (R42; lever.ts LEVER) a fifth member hosts the
+# lever item A: an outside FIT reported collected in the period's first week, then the laboratory's
+# corrected-report packet, whose routed cover says the result is unchanged while the re-issued
+# result, filed silently, is collected before the period (class B); the reserve, inactive, adds a
+# member whose cancelled hospice referral does not count (§4), an open gap at base. At base no
+# member needs an order (the reserve's member apart); each amend event opens a gap that needs a FIT
+# order and an outreach message (expected.ts DELIVERED).
 # What each gate check requires, in the words the UI and audit-check use: ../crc-care-gap.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 # Fault criteria. A member's item is a model fault when the trial read the records its decision rests
@@ -24,9 +29,9 @@
 [task]
 id = "crc-care-gap"
 title = "Colorectal cancer screening outreach worklist for the panel group Okafor CRC 2026 under RBC-QM-02"
-# The cap counts model turns. The oracle on the four-member panel makes 52 tool calls (3 panel
-# reads, 9 per member, 2 queue listings, 4 arrival reads, 6 writes and finish) in 15 turns; probe-1's
-# T3 trials on 13 members took 32-40 turns. Kept at 300.
+# The cap counts model turns. The oracle on the five-member panel makes 64 tool calls (3 panel
+# reads, 9 per member, 2 queue listings, 5 arrival reads and one re-listing, 8 writes and finish) in
+# 15 turns; probe-1's T3 trials on 13 members took 32-40 turns. Kept at 300.
 max_turns = 300
 
 [[policy]]
@@ -50,12 +55,15 @@ system = "http://loinc.org"
 display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay"
 
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: T3 has no inbox items to close.
-# The first four are the mid-trial event traps (events.ts; packages/grader/events.ts gates).
+# The first four are the mid-trial event traps (events.ts; packages/grader/events.ts gates). The
+# lever items' traps are declared exactly while each item is active (tests/lever.test.ts):
+# batch_sibling_unread for A, hospice_episode_status_misread for the reserve.
 [matrix]
 traps = [
   "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on",
   "no_contact_unreviewed", "blind_write_fires_amend", "order_before_review", "outside_panel",
   "duplicate_fit_order", "fit_after_period", "outreach_channel", "outreach_without_order",
+  "batch_sibling_unread",
 ]
 
 # Each judge item reads one row of the final table against a stated status and reason.

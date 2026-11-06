@@ -459,7 +459,7 @@
         }
       },
       "phase": "P14",
-      "note": "Since PW4 each task's grader also grades its mid-trial events (packages/grader/events.ts gates; tasks/<id>/events.ts specs), and docs/tasks.md describes each task's events and what each event class does not measure; since W5 the four lever tasks' expected.ts LEVER_ITEMS declare the lever items the matrix bounds with the focus-only and read-all-newest agents, and docs/tasks.md states each item and what it does not measure."
+      "note": "Since PW4 each task's grader also grades its mid-trial events (packages/grader/events.ts gates; tasks/<id>/events.ts specs), and docs/tasks.md describes each task's events and what each event class does not measure; since W5 the four lever tasks' expected.ts LEVER_ITEMS declare the lever items the matrix bounds with the focus-only and read-all-newest agents, and docs/tasks.md states each item and what it does not measure; since R42 crc-care-gap (v2) declares one too."
     },
     {
       "id": "N7",
@@ -861,7 +861,8 @@
         "tasks/renal-dose-review/lever.ts",
         "tasks/results-inbox/lever.ts",
         "tasks/discharge-medrec/lever.ts",
-        "tasks/message-queue/lever.ts"
+        "tasks/message-queue/lever.ts",
+        "tasks/crc-care-gap/lever.ts"
       ],
       "tests": [
         "packages/core/test/summary-schema.test.ts",
@@ -901,7 +902,7 @@
         }
       ],
       "phase": "P22",
-      "note": "The difficulty lever since PW4 is the mid-trial event (plan-amendment-w4): each task's ACTIVE list in tasks/<id>/events.ts sets how many arrivals a trial meets. Since W5 (plan-amendment-w5) it is the record-integrity lever item: tasks/<id>/lever.ts LEVER names the active items of renal-dose-review, results-inbox, discharge-medrec and message-queue (an A item is a silently filed sibling in an arriving batch, a B item a static chart record), hashed into env_version; docs/tasks.md states each event class, each lever item and what each does not measure."
+      "note": "The difficulty lever since PW4 is the mid-trial event (plan-amendment-w4): each task's ACTIVE list in tasks/<id>/events.ts sets how many arrivals a trial meets. Since W5 (plan-amendment-w5) it is the record-integrity lever item: tasks/<id>/lever.ts LEVER names the active items of renal-dose-review, results-inbox, discharge-medrec, message-queue and, since R42, crc-care-gap v2 (an A item is a silently filed sibling in an arriving batch, a B item a static chart record), hashed into env_version; docs/tasks.md states each event class, each lever item and what each does not measure."
     },
     {
       "id": "W2",

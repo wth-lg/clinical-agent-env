@@ -83,8 +83,13 @@ type Absence = { type: string; from: string | null; codes: string[]; categories:
 const procedureAbsence = (years: number | null, codes: readonly string[]): Absence => ({ type: 'Procedure', from: years === null ? null : `${YEAR - years}-01-01`, codes: tok(SNOMED, codes), categories: [], statuses: ['completed'] });
 const testAbsence = (years: number, codes: readonly string[]): Absence => ({ type: 'Observation', from: `${YEAR - years}-01-01`, codes: tok(LOINC, codes), categories: tok(OBSERVATION_CATEGORY, ['laboratory']), statuses: RESULTED });
 const SCREENING_ABSENCES: Absence[] = [procedureAbsence(9, COLONOSCOPY), procedureAbsence(4, SIGMOIDOSCOPY_OR_CTC), testAbsence(0, FOBT), testAbsence(2, SDNA)];
+const CARE_EPISODE_IN_PERIOD: Absence = { type: 'EpisodeOfCare', from: `${YEAR}-01-01`, codes: [], categories: [], statuses: EPISODE_STATUSES };
 const EXCLUSION_ABSENCES: Readonly<Record<string, Absence[]>> = {
-  hospice_before_period: [{ type: 'EpisodeOfCare', from: `${YEAR}-01-01`, codes: [], categories: [], statuses: EPISODE_STATUSES }],
+  hospice_before_period: [CARE_EPISODE_IN_PERIOD],
+  // T3 v2 (R42): a hospice or palliative care episode in the period in a status §4 does not count
+  // (waitlisted, cancelled, entered in error) leaves the member in the population; the gap rests
+  // on no counted episode being there, the same search as for an episode that ended before it.
+  hospice_not_counted: [CARE_EPISODE_IN_PERIOD],
   partial_colectomy: [procedureAbsence(null, COLECTOMY), { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: NOTE_STATUSES, words: COLECTOMY_WORDS }],
   frailty_without_advanced_illness: [
     { type: 'Condition', from: null, codes: tok(SNOMED, ADVANCED_ILLNESS), categories: [], statuses: [] },
@@ -191,6 +196,12 @@ export function derive(world: WorldView): Json {
       const appointments = (world.all('Appointment') as ReadonlyArray<R & { basedOn?: Ref[]; status?: string }>).filter((a) => (a.basedOn ?? []).some((b) => notDone.some((o) => b.reference === `ServiceRequest/${o.id}`)));
       const partial = procedures.filter((r) => /\bcolectomy\b/i.test(r.code?.text ?? '') && !coded(r.code, SNOMED, COLECTOMY) && !/\btotal\b/i.test(r.code?.text ?? ''));
       const endedHospice = episodes.filter((e) => careGiven(e) && yearOf(e.period?.end) < YEAR);
+      // A hospice or palliative care episode in the period in a status §4 does not count: a
+      // referral waitlisted, cancelled or entered in error (R42, the T3 v2 reserve). Like an
+      // episode that ended before the period, it names the gap's reason, and its seen rule is the
+      // review that shows no counted episode (the absences; tests/grader.ts seenRule).
+      const isCareEpisode = (e: { type?: Concept[] }) => (e.type ?? []).some((t) => coded(t, SNOMED, HOSPICE) || coded(t, SNOMED, PALLIATIVE));
+      const notCountedEpisodes = episodes.filter((e) => isCareEpisode(e) && !careGiven(e) && yearOf(e.period?.start) <= YEAR && !(yearOf(e.period?.end) < YEAR));
       const frailty = confirmed.find((c) => coded(c.code, SNOMED, FRAILTY));
       const staleDementiaMeds = meds.filter((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && !isActive(m) && yearOf(m.authoredOn) < YEAR - 1);
       const id = (r: R) => `${r.resourceType}/${r.id}`;
@@ -239,6 +250,7 @@ export function derive(world: WorldView): Json {
           : expired ? [expired.reason, [expired.id]]
           : partial.length ? ['partial_colectomy', partial.map(id)]
           : endedHospice.length ? ['hospice_before_period', endedHospice.map(id)]
+          : notCountedEpisodes.length ? ['hospice_not_counted', notCountedEpisodes.map(id)]
           : age >= 66 && frailty ? ['frailty_without_advanced_illness', staleDementiaMeds.length ? [id(latest(staleDementiaMeds, (m) => m.authoredOn)!)] : [id(frailty)]]
           : age >= 66 && housing ? ['not_nursing_home', [id(housing), ...homeNotes.map(id), ...homeStays.map(id)]]
           : ['no_screening', []];

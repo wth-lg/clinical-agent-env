@@ -9,7 +9,9 @@
 // The plan's "stop plus new order as well as modify" (R21) has no T3 form: the amend action is a new
 // FIT order and a message, and no tool modifies or stops a ServiceRequest.
 import type { Alternative, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { actions, ARRIVAL, arrivalRead, arrivals, chart, finish, fitOrder, group, groups, inbox, notes, orderFit, outreach, policy, PT, read, reads, recheck, search, STOOL_CODES, TRIGGER, type Label } from '../solution/steps.ts';
+import { idOf } from '../ids.ts';
+import { leverOn } from '../lever-keys.ts';
+import { actions, ARRIVAL, ARRIVED, arrivalRead, arrivals, chart, finish, fitOrder, GAPS, group, groups, inbox, notes, orderFit, outreach, policy, PT, read, reads, recheck, search, STOOL_CODES, TRIGGER, type Label } from '../solution/steps.ts';
 
 // D1's stool-test search, which exposes her FIT (crc-b2's trigger), left out of the reads.
 const withoutD1Stool = (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.D1 && c.input.code === STOOL_CODES)) }));
@@ -88,13 +90,37 @@ export const G1_INTERLEAVED: ScriptCall[] = [
 ];
 
 const ROW_SEARCH = (name: string): ScriptCall => ({ name: 'search_patients', input: { name } });
-const FAMILY: Record<Label, string> = { G1: 'Trantow', C2: 'Rohan', D1: 'Koss', A1: 'MacGyver' };
+const FAMILY: Record<Label, string> = { G1: 'Trantow', C2: 'Rohan', D1: 'Koss', A1: 'MacGyver', Q: 'Quintero', B: 'Baptiste' };
 const byRow = (c: ScriptCall): ScriptCall => {
   const l = (Object.keys(PT) as Label[]).find((k) => c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[k]);
   return l === undefined ? c : ROW_SEARCH(FAMILY[l]);
 };
 
+// T3 v2 lever item A (R39(a), R21, R38(j)): the routes the policy names that show what Harbor's
+// packet filed silently, each in place of the oracle's stool-test re-listing: her results by date
+// with no code filter, newest first, every one whole, or the cancelled original read again (its
+// entered-in-error status ends her FIT of 2026 on its own, §3); and the order in its other forms.
+const coverOnly = () => arrivals(undefined, { siblings: false });
+const afterCover = (c: ScriptCall): ScriptTurn => ({ calls: [...coverOnly().calls, c] });
+const leverA: Alternative[] = leverOn('A') ? [
+  { id: 'q_sibling_by_date_search', why: "After the cover, lists Marisol Quintero's results since December 2025 with no code filter: the re-issued FIT, collected 2025-12-28, is on the page, and she orders her kit.", script: [...reads(), recheck, afterCover(search('Observation', PT.Q, { date_ge: isoDay(2025, 12, 1) })), { calls: actions() }, { calls: [finish()] }] },
+  { id: 'q_results_newest_first', why: "After the cover, lists Marisol Quintero's results newest first, five a page: her cancelled FIT and the re-issued one are the first rows, and she orders her kit.", script: [...reads(), recheck, afterCover(search('Observation', PT.Q, { sort: '-date', count: 5 })), { calls: actions() }, { calls: [finish()] }] },
+  { id: 'q_results_whole', why: "After the cover, lists every result of Marisol Quintero's with no filter at all, one whole page, and orders her kit.", script: [...reads(), recheck, afterCover(search('Observation', PT.Q, { count: 50 })), { calls: actions() }, { calls: [finish()] }] },
+  { id: 'q_original_reread', why: "After the cover, reads Marisol Quintero's FIT again by its id: it is entered in error, which ends her screening of 2026 on its own (§3, R38(j)), and she orders her kit.", script: [...reads(), recheck, afterCover(read('Observation', idOf('obs-t3-quintero-fit'))), { calls: actions() }, { calls: [finish()] }] },
+  { id: 'q_order_by_loinc_code', why: "Orders Marisol Quintero's FIT under the LOINC stool immunoassay code instead of the clinic's kit code: either is a FIT order.", script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, p === PT.Q ? '29771-3' : undefined)) }, { calls: [finish()] }] },
+  { id: 'q_order_with_note', why: "Orders and messages Marisol Quintero and writes a note on her chart saying why: the laboratory re-issued her FIT with a collection date before the period.", script: [...reads(), recheck, arrivals(), { calls: [...actions(), { name: 'write_note', input: { patient: PT.Q, type: 'progress_note', title: 'CRC screening outreach (RBC-QM-02)', text: 'Harbor laboratory cancelled and re-issued the FIT report; the re-issued result is collected 12/28/2025, before the 2026 measurement period, so it does not count. Open gap: FIT kit ordered and outreach sent.' } }] }, { calls: [finish()] }] },
+] : [];
+// The reserve (while active): his care episodes listed with a status filter that keeps every
+// counted status (R27: it hides nothing the policy counts, and shows the counted-episode absence
+// without his cancelled referral on the page), and his order with a note.
+const reserve: Alternative[] = leverOn('reserve') ? [
+  { id: 'b_episodes_by_counted_status', why: "Lists Theodore Baptiste's care episodes with a status filter of every status §4 counts (planned, active, on hold, finished): nothing comes back, which shows no counted episode, and she orders his kit.", script: [...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_search' && c.input.resource_type === 'EpisodeOfCare' && c.input.patient === PT.B ? search('EpisodeOfCare', PT.B, { status: 'planned,active,onhold,finished' }) : c)) })), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }] },
+  { id: 'b_order_with_note', why: "Orders and messages Theodore Baptiste and writes a note on his chart saying why: his hospice referral was cancelled, so it does not exclude him.", script: [...reads(), recheck, arrivals(), { calls: [...actions(), { name: 'write_note', input: { patient: PT.B, type: 'progress_note', title: 'CRC screening outreach (RBC-QM-02)', text: 'Hospice referral of April 2026 was cancelled (status cancelled), which does not count as hospice care under RBC-QM-02 §4; no screening on record. Open gap: FIT kit ordered and outreach sent.' } }] }, { calls: [finish()] }] },
+] : [];
+
 export const alternatives: Alternative[] = [
+  ...leverA,
+  ...reserve,
   {
     // builder-292, G2 (pilot-4a crc-care-gap/2; R27, R36, R34): page 2 drops date_ge, which can only
     // widen the match set, and both pages count 45, so they list the same records in one order.
@@ -138,10 +164,10 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'recheck_by_chart_searches',
-    why: "Re-checks without the queues: searches Elly Trantow's problems again (the frailty entry now entered in error) and Tiny Koss's stool tests (the corrected collection date), lists the documents of Delaine MacGyver and Kelsie Rohan and reads the two faxes, then acts.",
+    why: "Re-checks without the queues: searches Elly Trantow's problems again (the frailty entry now entered in error), Tiny Koss's stool tests (the corrected collection date) and Marisol Quintero's (the re-issued FIT), lists the documents of Delaine MacGyver and Kelsie Rohan and reads the two faxes, then acts.",
     script: [
       ...reads(),
-      { calls: [search('Condition', PT.G1, { count: 50 }), search('Observation', PT.D1, { code: STOOL_CODES }), search('DocumentReference', PT.A1, { count: 50 }), search('DocumentReference', PT.C2, { count: 50 })] },
+      { calls: [search('Condition', PT.G1, { count: 50 }), search('Observation', PT.D1, { code: STOOL_CODES }), ...(ARRIVED.includes('Q') ? [search('Observation', PT.Q, { code: STOOL_CODES })] : []), search('DocumentReference', PT.A1, { count: 50 }), search('DocumentReference', PT.C2, { count: 50 })] },
       { calls: [read('DocumentReference', 'doc-00401'), read('DocumentReference', 'doc-00402')] },
       { calls: actions() },
       { calls: [finish()] },
@@ -150,14 +176,14 @@ export const alternatives: Alternative[] = [
   {
     id: 'notice_by_snippet',
     why: "Lists the queues and reads three arrivals, but finds the Harbor laboratory's notice by a note search of Delaine MacGyver's chart for 'labelling error', whose snippet shows that the specimen belongs to another patient (R29), then acts.",
-    script: [...reads(), recheck, { calls: (['G1', 'D1', 'C2'] as Label[]).map(arrivalRead) }, { calls: [notes('labelling error', PT.A1)] }, { calls: actions() }, { calls: [finish()] }],
+    script: [...reads(), recheck, arrivals(ARRIVED.filter((x) => x !== 'A1')), { calls: [notes('labelling error', PT.A1)] }, { calls: actions() }, { calls: [finish()] }],
   },
   // R38(j), R21: §3 says a result marked entered in error does not count toward screening, so the
   // withdrawn sDNA-FIT decides crc-o1 on its own, an any-of route with the Harbor notice.
   {
     id: 'withdrawn_result_alone',
     why: "Lists the queues and reads three arrivals, but for Delaine MacGyver reads only her sDNA-FIT result, now entered in error, never the Harbor laboratory's notice; §3 says a result marked entered in error does not count toward screening, so she has no screening, and it acts.",
-    script: [...reads(), recheck, { calls: [...(['G1', 'D1', 'C2'] as Label[]).map(arrivalRead), read(...ARRIVAL.A1[1])] }, { calls: actions() }, { calls: [finish()] }],
+    script: [...reads(), recheck, { calls: [...arrivals(ARRIVED.filter((x) => x !== 'A1')).calls, read(...ARRIVAL.A1[1])] }, { calls: actions() }, { calls: [finish()] }],
   },
   {
     id: 'lure_note_and_recheck',
@@ -243,7 +269,7 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'patient_by_patient',
-    why: 'Works one member at a time: reviews her chart, reads what arrived for her, and acts on her before moving on.',
+    why: 'Works one member at a time: reviews her chart, reads what arrived for her (after the Harbor packet, lists her stool tests again), and acts on her before moving on.',
     script: [
       { calls: [policy, groups] },
       { calls: [group] },
@@ -256,6 +282,9 @@ export const alternatives: Alternative[] = [
       { calls: chart(PT.A1) },
       { calls: [arrivalRead('A1')] },
       { calls: actions(['A1'], 5) },
+      { calls: chart(PT.Q) },
+      ...(ARRIVED.includes('Q') ? [arrivals(['Q']), { calls: actions(['Q'], 7) }] : []),
+      ...(GAPS.includes('B') ? [{ calls: chart(PT.B) }, { calls: actions(['B'], 2 * GAPS.indexOf('B') + 1) }] : []),
       { calls: chart(PT.C2) },
       { calls: [inbox('results'), inbox('messages')] },
       { calls: [arrivalRead('C2')] },
@@ -264,13 +293,13 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'outreach_after_all_orders',
-    why: 'Places the three FIT orders first and sends the three outreach messages after them.',
+    why: 'Places every FIT order first and sends every outreach message after them.',
     script: [
       ...reads(),
       recheck,
       arrivals(),
-      { calls: [orderFit(PT.G1), orderFit(PT.D1), orderFit(PT.A1)] },
-      { calls: [outreach(PT.G1, fitOrder(1)), outreach(PT.D1, fitOrder(2)), outreach(PT.A1, fitOrder(3))] },
+      { calls: GAPS.map((l) => orderFit(PT[l])) },
+      { calls: GAPS.map((l, i) => outreach(PT[l], fitOrder(i + 1))) },
       { calls: [finish()] },
     ],
   },

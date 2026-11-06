@@ -1,10 +1,14 @@
-import { ref } from './ids.ts';
+import { idOf, ref, refOf } from './ids.ts';
+import { LEVER } from './lever.ts';
+import { HOSTS, hostsOf } from './lever-keys.ts';
+export { LEVER } from './lever.ts';
 // T3's expected end state after the PW4-E3 list cut (plan-amendment-w4 "Sizing and per-task
-// targets": n = 4): four members of the panel group, each the item of one mid-trial event
-// (events.ts), written by hand. policy.ts computes the same from the initial world, and the matrix
-// fails when the two differ. The grader reads its targets here. Each member's decisive ids are only
-// the records whose reading decides the member's action (ruling R1), which a trial must have seen
-// before it acts on the member.
+// targets": n = 4) and the T3 v2 lever (R42): four base members of the panel group, each the item
+// of one mid-trial event (events.ts), plus the lever hosts (lever-keys.ts HOSTS: the A host in
+// every state, the reserve host while the reserve is active), written by hand. policy.ts computes
+// the same from the initial world, and the matrix fails when the two differ. The grader reads its
+// targets here. Each member's decisive ids are only the records whose reading decides the member's
+// action (ruling R1), which a trial must have seen before it acts on the member.
 //
 //   member   age  probe class                  base record                          base status   event
 //   pt-0009   72  frailty and advanced illness frailty, donepezil active            excluded      crc-b1 (B): frailty entered in error -> gap
@@ -13,6 +17,16 @@ import { ref } from './ids.ts';
 //                                              week                                                day before the period -> gap
 //   pt-0024   51  colonoscopy never done       sDNA-FIT of 2024 (outside lab); a    met           crc-o1 (O): the outside lab withdraws the
 //                                              2025 colonoscopy order never done                  sDNA-FIT (another patient's) -> gap
+//   pt-0073   58  outside FIT re-issued        FIT by the outside Harbor laboratory, met           crc-b3 (B, lever item A): the laboratory's
+//            (lever A)                         reported collected 2026-01-08                       corrected-report packet: a routed cover
+//                                                                                                  ('result unchanged'), the re-issued result
+//                                                                                                  filed silently, collected 2025-12-28 -> gap
+//   pt-0074   63  hospice referral cancelled   a hospice episode of 2026 in the     gap           none (a static chart record, the reserve,
+//            (reserve, inactive)               status cancelled (§4: does not count)               inactive)
+//
+// LEVER (lever.ts, re-exported above on its own line: the form packages/core/tasks.ts leverOf
+// hashes into env_version) names the active lever items; LEVER_ITEMS (below) declares them in
+// W5-H's shape. Toggling A changes events.ts ACTIVE alone; toggling the reserve is a rebuild.
 //
 // The other two probe classes (partial against total colectomy, nursing home against rehab) and
 // the filler are off the panel; their charts stay as overlay.ts builds them (coordinator, builder-283
@@ -98,6 +112,28 @@ const FOBT_IN_PERIOD: Absence = { type: 'Observation', from: '2026-01-01', codes
 const SDNA_IN_WINDOW: Absence = { type: 'Observation', from: '2024-01-01', codes: loinc(['77354-9', '77353-1']), categories: LAB, statuses: RESULTED };
 export const SCREENING: readonly Absence[] = [COLONOSCOPY_DONE, SIGMOIDOSCOPY_OR_CTC_DONE, FOBT_IN_PERIOD, SDNA_IN_WINDOW];
 
+// What a cancelled hospice referral's gap rests on being absent, beside the screening kinds: a
+// hospice or palliative care episode in the period in a status §4 counts (policy.ts
+// EXCLUSION_ABSENCES hospice_not_counted; the same search as for an episode that ended before the
+// period: no status filter, or one that lists every counted status).
+const EPISODE_STATUSES = ['planned', 'active', 'onhold', 'finished'];
+const CARE_EPISODE_IN_PERIOD: Absence = { type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: EPISODE_STATUSES };
+
+// The lever hosts' members (lever-keys.ts), each while its host is in the world: Quintero at base
+// screening up to date by her Harbor FIT (her gap comes from crc-b3, DELIVERED); Baptiste an open
+// gap at base, named by his cancelled hospice referral as a gap after an ended episode is named by
+// that episode (policy.ts hospice_before_period): its seen rule is the review that shows the
+// screening kinds and a counted care episode absent (tests/grader.ts seenRule, R27, R31), with
+// his Patient (R33). Reading the referral alone reviews nothing (R19, R31).
+export function leverMembers(lever: readonly string[]): Member[] {
+  const out: Member[] = [];
+  if (hostsOf(lever).includes(HOSTS.A)) out.push(m(idOf(HOSTS.A), 'Marisol Elena Quintero', 'Quintero', 58, 'met', 'fobt', [refOf('Observation/obs-t3-quintero-fit')]));
+  if (hostsOf(lever).includes(HOSTS.reserve)) out.push(m(idOf(HOSTS.reserve), 'Theodore James Baptiste', 'Baptiste', 63, 'gap', 'hospice_not_counted', [refOf('EpisodeOfCare/eoc-t3-baptiste-hospice'), `Patient/${idOf(HOSTS.reserve)}`], { absences: [...SCREENING, CARE_EPISODE_IN_PERIOD] }));
+  return out;
+}
+// The panel of a LEVER state: the four base members and the state's hosts.
+export const panelOf = (lever: readonly string[]): string[] => ['Patient/pt-0009', 'Patient/pt-0020', 'Patient/pt-0022', 'Patient/pt-0024', ...hostsOf(lever).map((h) => `Patient/${idOf(h)}`)].sort();
+
 export const expected = {
   group: ref('Group/grp-t3-okafor-crc'),
   period: { start: '2026-01-01', end: '2026-12-31' },
@@ -106,8 +142,19 @@ export const expected = {
     m('pt-0020', 'Kelsie Wanetta Rohan', 'Rohan', 52, 'excluded', 'hospice', [ref('EpisodeOfCare/eoc-t3-8215')]),
     m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'met', 'fobt', [ref('Observation/obs-t3-3906')]),
     m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'met', 'sdna_fit', [ref('Observation/obs-t3-1279')]),
+    ...leverMembers(LEVER),
   ].sort((a, b) => a.patient.localeCompare(b.patient)),
 };
+
+// W5-H's declaration of the lever items (packages/grader/matrix/types.ts LeverItem): the panel item
+// each bears on (T3's items are keyed by patient) and its Patient, the A item's event spec, and the
+// sibling records cli classes reports as exposed or not: the re-issued FIT the packet files
+// silently (events.ts ARRIVAL.Q[1], a new record), and for the reserve the cancelled episode. The
+// reserve is marked (plan-amendment-w5 Correction 2).
+export const LEVER_ITEMS = [
+  { id: 'A', kind: 'A', item: `Patient/${idOf(HOSTS.A)}`, patient: idOf(HOSTS.A), spec: 'crc-b3', sibling: ['Observation/obs-05001'], gates: ['event_seen', 'amended'] },
+  { id: 'reserve', kind: 'B', item: `Patient/${idOf(HOSTS.reserve)}`, patient: idOf(HOSTS.reserve), sibling: [refOf('EpisodeOfCare/eoc-t3-baptiste-hospice')], reserve: true },
+] as const;
 
 // Each amend event's member on the chart as delivered (C1; events.ts): an open gap, which needs
 // one FIT order and an outreach message about it (§5). Its decisive records are the arrival, the
@@ -115,10 +162,15 @@ export const expected = {
 // (§3). policy.ts applied to the world with the arrival gives the same status, age, order, message
 // and absences (tests/events.test.ts). The arrival's own atoms, where it is a note, are in
 // ARRIVAL_ATOMS.
+// crc-b3 (lever item A, R39): the deciding records are the re-issued FIT (obs-05001, collected
+// 2025-12-28, filed silently) and the cancelled original (any-of, R21, R38(j): either shows that no
+// FIT of 2026 counts); the routed cover (doc-00403) decides nothing and is not listed (R39(b):
+// opening the focus alone is not seen).
 export const DELIVERED: Readonly<Record<string, Member>> = {
   'crc-b1': m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'gap', 'frailty_entered_in_error', ['Communication/comm-00301', ref('Condition/cond-t3-6027'), 'Patient/pt-0009'], { absences: [...SCREENING] }),
   'crc-b2': m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fit_collected_before_period', [ref('Observation/obs-t3-3906'), 'Patient/pt-0022'], { absences: [...SCREENING] }),
   'crc-o1': m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'sdna_withdrawn', ['DocumentReference/doc-00401', ref('Observation/obs-t3-1279'), 'Patient/pt-0024'], { absences: [...SCREENING] }),
+  'crc-b3': m(idOf(HOSTS.A), 'Marisol Elena Quintero', 'Quintero', 58, 'gap', 'fit_reissued_before_period', ['Observation/obs-05001', refOf('Observation/obs-t3-quintero-fit'), `Patient/${idOf(HOSTS.A)}`], { absences: [...SCREENING] }),
 };
 
 // The members who need an order at base: none (every member's order comes from its event).
@@ -131,6 +183,9 @@ export const CLASSES = {
   hospice_revoked: ['Patient/pt-0020'],
   collection_vs_report_date: ['Patient/pt-0022'],
   colonoscopy_never_done: ['Patient/pt-0024'],
-} as const satisfies Record<string, readonly [string]>;
+  // T3 v2 (R42): the lever hosts' classes, each while its host is on the panel.
+  ...(hostsOf(LEVER).includes(HOSTS.A) ? { outside_fit_reissued: [`Patient/${idOf(HOSTS.A)}`] } : {}),
+  ...(hostsOf(LEVER).includes(HOSTS.reserve) ? { hospice_referral_cancelled: [`Patient/${idOf(HOSTS.reserve)}`] } : {}),
+} as Record<string, readonly [string]>;
 export type ItemClass = keyof typeof CLASSES;
 export const classOf = (patient: string): ItemClass => Object.entries(CLASSES).find(([, ps]) => (ps as readonly string[]).includes(patient))?.[0] as ItemClass;

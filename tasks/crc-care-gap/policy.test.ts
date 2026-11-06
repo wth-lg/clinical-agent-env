@@ -12,9 +12,10 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import { READ_TOOLS, type ReadContext } from '../../packages/env/tools/read/index.ts';
 import { callTool } from '../../packages/env/tools/registry.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
-import { expected } from './expected.ts';
+import { expected, LEVER, panelOf } from './expected.ts';
+import { HOSTS } from './lever-keys.ts';
 import { derive } from './policy.ts';
-import { id, ref } from './ids.ts';
+import { id, idOf, ref } from './ids.ts';
 import { PLANTED } from '../planted.ts';
 
 const store = await loadStore(matrixEnv().world);
@@ -26,11 +27,12 @@ describe('crc-care-gap', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  // The PW4-E3 list cut: four members, none with an open gap until its event arrives (events.ts).
-  it('orders for no member of the four-member panel at base', () => {
+  // The PW4-E3 list cut: four base members, none with an open gap until its event arrives
+  // (events.ts); T3 v2 adds the lever hosts (expected.ts panelOf), the reserve's an open gap at base.
+  it("orders for no member of the panel at base but the reserve's host", () => {
     const d = derive(world) as unknown as typeof expected;
-    expect(d.items.map((x) => x.patient)).toEqual(['pt-0009', 'pt-0020', 'pt-0022', 'pt-0024'].map((p) => `Patient/${p}`));
-    expect(d.items.filter((x) => x.order).map((x) => x.patient)).toEqual([]);
+    expect(d.items.map((x) => x.patient)).toEqual(panelOf(LEVER));
+    expect(d.items.filter((x) => x.order).map((x) => x.patient)).toEqual(LEVER.includes('reserve') ? [`Patient/${idOf(HOSTS.reserve)}`] : []);
   });
 
   // Each class's decisive fact, as the overlay plants it (expected.ts CLASSES).
@@ -128,8 +130,11 @@ describe('crc-care-gap', () => {
     expect(mentions).toEqual([]);
   });
 
-  it('keeps neutral Synthea notes on every slot, none stating an age', () => {
-    for (const p of SLOTS) expect(notesOf(p).length, p).toBeGreaterThan(0);
+  // The lever hosts (T3 v2) are hand-written charts with no Synthea note; the kept-notes rule is the
+  // cohort slots'.
+  const COHORT = SLOTS.filter((p) => (TASKS.T3.slots as readonly string[]).includes(p.slice(8)));
+  it('keeps neutral Synthea notes on every cohort slot, none stating an age', () => {
+    for (const p of COHORT) expect(notesOf(p).length, p).toBeGreaterThan(0);
     const aged = SLOTS.flatMap(notesOf).filter((r) => /\b\d+[ -]years?[ -]old\b/i.test(text(r))).map((r) => r.id);
     expect(aged).toEqual([]);
   });

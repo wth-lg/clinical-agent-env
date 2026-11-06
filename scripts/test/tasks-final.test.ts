@@ -19,10 +19,11 @@
 // or the grader changed without a regrade entry (grader_task_version, task_version), and not
 // when the world changed.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
+import type { TaskSource } from '../../packages/core/tasks.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
 import { taskVersions } from '../../packages/core/tasks.ts';
 import { repoRoot } from './helpers.ts';
@@ -54,11 +55,20 @@ export interface FrozenTask {
   replay_at?: { tag: string; commit: string };
   regrades: FrozenRegrade[];
 }
+// A task whose freeze a new version superseded (R42, T3 v2): `status: "v2-pending"`, the reason,
+// and the earlier freeze kept whole under `superseded` with its `version`. It is not frozen (its
+// new freeze is written by W5-S), and this test pins its superseded files at their tags instead.
+export interface PendingTask {
+  status: 'v2-pending';
+  reason: string;
+  superseded: FrozenTask & { version: string };
+}
+export const isPending = (t: FrozenTask | PendingTask): t is PendingTask => (t as PendingTask).status === 'v2-pending';
 export interface TasksFinal {
   schema_version: 1;
   trials_per_task: number;
   band: [number, number];
-  tasks: Record<string, FrozenTask>;
+  tasks: Record<string, FrozenTask | PendingTask>;
 }
 
 // The grader-side versions a frozen task is held to now: its last regrade's, else the freeze's.
@@ -66,6 +76,26 @@ export const currentVersions = (t: FrozenTask): { grader_task_version: string; t
 
 const file = join(repoRoot, TASKS_FINAL);
 const doc = (): TasksFinal => JSON.parse(readFileSync(file, 'utf8')) as TasksFinal;
+// The task's files as a tag held them, extracted to a temporary tasks root inside the repo (as
+// scripts/test/lever-invariant.test.ts plants its fixture), with the repo's fixtures/ and
+// packages/ linked beside it so the task's events.ts imports resolve; a tag the checkout lacks
+// skips the check with a warning, as scripts/donewhen.ts does for a freeze tag. The root is
+// removed after the run.
+const roots: string[] = [];
+afterAll(() => {
+  for (const r of roots) rmSync(r, { recursive: true, force: true });
+});
+function taskSourceAt(tag: string, id: string): TaskSource | null {
+  if (spawnSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`], { cwd: repoRoot, encoding: 'utf8' }).status !== 0) return null;
+  const root = mkdtempSync(join(repoRoot, 'scripts', 'test', '.tasks-final-at-'));
+  roots.push(root);
+  const archive = spawnSync('git', ['archive', '--format=tar', tag, `tasks/${id}`], { cwd: repoRoot, maxBuffer: 1 << 28 });
+  if (archive.status !== 0) throw new Error(`git archive ${tag} tasks/${id}: ${archive.stderr.toString()}`);
+  const untar = spawnSync('tar', ['-x', '-C', root], { input: archive.stdout });
+  if (untar.status !== 0) throw new Error(`tar: ${untar.stderr.toString()}`);
+  for (const d of ['fixtures', 'packages']) symlinkSync(join(repoRoot, d), join(root, d), 'dir');
+  return nodeTaskSource({ root: join(root, 'tasks'), testMode: false });
+}
 
 describe('results/tasks-final.json', () => {
   it('exists and holds the final run size and band from the constants', () => {
@@ -82,7 +112,12 @@ describe('results/tasks-final.json', () => {
     const frozen = Object.keys(d.tasks);
     expect(frozen.length).toBeGreaterThan(0);
     for (const id of frozen) expect(ids, `${id} is frozen but not a task`).toContain(id);
-    for (const [id, t] of Object.entries(d.tasks)) {
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      if (isPending(entry)) {
+        expect(entry.reason.length, `${id}.reason`).toBeGreaterThan(0);
+        expect(entry.superseded.version, `${id}.superseded.version`).toMatch(/^v\d+$/);
+      }
+      const t = isPending(entry) ? entry.superseded : entry;
       for (const k of ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'oracle_final_hash'] as const) expect(t[k], `${id}.${k}`).toMatch(SHA256);
       expect(t.frozen_at?.tag, `${id}.frozen_at.tag`).toMatch(TAG);
       expect(t.frozen_from_branch, `${id}.frozen_from_branch`).toMatch(COMMIT);
@@ -100,12 +135,39 @@ describe('results/tasks-final.json', () => {
   it("a frozen task's own files and tools have not moved (its env_version at the frozen world), and its grader side only through a recorded regrade", async () => {
     const d = doc();
     const source = nodeTaskSource({ testMode: false });
-    for (const [id, t] of Object.entries(d.tasks)) {
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      if (isPending(entry)) continue;
+      const t = entry;
       const now = await taskVersions(await source.get(id), t.world_hash);
       expect(now.env_version, `${id}: env_version at the frozen world moved since the freeze (the task's env files or TOOLS_VERSION)`).toBe(t.env_version);
       const held = currentVersions(t);
       expect(now.grader_task_version, `${id}: grader_task_version moved without a regrade entry in ${TASKS_FINAL}`).toBe(held.grader_task_version);
       expect(now.task_version, `${id}: task_version moved without a regrade entry in ${TASKS_FINAL}`).toBe(held.task_version);
+    }
+  });
+
+  // R42, R37, R40: a superseded freeze is history. Its recorded files, as the tag of its last
+  // regrade (else its freeze tag) holds them, still give the versions it records at its world,
+  // and the checkout's files have moved on from them (the task is pending its new version).
+  it("a v2-pending task's superseded freeze is pinned by its files at their tag, and the checkout's task has moved on from it", async () => {
+    const d = doc();
+    const source = nodeTaskSource({ testMode: false });
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      if (!isPending(entry)) continue;
+      const t = entry.superseded;
+      const held = currentVersions(t);
+      const tag = t.regrades.at(-1)?.at ?? t.frozen_at.tag;
+      const at = taskSourceAt(tag, id);
+      if (at === null) {
+        console.warn(`${TASKS_FINAL}: ${id}'s tag ${tag} is not on this checkout; its superseded freeze is not pinned here`);
+      } else {
+        const then = await taskVersions(await at.get(id), t.world_hash);
+        expect(then.env_version, `${id}: env_version of the superseded freeze at its tag ${tag} and world`).toBe(t.env_version);
+        expect(then.grader_task_version, `${id}: grader_task_version of the superseded freeze at its tag ${tag}`).toBe(held.grader_task_version);
+        expect(then.task_version, `${id}: task_version of the superseded freeze at its tag ${tag}`).toBe(held.task_version);
+      }
+      const now = await taskVersions(await source.get(id), t.world_hash);
+      expect(now.task_version, `${id} is pending a new version, so its checkout files must differ from the superseded freeze`).not.toBe(held.task_version);
     }
   });
 
@@ -124,7 +186,10 @@ describe('results/tasks-final.json', () => {
   };
   it('replay_at is required for a frozen task with final-1 records, and where named is a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
     const d = doc();
-    for (const [id, t] of Object.entries(d.tasks)) {
+    // A v2-pending task's replay_at is its superseded freeze's (R42): the commit that holds its
+    // earlier version's final-1 records.
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      const t = isPending(entry) ? entry.superseded : entry;
       if (t.replay_at === undefined) {
         expect(finalRecords(id), `${id}: has final-1 records under ${FINAL_TRIALS} and names no replay_at (R37: the tag and commit that reproduce them)`).toBe(0);
         continue;

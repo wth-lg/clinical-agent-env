@@ -304,6 +304,20 @@ describe('donewhen', () => {
     expect(line).toContain('t1 4/20');
   });
 
+  // R42: a task whose v1 freeze a new version superseded is listed with status v2-pending and its
+  // freeze kept under `superseded`; clause 5 counts it as not frozen, names it so, and holds no
+  // records to it.
+  it('clause 5 names a v2-pending task as not frozen and holds no records to its superseded freeze', () => {
+    const root = completeRepo();
+    const all = JSON.parse(freeze(TASKS)) as { tasks: Record<string, Record<string, unknown>> };
+    all.tasks.t3 = { status: 'v2-pending', reason: 'R42', superseded: { version: 'v1', ...all.tasks.t3 } };
+    write(root, 'results/tasks-final.json', JSON.stringify(all));
+    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t4,t5 --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`]: 'summary-pass' }).clause(5);
+    expect(line).toMatch(/^FAIL \(5\)/);
+    expect(line).toContain('frozen 4/5, not frozen: t3 (v2 pending, its v1 freeze superseded)');
+    expect(line).not.toContain('t3 at ');
+  });
+
   it('clause 5 fails without results/tasks-final.json, and when it freezes a task the checkout does not have', () => {
     const root = completeRepo();
     rmSync(join(root, 'results/tasks-final.json'));

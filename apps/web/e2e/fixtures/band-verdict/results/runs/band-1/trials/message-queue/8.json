@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:message-queue/8",
   "task_id": "message-queue",
-  "task_version": "3b4ab8bf7bb171e9ba3d18d24276c3110ad4f8832f33c04648a3c8cbaa957ac2",
-  "env_version": "d2e619456dd6012ee1a29abcf1bd7274280c60088d4df048514555eb90f32efb",
+  "task_version": "8c0425ad53735c0afbe5d697527d6d5ceac287adabc3409c40bee58c60eb52c4",
+  "env_version": "8d7078cb17e356dc56c9a732096517d93cf82b07ab2c275815238383e7a6f2ec",
   "grader_task_version": "c45e07324915d7382b0a22e8689c129d75ccd13df10a412078cc11a6a27c8048",
-  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+  "fixture_hash": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
   "state_hash": {
-    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
-    "final": "a55b6131b9de6d1ff6ba61f461815a0d59111d8186b7c9ba5fd07f7c322acb8c",
-    "replay_final": "a55b6131b9de6d1ff6ba61f461815a0d59111d8186b7c9ba5fd07f7c322acb8c"
+    "initial": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
+    "final": "f91e6ef5fdbc3ae43bb2786f03de7133cab60f916a53144f3b1c675d4d6780e6",
+    "replay_final": "f91e6ef5fdbc3ae43bb2786f03de7133cab60f916a53144f3b1c675d4d6780e6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:48:11.000Z",
+  "started": "2026-10-23T13:53:07.000Z",
   "turns": 14,
   "tool_calls": 55,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8) and Price (corrected creatinine, 35% rise), each with a task to Dr. Okafor and any earlier order cancelled; Webb's lisinopril renewed for 90 days once his redrawn panel came in; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:51:29.000Z",
+  "ended": "2026-10-23T13:56:25.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",

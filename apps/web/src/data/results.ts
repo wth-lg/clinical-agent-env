@@ -82,13 +82,25 @@ export interface Grading {
   regrade: { graders: string[]; records: number; changed: string[] } | null;
 }
 
-// A frozen task's entry in results/tasks-final.json, as the views read it: its world and the tag
-// and commit that reproduce its records (replay_at, else the freeze tag alone).
+// A task's freeze in results/tasks-final.json, as the views read it: its world, the env_version
+// it froze at, and the tag and commit that reproduce its records (replay_at, else the freeze tag
+// alone). A task carries one freeze per version: its entry and, for a task with a version pending
+// (R42, `status: "v2-pending"`), its superseded sub-entry; a trial's freeze is the one at the
+// trial's env_version (frozenFor), as cli/replay.ts replayAtOf matches it.
 export interface FrozenTask {
+  // null when the entry records none: such a freeze stands for the task's trials at any version.
+  env_version: string | null;
   world_hash: string;
   frozen_at: { tag: string };
   replay_at: { tag: string; commit: string } | null;
 }
+export type Freezes = Readonly<Record<string, readonly FrozenTask[]>>;
+// A trial's freeze: the task's freeze at the trial's env_version, else one that records no
+// env_version (a minimal entry), else none.
+export const frozenFor = (frozen: Freezes, task: string, env: string | null | undefined): FrozenTask | null => {
+  const fs = frozen[task] ?? [];
+  return fs.find((f) => f.env_version !== null && f.env_version === env) ?? fs.find((f) => f.env_version === null) ?? null;
+};
 
 export interface RunData {
   runId: string;
@@ -111,7 +123,7 @@ export interface RunData {
 
 export type Results =
   | { kind: 'error'; message: string }
-  | { kind: 'ready'; official: RunData | null; officialError: string | null; superseded: RunData[]; pilots: RunData[]; frozen: Readonly<Record<string, FrozenTask>>; findings: string | null; files: ReadonlySet<string> };
+  | { kind: 'ready'; official: RunData | null; officialError: string | null; superseded: RunData[]; pilots: RunData[]; frozen: Freezes; findings: string | null; files: ReadonlySet<string> };
 
 async function fetchText(rel: string): Promise<string> {
   const res = await fetch(dataUrl(rel));
@@ -134,7 +146,7 @@ export const readsEvents = (r: Pick<ExplainRecord, 'outcome' | 'detail'>, audit:
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null, frozen: Readonly<Record<string, FrozenTask>>, superseded: RunData['superseded'] = null): Promise<RunData> {
+async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null, frozen: Freezes, superseded: RunData['superseded'] = null): Promise<RunData> {
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
@@ -188,12 +200,12 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
 }
 
 // Whether a trial started from its task's frozen world, when that is not today's.
-export const onFrozenWorld = (t: Pick<Trial, 'task' | 'record'>, frozen: Readonly<Record<string, FrozenTask>>): boolean => {
-  const f = frozen[t.task];
-  return f !== undefined && f.world_hash !== MANIFEST.world.state_hash && t.record.state_hash.initial === f.world_hash;
+export const onFrozenWorld = (t: Pick<Trial, 'task' | 'record'>, frozen: Freezes): boolean => {
+  const f = frozenFor(frozen, t.task, t.record.env_version);
+  return f !== null && f.world_hash !== MANIFEST.world.state_hash && t.record.state_hash.initial === f.world_hash;
 };
 
-async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[], frozen: Readonly<Record<string, FrozenTask>>): Promise<Grading> {
+async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[], frozen: Freezes): Promise<Grading> {
   const graders = [...new Set(trials.map((t) => t.record.grader_version ?? 'unknown'))].sort();
   const frozenWorld = trials.filter((t) => onFrozenWorld(t, frozen)).length;
   const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash && !onFrozenWorld(t, frozen)).length;
@@ -275,14 +287,21 @@ const SUPERSEDED_DIR = /^superseded\/((.+)-(v\d+))\/trials\//;
 // results/tasks-final.json as the views read it: each frozen task's world and reproduce pointer;
 // {} without the file or when it cannot be read (a warning the loader does not raise: the freeze
 // is a hint for the State diff, never a count).
-async function loadFrozen(has: ReadonlySet<string>): Promise<Record<string, FrozenTask>> {
+async function loadFrozen(has: ReadonlySet<string>): Promise<Freezes> {
   if (!has.has('results/tasks-final.json')) return {};
   try {
-    const doc = await fetchJson<{ tasks?: Record<string, { world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown } }> }>('results/tasks-final.json');
-    return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, t]) => {
-      if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return [];
+    type Entry = { env_version?: unknown; world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown }; superseded?: Entry };
+    const doc = await fetchJson<{ tasks?: Record<string, Entry> }>('results/tasks-final.json');
+    // Each task's freezes: its entry and, for a task with a version pending (R42), its superseded
+    // sub-entry; a freeze needs its env_version, world and tag to be a hint.
+    const freeze = (t: Entry): FrozenTask | null => {
+      if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return null;
       const replay_at = typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? { tag: t.replay_at.tag, commit: t.replay_at.commit } : null;
-      return [[id, { world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at }]];
+      return { env_version: typeof t.env_version === 'string' ? t.env_version : null, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at };
+    };
+    return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, e]) => {
+      const fs = [e, ...(e.superseded ? [e.superseded] : [])].map(freeze).filter((f): f is FrozenTask => f !== null);
+      return fs.length === 0 ? [] : [[id, fs]];
     }));
   } catch {
     return {};

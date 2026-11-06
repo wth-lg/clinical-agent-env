@@ -33,10 +33,10 @@ const build = (overlays: Overlay[]) => applyOverlays(BASE, [], {}, overlays);
 const obsIds = (rs: readonly Resource[]) => rs.filter((r) => r.resourceType === 'Observation').map((r) => r.id).sort();
 
 describe('added Patients take fixed slots per task (W5 F3)', () => {
-  it('TASKS declares each lever task\'s slots after the cohort, three each, none overlapping; the frozen tasks declare none', () => {
+  it('TASKS declares each lever task\'s slots after the cohort, three each, none overlapping; the frozen task declares none', () => {
     const ranges = (Object.entries(TASKS) as Array<[TaskId, { added?: { first: number; count: number } }]>).flatMap(([t, v]) => (v.added ? [[t, v.added.first, v.added.count] as const] : []));
-    expect(ranges).toEqual([['T1', 61, 3], ['T2', 64, 3], ['T4', 67, 3], ['T6', 70, 3]]);
-    expect(TASKS.T3).not.toHaveProperty('added');
+    expect(ranges).toEqual([['T1', 61, 3], ['T2', 64, 3], ['T3', 73, 3], ['T4', 67, 3], ['T6', 70, 3]]);
+    // T3's range came with its v2 lever (R42); T5, frozen, declares none.
     expect(TASKS.T5).not.toHaveProperty('added');
   });
 
@@ -86,7 +86,7 @@ describe('added Patients take fixed slots per task (W5 F3)', () => {
     expect(() => build([overlay('T6', [patient('pt-t6-k', 'K'), patient('pt-t6-m', 'M')], { 'pt-t6-k': 1, 'pt-t6-m': 1 })])).toThrow(/overlay T6: added slot 1 is given to pt-t6-k and pt-t6-m/);
     const many = Array.from({ length: 1000 }, (_, i) => obs(`obs-t6-k-${i}`, 'pt-t6-k', `2026-01-01T00:${String(i % 60).padStart(2, '0')}:00-05:00`, `code-${i}`));
     expect(() => build([overlay('T6', [patient('pt-t6-k', 'K'), ...many])])).toThrow(/Patient\/pt-0070: 1000 Observation resources, at most 999 in its slot/);
-    expect(() => build([overlay('T3', [patient('pt-t3-x', 'X')])])).toThrow(/overlay T3: adds Patient\/pt-t3-x, and T3 declares no added-Patient slots/);
+    expect(() => build([overlay('T5', [patient('pt-t5-x', 'X')])])).toThrow(/overlay T5: adds Patient\/pt-t5-x, and T5 declares no added-Patient slots/);
   });
 
   // The #215 gate (verifier-phase-P17i-SLOTS-215-1): S1, M1, M2, M3, M4.

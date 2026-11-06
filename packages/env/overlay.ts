@@ -47,7 +47,7 @@ import { Store } from './store.ts';
 // Added-Patient slots (W5, the T1 gate's F3; builder-302-slots): a task that may add Patients
 // declares a range of Patient numbers after the cohort's last, `added: { first, count }`, three
 // each (T1 pt-0061 to pt-0063, T2 pt-0064 to pt-0066, T4 pt-0067 to pt-0069, T6 pt-0070 to
-// pt-0072). Its added Patients take the slots their overlay declares for their keys (Overlay.added),
+// pt-0072, T3 pt-0073 to pt-0075 since its v2 lever, R42). Its added Patients take the slots their overlay declares for their keys (Overlay.added),
 // whatever the other tasks add, and each one's resources are numbered in a block of its slot
 // (renumber.ts). So a lever toggle that adds or removes an added Patient and its resources moves no
 // other id: not another task's, not the task's other Patients', not the cohort's. That holds only for
@@ -58,14 +58,15 @@ import { Store } from './store.ts';
 // is put in some state, no toggle changes the removals) and that no two states differ in an id
 // outside the toggled items' blocks is scripts/test/lever-invariant.test.ts: it builds the world in
 // every subset of the items of every task that exports LEVER_ITEMS (none on main, so it binds when
-// the W5-E branches land; its loops run on a synthetic task today). The frozen tasks (T3, T5) declare no slots and may add no
-// Patient. A range may not reach past pt-0099.
+// the W5-E branches land; its loops run on a synthetic task today). The frozen task (T5) declares no slots and may add no
+// Patient; T3's v2 lever (R42) gave it a range. A range may not reach past pt-0099.
 export const TASKS = {
   T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'], added: { first: 61, count: 3 } },
   T2: { slug: 'results-inbox', slots: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'], added: { first: 64, count: 3 } },
   T3: {
     slug: 'crc-care-gap',
     slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0032', 'pt-0034', 'pt-0035', 'pt-0036', 'pt-0037'],
+    added: { first: 73, count: 3 },
   },
   T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005', 'pt-0042', 'pt-0044'], added: { first: 67, count: 3 } },
   T5: { slug: 'contrast-ct-prep', slots: ['pt-0012', 'pt-0015', 'pt-0046', 'pt-0047', 'pt-0048', 'pt-0049', 'pt-0050'] },

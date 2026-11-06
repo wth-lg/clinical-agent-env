@@ -21,6 +21,7 @@ import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemVerdict } from '../../../packages/grader/items.ts';
 import * as events from '../events.ts';
 import { DELIVERED, expected, type Absence, type Member } from '../expected.ts';
+import { idOf } from '../ids.ts';
 import { amendSpecOf, handed, memberNow, SPECS } from './delivered.ts';
 import { recipients, rubric } from './rubric.ts';
 
@@ -670,11 +671,20 @@ export function arrivalSeenAt(steps: readonly Step[], at: number, ids: readonly 
 // is not reported as a missed arrival. A base record that no longer decides (G1's donepezil order,
 // once frailty is gone) is not required (R38d, R34); each base record the arrival replaces is the
 // trigger, exposed by the fire itself.
-const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => arrivalSeenAt(steps, at, arrivalIds(spec));
+// crc-b3 (T3 v2 lever item A; R39(b), R38(g)): the packet's routed cover decides nothing, so a read
+// of it is not seen; the arrival is seen by the re-issued FIT (the silent sibling, obs-05001) or by
+// the cancelled original, either shown after the arrival by a read or a search that returns it
+// (any-of, R21, R38(j): the one's collection date, the other's entered-in-error status, each ends
+// her FIT of 2026 under §3).
+const DECIDING_ARRIVAL: Readonly<Record<string, readonly string[]>> = { 'crc-b3': [`Observation/${events.REISSUED.fit}`, `Observation/${idOf('obs-t3-quintero-fit')}`] };
+const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => arrivalSeenAt(steps, at, DECIDING_ARRIVAL[spec.id] ?? arrivalIds(spec));
 const amendExpectation = (spec: EventSpec): EventExpectation => {
   const p = spec.item;
   return {
     seenAt: deliveredSeenAt(spec),
+    // crc-b3's seen resource is the silent sibling (R39(b)), so the gates and the exposure report
+    // name it and not the cover; its rule is the any-of above (the cancelled original counts too).
+    ...(DECIDING_ARRIVAL[spec.id] ? { seenBy: { [DECIDING_ARRIVAL[spec.id]![0]!]: deliveredSeenAt(spec) } } : {}),
     amended: (ctx) => {
       const rs = newFitOrders(ctx).get(p) ?? [];
       const ids = rs.map(keyOf);
@@ -699,14 +709,24 @@ const amendExpectation = (spec: EventSpec): EventExpectation => {
     },
   };
 };
+// Each lure's reason, in a why: crc-d1 (Rohan's hospice discharge summary) and crc-d2 (the A-twin,
+// matrix only: the re-issued FIT keeps its 2026 collection date and counts).
+const LURE_WHY: Readonly<Record<string, string>> = {
+  'crc-d1': 'hospice care during part of the measurement period still excludes her; the trial wrote her a FIT order or a message',
+  'crc-d2': 'the re-issued FIT keeps its collection date in the measurement period and counts, so her screening is still up to date; the trial wrote her a FIT order or a message',
+};
 const lureExpectation = (spec: EventSpec): EventExpectation => ({
   kept: (ctx) => {
     const orders = (newFitOrders(ctx).get(spec.item) ?? []).map(keyOf);
     const sent = (messagesTo(ctx).get(spec.item) ?? []).map(keyOf);
     const ids = [...orders, ...sent];
-    return { met: ids.length === 0, ids, why: 'hospice care during part of the measurement period still excludes her; the trial wrote her a FIT order or a message' };
+    return { met: ids.length === 0, ids, why: LURE_WHY[spec.id] ?? 'the arrival changes nothing under the policy; the trial wrote the member a FIT order or a message' };
   },
 });
-export const EVENTS = eventGates(SPECS, Object.fromEntries(SPECS.map((s) => [s.id, s.class === 'D' ? lureExpectation(s) : amendExpectation(s)])), 'RBC-QM-02 §8');
+const expectationsFor = (specs: readonly EventSpec[]) => Object.fromEntries(specs.map((s) => [s.id, s.class === 'D' ? lureExpectation(s) : amendExpectation(s)]));
+export const EVENTS = eventGates(SPECS, expectationsFor(SPECS), 'RBC-QM-02 §8');
 
+// The checks for a given set of active specs (tests/events.test.ts runs each spec alone, the
+// matrix-only twin crc-d2 among them); `checks` is the task's, for the active specs.
+export const checksFor = (specs: readonly EventSpec[]): Check[] => [...gates, ...eventGates(specs, expectationsFor(specs), 'RBC-QM-02 §8'), ...rubric];
 export const checks: Check[] = [...gates, ...EVENTS, ...rubric];
