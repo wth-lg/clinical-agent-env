@@ -19,7 +19,7 @@
 // or the grader changed without a regrade entry (grader_task_version, task_version), and not
 // when the world changed.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
@@ -28,6 +28,7 @@ import { taskVersions } from '../../packages/core/tasks.ts';
 import { repoRoot } from './helpers.ts';
 
 export const TASKS_FINAL = 'results/tasks-final.json';
+export const FINAL_TRIALS = 'results/runs/final-1/trials';
 const SHA256 = /^[0-9a-f]{64}$/;
 const COMMIT = /^[0-9a-f]{40}$/;
 // A git tag name as this repo writes them.
@@ -114,11 +115,20 @@ describe('results/tasks-final.json', () => {
   // test holds before the tag exists. That commit's tree must hold the run and the frozen world.
   // A task frozen before its final run (W5-S freezes renal-dose-review on pilot-5a's evidence, its
   // final-1 records still to come) names no replay_at yet: scripts/donewhen.ts then points at the
-  // freeze tag, and the pointer is written with the run.
-  it('replay_at, where the freeze names one, is a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
+  // freeze tag, and the pointer is written with the run. Once the task has records under
+  // results/runs/final-1/trials/<id>/ the pointer is required, so a frozen task cannot lose it
+  // (W5S-232 F1; the same rule in scripts/donewhen.ts clause 5).
+  const finalRecords = (id: string): number => {
+    const dir = join(repoRoot, FINAL_TRIALS, id);
+    return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).length : 0;
+  };
+  it('replay_at is required for a frozen task with final-1 records, and where named is a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
     const d = doc();
     for (const [id, t] of Object.entries(d.tasks)) {
-      if (t.replay_at === undefined) continue;
+      if (t.replay_at === undefined) {
+        expect(finalRecords(id), `${id}: has final-1 records under ${FINAL_TRIALS} and names no replay_at (R37: the tag and commit that reproduce them)`).toBe(0);
+        continue;
+      }
       expect(t.replay_at?.tag, `${id}.replay_at.tag`).toMatch(TAG);
       expect(t.replay_at?.commit, `${id}.replay_at.commit`).toMatch(COMMIT);
       const { commit, tag } = t.replay_at!;

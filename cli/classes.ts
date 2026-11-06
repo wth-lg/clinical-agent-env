@@ -121,6 +121,8 @@ export interface LeverRow {
   split: { retrieval: number; reasoning: number; process: number; other: number };
   // Observed trials that exposed every declared sibling; null when the item declares none.
   sibling_exposed: number | null;
+  // The world field the item's toggle moves (LeverItem.world); null when it declares none.
+  world: string | null;
   fails: LeverFail[];
 }
 export interface TaskClasses {
@@ -442,7 +444,7 @@ function leverRows(valid: readonly Trial[], lever: Lever): NonNullable<TaskClass
     return {
       id: i.id, kind: i.kind, item: i.item, spec: i.spec ?? null, active: active(i), observed: observed.length, passed,
       catch_rate: observed.length > 0 ? passed / observed.length : null, wilson: wilson(passed, observed.length), split,
-      sibling_exposed: sibling.length === 0 ? null : observed.filter((t) => exposedAll(t) === true).length, fails,
+      sibling_exposed: sibling.length === 0 ? null : observed.filter((t) => exposedAll(t) === true).length, world: i.world ?? null, fails,
     };
   });
   return { base_pass, items };

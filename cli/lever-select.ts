@@ -31,17 +31,18 @@
 // DEFAULT_ITEM_COST_USD). The most expensive item is the one priced highest, the later-declared
 // among equals. `drops` is the order dropped, `drop` the first (null for none), `final` the set
 // after them, `p90_after` the task's p90 after them. `toggles` says what moving from the active set
-// to `final` changes: an A item is a LEVER and events.ts ACTIVE edit (no world rebuild); a B item
-// (the reserve included) is a static chart record, so its toggle needs fixtures:build and moves
-// every task's env_version (R40; a plan defect builder-300 found, so the output never says "no
-// rebuild" for a B).
+// to `final` changes: an A item is a LEVER and events.ts ACTIVE edit (no world rebuild) unless its
+// declaration names a `world` field its toggle moves (results-inbox A: the inbox item's owner), in
+// which case it needs fixtures:build like a B item; a B item (the reserve included) is a static
+// chart record, so its toggle needs fixtures:build and moves every task's env_version (R40; a plan
+// defect builder-300 found, so the output never says "no rebuild" for a B).
 // Text on stdout by default; --json prints LeverSelectJson. Exit 0 on success, 1 when a run or
 // the classes file cannot be read, 2 on a usage error. Nothing here selects by hand: the rule's
 // numbers are in the output beside the pick.
 import { existsSync, readFileSync } from 'node:fs';
 import { PER_TRIAL_BUDGET_USD, money } from '../packages/core/cost.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
-import { type ClassesJson, classesJsonProblems, classesOf, type LeverRow, uniqueRuns } from './classes.ts';
+import { type ClassesJson, classesJsonProblems, classesOf, type LeverRow, type TaskLever, taskLeverOf, uniqueRuns } from './classes.ts';
 import { MEAN_P90_BUDGET_USD } from './context-budget.ts';
 
 export const TARGET = 0.45;
@@ -53,10 +54,11 @@ export const W5_TASKS = 4;
 // What a dropped item takes off its task's p90 when --item-cost does not price it (the header).
 export const DEFAULT_ITEM_COST_USD = { A: 0.2, B: 0.1 } as const;
 
-export interface ItemEstimate { id: string; kind: 'A' | 'B'; item: string; spec: string | null; active: boolean; passed: number; observed: number; c_hat: number | null }
+export interface ItemEstimate { id: string; kind: 'A' | 'B'; item: string; spec: string | null; active: boolean; passed: number; observed: number; c_hat: number | null; world: string | null }
 export interface Prediction { set: string[]; pred: number; in_band: boolean }
 export type Rule = 'S5-2' | 'S5-2 freeze' | 'S5-2 reserve' | 'S5-3' | 'S5-2 no set in band';
-export interface Toggle { id: string; kind: 'A' | 'B'; on: boolean; rebuild: boolean }
+// `world`: the world field an A item's toggle moves (LeverItem.world), which makes it a rebuild too.
+export interface Toggle { id: string; kind: 'A' | 'B'; on: boolean; rebuild: boolean; world: string | null }
 export interface TaskSelection {
   trials: number;
   pass: number;
@@ -97,6 +99,9 @@ export interface Deps {
   err: (line: string) => void;
   // The classes JSON of run directories; default classesOf.
   classes?: (runs: readonly string[]) => Promise<ClassesJson>;
+  // The checkout's lever declaration of a task (for an item's `world` when the run's rows, pinned
+  // at an older commit, carry none); default taskLeverOf, null for a task the checkout lacks.
+  lever?: (task: string) => Promise<TaskLever | null>;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
@@ -113,7 +118,7 @@ export function select(t: Pick<ClassesJson['tasks'][string], 'trials_valid' | 'p
   const n = t.trials_valid;
   const b_hat = (t.lever.base_pass + 1) / (n + 2);
   const notes: string[] = [];
-  const items = t.lever.items.map((i): ItemEstimate => ({ id: i.id, kind: i.kind, item: i.item, spec: i.spec, active: i.active, passed: i.passed, observed: i.observed, c_hat: i.active ? (i.passed + 1) / (i.observed + 2) : null }));
+  const items = t.lever.items.map((i): ItemEstimate => ({ id: i.id, kind: i.kind, item: i.item, spec: i.spec, active: i.active, passed: i.passed, observed: i.observed, c_hat: i.active ? (i.passed + 1) / (i.observed + 2) : null, world: i.world ?? null }));
   for (const i of items) if (i.active && i.observed === 0) notes.push(`${i.id} was never observed (${i.kind === 'A' ? 'its arrival never fired' : 'no valid trial'}): its c_hat is the prior 0.5`);
   const active = items.filter((i) => i.active);
   const predictions: Prediction[] = [];
@@ -135,14 +140,17 @@ export function select(t: Pick<ClassesJson['tasks'][string], 'trials_valid' | 'p
     return aCount(y.set) - aCount(x.set);
   };
   // `x` won over `y`; the two are named in enumeration order, the winner after the colon. Equal
-  // predictions tie at that value; predictions on both sides of 0.45 (a straddle, R44) tie at their
-  // distance from it, each named with its value so the text never reads as if one were nearer.
+  // predictions tie at that value; two predictions equally far from 0.45 on opposite sides are each
+  // named with its value, and when both are outside the band (a straddle) the tie is quoted as R44
+  // does, by the distance from the band's nearer edge (the same ranking as the distance from 0.45).
+  const bandDist = (p: number) => (p < BAND[0] ? BAND[0] - p : p > BAND[1] ? p - BAND[1] : 0);
   const tieNote = (x: Prediction, y: Prediction): string | null => {
     if (Math.abs(near(x.pred) - near(y.pred)) > EPS || x.set.length !== y.set.length) return null;
     const [first, second] = predictions.indexOf(x) < predictions.indexOf(y) ? [x, y] : [y, x];
+    const outside = !x.in_band && !y.in_band;
     const pair = Math.abs(x.pred - y.pred) <= EPS
       ? `${setText(first.set)} and ${setText(second.set)} tie at ${x.pred.toFixed(3)}: ${setText(x.set)}`
-      : `${setText(first.set)} ${first.pred.toFixed(3)} and ${setText(second.set)} ${second.pred.toFixed(3)} tie at ${near(x.pred).toFixed(3)} from ${TARGET}: ${setText(x.set)}`;
+      : `${setText(first.set)} ${first.pred.toFixed(3)} and ${setText(second.set)} ${second.pred.toFixed(3)} tie at ${outside ? `${bandDist(x.pred).toFixed(3)} from the band [${BAND[0].toFixed(2)}, ${BAND[1].toFixed(2)}]` : `${near(x.pred).toFixed(3)} from ${TARGET}`}: ${setText(x.set)}`;
     const [px, py] = [priced(x.set), priced(y.set)];
     if (px !== null && py !== null && px !== py) return `${pair} (lower projected p90 by --item-cost, ${money(px)} vs ${money(py)})`;
     if (aCount(x.set) !== aCount(y.set)) return `${pair} (the measured mechanism)`;
@@ -344,15 +352,26 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     for (const item of Object.keys(items)) if (tasks[task] === undefined || !tasks[task].items.some((i) => i.id === item)) return usage(`--item-cost names ${task}.${item}, which is not a lever item of a task here`);
   }
   const { before: mean_p90, after: mean_p90_after, steps } = applyCost(tasks, p90, cost);
-  for (const t of Object.values(tasks)) {
+  for (const [id, t] of Object.entries(tasks)) {
     const active = t.items.filter((i) => i.active).map((i) => i.id);
-    const kindOf = (id: string) => t.items.find((i) => i.id === id)!.kind;
-    t.toggles = [...active.filter((id) => !t.final.includes(id)).map((id) => ({ id, on: false })), ...t.final.filter((id) => !active.includes(id)).map((id) => ({ id, on: true }))]
-      .map(({ id, on }): Toggle => ({ id, kind: kindOf(id), on, rebuild: kindOf(id) === 'B' }));
-    const rebuild = t.toggles.filter((x) => x.rebuild);
-    if (rebuild.length > 0) t.notes.push(`toggling ${rebuild.map((x) => `${x.id} ${x.on ? 'on' : 'off'}`).join(', ')} changes static chart records: fixtures:build, and every task's env_version moves (R40)`);
+    const kindOf = (x: string) => t.items.find((i) => i.id === x)!.kind;
+    // An A item's `world` (W5S-232 F2): from the run's rows, else the checkout's declaration (a
+    // historical run's pinned rows predate the field).
+    let decl: TaskLever | null = null;
+    try {
+      decl = await (deps.lever ?? taskLeverOf)(id);
+    } catch {
+      decl = null;
+    }
+    const worldOf = (x: string): string | null => t.items.find((i) => i.id === x)!.world ?? decl?.items.find((i) => i.id === x)?.world ?? null;
+    t.toggles = [...active.filter((x) => !t.final.includes(x)).map((x) => ({ id: x, on: false })), ...t.final.filter((x) => !active.includes(x)).map((x) => ({ id: x, on: true }))]
+      .map(({ id: x, on }): Toggle => ({ id: x, kind: kindOf(x), on, rebuild: kindOf(x) === 'B' || worldOf(x) !== null, world: worldOf(x) }));
+    const flip = (x: Toggle) => `${x.id} ${x.on ? 'on' : 'off'}`;
+    const statics = t.toggles.filter((x) => x.kind === 'B');
+    if (statics.length > 0) t.notes.push(`toggling ${statics.map(flip).join(', ')} changes static chart records: fixtures:build, and every task's env_version moves (R40)`);
+    for (const x of t.toggles.filter((y) => y.kind === 'A' && y.world !== null)) t.notes.push(`toggling ${flip(x)} moves a world field, ${x.world}: fixtures:build, and every task's env_version moves (R40)`);
     const a = t.toggles.filter((x) => !x.rebuild);
-    if (a.length > 0) t.notes.push(`toggling ${a.map((x) => `${x.id} ${x.on ? 'on' : 'off'}`).join(', ')} is a LEVER and events.ts ACTIVE edit (this task's env_version moves)`);
+    if (a.length > 0) t.notes.push(`toggling ${a.map(flip).join(', ')} is a LEVER and events.ts ACTIVE edit (this task's env_version moves)`);
   }
 
   if (opts.has('--json')) {
