@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:1",
   "task_id": "crc-care-gap",
-  "task_version": "db86befc9ca9a39614de3446f3ad9426155d805ebdabfe87b3e5ec25a211ef89",
-  "env_version": "edb2c1114e1dfd06e67bd6e3386bba2ca3a1402cc699420517701b9cf064b31a",
+  "task_version": "8123d50e7a8b0ea1b10d197fc6bce7e24a77b6bec34579e3ffcc25bdd1893140",
+  "env_version": "8d927ee846642265c6e44094cc779f0c919ab0e6b5effb8006e79e115c1e18c1",
   "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
-  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
   "state_hash": {
-    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
-    "final": "5f8d0e10ffe46ff98696a87061e2fd6090286d5c6e19d3909241928e95549a85",
-    "replay_final": "5f8d0e10ffe46ff98696a87061e2fd6090286d5c6e19d3909241928e95549a85"
+    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+    "final": "3ecd5f064937708c3e4e8115d3219077c45b983097aeea3e09fdec61981d32dc",
+    "replay_final": "3ecd5f064937708c3e4e8115d3219077c45b983097aeea3e09fdec61981d32dc"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:2",
   "task_id": "message-queue",
-  "task_version": "b759f5a29688c70f08c1c656b61f1911ceb12f5766a95a3d1cda3386872cb3c6",
-  "env_version": "970fe35aef67cb5b8f64480d109647c728333b63f3e5704e863064cb576c93d4",
-  "grader_task_version": "076ed39cad117c8640a4b78f507ab9e173b89d94419af6cd9ed5ed7a9ca9df70",
-  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "task_version": "3b4ab8bf7bb171e9ba3d18d24276c3110ad4f8832f33c04648a3c8cbaa957ac2",
+  "env_version": "d2e619456dd6012ee1a29abcf1bd7274280c60088d4df048514555eb90f32efb",
+  "grader_task_version": "c45e07324915d7382b0a22e8689c129d75ccd13df10a412078cc11a6a27c8048",
+  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
   "state_hash": {
-    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
-    "final": "bf17f701a348aa30dbe87c53c2242463b7f81859eddb8347320b56f4ccff4493",
-    "replay_final": "bf17f701a348aa30dbe87c53c2242463b7f81859eddb8347320b56f4ccff4493"
+    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+    "final": "e1eb102eacc2977be547e88e003ce91852c99271063885a6f9b0b8b04b7cde46",
+    "replay_final": "e1eb102eacc2977be547e88e003ce91852c99271063885a6f9b0b8b04b7cde46"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:56:46.000Z",
-  "turns": 16,
-  "tool_calls": 62,
+  "started": "2026-10-23T13:54:51.000Z",
+  "turns": 14,
+  "tool_calls": 55,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Cleared the 7 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8) and Price (corrected creatinine, 35% rise) and Kaplan (creatinine 46% above the value before the dose increase), each with a task to Dr. Okafor and any earlier order cancelled; Webb's lisinopril renewed for 90 days once his redrawn panel came in; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
+  "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8) and Price (corrected creatinine, 35% rise), each with a task to Dr. Okafor and any earlier order cancelled; Webb's lisinopril renewed for 90 days once his redrawn panel came in; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:00:29.000Z",
+  "ended": "2026-10-23T13:58:09.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
@@ -138,15 +138,6 @@
               }
             ]
           }
-        },
-        {
-          "item": "Task/task-70001",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-70022",
-            "Observation/obs-70004"
-          ],
-          "evidence": {}
         }
       ]
     },
@@ -216,15 +207,6 @@
             "Observation/obs-02270"
           ],
           "evidence": {}
-        },
-        {
-          "item": "Task/task-70001",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-70022",
-            "Observation/obs-70004"
-          ],
-          "evidence": {}
         }
       ]
     },
@@ -292,15 +274,6 @@
           "decisive_ids": [
             "Observation/obs-02269",
             "Observation/obs-02270"
-          ],
-          "evidence": {}
-        },
-        {
-          "item": "Task/task-70001",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-70022",
-            "Observation/obs-70004"
           ],
           "evidence": {}
         }
@@ -374,15 +347,6 @@
           "evidence": {}
         },
         {
-          "item": "Task/task-70001",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-70022",
-            "Observation/obs-70004"
-          ],
-          "evidence": {}
-        },
-        {
           "item": "outside",
           "met": true,
           "decisive_ids": [],
@@ -435,12 +399,6 @@
         },
         {
           "item": "Task/task-00024",
-          "met": true,
-          "decisive_ids": [],
-          "evidence": {}
-        },
-        {
-          "item": "Task/task-70001",
           "met": true,
           "decisive_ids": [],
           "evidence": {}
@@ -755,15 +713,14 @@
         "recipients": [
           "Patient/pt-0027 false",
           "Patient/pt-0030 false",
-          "Patient/pt-0031 false",
-          "Patient/pt-0070 false"
+          "Patient/pt-0031 false"
         ]
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 4,
+    "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -772,8 +729,7 @@
     "cache_keys": [
       "3d8e2dd72a7d10a6e490413c88afbba1b252751cab0c76e4b7f2dd6c0a74615d",
       "3cd6a47419af22ee00db7fb9282766b7cfb0c1177b4353cb0c0c8c80b133f100",
-      "96c51c20c6bff38fbd413c5544b58ab21a36917087c30258a4ffb1b3f9ebd5e1",
-      "3897111642eac8880b594ebd6372f6253e95df3694ec9b712d510abe99df65a7"
+      "96c51c20c6bff38fbd413c5544b58ab21a36917087c30258a4ffb1b3f9ebd5e1"
     ],
     "cache": [
       {
@@ -814,24 +770,6 @@
       },
       {
         "key": "96c51c20c6bff38fbd413c5544b58ab21a36917087c30258a4ffb1b3f9ebd5e1",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-11-04T20:39:23.460Z"
-        }
-      },
-      {
-        "key": "3897111642eac8880b594ebd6372f6253e95df3694ec9b712d510abe99df65a7",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",

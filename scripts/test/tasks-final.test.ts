@@ -112,9 +112,13 @@ describe('results/tasks-final.json', () => {
   // records, which is not the freeze commit once a grader fix regraded them (the freeze's grader
   // contradicts the current grade): a tag the coordinator creates, and the commit it names, so the
   // test holds before the tag exists. That commit's tree must hold the run and the frozen world.
-  it('replay_at names a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
+  // A task frozen before its final run (W5-S freezes renal-dose-review on pilot-5a's evidence, its
+  // final-1 records still to come) names no replay_at yet: scripts/donewhen.ts then points at the
+  // freeze tag, and the pointer is written with the run.
+  it('replay_at, where the freeze names one, is a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
     const d = doc();
     for (const [id, t] of Object.entries(d.tasks)) {
+      if (t.replay_at === undefined) continue;
       expect(t.replay_at?.tag, `${id}.replay_at.tag`).toMatch(TAG);
       expect(t.replay_at?.commit, `${id}.replay_at.commit`).toMatch(COMMIT);
       const { commit, tag } = t.replay_at!;
