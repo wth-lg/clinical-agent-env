@@ -1494,13 +1494,13 @@
   },
   "message-queue": {
    "trials_valid": 20,
-   "pass": 19,
+   "pass": 20,
    "wilson": {
-    "lo": 0.763868806553258,
-    "hi": 0.9911185511992047
+    "lo": 0.8388748419471806,
+    "hi": 1
    },
    "split": {
-    "model": 1,
+    "model": 0,
     "environment": 0,
     "grader": 0,
     "infra": 0
@@ -1514,58 +1514,42 @@
    "classes": [
     {
      "class": "hemolyzed_potassium",
-     "fails": 1,
+     "fails": 0,
      "base_fails": 0,
      "observations": 20,
-     "pass_rate": 0.95,
+     "pass_rate": 1,
      "wilson": {
-      "lo": 0.763868806553258,
-      "hi": 0.9911185511992047
+      "lo": 0.8388748419471806,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 10,
-       "run": "results/runs/final-1",
-       "item": "Task/task-00014",
-       "gate": "amended",
-       "label": "reasoning"
-      }
-     ],
+     "labels": [],
      "instances": [
       {
        "instance": 1,
        "item": "Task/task-00014",
        "label": "m3",
-       "fails": 1,
+       "fails": 0,
        "observations": 20
       }
      ]
     },
     {
      "class": "creatinine_rise",
-     "fails": 1,
+     "fails": 0,
      "base_fails": 0,
      "observations": 20,
-     "pass_rate": 0.95,
+     "pass_rate": 1,
      "wilson": {
-      "lo": 0.763868806553258,
-      "hi": 0.9911185511992047
+      "lo": 0.8388748419471806,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 10,
-       "run": "results/runs/final-1",
-       "item": "Task/task-00020",
-       "gate": "amended",
-       "label": "reasoning"
-      }
-     ],
+     "labels": [],
      "instances": [
       {
        "instance": 1,
        "item": "Task/task-00020",
        "label": "m9",
-       "fails": 1,
+       "fails": 0,
        "observations": 20
       }
      ]
@@ -1662,23 +1646,15 @@
      "class": "O",
      "active": true,
      "fired": 20,
-     "fails": 1,
+     "fails": 0,
      "observations": 20,
      "wilson": {
-      "lo": 0.763868806553258,
-      "hi": 0.9911185511992047
+      "lo": 0.8388748419471806,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 10,
-       "run": "results/runs/final-1",
-       "item": "Task/task-00014",
-       "gate": "amended",
-       "label": "reasoning"
-      }
-     ],
+     "labels": [],
      "seen": 20,
-     "amend_fails_seen": 1
+     "amend_fails_seen": 0
     },
     {
      "id": "price-b1",
@@ -1686,23 +1662,15 @@
      "class": "B",
      "active": true,
      "fired": 20,
-     "fails": 1,
+     "fails": 0,
      "observations": 20,
      "wilson": {
-      "lo": 0.763868806553258,
-      "hi": 0.9911185511992047
+      "lo": 0.8388748419471806,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 10,
-       "run": "results/runs/final-1",
-       "item": "Task/task-00020",
-       "gate": "amended",
-       "label": "reasoning"
-      }
-     ],
+     "labels": [],
      "seen": 20,
-     "amend_fails_seen": 1
+     "amend_fails_seen": 0
     },
     {
      "id": "price-d1",
@@ -1778,9 +1746,9 @@
    ],
    "outside_failures": [],
    "independence": {
-    "all_items_pass": 19,
-    "expected_per_item": 18.05,
-    "expected_per_class": 18.05
+    "all_items_pass": 20,
+    "expected_per_item": 20,
+    "expected_per_class": 20
    },
    "outcomes": [
     {
@@ -1836,7 +1804,7 @@
     {
      "trial": 10,
      "run": "results/runs/final-1",
-     "outcome": "FAIL"
+     "outcome": "PASS"
     },
     {
      "trial": 11,
@@ -1885,7 +1853,7 @@
     }
    ],
    "lever": {
-    "base_pass": 19,
+    "base_pass": 20,
     "items": [
      {
       "id": "A",
@@ -1951,6 +1919,12 @@
       "fails": []
      }
     ]
+   },
+   "historical": {
+    "task_versions": [
+     "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
+    ],
+    "checkout": "1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17"
    }
   },
   "renal-dose-review": {

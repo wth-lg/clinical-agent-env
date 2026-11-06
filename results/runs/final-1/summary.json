@@ -137,7 +137,7 @@
         "PASS": 15,
         "FAIL": 5
       },
-      "regraded": 0,
+      "regraded": 20,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -239,7 +239,7 @@
       "recorded_outcomes": {
         "PASS": 20
       },
-      "regraded": 0,
+      "regraded": 20,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -309,28 +309,27 @@
         "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
       ],
       "grader_task_versions": [
-        "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
+        "09e775242cf6c5a229f60ebd1af34c5ac6d102bdbf83a81fe70a243acb677421"
       ],
       "records": 20,
       "trials": 20,
-      "passes": 19,
-      "pass_rate": 0.95,
+      "passes": 20,
+      "pass_rate": 1,
       "wilson95": {
-        "lo": 0.763868806553258,
-        "hi": 0.9911185511992047
+        "lo": 0.8388748419471806,
+        "hi": 1
       },
       "band_verdict": "Saturated",
       "refusals": 0,
-      "refusal_excluded_rate": 0.95,
+      "refusal_excluded_rate": 1,
       "outcomes": {
-        "PASS": 19,
-        "FAIL": 1
+        "PASS": 20
       },
       "recorded_outcomes": {
         "PASS": 19,
         "FAIL": 1
       },
-      "regraded": 0,
+      "regraded": 20,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -339,9 +338,9 @@
       "mean_score": 1,
       "mean_cost_usd": 1.47677578,
       "raw_mean_score": 1,
-      "gate_fraction": 0.9949999999999999,
-      "pass_no_harm": 19,
-      "pass_no_harm_rate": 0.95,
+      "gate_fraction": 1,
+      "pass_no_harm": 20,
+      "pass_no_harm_rate": 1,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -351,35 +350,29 @@
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 20,
-      "infra_counted_rate": 0.95,
+      "infra_counted_rate": 1,
       "metric_trials": {
         "mean_score": 20,
         "raw_mean_score": 20,
         "gate_fraction": 20
       },
       "pass_k": {
-        "1": 0.95,
-        "3": 0.85,
-        "5": 0.75
+        "1": 1,
+        "3": 1,
+        "5": 1
       },
       "consistency": {
         "valid": 20,
-        "passes": 19,
-        "failures": 1,
-        "shared": {
-          "check": "amended",
-          "count": 1,
-          "found": "{\"failed_items\":[\"Task/task-00014\",\"Task/task-00020\"]}",
-          "found_count": 1,
-          "found_values": 1
-        },
+        "passes": 20,
+        "failures": 0,
+        "shared": null,
         "flags": []
       },
       "fault_counts": {
-        "failures": 1,
+        "failures": 0,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 1,
+          "reasoning": 0,
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
@@ -389,19 +382,14 @@
           "unattributed": 0
         },
         "label": {
-          "model": 1,
+          "model": 0,
           "environment": 0,
           "grader": 0,
           "unlabelled": 0
         },
         "infra_reruns": 0
       },
-      "top_failed_checks": [
-        {
-          "check": "amended",
-          "count": 1
-        }
-      ]
+      "top_failed_checks": []
     },
     "renal-dose-review": {
       "task_versions": [
@@ -432,7 +420,7 @@
         "PASS": 16,
         "FAIL": 4
       },
-      "regraded": 0,
+      "regraded": 20,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -534,7 +522,7 @@
         "PASS": 12,
         "FAIL": 8
       },
-      "regraded": 0,
+      "regraded": 20,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -613,12 +601,12 @@
   "totals": {
     "records": 120,
     "trials": 120,
-    "passes": 87,
+    "passes": 88,
     "env_error_raw": 0,
     "env_limit": 0,
     "grader_error": 0,
     "grader_error_history": 0,
-    "regraded": 20,
+    "regraded": 120,
     "requeued": 0,
     "internal_errors": 0,
     "cost_usd": 205.10860219999998
