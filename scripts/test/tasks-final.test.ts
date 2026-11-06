@@ -220,4 +220,28 @@ describe('results/tasks-final.json', () => {
       if (resolved.status === 0) expect(resolved.stdout.trim(), `${id}: tag ${tag} does not name replay_at.commit`).toBe(commit);
     }
   });
+
+  // After a squash merge the PR-branch commit a pointer named is gone from main; the pointer must
+  // name a commit on the line of this checkout (the squash commit that holds the run), or a
+  // clone cannot reproduce the run (gate FINAL-238 follow-up).
+  it('every replay_at.commit, entry or superseded, is an ancestor of HEAD', () => {
+    const d = doc();
+    for (const [id, entry] of Object.entries(d.tasks)) {
+      const own = (entry as { replay_at?: { tag: string; commit: string } }).replay_at;
+      for (const [where, t] of [['replay_at', own], ['superseded.replay_at', entry.superseded?.replay_at]] as const) {
+        if (t === undefined) continue;
+        const r = spawnSync('git', ['-C', repoRoot, 'merge-base', '--is-ancestor', t.commit, 'HEAD'], { encoding: 'utf8' });
+        expect(r.status, `${id}.${where}.commit ${t.commit.slice(0, 12)} is not an ancestor of HEAD (${r.stderr.trim()})`).toBe(0);
+      }
+    }
+    // The run's replay.json names where each verdict was made; those commits must be on the line
+    // of this checkout too, or the verdicts cannot be re-made where they were.
+    const replay = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/replay.json'), 'utf8')) as { trials: Record<string, { replayed_at: { commit: string } }> };
+    const commits = [...new Set(Object.values(replay.trials).map((v) => v.replayed_at.commit))];
+    expect(commits.length).toBeGreaterThan(0);
+    for (const commit of commits) {
+      const r = spawnSync('git', ['-C', repoRoot, 'merge-base', '--is-ancestor', commit, 'HEAD'], { encoding: 'utf8' });
+      expect(r.status, `replay.json replayed_at.commit ${commit.slice(0, 12)} is not an ancestor of HEAD (${r.stderr.trim()})`).toBe(0);
+    }
+  });
 });

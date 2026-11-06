@@ -194,6 +194,12 @@ describe('docs-gen', () => {
     expect(block).toContain(tr('contrast-ct-prep', '5/20', '25%'));
     expect(block).not.toContain('5/20 (5/20 as recorded');
     expect(block).toContain('as recorded');
+    // A recorded_outcomes with no PASS key means 0 recorded passes, not the current count (delta gate FINAL-238-2 n1).
+    const root = docsRootWithSummary((s) => {
+      const mq = (s['tasks'] as Record<string, Record<string, unknown>>)['message-queue']!;
+      mq['recorded_outcomes'] = { FAIL: 20 };
+    });
+    expect(blockOf(generate(root).writeup, 'pass-rates')).toContain(tr('message-queue', '20/20 (0/20 as recorded; regrade-r48)'));
   });
 
   it('renders the superseded crc-care-gap v1 beside v2 in the pass-rate table, marked not counted', () => {
