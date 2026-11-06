@@ -28,6 +28,7 @@
 // trial runs (before the terminal event) ends it as ENV_ERROR INTERNAL, keeping what was spent:
 // its trajectory is incomplete. A failure on the terminal or graded event leaves the outcome as
 // it was. Every event stays in the returned events either way.
+import { WORLD_MISMATCH } from './replay.ts';
 import { ANTHROPIC_VERSION, MODEL, type MessageParam, type MessageParams } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD } from './cost.ts';
 import { createEmitter, type TrialEvent, type TrialStatus } from './events.ts';
@@ -360,6 +361,9 @@ export interface GradeTrajectoryOptions {
   // Answers the judge items instead of the record's cache: judge-calibrate --from-trials passes
   // one that notes each question, to ask it again live.
   judge?: Judge;
+  // Where the run is reproduced, for the world-mismatch error (worldMismatch): the run
+  // directory's README.md, named by the caller that knows the directory.
+  reproduce?: string;
 }
 
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
@@ -369,9 +373,11 @@ export interface GradeTrajectoryOptions {
 // mismatch, R37), the replay's
 // arrivals are not the trajectory's env_events, or the replay does not reach its final hash, the
 // grade is GRADER_ERROR with the reason.
-// The named error for a record of another world (ruling R37).
-export const worldMismatch = (runAt: string | null, checkoutAt: string, runId?: unknown): string =>
-  `world mismatch: run at ${runAt ?? 'an unrecorded world'}, checkout at ${checkoutAt}; reproduce at the commit in results/${typeof runId === 'string' && runId !== '' ? runId : '<run>'}/README.md`;
+// The named error for a record of another world (ruling R37): the reason, then where the run is
+// reproduced: what the caller names (GradeTrajectoryOptions.reproduce, the run directory's README
+// as cli/replay.ts reproducePointer builds it), else results/<run_id>/README.md.
+export const worldMismatch = (runAt: string | null, checkoutAt: string, runId?: unknown, reproduce?: string): string =>
+  `${WORLD_MISMATCH}run at ${runAt ?? 'an unrecorded world'}, checkout at ${checkoutAt}; ${reproduce ?? `reproduce at the commit in results/${typeof runId === 'string' && runId !== '' ? runId : '<run>'}/README.md`}`;
 
 export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptions): Promise<Grade> {
   const task = await opts.tasks.get(taskId);
@@ -392,7 +398,7 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   const initialHash = await stateHash(initial);
   // R37: a run is historical data, pinned to the world it ran on; it is reproduced at the commit
   // its run directory's README.md names, never graded on another world.
-  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: worldMismatch(h.initial, initialHash, (opts.record as { run_id?: unknown }).run_id), stops_batch: false });
+  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: worldMismatch(h.initial, initialHash, (opts.record as { run_id?: unknown }).run_id, opts.reproduce), stops_batch: false });
   const replayed = await replay(source, task, taskTools(task), opts.events);
   if (replayed?.eventMismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.eventMismatch}`, stops_batch: false });
   if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
