@@ -1,0 +1,366 @@
+{
+ "schema_version": 1,
+ "run_dirs": [
+  "results/pilot-5t"
+ ],
+ "grader_versions": [
+  "22"
+ ],
+ "tasks": {
+  "crc-care-gap": {
+   "trials_valid": 8,
+   "pass": 3,
+   "wilson": {
+    "lo": 0.13684428582359737,
+    "hi": 0.6942576053973728
+   },
+   "split": {
+    "model": 5,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 8,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "frailty_advanced_illness",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0009",
+       "label": "Elly Shyla Trantow",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "hospice_revoked",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0020",
+       "label": "Kelsie Wanetta Rohan",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "collection_vs_report_date",
+     "fails": 2,
+     "base_fails": 2,
+     "observations": 8,
+     "pass_rate": 0.75,
+     "wilson": {
+      "lo": 0.40927543031016883,
+      "hi": 0.9285207872478909
+     },
+     "labels": [
+      {
+       "trial": 0,
+       "run": "results/pilot-5t",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 5,
+       "run": "results/pilot-5t",
+       "item": "Patient/pt-0022",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0022",
+       "label": "Tiny Darline Koss",
+       "fails": 2,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "colonoscopy_never_done",
+     "fails": 3,
+     "base_fails": 3,
+     "observations": 8,
+     "pass_rate": 0.625,
+     "wilson": {
+      "lo": 0.3057423946026273,
+      "hi": 0.8631557141764027
+     },
+     "labels": [
+      {
+       "trial": 1,
+       "run": "results/pilot-5t",
+       "item": "Patient/pt-0024",
+       "gate": "nothing_for_others",
+       "label": "over_action"
+      },
+      {
+       "trial": 2,
+       "run": "results/pilot-5t",
+       "item": "Patient/pt-0024",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      },
+      {
+       "trial": 3,
+       "run": "results/pilot-5t",
+       "item": "Patient/pt-0024",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0024",
+       "label": "Delaine Evelyn MacGyver",
+       "fails": 3,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "outside_fit_reissued",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0073",
+       "label": "Marisol Elena Quintero",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "crc-b1",
+     "item": "Patient/pt-0009",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-b2",
+     "item": "Patient/pt-0022",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-o1",
+     "item": "Patient/pt-0024",
+     "class": "O",
+     "active": true,
+     "fired": 7,
+     "fails": 0,
+     "observations": 7,
+     "wilson": {
+      "lo": 0.6456695649333126,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 7,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d1",
+     "item": "Patient/pt-0020",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-b3",
+     "item": "Patient/pt-0073",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d2",
+     "item": "Patient/pt-0073",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 3,
+    "expected_per_item": 3.75,
+    "expected_per_class": 3.75
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5t",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5t",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5t",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5t",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5t",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5t",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5t",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5t",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 3,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Patient/pt-0073",
+      "spec": "crc-b3",
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "Patient/pt-t3-baptiste",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  }
+ }
+}
