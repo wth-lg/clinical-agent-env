@@ -11,13 +11,13 @@ import { tempDir } from '../../scripts/test/helpers.ts';
 import type { ClassesJson, LeverRow, TaskClasses } from '../classes.ts';
 import { type Deps, type LeverSelectJson, main } from '../lever-select.ts';
 
-interface Spec { n: number; pass: number; base_pass: number; items: Array<{ id: string; kind: 'A' | 'B'; passed: number; observed: number; active?: boolean }> }
+interface Spec { n: number; pass: number; base_pass: number; items: Array<{ id: string; kind: 'A' | 'B'; passed: number; observed: number; active?: boolean; world?: string }> }
 
 function taskOf(s: Spec): TaskClasses {
   const row = (i: Spec['items'][number]): LeverRow => ({
     id: i.id, kind: i.kind, item: `item-${i.id}`, spec: i.kind === 'A' ? `ev-${i.id}` : null, active: i.active ?? true,
     observed: i.observed, passed: i.passed, catch_rate: i.observed > 0 ? i.passed / i.observed : null, wilson: null,
-    split: { retrieval: 0, reasoning: 0, process: 0, other: 0 }, sibling_exposed: null, fails: [],
+    split: { retrieval: 0, reasoning: 0, process: 0, other: 0 }, sibling_exposed: null, world: i.world ?? null, fails: [],
   });
   return {
     trials_valid: s.n, pass: s.pass, wilson: null, split: { model: s.n - s.pass, environment: 0, grader: 0, infra: 0 }, guard_fires: 0, q: null,
@@ -86,7 +86,7 @@ describe('W5-H gate: lever-select reproduces the hand-computed S5-2 sets on the 
     // S5-2 freeze: observed both-active pass 3-5 of 8 and {A,B} selected: freeze v2, no pilot-5b.
     expect(Object.values(json!.tasks).map((t) => [t.rule, t.freeze, t.reserve])).toEqual([['S5-2 freeze', true, false], ['S5-2 freeze', true, false], ['S5-2', false, false], ['S5-2', false, false]]);
     // What each pick changes against the active set {A,B}: a B toggle is a static chart record (rebuild).
-    expect(Object.values(json!.tasks).map((t) => t.toggles)).toEqual([[], [], [{ id: 'B', kind: 'B', on: false, rebuild: true }], [{ id: 'A', kind: 'A', on: false, rebuild: false }]]);
+    expect(Object.values(json!.tasks).map((t) => t.toggles)).toEqual([[], [], [{ id: 'B', kind: 'B', on: false, rebuild: true, world: null }], [{ id: 'A', kind: 'A', on: false, rebuild: false, world: null }]]);
     expect(json!.tasks.t4!.notes.join('\n')).toMatch(/toggling B off changes static chart records: fixtures:build, and every task's env_version moves \(R40\)/);
     expect(json!.tasks.t6!.notes.join('\n')).toMatch(/toggling A off is a LEVER and events\.ts ACTIVE edit \(this task's env_version moves\)/);
     expect(out.join('\n')).toMatch(/^\{/);
@@ -115,7 +115,7 @@ describe('S5-2 band edges', () => {
     const t = json!.tasks.t!;
     expect([t.selected, t.rule, t.reserve, t.freeze]).toEqual([['A', 'B'], 'S5-2 reserve', true, false]);
     expect(t.final).toEqual(['A', 'B', 'reserve']);
-    expect(t.toggles).toEqual([{ id: 'reserve', kind: 'B', on: true, rebuild: true }]);
+    expect(t.toggles).toEqual([{ id: 'reserve', kind: 'B', on: true, rebuild: true, world: null }]);
     expect(t.notes.join('\n')).toMatch(/toggling reserve on changes static chart records: fixtures:build, and every task's env_version moves \(R40\)/);
     const text = (await run(['--classes', file('reserve-text', classesJson({ t: spec }))])).out.join('\n');
     expect(text).toContain('selected {A,B}: S5-2 reserve (every prediction is above 0.60: activate the reserve alongside {A,B}, v3)');
@@ -123,7 +123,7 @@ describe('S5-2 band edges', () => {
     // An A reserve toggles by LEVER and events.ts; a task with no inactive item has no reserve to activate.
     const aReserve: Spec = { ...spec, items: [...spec.items.slice(0, 2), { id: 'reserve', kind: 'A', passed: 0, observed: 0, active: false }] };
     const ar = (await run(['--classes', file('reserve-a', classesJson({ t: aReserve })), '--json'])).json!.tasks.t!;
-    expect(ar.toggles).toEqual([{ id: 'reserve', kind: 'A', on: true, rebuild: false }]);
+    expect(ar.toggles).toEqual([{ id: 'reserve', kind: 'A', on: true, rebuild: false, world: null }]);
     const none: Spec = { ...spec, items: spec.items.slice(0, 2) };
     const nr = (await run(['--classes', file('reserve-none', classesJson({ t: none })), '--json'])).json!.tasks.t!;
     expect([nr.reserve, nr.final, nr.toggles]).toEqual([true, ['A', 'B'], []]);
@@ -161,6 +161,57 @@ describe('S5-2 band edges', () => {
     const t = json!.tasks.t!;
     expect([t.selected, t.rule]).toEqual([['A'], 'S5-2 no set in band']);
     expect(t.notes.join('\n')).toMatch(/no set is inside \[0\.30, 0\.60\] and the predictions straddle it: coordinator ruling/);
+  });
+
+  // R44 (pilot-5a discharge-medrec: b_hat 0.9, c_A 0.1, c_B 0.9): {A} 0.090 and {B} 0.810 are both
+  // 0.210 from the band (0.360 from 0.45), so the straddle pick is a tie, broken as F4 says (lower
+  // --item-cost, else {A}). The out-of-band branches print the tie note too (verifier-phase-P17i-P5A-230-1
+  // M1), quoting the distance from the band as R44 does (W5S-232 F3), so the text never reads as if
+  // one set were nearer.
+  it('a straddle tie is named: the lower --item-cost wins, else {A}, and the note says both are equally far', async () => {
+    const spec: Spec = { n: 8, pass: 0, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 0, observed: 8 }, { id: 'B', kind: 'B', passed: 8, observed: 8 }] };
+    const plain = (await run(['--classes', file('straddle-tie', classesJson({ t: spec })), '--json'])).json!.tasks.t!;
+    expect(plain.predictions.map((p) => Number(p.pred.toFixed(6)))).toEqual([0.09, 0.81, 0.081]);
+    expect([plain.selected, plain.rule]).toEqual([['A'], 'S5-2 no set in band']);
+    expect(plain.notes.join('\n')).toMatch(/\{A\} 0\.090 and \{B\} 0\.810 tie at 0\.210 from the band \[0\.30, 0\.60\]: \{A\} \(the measured mechanism\)/);
+    const priced = await run(['--classes', file('straddle-tie-cost', classesJson({ t: spec })), '--item-cost', 't.A=0.33,t.B=0.14', '--json']);
+    const t = priced.json!.tasks.t!;
+    expect([t.selected, t.rule, t.final]).toEqual([['B'], 'S5-2 no set in band', ['B']]);
+    expect(t.notes.join('\n')).toMatch(/\{A\} 0\.090 and \{B\} 0\.810 tie at 0\.210 from the band \[0\.30, 0\.60\]: \{B\} \(lower projected p90 by --item-cost, \$0\.14 vs \$0\.33\)/);
+    const text = (await run(['--classes', file('straddle-tie-text', classesJson({ t: spec })), '--item-cost', 't.A=0.33,t.B=0.14'])).out.join('\n');
+    expect(text).toContain('selected {B}: S5-2 no set in band (no set is inside [0.30, 0.60] and the predictions straddle it: coordinator ruling; {B} is nearest 0.45, by the tie-break)');
+    expect(text).toContain('{A} 0.090 and {B} 0.810 tie at 0.210 from the band [0.30, 0.60]: {B} (lower projected p90 by --item-cost, $0.14 vs $0.33)');
+    // Two in-band predictions equally far from 0.45 on opposite sides are quoted by that distance.
+    const inBand: Spec = { n: 8, pass: 4, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 3, observed: 8 }, { id: 'B', kind: 'B', passed: 5, observed: 8 }] };
+    const ib = (await run(['--classes', file('inband-tie', classesJson({ t: inBand })), '--json'])).json!.tasks.t!;
+    expect(ib.predictions.map((p) => Number(p.pred.toFixed(6)))).toEqual([0.36, 0.54, 0.216]);
+    expect(ib.notes.join('\n')).toMatch(/\{A\} 0\.360 and \{B\} 0\.540 tie at 0\.090 from 0\.45: \{A\} \(the measured mechanism\)/);
+    // S5-3 (every prediction below 0.30) names a tie the same way: {A} 0.090 against {B} 0.090.
+    const s53: Spec = { n: 8, pass: 0, base_pass: 8, items: [{ id: 'A', kind: 'A', passed: 0, observed: 8 }, { id: 'B', kind: 'B', passed: 0, observed: 8 }] };
+    const low = (await run(['--classes', file('s53-tie', classesJson({ t: s53 })), '--json'])).json!.tasks.t!;
+    expect([low.selected, low.rule]).toEqual([['A'], 'S5-3']);
+    expect(low.notes.join('\n')).toMatch(/\{A\} and \{B\} tie at 0\.090: \{A\} \(the measured mechanism\)/);
+  });
+
+  // W5S-232 F2: an A item whose toggle moves a world field (results-inbox A: its inbox item's
+  // owner) is a fixtures:build like a B item; the field comes from the run's rows, or from the
+  // checkout's declaration when the rows (pinned at an older commit) carry none.
+  it("toggling an A item that moves a world field is a fixtures:build, by the row's world or the checkout's declaration", async () => {
+    const spec: Spec = { n: 8, pass: 2, base_pass: 5, items: [{ id: 'A', kind: 'A', passed: 4, observed: 8, world: "the inbox item's owner" }, { id: 'B', kind: 'B', passed: 8, observed: 8 }] };
+    const { json, out } = await run(['--classes', file('world-row', classesJson({ t: spec })), '--json']);
+    const t = json!.tasks.t!;
+    expect([t.selected, t.final]).toEqual([['B'], ['B']]);
+    expect(t.toggles).toEqual([{ id: 'A', kind: 'A', on: false, rebuild: true, world: "the inbox item's owner" }]);
+    expect(t.notes.join('\n')).toMatch(/toggling A off moves a world field, the inbox item's owner: fixtures:build, and every task's env_version moves \(R40\)/);
+    expect(t.notes.join('\n')).not.toMatch(/LEVER and events\.ts ACTIVE edit/);
+    expect(out.join('\n')).not.toMatch(/no rebuild/);
+    const { world: _world, ...noWorld } = spec.items[0]!;
+    const plain: Spec = { ...spec, items: [noWorld, spec.items[1]!] };
+    const bare = (await run(['--classes', file('world-none', classesJson({ t: plain })), '--json'])).json!.tasks.t!;
+    expect(bare.toggles).toEqual([{ id: 'A', kind: 'A', on: false, rebuild: false, world: null }]);
+    expect(bare.notes.join('\n')).toMatch(/toggling A off is a LEVER and events\.ts ACTIVE edit/);
+    const declared = (await run(['--classes', file('world-decl', classesJson({ t: plain })), '--json'], { lever: async (task) => (task === 't' ? { active: ['A', 'B'], items: [{ id: 'A', kind: 'A', item: 'item-A', spec: 'ev-A', world: 'its owner' }, { id: 'B', kind: 'B', item: 'item-B' }] } : null) })).json!.tasks.t!;
+    expect(declared.toggles).toEqual([{ id: 'A', kind: 'A', on: false, rebuild: true, world: 'its owner' }]);
   });
 
   it('an inactive item is not a candidate; an active item with no observation is flagged', async () => {

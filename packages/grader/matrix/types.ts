@@ -121,6 +121,9 @@ export interface Agents {
 // `sibling` the deciding sibling records ('Type/id') cli classes flags as exposed or not (none
 // declared: no flag); `gates`, when given, the gates whose failure on the item is the lever item's
 // (default: any gate of the item). The id is the item's name in LEVER ('A', 'B', 'reserve').
+// `world`, on an A item, names the world field its toggle moves (results-inbox A: the inbox item's
+// owner), so that toggling it is a fixtures:build like a B item's (W5S-232 F2); an A item without
+// it toggles by LEVER and events.ts alone.
 export interface LeverItem {
   id: string;
   kind: 'A' | 'B';
@@ -129,6 +132,7 @@ export interface LeverItem {
   spec?: string;
   sibling?: readonly string[];
   gates?: readonly string[];
+  world?: string;
 }
 
 // A task's lever items and the active ones (expected.ts LEVER, which packages/core/tasks.ts also

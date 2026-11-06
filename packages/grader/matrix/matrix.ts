@@ -215,10 +215,12 @@ export function matrixLever(mod: { LEVER_ITEMS?: unknown; LEVER?: unknown; [k: s
     if (r.spec !== undefined && (typeof r.spec !== 'string' || r.spec === '')) throw new Error(`${w}: spec must be an event spec id`);
     if (r.sibling !== undefined && !isIdList(r.sibling)) throw new Error(`${w}: sibling must be a list of ids`);
     if (r.gates !== undefined && !isIdList(r.gates)) throw new Error(`${w}: gates must be a list of gate ids`);
+    if (r.world !== undefined && (typeof r.world !== 'string' || r.world === '')) throw new Error(`${w}: world must name the world field the toggle moves`);
     return {
       id: r.id, kind: r.kind as LeverItem['kind'], item: r.item,
       ...(r.patient === undefined ? {} : { patient: r.patient }), ...(r.spec === undefined ? {} : { spec: r.spec }),
       ...(r.sibling === undefined ? {} : { sibling: r.sibling }), ...(r.gates === undefined ? {} : { gates: r.gates }),
+      ...(r.world === undefined ? {} : { world: r.world }),
     };
   });
   return { active: mod.LEVER, items };

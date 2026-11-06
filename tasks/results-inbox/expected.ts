@@ -29,9 +29,9 @@ import { LEVER } from './lever.ts';
 //
 // W5-E (plan-amendment-w5 "T2 results-inbox", G1): three lever items on three patients the overlay
 // adds (overlay.ts LEVER_HOSTS), each a toggle in LEVER below. An inactive item's patient, list
-// entry, event and policy sentence are all absent; the loader hashes LEVER into env_version
-// (packages/core/tasks.ts leverOf) and the overlay reads the same literal, so toggling B or the
-// reserve is a world rebuild, toggling A is not (its arrival lives in events.ts).
+// entry, event and policy sentence are all absent; the loader hashes LEVER into env_version and the
+// overlay reads the same literal, so every toggle is a world rebuild (A's by its item's owner,
+// LEVER_ITEMS `world`; A's arrival lives in events.ts).
 //   A        marchetti_cr_ed (item 14): a creatinine item that closes (RBC-LAB-03 §3 not met) and
 //            hosts the A event marchetti-cr-batch: a St. Brigid batch of two creatinines, the high
 //            one notified and the normal one filed silently; against the silent one the notified
@@ -42,11 +42,10 @@ import { LEVER } from './lever.ts';
 //   reserve  cipriani_k_exception (item 16, inactive): a hemolyzed potassium of 6.3 on a
 //            mineralocorticoid antagonist with an eGFR of 24; RBC-LAB-03 §2 gains RESERVE_SENTENCE
 //            only while it is active, and §1 then applies
-// Toggling (W5-S): change LEVER in lever.ts; for B or the reserve run `pnpm fixtures:build` and commit its
-// outputs; for the reserve also append RESERVE_SENTENCE to RBC-LAB-03 §2 (policy/rbc-lab-03.md,
-// version 3) and add "hemolysis_exception_missed" to task.toml [matrix] traps; then refill the judge
-// cache (`pnpm cli oracle --task results-inbox --live-judge --misses-only`). tests/lever.test.ts
-// checks each of these against LEVER.
+// Toggling (W5-S): change LEVER in lever.ts; run `pnpm fixtures:build` and commit its outputs; for
+// the reserve also append RESERVE_SENTENCE to RBC-LAB-03 §2 (version 3) and add
+// "hemolysis_exception_missed" to task.toml [matrix] traps; then refill the judge cache
+// (`pnpm cli oracle --task results-inbox --live-judge --misses-only`). tests/lever.test.ts checks these.
 export const NEXT_BUSINESS_DAY = '2026-10-26';
 export const TODAY = '2026-10-23';
 
@@ -190,7 +189,7 @@ export const items: readonly Item[] = [...BASE_ITEMS, ...leverItems(LEVER)];
 // reports as exposed or not: the silent creatinine of the batch, and the Patient record whose
 // identifiers decide the fax.
 export const LEVER_ITEMS = [
-  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: idOf('pt-t2-marchetti'), spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'] },
+  { id: 'A', kind: 'A', item: 'marchetti_cr_ed', patient: idOf('pt-t2-marchetti'), spec: 'marchetti-cr-batch', sibling: ['Observation/obs-06210'], gates: ['event_seen', 'amended'], world: "the inbox item's owner (the user's while A is on, else Jordan Reyes's)" },
   { id: 'B', kind: 'B', item: 'nowicki_fax', patient: idOf('pt-t2-nowicki'), sibling: [`Patient/${idOf('pt-t2-nowicki')}`] },
   { id: 'reserve', kind: 'B', item: 'cipriani_k_exception', patient: idOf('pt-t2-cipriani'), sibling: [] },
 ] as const;

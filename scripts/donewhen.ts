@@ -313,6 +313,16 @@ function clause5(): Verdict {
       }
     }
   }
+  // W5S-232 F1: a frozen task whose final-1 records exist must name replay_at (R37: the tag and
+  // commit that reproduce them); one frozen before its final run has none to point at yet.
+  for (const id of frozenList) {
+    const dir = join(root, FINAL_RUN, 'trials', id);
+    const n = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).length : 0;
+    if (n > 0 && frozen.tasks[id]!.replay_at === undefined) {
+      pass = false;
+      parts.push(`${id} has ${n} final-1 record${n === 1 ? '' : 's'} and names no replay_at (R37)`);
+    }
+  }
   const w = worldCheck(frozen, j);
   if (!w.pass) pass = false;
   parts.push(w.evidence);

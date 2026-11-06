@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:discharge-medrec/16",
   "task_id": "discharge-medrec",
-  "task_version": "cd7d0c66620c00f214f77a6cc0ef10742c2100b669ca4e1eab8bd65b3daa73b6",
-  "env_version": "118a5fd3ee1e10008d7fdabbb6256be73c3fc956fb6297cb2448e43bfae70168",
-  "grader_task_version": "1f9cb1dfb1f6be1244603c75525d95f4c16756b6f010691cbd5da0b224fe0aa5",
-  "fixture_hash": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
+  "task_version": "b914c4e0f81813fadc47f4faa90b5d7e3752eee9928ee96a06105c701bd7df92",
+  "env_version": "51f6d65c330becbd0bc5cb398fdd87585be5ca094adbcf3d40db0c9bfa0a45da",
+  "grader_task_version": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
+  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
   "state_hash": {
-    "initial": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
-    "final": "4d6a3d49a0fa25cbad75ff10f5fa91c4c26a322911ce00c2970812d8e2d89394",
-    "replay_final": "4d6a3d49a0fa25cbad75ff10f5fa91c4c26a322911ce00c2970812d8e2d89394"
+    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+    "final": "02bdcbaef704c7436cba712364d76f2a08288a77ca6261286bc20013fa7f0163",
+    "replay_final": "02bdcbaef704c7436cba712364d76f2a08288a77ca6261286bc20013fa7f0163"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:36:26.000Z",
+  "started": "2026-10-23T13:30:55.000Z",
   "turns": 8,
-  "tool_calls": 58,
+  "tool_calls": 56,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Reconciled the five post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:39:19.000Z",
+  "ended": "2026-10-23T13:33:43.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "FAIL",
@@ -599,19 +599,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -675,19 +662,6 @@
           "evidence": {
             "fired": [
               "roberts-r1"
-            ],
-            "not_fired": []
-          }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
             ],
             "not_fired": []
           }
@@ -757,19 +731,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -823,19 +784,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -873,19 +821,6 @@
           "evidence": {
             "fired": [
               "stark-s1"
-            ],
-            "not_fired": []
-          }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
             ],
             "not_fired": []
           }
@@ -1022,7 +957,7 @@
   "attribution": {
     "auto": "retrieval",
     "first_failed": "med_actions",
-    "decisive_step": 49,
+    "decisive_step": 47,
     "exposure": [
       {
         "id": "DocumentReference/doc-00009",

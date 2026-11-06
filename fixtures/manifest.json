@@ -2,27 +2,27 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "37d5c269180d3209a3120e1f573acacad54e9f840f23ac0da302e316235155ba",
-    "ndjson_sha256": "f921b2cd8653de3dcef8304c5aa64945211a6bc8d50dd6da4c890046d42b0dd6",
-    "resources": 7584,
+    "state_hash": "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5",
+    "ndjson_sha256": "5713a2511b4b03058e9b93363c35cc3e16f08e96f1ca2093e7bd77f1e18a255d",
+    "resources": 7544,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
-      "Communication": 14,
-      "Condition": 917,
-      "DiagnosticReport": 489,
-      "DocumentReference": 228,
-      "Encounter": 426,
+      "Communication": 13,
+      "Condition": 916,
+      "DiagnosticReport": 486,
+      "DocumentReference": 226,
+      "Encounter": 424,
       "EpisodeOfCare": 2,
       "Group": 5,
-      "MedicationRequest": 450,
-      "Observation": 3616,
+      "MedicationRequest": 448,
+      "Observation": 3589,
       "Organization": 10,
-      "Patient": 69,
+      "Patient": 68,
       "Practitioner": 20,
       "Procedure": 1251,
       "ServiceRequest": 3,
-      "Task": 30
+      "Task": 29
     }
   },
   "base": {
@@ -113,7 +113,7 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "f6de32de81613fcd25be87658939234b0ca294bf1989a5ad6cd98d7847bf18c3",
+    "sha256": "4115df56aee21d4cef0de20af82eb3cf836f1921e23c5ece443df76d8ec3045b",
     "synthea_file": "fixtures/synthea-ids.ts",
     "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }
