@@ -113,3 +113,12 @@ describe('replayStateOf', () => {
     expect(replayStateOf({})).toBe('mismatch');
   });
 });
+
+// verifier-phase-P17i-TWOW-229-3-1 m2: a grade that stopped on the world mismatch
+// (packages/core/run.ts worldMismatch) is the named verdict world_mismatch, not a mismatch.
+describe('replayVerdict on a world-mismatch grade', () => {
+  it('gives world_mismatch with no match field and the grade\'s message', () => {
+    const message = `world mismatch: run at ${'f'.repeat(64)}, checkout at ${ENV}; reproduce at the commit in results/runs/final-1/README.md`;
+    expect(replayVerdict(record(), graded({ outcome: 'GRADER_ERROR', score: null, checks: [], error: { message } }))).toEqual({ verdict: 'world_mismatch', outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: message });
+  });
+});
