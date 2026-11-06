@@ -243,11 +243,12 @@ describe('replay --stamp', () => {
     }
     expect(j.trials['other/0']).toEqual(foreign);
     expect(r.text).toContain(`replay: stamped 2 entries with commit ${COMMIT.slice(0, 12)} (_toy/0, _toy/1); 1 entry of no settled record left as it is (other/0); wrote ${join(copy, 'replay.json')}`);
-    // Again: nothing to stamp.
-    const again = await cli([copy, '--stamp', 'a'.repeat(40)]);
+    // Again, with the checkout's own commit: nothing to stamp.
+    const head = gitState(repoRoot).sha as string;
+    const again = await cli([copy, '--stamp', head]);
     expect(again.code).toBe(0);
     expect(readFile(copy)).toEqual(j);
-    expect(again.text).toContain('replay: stamped 0 entries with commit aaaaaaaaaaaa; 2 entries already stamped');
+    expect(again.text).toContain(`replay: stamped 0 entries with commit ${head.slice(0, 12)}; 2 entries already stamped`);
     // The stamped file is what summary --require replay=all accepts.
     expect(j.trials['_toy/0']!.verdict).toBe('match');
   });
@@ -268,6 +269,11 @@ describe('replay --stamp', () => {
     expect((await cli([copy, '--stamp', 'nothex'])).code).toBe(2);
     expect((await cli([copy, '--stamp', COMMIT, '--tasks', '_toy'])).code).toBe(2);
     expect((await cli([copy, '--stamp', COMMIT, '--overwrite'])).code).toBe(2);
+    // STAMP-231 S1: a commit the repository does not hold cannot have made a verdict.
+    const nowhere = await cli([copy, '--stamp', 'a'.repeat(40)]);
+    expect(nowhere.code).toBe(1);
+    expect(nowhere.text).toContain(`replay: --stamp ${'a'.repeat(40)}: no such commit in this repository; nothing written`);
+    expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(before);
   });
 });
 
@@ -333,14 +339,54 @@ describe('replay --stamp against results/tasks-final.json', () => {
     expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(before);
   });
 
-  it('a task the file does not freeze at that commit is stamped as before', async () => {
+  // STAMP-231 S1: a frozen task's records were replayed at the freeze's replay_at commit alone, so
+  // a stamp with any other commit is refused, whatever the record's env_version.
+  it('a frozen task refuses a stamp with a commit that is not one of its replay_at commits', async () => {
     const copy = join(tempDir('replay-stamp-guard-other'), 'run');
     cpSync(dir, copy, { recursive: true });
     expect((await cli([copy])).code).toBe(0);
     unstamp(copy);
-    const file = freeze(tempDir('replay-stamp-guard-final-other'), 'v-other-freeze', 'entry');
-    const other = await cli([copy, '--stamp', 'b'.repeat(40)], file);
-    expect(other.code, other.text).toBe(0);
+    const env = record(copy, 0).env_version;
+    const file = freeze(tempDir('replay-stamp-guard-final-other'), env, 'entry');
+    const head = gitState(repoRoot).sha as string;
+    const before = readFileSync(join(copy, 'replay.json'), 'utf8');
+    const other = await cli([copy, '--stamp', head], file);
+    expect(other.code).toBe(1);
+    expect(other.text).toContain(`replay: _toy/0: not stamped: results/tasks-final.json freezes _toy, and ${head.slice(0, 12)} is not one of its replay_at commits (${COMMIT.slice(0, 12)}): no verdict of its records was made there`);
+    expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(before);
+  });
+
+  it('a task the file does not freeze stamps as before', async () => {
+    const copy = join(tempDir('replay-stamp-guard-unfrozen'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    expect((await cli([copy])).code).toBe(0);
+    unstamp(copy);
+    const file = join(tempDir('replay-stamp-guard-final-unfrozen'), 'tasks-final.json');
+    writeFileSync(file, JSON.stringify({ schema_version: 1, tasks: { other: { env_version: 'e-other', replay_at: { tag: 't', commit: COMMIT } } } }, null, 2));
+    const head = gitState(repoRoot).sha as string;
+    const r = await cli([copy, '--stamp', head], file);
+    expect(r.code, r.text).toBe(0);
+    expect(readFile(copy).trials['_toy/0']).toMatchObject({ verdict: 'match', replayed_at: { commit: head } });
+  });
+
+  // STAMP-231 m1: the freeze's replay tag is the pointer only for a record at that freeze's
+  // env_version; a record of another version of the task (v2 under a v2-pending entry whose
+  // superseded sub-entry freezes v1) is pointed at the run directory's README.
+  it('the reproduce pointer names the freeze\'s tag for a record at its env_version, else the run directory', async () => {
+    const copy = join(tempDir('replay-pointer'), 'run');
+    cpSync(dir, copy, { recursive: true });
+    const file = freeze(tempDir('replay-pointer-final'), 'v-frozen', 'superseded');
+    const r0 = record(copy, 0);
+    delete r0.regrades;
+    writeFileSync(join(copy, 'trials', '_toy', '0.json'), JSON.stringify({ ...r0, env_version: 'v-frozen' }, null, 2));
+    const r1 = record(copy, 1);
+    delete r1.regrades;
+    writeFileSync(join(copy, 'trials', '_toy', '1.json'), JSON.stringify({ ...r1, env_version: 'v-other' }, null, 2));
+    const r = await cli([copy], file);
+    expect(r.code).toBe(1);
+    const j = readFile(copy);
+    expect(j.trials['_toy/0']!.error).toContain(`; replay it at tag final-1-t3t5 (${COMMIT.slice(0, 12)}, results/tasks-final.json replay_at)`);
+    expect(j.trials['_toy/1']!.error).toContain(`; reproduce at the commit in ${copy}/README.md`);
   });
 });
 
