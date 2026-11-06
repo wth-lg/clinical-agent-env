@@ -11,14 +11,19 @@
 //     against research and public environments and References; Instructions names the local start
 //     command, the hosted URL and the CLI run command; Pass rates holds PASS_DEFINITION and
 //     DENOMINATOR_RULE; every reference item carries a YYYY-MM-DD date;
-//   - no percentage, k/N or "k of N" appears in the writeup's prose outside a generated block, a
-//     code element, a phrase of scripts/ste/numbers-allow.txt, or a region between
-//     `<!-- docs-check:allow-numbers <why> -->` and `<!-- docs-check:end-allow-numbers -->`
-//     (each region is printed as an info line, so a reviewer sees what was allowed); Unicode
-//     slashes and percent signs read as the ASCII ones. Limit: a rate written as a decimal
-//     ("0.95"), as "N percent" or in words ("ninety-five percent") is not caught, and the
-//     reviewer reads for those;
-//   - none of the claim phrases "MCP support", "Harbor compatible" or "first clinical" appears;
+//   - no percentage, k/N or "k of N" ("k of the N", "k out of N" too) appears in the writeup's
+//     prose outside a generated block, a code element, a phrase of scripts/ste/numbers-allow.txt,
+//     or a region between `<!-- docs-check:allow-numbers <why> -->` and
+//     `<!-- docs-check:end-allow-numbers -->` (each region is printed as an info line, so a
+//     reviewer sees what was allowed); Unicode slashes and percent signs and a no-break space
+//     read as the ASCII ones; an ordinal "step 2 of 3" (ORDINAL: step, part, page, round, phase,
+//     stage, section, chapter, figure, table, item, turn, not followed by a count noun or verb)
+//     is not a number. Limit: a rate written as a decimal ("0.95"), as "N percent" or in words
+//     ("ninety-five percent") is not caught, and the reviewer reads for those;
+//   - none of the claim phrases appears (CLAIM_PATTERNS: "MCP support" or "supports MCP",
+//     "Harbor compatible", "first clinical", "first FHIR agent benchmark", "fully deterministic",
+//     with whitespace, a hyphen or markdown emphasis between the words), reported at the source
+//     line of the raw HTML index;
 //   - the writeup loads nothing from outside: no script, link, img, iframe, object or embed
 //     element, no @import or url() in its style, and every theme token of apps/web with its value;
 //   - README.md has the sections Quick start, Key handling, Run from the CLI and Links, and only
@@ -53,14 +58,27 @@ const MODEL = 'claude-opus-5-5';
 const DATE = /\b20\d\d-\d\d-\d\d\b/;
 const PERCENT = /\d+(\.\d+)?\s?%/;
 const K_OF_N = /\b\d+\s?\/\s?\d+\b/;
-const K_OF_N_WORDS = /\b\d+ of \d+\b/;
-// Unicode forms of a slash or a percent sign read as the ASCII ones (verifier P24A-227-2 F5).
-const normalizeSigns = (s: string) => s.replace(/[\u2044\u2215\uFF0F]/g, '/').replace(/[\uFF05\u066A]/g, '%');
-// Phrases the writeup and README may not make as claims (researcher-16, the do-not-claim list).
-const CLAIM_PHRASES = ['MCP support', 'Harbor compatible', 'first clinical'];
-// A dollar amount in any form: a dollar sign (or its entity) before a number, or a number before USD
-// or dollars, or USD before a number (verifier P24A-227-2 F6).
-const DOLLAR = /(?:\$|&#36;|&dollar;)\s?\.?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?\s?(?:USD|dollars?)\b|\bUSD\s?\.?\d[\d,]*(?:\.\d+)?/gi;
+// "12 of 20", "12 of the 20", "12 out of 20" (verifier P24A-227-3 R3-F4a).
+const K_OF_N_WORDS = /\b\d+\s+(?:out\s+)?of\s+(?:the\s+)?\d+\b/;
+// Unicode forms of a slash or a percent sign read as the ASCII ones (verifier P24A-227-2 F5), a
+// no-break space as a space (R3-F4a).
+const normalizeSigns = (s: string) => s.replace(/[\u2044\u2215\uFF0F]/g, '/').replace(/[\uFF05\u066A\uFE6A]/g, '%').replace(/\u00A0/g, ' ');
+// An ordinal "step 2 of 3" is a place, not a rate (R3-F4d): blanked before the number rules run.
+// Only nouns that never count trials (not task, trial, pilot, day), and not when a count noun or
+// verb follows ("step 3 of 20 passed" is a rate; verifier HARD3-237-1 S1).
+const ORDINAL = /\b(?:step|part|page|round|phase|stage|section|chapter|figure|table|item|turn)\s+\d+\s+(?:out\s+)?of\s+(?:the\s+)?\d+\b(?!\s+(?:trials?|runs?|tasks?|passed|failed|were)\b)/gi;
+const blankOrdinals = (s: string) => s.replace(ORDINAL, (m) => ' '.repeat(m.length));
+// Phrases the writeup and README may not make as claims (researcher-16, the do-not-claim list),
+// with their variants (R3-F4b): between the words, whitespace (the blanks a stripped tag or a
+// padded entity leaves too), a hyphen (ASCII, U+2010, U+2011) or markdown emphasis, never other
+// punctuation ("At first, clinical staff" is no claim; HARD3-237-1 m1).
+const GAP = '[\\s\\-\\u2010\\u2011*_]+';
+const claim = (...words: string[]) => new RegExp(words.join(GAP), 'gi');
+const CLAIM_PATTERNS = [claim('MCP', 'support'), claim('supports', 'MCP'), claim('Harbor', 'compatible'), claim('first', 'clinical'), claim('first', 'FHIR', 'agent', 'benchmark'), claim('fully', 'deterministic')];
+// A dollar amount in any form: a dollar sign (its entities and U+FF04 too) before a number, or a
+// number before USD or dollars, or USD before a number, a no-break space or &nbsp; as the gap
+// (verifier P24A-227-2 F6, P24A-227-3 R3-F4c).
+const DOLLAR = /(?:\$|\uFF04|&#0*36;|&#x0*24;|&dollar;)(?:\s|&nbsp;)?\.?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?(?:\s|&nbsp;)?(?:USD|dollars?)\b|\bUSD(?:\s|&nbsp;)?\.?\d[\d,]*(?:\.\d+)?/gi;
 
 export interface Problem {
   file: string;
@@ -121,7 +139,7 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
   let prose = html.replace(/<!-- docs-gen:begin [a-z-]+ -->[\s\S]*?<!-- docs-gen:end [a-z-]+ -->/g, blank);
   for (const m of prose.matchAll(/<!-- docs-check:allow-numbers ([^>]*?) -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g)) infos.push(`info: ${file}:${lineOf(prose, m.index)}: numbers allowed: ${m[1]!.trim()}`);
   prose = prose.replace(/<!-- docs-check:allow-numbers [^>]*? -->[\s\S]*?<!-- docs-check:end-allow-numbers -->/g, blank);
-  prose = normalizeSigns(prose.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank));
+  prose = blankOrdinals(normalizeSigns(prose.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank).replace(/https?:\/\/\S+/g, blank)));
   for (const a of allow) prose = prose.split(a).join(' '.repeat(a.length));
   for (const re of [PERCENT, K_OF_N, K_OF_N_WORDS]) {
     for (const m of prose.matchAll(new RegExp(re.source, 'g'))) {
@@ -132,11 +150,12 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
     }
   }
   // Claims the writeup may not make, in its prose (generated blocks, code and allowed regions included: a
-  // claim is a claim wherever it stands).
-  const text = decodeEntities(html.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank));
-  for (const phrase of CLAIM_PHRASES) {
-    for (const m of text.matchAll(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'))) {
-      problems.push({ ...(sourceAt(html, m.index) ?? { file, line: lineOf(text, m.index) }), problem: `claim phrase: "${m[0]}"`, fix: 'the writeup makes no such claim (researcher-16); reword the sentence' });
+  // claim is a claim wherever it stands). Entities decode in place (padEntities), so a match's
+  // index is an index into the raw HTML and sourceAt names the right source line (R3-F4e).
+  const text = padEntities(html.replace(/<(pre|code|style)\b[\s\S]*?<\/\1>/g, blank).replace(/<[^>]+>/g, blank));
+  for (const re of CLAIM_PATTERNS) {
+    for (const m of text.matchAll(re)) {
+      problems.push({ ...(sourceAt(html, m.index) ?? { file, line: lineOf(text, m.index) }), problem: `claim phrase: "${m[0].replace(/\s+/g, ' ')}"`, fix: 'the writeup makes no such claim (researcher-16); reword the sentence' });
     }
   }
   // Self-contained.
@@ -146,6 +165,14 @@ function checkWriteup(root: string, html: string, problems: Problem[], infos: st
   for (const m of tokens.matchAll(/(--color-[a-z-]+): ([^;]+);/g)) if (!html.includes(`${m[1]}: ${m[2]}`)) add(1, `theme token ${m[1]} ${m[2]} is not in the page`, 'regenerate: docs-gen copies apps/web/src/styles/tokens.css');
   void root;
 }
+
+// decodeEntities keeping every index: each entity becomes its character and then spaces to the
+// entity's length, so the text is as long as the HTML and an index into it is an index into the
+// HTML. A claim pattern allows any non-word run between its words, so the padding never hides one.
+const padEntities = (s: string) => s.replace(/&(#?\w+);/g, (m) => {
+  const d = decodeEntities(m);
+  return d === m ? m : `${d}${' '.repeat(m.length - d.length)}`;
+});
 
 // The source file and line of the last element before index that carries a data-src.
 function sourceAt(html: string, index: number): { file: string; line: number } | null {
@@ -205,12 +232,15 @@ function checkReadme(root: string, text: string, problems: Problem[]): void {
   for (const b of blocks) if (b.kind === 'table') add(b.line, 'a table in README.md', 'move it to the writeup');
   const prose = blocks.flatMap((b) => (b.kind === 'paragraph' ? [{ text: b.text, line: b.line }] : b.kind === 'list' ? b.items : []));
   for (const { text: t, line } of prose) {
-    const plain = normalizeSigns(t.replace(/`[^`]*`/g, ' ').replace(/https?:\/\/\S+/g, ' '));
+    const plain = blankOrdinals(normalizeSigns(t.replace(/`[^`]*`/g, ' ').replace(/https?:\/\/\S+/g, ' ')));
     for (const re of [PERCENT, K_OF_N, K_OF_N_WORDS]) {
       const m = re.exec(plain);
       if (m) add(line, `number in README.md: "${m[0]}"`, 'README.md carries no findings or number tables; move it to the writeup');
     }
-    for (const phrase of CLAIM_PHRASES) if (new RegExp(phrase, 'i').test(t)) add(line, `claim phrase: "${phrase}"`, 'README.md makes no such claim (researcher-16); reword the sentence');
+    for (const re of CLAIM_PATTERNS) {
+      const m = new RegExp(re.source, 'i').exec(padEntities(t));
+      if (m) add(line, `claim phrase: "${m[0].replace(/\s+/g, ' ')}"`, 'README.md makes no such claim (researcher-16); reword the sentence');
+    }
   }
   const caps = /<!-- docs-gen:begin caps -->[\s\S]*?<!-- docs-gen:end caps -->/.exec(text);
   if (!caps) add(1, 'README.md has no caps block', 'add <!-- docs-gen:begin caps --> and <!-- docs-gen:end caps --> under Key handling');

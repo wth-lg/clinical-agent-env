@@ -34,12 +34,18 @@
 // version's trials moved there byte-identical when a later version's entered the run) load as
 // runs of their own, never counted: Runs lists them under the official run, the difficulty
 // history shows each beside the current version, and a trial of one opens like any other.
+//
+// The probe and smoke runs (results/probe-<n>/, results/smoke-<n>/, or under results/runs/; a
+// grader probe or a pipeline smoke before a pilot, never a pilot) load as runs of their own too
+// (probes, by name), for the difficulty history alone, labelled not counted (pre-audit-2 S24):
+// they are not pilots, so the latest pilot, Overview's pilot card and Runs leave them out.
 import { explainContext } from '../../../../packages/core/explain-context.ts';
 import { auditAnswerOf, explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
 import { trialName, validateSummary, wilson, type Interval, type Summary } from '../../../../packages/core/summary.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { useEffect, useState } from 'react';
+import { compareRuns } from './pilot-order.ts';
 import { readAudit, validateRecord } from './records.ts';
 import { MANIFEST } from './world.ts';
 
@@ -102,11 +108,16 @@ export const frozenFor = (frozen: Freezes, task: string, env: string | null | un
   return fs.find((f) => f.env_version !== null && f.env_version === env) ?? fs.find((f) => f.env_version === null) ?? null;
 };
 
+// What a run is to the results: the official run, one of its superseded task versions, a pilot,
+// or a probe or smoke run (header); only the official run counts.
+export type RunKind = 'official' | 'superseded' | 'pilot' | 'probe' | 'smoke';
+
 export interface RunData {
   runId: string;
   // The run's directory under data/, e.g. results/pilot-0.
   dir: string;
   official: boolean;
+  kind: RunKind;
   // Set on a superseded version of a task of the official run (header): which run and task it
   // supersedes under, and its version (v1).
   superseded: { of: string; task: string; version: string } | null;
@@ -123,7 +134,9 @@ export interface RunData {
 
 export type Results =
   | { kind: 'error'; message: string }
-  | { kind: 'ready'; official: RunData | null; officialError: string | null; superseded: RunData[]; pilots: RunData[]; frozen: Freezes; findings: string | null; files: ReadonlySet<string> };
+  // pilots: the pilot runs in their one order (pilot-order.ts); probes: the probe and smoke runs,
+  // by name, for the difficulty history alone.
+  | { kind: 'ready'; official: RunData | null; officialError: string | null; superseded: RunData[]; pilots: RunData[]; probes: RunData[]; frozen: Freezes; findings: string | null; files: ReadonlySet<string> };
 
 async function fetchText(rel: string): Promise<string> {
   const res = await fetch(dataUrl(rel));
@@ -146,7 +159,7 @@ export const readsEvents = (r: Pick<ExplainRecord, 'outcome' | 'detail'>, audit:
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null, frozen: Freezes, superseded: RunData['superseded'] = null): Promise<RunData> {
+async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDir: string, summary: Summary | null, frozen: Freezes, kind: RunKind, superseded: RunData['superseded'] = null): Promise<RunData> {
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
@@ -196,7 +209,7 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
     for (const id of new Set(trials.map((x) => x.task))) if (!(id in summary.tasks)) warnings.push(`${id}: the run holds records of a task that summary.json does not list`);
   }
   const runId = summary?.run_id ?? runDir.split('/').at(-1)!;
-  return { runId, dir: runDir, official: summary !== null, superseded, manifest, grading: await gradingOf(files, runDir, trials, warnings, frozen), summary, trials, bad, warnings };
+  return { runId, dir: runDir, official: summary !== null, kind, superseded, manifest, grading: await gradingOf(files, runDir, trials, warnings, frozen), summary, trials, bad, warnings };
 }
 
 // Whether a trial started from its task's frozen world, when that is not today's.
@@ -280,7 +293,9 @@ export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<s
   return explainTrial(t.record, t.audit, explainContext(input));
 }
 
-const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;
+// A pilot, probe or smoke run's directory (its kind is the name's prefix), under results/ or
+// results/runs/, by a record under its trials/.
+const RUN_DIR = /^(results\/(?:runs\/)?(pilot|probe|smoke)-[A-Za-z0-9._-]+)\/trials\//;
 // A superseded version's directory under the official run: superseded/<task>-v<n>/trials/.
 const SUPERSEDED_DIR = /^superseded\/((.+)-(v\d+))\/trials\//;
 
@@ -312,7 +327,7 @@ async function load(): Promise<Results> {
   const res = await fetch(dataUrl('index.json'));
   // A build always writes data/index.json. Only its absence, a 404 (vite dev answers one for every
   // data/ path, vite.config.ts), means no results; any other HTTP error is a failed load.
-  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], frozen: {}, findings: null, files: new Set() };
+  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], probes: [], frozen: {}, findings: null, files: new Set() };
   if (!res.ok) throw new Error(`data/index.json: HTTP ${res.status}`);
   const { files } = (await res.json()) as { files: string[] };
   const has = new Set(files);
@@ -330,7 +345,7 @@ async function load(): Promise<Results> {
       const errors = validateSummary(summary);
       if (errors.length > 0) officialError = `${officialDir}/summary.json is not a summary: ${errors.slice(0, 3).join('; ')}`;
       else {
-        official = await loadRun(files, has, officialDir, summary as Summary, frozen);
+        official = await loadRun(files, has, officialDir, summary as Summary, frozen, 'official');
         const prefix = `${officialDir}/`;
         const keys = [...new Set(files.flatMap((f) => {
           const m = f.startsWith(prefix) ? SUPERSEDED_DIR.exec(f.slice(prefix.length)) : null;
@@ -338,22 +353,28 @@ async function load(): Promise<Results> {
         }))].sort();
         for (const k of keys) {
           const [key, task, version] = k.split('\u0000') as [string, string, string];
-          superseded.push(await loadRun(files, has, `${officialDir}/superseded/${key}`, null, frozen, { of: official.runId, task, version }));
+          superseded.push(await loadRun(files, has, `${officialDir}/superseded/${key}`, null, frozen, 'superseded', { of: official.runId, task, version }));
         }
       }
     }
   }
-  // By the pilot's number, so the last pilot is the latest: pilot-9 before pilot-10, under results/
-  // or results/runs/ (verifier-phase-P17i-UI-2-1).
-  const pilotName = (d: string) => d.slice(d.lastIndexOf('/') + 1);
-  const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort((a, b) => pilotName(a).localeCompare(pilotName(b), 'en', { numeric: true }) || a.localeCompare(b));
-  // Every pilot settles before the first failure is reported, so nothing is still fetching when
+  // By the run's name with numbers as numbers (pilot-order.ts), so the last pilot is the latest:
+  // pilot-9 before pilot-10, under results/ or results/runs/ (verifier-phase-P17i-UI-2-1); the
+  // probe and smoke runs apart, in the same order.
+  const runName = (d: string) => d.slice(d.lastIndexOf('/') + 1);
+  const runDirs = new Map<string, RunKind>();
+  for (const f of files) {
+    const m = RUN_DIR.exec(f);
+    if (m !== null && m[1] !== officialDir) runDirs.set(m[1]!, m[2] as RunKind);
+  }
+  const dirs = [...runDirs.keys()].sort((a, b) => compareRuns(runName(a), runName(b)) || a.localeCompare(b));
+  // Every run settles before the first failure is reported, so nothing is still fetching when
   // the load settles (ViewBody's data-preload signal relies on it).
-  const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null, frozen)));
+  const settled = await Promise.allSettled(dirs.map((d) => loadRun(files, has, d, null, frozen, runDirs.get(d)!)));
   const failed = settled.find((s) => s.status === 'rejected');
   if (failed) throw failed.reason;
-  const pilots = settled.map((s) => (s as PromiseFulfilledResult<RunData>).value);
-  return { kind: 'ready', official, officialError, superseded, pilots, frozen, findings, files: has };
+  const runs = settled.map((s) => (s as PromiseFulfilledResult<RunData>).value);
+  return { kind: 'ready', official, officialError, superseded, pilots: runs.filter((r) => r.kind === 'pilot'), probes: runs.filter((r) => r.kind !== 'pilot'), frozen, findings, files: has };
 }
 
 let cached: Promise<Results> | undefined;

@@ -45,7 +45,8 @@ describe('the Pages build', () => {
   it('holds index.html and its assets, and no test page', () => {
     const files = build(['--mode', mode ?? '']);
     expect(pages(files)).toEqual(['index.html']);
-    expect(files.filter((f) => /probe|harness|worker/.test(f))).toEqual([]);
+    // Outside data/: the committed results it copies hold results/probe-<n>/ (a probe run, S24).
+    expect(files.filter((f) => !f.startsWith('data/') && /probe|harness|worker/.test(f))).toEqual([]);
   });
 
   it('the default build, which the e2e runs serve, still has the test pages', () => {
