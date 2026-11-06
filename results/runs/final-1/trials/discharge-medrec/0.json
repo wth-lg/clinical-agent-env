@@ -1,0 +1,930 @@
+{
+  "trial_id": "run:final-1:discharge-medrec/0",
+  "task_id": "discharge-medrec",
+  "task_version": "59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2",
+  "env_version": "9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5",
+  "grader_task_version": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
+  "fixture_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+  "state_hash": {
+    "initial": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "final": "48988caf639485b5f87b985a8633704af3c54364e5f8a66dd97018e20608ff4a",
+    "replay_final": "48988caf639485b5f87b985a8633704af3c54364e5f8a66dd97018e20608ff4a"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-06T12:42:17.601Z",
+  "turns": 40,
+  "tool_calls": 87,
+  "tool_errors": {
+    "INVALID_INPUT": 1,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 82,
+    "cache_write": 105820,
+    "cache_read": 2604869,
+    "output": 22856
+  },
+  "cost_usd": 1.5075218,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Reconciled all 5 St. Brigid discharges per RBC-TOC-02. Each has a progress note, and 3 have an addendum for results that arrived during the work (§8).\n\nWalter Kim (pt-0005): furosemide changed to 40 mg BID per the signed addendum (mr-t0001). KCl stopped per the summary. Omeprazole kept; inpatient pantoprazole was a formulary substitution and was not ordered. Lisinopril first stayed held (K 5.4 on 10/21). A repeat BMP on 10/23 (K 4.7, Cr 1.21) then arrived, so it was resumed (mr-00072). An unsigned draft addendum proposing furosemide 60 BID was not acted on. Task-t0003 is superseded and I couldn't close it: messaged Dr. Okafor (comm-t0026). Notes doc-t0004 and doc-t0019.\n\nTerence Stark (pt-0004): carvedilol was raised to 12.5 BID per the summary. A signed addendum on 10/23 reversed it (bradycardia), so it is back to 6.25 BID (mr-t0017). Insulin 70/30 and aspirin unchanged. FLAGGED: atorvastatin fills cover about 24% of the 180 days before admission, so no change (comm-t0006). FLAGGED: outside glipizide (Dr. Desai) is not addressed at discharge and was not ordered (comm-t0007). Notes doc-t0008 and doc-t0020.\n\nEarnest Roberts (pt-0044): lisinopril resumed after the 10/22 labs (Cr 1.08, K 4.6). K 5.5 on 10/23 then arrived, so it was re-held (§7). PCP task-t0018 is due 10/26. Insulins and rosuvastatin unchanged. Notes doc-t0010 and doc-t0021.\n\nGerald Whitcomb (pt-0069): lisinopril resumed (post-discharge Cr 1.12, K 4.4). Amlodipine and atorvastatin unchanged. Note doc-t0012.\n\nLorraine Pruitt (pt-0067): metformin stays held. The only creatinine is from the hospital stay, so the post-discharge condition isn't met. PCP task-t0013 is due 10/24, when the BMP is expected. Amlodipine and atorvastatin unchanged. Note doc-t0014.\n\nCompleted 4 arrived inbox items (inbox-a0001 to a0004). Unrelated inbox items for other patients were left untouched.",
+  "resumed": false,
+  "env_git_sha": "30448f3a7abd17dfcda794ff6aecd2eb692ef1b7",
+  "ended": "2026-11-06T12:45:29.430Z",
+  "judge_cost_usd": 0.009796,
+  "grader_version": "22",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "med_actions",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "why": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "decisive_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "unseen": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "nothing_else",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "extra": [],
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "seen_before_change",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "late": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009",
+            "DocumentReference/doc-00010"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005",
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-69001",
+            "Observation/obs-69002",
+            "Observation/obs-69001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-67001",
+            "Observation/obs-67001"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "delivered_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "whitcomb-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "pruitt-metformin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "event_delivered",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00901"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-k1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00902"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-d2"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00904"
+          ],
+          "evidence": {
+            "fired": [
+              "stark-s1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09002"
+          ],
+          "evidence": {
+            "fired": [
+              "roberts-r1"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "had_turn",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00901"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-k1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00902"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-d2"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00904"
+          ],
+          "evidence": {
+            "fired": [
+              "stark-s1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09002"
+          ],
+          "evidence": {
+            "fired": [
+              "roberts-r1"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "event_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "retrieval",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00901"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-k1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00902"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-d2"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00904"
+          ],
+          "evidence": {
+            "fired": [
+              "stark-s1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09002"
+          ],
+          "evidence": {
+            "fired": [
+              "roberts-r1"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "amended",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00901"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-k1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00904"
+          ],
+          "evidence": {
+            "fired": [
+              "stark-s1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-09002"
+          ],
+          "evidence": {
+            "fired": [
+              "roberts-r1"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "amend_form",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00901"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-k1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00904"
+          ],
+          "evidence": {
+            "fired": [
+              "stark-s1"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "kept",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00902"
+          ],
+          "evidence": {
+            "fired": [
+              "kim-d2"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "note_per_patient",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "missing": []
+      }
+    },
+    {
+      "id": "notes_cite_sources",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "short": []
+      }
+    },
+    {
+      "id": "flag_outside_drug",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "The outside pharmacy fill history (doc-00007) shows glipizide 5 mg tablets, 30-day fills on 07/30, 08/29 and 09/28/2026 at Lakeview Drug, prescribed by Anil Desai, MD (Valley Endocrinology). The clinic has no order for it",
+        "cache_key": "82d33946165decd359f5c76b8271dfdcbdeb2b1d9fc8dbf813e4cee86cd0ea8e"
+      }
+    },
+    {
+      "id": "flag_fill_gap",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "That covers only 44 of the 180 days before admission (4/19-10/15/2026), about 24%, well under 80%.",
+        "cache_key": "c28f1b4e2b9709c35cf48e020a3bec1a7d302d5cb10655d4be3b647e9f745014"
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 2,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [
+      "82d33946165decd359f5c76b8271dfdcbdeb2b1d9fc8dbf813e4cee86cd0ea8e",
+      "c28f1b4e2b9709c35cf48e020a3bec1a7d302d5cb10655d4be3b647e9f745014"
+    ],
+    "cache": [
+      {
+        "key": "82d33946165decd359f5c76b8271dfdcbdeb2b1d9fc8dbf813e4cee86cd0ea8e",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "The outside pharmacy fill history (doc-00007) shows glipizide 5 mg tablets, 30-day fills on 07/30, 08/29 and 09/28/2026 at Lakeview Drug, prescribed by Anil Desai, MD (Valley Endocrinology). The clinic has no order for it"
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "c28f1b4e2b9709c35cf48e020a3bec1a7d302d5cb10655d4be3b647e9f745014",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "That covers only 44 of the 180 days before admission (4/19-10/15/2026), about 24%, well under 80%."
+        },
+        "error": null,
+        "calls": 1
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "final-1",
+  "index": 0,
+  "attempt": "5a45f225-41",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/discharge-medrec/0.jsonl"
+}
