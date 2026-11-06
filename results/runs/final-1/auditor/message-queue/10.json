@@ -1,0 +1,30 @@
+{
+  "trial": "message-queue/10",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "566f411aef7e81391eeca1b1ed533f5775fd8892d6d14469c369009d23ba7cb0",
+  "at": "2026-11-06T17:47:22.161Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 68,
+    "evidence_ids": [
+      "MedicationRequest/mr-t0001",
+      "DocumentReference/doc-00601",
+      "MedicationRequest/mr-t0005",
+      "Observation/obs-02219"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "After the valid potassium of 5.8 and the corrected creatinine arrived, the agent only held the 90-day lisinopril refills it had already sent (mr-t0001, mr-t0005) instead of voiding them, so a refill the protocol forbids stayed live. The reference solution and all alternatives pass this grader, and no infra, grader or environment criterion holds."
+  },
+  "problem": null,
+  "answer": "The amended gate failure is the model's fault, and the FAIL is clinically deserved.\n\n- **What triggered the failure.** After a valid repeat potassium of 5.8 arrived for Frank Odum (DocumentReference/doc-00601, read at step 60), the agent only put the 90-day lisinopril refill it had already sent (MedicationRequest/mr-t0001) on hold at step 68.\n- **Why a hold falls short.** RBC-RX-05 §2 says \"do not refill.\" The refill itself therefore had to be voided, not paused. A held refill stays authorized and can be released, and the pharmacy is left holding a live 90-day prescription for a patient with a potassium of 5.8.\n- **Second failed item.** The same thing happened for Samuel Price. Step 69 held MedicationRequest/mr-t0005 after the corrected creatinine of 1.49 (Observation/obs-02219), which is 35% above the pre-change value and is handled as a potassium of 5.5 or higher.\n- **Why no other fault applies.** The validation matrix shows the reference solution and every accepted alternative pass the same grader version (M4). Both deciding records were shown to the model (M1). No tool call returned an internal error (M2), and both state hashes match (M3). So no infra, grader or environment criterion holds, and MF1 decides.\n- **Tool rejections.** The trajectory has no tool rejections at all, so none were wrong.\n- **Decisive step.** Step 68 is the first write on the first failed item (Task/task-00014).\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 68, \"evidence_ids\": [\"MedicationRequest/mr-t0001\", \"DocumentReference/doc-00601\", \"MedicationRequest/mr-t0005\", \"Observation/obs-02219\"], \"criteria\": [\"MF1\"], \"reason\": \"After the valid potassium of 5.8 and the corrected creatinine arrived, the agent only held the 90-day lisinopril refills it had already sent (mr-t0001, mr-t0005) instead of voiding them, so a refill the protocol forbids stayed live. The reference solution and all alternatives pass this grader, and no infra, grader or environment criterion holds.\"}",
+  "calls": 1,
+  "cost_usd": 0.306044,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

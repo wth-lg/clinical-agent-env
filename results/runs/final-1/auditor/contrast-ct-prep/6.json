@@ -1,0 +1,30 @@
+{
+  "trial": "contrast-ct-prep/6",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "69435e8a06735443aa3e4897ec2b3964f31c4973759fd230b5d815ead228698c",
+  "at": "2026-11-06T17:43:01.871Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 97,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Appointment/appt-00005"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent read only obs-07502 from the arrival for Mohr and never opened obs-07501, which was reachable and shows kidney injury requiring saline one hour before his scan. It kept his prep unchanged, so the event_seen and amended failures are deserved."
+  },
+  "problem": null,
+  "answer": "The FAIL is the model's fault and the grade is clinically right; every tool rejection was correct.\n\n1. **What arrived.** Event t5-mohr-scr delivered two creatinine results for Mr. Mohr (pt-0047) at step 50: Observation/obs-07501 and Observation/obs-07502. The inbox task pointed only at obs-07502.\n2. **What the agent read.** At step 69 the agent opened obs-07502 (1.52 mg/dL on 10/22). It never opened obs-07501 or searched his labs again before finishing.\n3. **What it decided without that record.** It compared 1.52 only with the 9/24 value of 0.94 and concluded there was no acute kidney injury. It left the decision unchanged and added no saline.\n4. **What the grader expected.** The failed `amended` check expects IV saline at 07:00, one hour before his 08:00 scan. That points to obs-07501 establishing acute kidney injury under the policy, so his prep should have been corrected.\n5. **Why no other fault applies.**\n   - M1: obs-07501 was reachable; the reference solution reached it in the matrix.\n   - M2: no tool call returned an internal error.\n   - M3: the start and final state hashes match.\n   - M4: the reference solution and all alternatives pass at this grader version.\n   - No infrastructure, grader or environment criterion holds, so MF1 decides.\n6. **Tool rejections.**\n   - Steps 54 and 55 mixed a date with a dateTime, which the schema refuses.\n   - Step 80 used substance code 5960, which is not in the catalog; the step-75 lookup for iopamidol returned nothing.\n7. **Decisive step.** Step 97 (finish) is the last step before the missing review and saline order.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 97, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Appointment/appt-00005\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent read only obs-07502 from the arrival for Mohr and never opened obs-07501, which was reachable and shows kidney injury requiring saline one hour before his scan. It kept his prep unchanged, so the event_seen and amended failures are deserved.\"}",
+  "calls": 1,
+  "cost_usd": 0.284068,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

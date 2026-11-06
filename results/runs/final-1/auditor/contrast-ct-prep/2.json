@@ -1,0 +1,35 @@
+{
+  "trial": "contrast-ct-prep/2",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "28c8917367fdc2ea2fe2121eef9f868a5b5e7bc267a50f5a59a4610e57b22dbc",
+  "at": "2026-11-06T17:41:59.356Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 97,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Appointment/appt-00005",
+      "DocumentReference/doc-t0029"
+    ],
+    "criteria": [
+      "MF1",
+      "M1",
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "reason": "Mohr's mid-trial arrival included a second creatinine (obs-07501) that the agent never opened. At step 97 it wrongly ruled out acute kidney injury from a 28-day-old baseline, so the required pre-scan saline was never ordered. The record was reachable, the hashes and grader validation are clean, and the INVALID_INPUT rejections were schema-correct, so the FAIL is the model's and is deserved."
+  },
+  "problem": null,
+  "answer": "The FAIL is the model's fault and is clinically deserved. The agent read the new 1.52 mg/dL creatinine for Mohr (pt-0047) but never opened the second creatinine (Observation/obs-07501) that arrived in the same batch, so it missed acute kidney injury and the saline it required.\n\n- **What arrived:** Event t5-mohr-scr arrived at step 57 and contained two creatinine observations, obs-07501 and obs-07502. The inbox task pointed only to obs-07502, which the agent read at step 80. It never retrieved obs-07501.\n- **Wrong decision:** At step 97 the agent ruled out acute kidney injury because \"the prior value is 28 days earlier,\" without re-querying the patient's creatinines. It left the protocol unchanged, so no 0.9% saline was ordered for 07:00. That is why both the event_seen and amended gates fail.\n- **Fairness:**\n  - M1: obs-07501 was reachable; the reference solution reached it in the validation matrix.\n  - M2: no internal tool errors occurred.\n  - M3: the start and final state hashes match.\n  - M4: the reference and all accepted alternatives pass this grader version.\n  - E10 does not apply, because the results arrived at step 57, well before the last turn.\n- **Tool rejections:** The two INVALID_INPUT errors (steps 61 and 62) correctly rejected a date paired with a dateTime. The agent's corrected calls at steps 67 and 68 succeeded.\n- **Decisive step:** I chose step 97, where the wrong \"unchanged\" decision was recorded. Step 108 (finish), the last step before the saline order that never came, would also be defensible.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 97, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Appointment/appt-00005\", \"DocumentReference/doc-t0029\"], \"criteria\": [\"MF1\", \"M1\", \"M2\", \"M3\", \"M4\"], \"reason\": \"Mohr's mid-trial arrival included a second creatinine (obs-07501) that the agent never opened. At step 97 it wrongly ruled out acute kidney injury from a 28-day-old baseline, so the required pre-scan saline was never ordered. The record was reachable, the hashes and grader validation are clean, and the INVALID_INPUT rejections were schema-correct, so the FAIL is the model's and is deserved.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.30646,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

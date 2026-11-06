@@ -1,0 +1,36 @@
+{
+  "trial": "results-inbox/14",
+  "outcome": "PASS",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "57fb0008936af6087d868dbb75c4dbff29965ca5e214bb7aeecf4771c758c76f",
+  "at": "2026-11-06T17:49:19.745Z",
+  "verdict": {
+    "label": "pass",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": null,
+    "evidence_ids": [
+      "Observation/obs-00708",
+      "ServiceRequest/sr-t0019",
+      "Communication/comm-t0020",
+      "DocumentReference/doc-06201",
+      "ServiceRequest/sr-t0033",
+      "Observation/obs-06203",
+      "Observation/obs-06209",
+      "DiagnosticReport/dr-06204"
+    ],
+    "criteria": [
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "reason": "Every result and every late arrival was handled as the policies require: the corrected non-hemolyzed potassium moved to the critical-potassium pathway, the screening addendum moved the scan to 6 months, the two new AKI creatinines got repeat BMPs and patient notices, and the preliminary chest X-ray was rightly left open. The only refusal (step 90) correctly rejected a non-inbox task, and the odd negative rubric hit does not touch any gate check, so the PASS is right."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"pass\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": null, \"evidence_ids\": [\"Observation/obs-00708\", \"ServiceRequest/sr-t0019\", \"Communication/comm-t0020\", \"DocumentReference/doc-06201\", \"ServiceRequest/sr-t0033\", \"Observation/obs-06203\", \"Observation/obs-06209\", \"DiagnosticReport/dr-06204\"], \"criteria\": [\"M2\", \"M3\", \"M4\"], \"reason\": \"Every result and every late arrival was handled as the policies require: the corrected non-hemolyzed potassium moved to the critical-potassium pathway, the screening addendum moved the scan to 6 months, the two new AKI creatinines got repeat BMPs and patient notices, and the preliminary chest X-ray was rightly left open. The only refusal (step 90) correctly rejected a non-inbox task, and the odd negative rubric hit does not touch any gate check, so the PASS is right.\"}",
+  "calls": 1,
+  "cost_usd": 0.303848,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}
