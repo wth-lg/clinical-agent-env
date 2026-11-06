@@ -60,6 +60,8 @@ Neither changes an outcome; E9 = E10 = 0; no GRADER_ERROR; every failure is mode
 Per task (20 trials each): renal-dose-review median $1.60, p90 $1.81, mean $1.63; results-inbox $1.57 / $1.84 / $1.59; discharge-medrec $1.43 / $1.51 / $1.44; message-queue $1.45 / $1.53 / $1.45; crc-care-gap $2.26 / $2.64 / $2.32; contrast-ct-prep (P22) $1.57 / $1.85 / $1.60. Median peak context 108k-134k for the four W5 tasks, 218k for crc-care-gap; `context-budget` says every budget line holds. Dry-run projection for the batch $222.09 (p90 of the pilots x 1.15 + judge); settled $172.61.
 
 
+## Generated: `pnpm cli classes results/runs/final-1` (grader 22)
+
 grader 22
 
 ## Per task
