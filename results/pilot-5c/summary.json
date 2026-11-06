@@ -1,0 +1,226 @@
+{
+  "schema_version": 11,
+  "run_id": "pilot-5c",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "tasks": {
+    "message-queue": {
+      "task_versions": [
+        "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
+      ],
+      "env_versions": [
+        "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
+      ],
+      "grader_task_versions": [
+        "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
+      ],
+      "records": 8,
+      "trials": 8,
+      "passes": 8,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.6755924351161198,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 8
+      },
+      "recorded_outcomes": {
+        "PASS": 8
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.4945691250000002,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 8,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 8,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 8,
+        "raw_mean_score": 8,
+        "gate_fraction": 8
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": 1
+      },
+      "consistency": {
+        "valid": 8,
+        "passes": 8,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    },
+    "results-inbox": {
+      "task_versions": [
+        "3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2"
+      ],
+      "env_versions": [
+        "e69093009b4e9bc112a7c35ea4c292431ed741c3ddc6d2b4789db2fca6f433bf"
+      ],
+      "grader_task_versions": [
+        "ffee13db89e555206d518851f848a5641d43a7afa7499f0bec99e412f46ff00e"
+      ],
+      "records": 8,
+      "trials": 8,
+      "passes": 4,
+      "pass_rate": 0.5,
+      "wilson95": {
+        "lo": 0.21521606221387757,
+        "hi": 0.7847839377861224
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.5,
+      "outcomes": {
+        "PASS": 4,
+        "FAIL": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 4,
+        "FAIL": 4
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.693308725,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.9166666666666666,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 0.5,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 8,
+      "infra_counted_rate": 0.5,
+      "metric_trials": {
+        "mean_score": 8,
+        "raw_mean_score": 8,
+        "gate_fraction": 8
+      },
+      "pass_k": {
+        "1": 0.5,
+        "3": 0.07142857142857142,
+        "5": 0
+      },
+      "consistency": {
+        "valid": 8,
+        "passes": 4,
+        "failures": 4,
+        "shared": {
+          "check": "event_seen",
+          "count": 4,
+          "found": "{\"failed_items\":[\"marchetti_cr_ed\"]}",
+          "found_count": 4,
+          "found_values": 1
+        },
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 4,
+        "taxonomy": {
+          "retrieval": 4,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "event_seen",
+          "count": 4
+        }
+      ]
+    }
+  },
+  "totals": {
+    "records": 16,
+    "trials": 16,
+    "passes": 12,
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "grader_error": 0,
+    "grader_error_history": 0,
+    "regraded": 0,
+    "requeued": 0,
+    "internal_errors": 0,
+    "cost_usd": 25.503022800000004
+  },
+  "mode": "live",
+  "expected_tasks": {
+    "tasks": [
+      "message-queue",
+      "results-inbox"
+    ],
+    "from": "the run manifest"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
+  ],
+  "replay": {
+    "ran": false,
+    "matched": 0,
+    "mismatched": [],
+    "other_world": [],
+    "missing": []
+  },
+  "superseded": {},
+  "requirements": {},
+  "violations": []
+}

@@ -1,0 +1,932 @@
+{
+ "schema_version": 1,
+ "run_dirs": [
+  "results/pilot-5c"
+ ],
+ "grader_versions": [
+  "22"
+ ],
+ "tasks": {
+  "message-queue": {
+   "trials_valid": 8,
+   "pass": 8,
+   "wilson": {
+    "lo": 0.6755924351161198,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 8,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "hemolyzed_potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00014",
+       "label": "m3",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "creatinine_rise",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00020",
+       "label": "m9",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "metformin_two_series",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00021",
+       "label": "m10",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "same_patient",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00022",
+       "label": "m11",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "collection_date",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00023",
+       "label": "m12",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "amended_or_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00024",
+       "label": "m13",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "odum-o1",
+     "item": "Task/task-00014",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b1",
+     "item": "Task/task-00020",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-d1",
+     "item": "Task/task-00022",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "price-b2",
+     "item": "Task/task-00021",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-c1",
+     "item": "Task/task-00023",
+     "class": "C",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-b2",
+     "item": "Task/task-00024",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "webb-a1",
+     "item": "Task/task-00023",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 8,
+    "expected_per_item": 8,
+    "expected_per_class": 8
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    }
+   ],
+   "lever": {
+    "base_pass": 8,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "Task/task-00023",
+      "spec": "webb-a1",
+      "active": true,
+      "observed": 8,
+      "passed": 8,
+      "catch_rate": 1,
+      "wilson": {
+       "lo": 0.6755924351161198,
+       "hi": 1
+      },
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 8,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "Task/task-t6-m14",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "A",
+      "item": "Task/task-t6-m16",
+      "spec": "mercer-b1",
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  },
+  "results-inbox": {
+   "trials_valid": 8,
+   "pass": 4,
+   "wilson": {
+    "lo": 0.21521606221387757,
+    "hi": 0.7847839377861224
+   },
+   "split": {
+    "model": 4,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 8,
+    "seen_all": 4,
+    "rate": 0.5
+   },
+   "classes": [
+    {
+     "class": "nodule_screening",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "nodule_scheduled",
+       "label": "nodule_scheduled",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "hemolyzed",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "hemolyzed_note",
+       "label": "hemolyzed_note",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "corrected",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "corrected_down",
+       "label": "corrected_down",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "entered_in_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "eie_baseline",
+       "label": "eie_baseline",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "preliminary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "prelim_negative",
+       "label": "prelim_negative",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "aki",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "aki_48h",
+       "label": "aki_48h",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "normal_tsh",
+       "label": "normal_tsh",
+       "fails": 0,
+       "observations": 8
+      }
+     ]
+    },
+    {
+     "class": "creatinine_no_aki",
+     "fails": 4,
+     "base_fails": 0,
+     "observations": 8,
+     "pass_rate": 0.5,
+     "wilson": {
+      "lo": 0.21521606221387757,
+      "hi": 0.7847839377861224
+     },
+     "labels": [
+      {
+       "trial": 3,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "marchetti_cr_ed",
+       "label": "marchetti_cr_ed",
+       "fails": 4,
+       "observations": 8
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "patel-ldct-addendum",
+     "item": "nodule_scheduled",
+     "class": "O",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-corrected",
+     "item": "hemolyzed_note",
+     "class": "B",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-new",
+     "item": "eie_baseline",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cxr-prelim",
+     "item": "prelim_negative",
+     "class": "D",
+     "active": true,
+     "fired": 8,
+     "fails": 0,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.6755924351161198,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 8,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "parisian-cta-corrected",
+     "item": "prelim_negative",
+     "class": "B",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "ondricka-k-new",
+     "item": "corrected_down",
+     "class": "A",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "brennan-k-hemolyzed",
+     "item": "hemolyzed_note",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "whitfield-cr-outside",
+     "item": "eie_baseline",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch",
+     "item": "marchetti_cr_ed",
+     "class": "A",
+     "active": true,
+     "fired": 8,
+     "fails": 4,
+     "observations": 8,
+     "wilson": {
+      "lo": 0.21521606221387757,
+      "hi": 0.7847839377861224
+     },
+     "labels": [
+      {
+       "trial": 3,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 4,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 6,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      },
+      {
+       "trial": 7,
+       "run": "results/pilot-5c",
+       "item": "marchetti_cr_ed",
+       "gate": "event_seen",
+       "label": "retrieval"
+      }
+     ],
+     "seen": 4,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "marchetti-cr-batch-twin",
+     "item": "marchetti_cr_ed",
+     "class": "D",
+     "active": false,
+     "fired": 0,
+     "fails": 0,
+     "observations": 0,
+     "wilson": null,
+     "labels": [],
+     "seen": 0,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 4,
+    "expected_per_item": 4,
+    "expected_per_class": 4
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-5c",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/pilot-5c",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/pilot-5c",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 6,
+     "run": "results/pilot-5c",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 7,
+     "run": "results/pilot-5c",
+     "outcome": "FAIL"
+    }
+   ],
+   "lever": {
+    "base_pass": 8,
+    "items": [
+     {
+      "id": "A",
+      "kind": "A",
+      "item": "marchetti_cr_ed",
+      "spec": "marchetti-cr-batch",
+      "active": true,
+      "observed": 8,
+      "passed": 4,
+      "catch_rate": 0.5,
+      "wilson": {
+       "lo": 0.21521606221387757,
+       "hi": 0.7847839377861224
+      },
+      "split": {
+       "retrieval": 4,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 4,
+      "world": "the inbox item's owner (the user's while A is on, else Jordan Reyes's)",
+      "fails": [
+       {
+        "trial": 3,
+        "run": "results/pilot-5c",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 4,
+        "run": "results/pilot-5c",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 6,
+        "run": "results/pilot-5c",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       },
+       {
+        "trial": 7,
+        "run": "results/pilot-5c",
+        "gates": [
+         "event_seen",
+         "amended"
+        ],
+        "label": "retrieval",
+        "sibling_exposed": false
+       }
+      ]
+     },
+     {
+      "id": "B",
+      "kind": "B",
+      "item": "nowicki_fax",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": 0,
+      "world": null,
+      "fails": []
+     },
+     {
+      "id": "reserve",
+      "kind": "B",
+      "item": "cipriani_k_exception",
+      "spec": null,
+      "active": false,
+      "observed": 0,
+      "passed": 0,
+      "catch_rate": null,
+      "wilson": null,
+      "split": {
+       "retrieval": 0,
+       "reasoning": 0,
+       "process": 0,
+       "other": 0
+      },
+      "sibling_exposed": null,
+      "world": null,
+      "fails": []
+     }
+    ]
+   }
+  }
+ }
+}
