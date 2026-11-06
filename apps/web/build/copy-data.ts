@@ -7,7 +7,9 @@
 //   and superseded/ (a task's superseded versions, R42: each <task>-v<n>/ with its trials, trajectories, replay.json,
 //   audit.jsonl and README, as cli supersede moves them);
 //   each pilot run, results/pilot-<n>/ or results/runs/pilot-<n>/ with a trials/ directory (not
-//   counted in the results; the Runs view lists them), with the same entries;
+//   counted in the results; the Runs view lists them), with the same entries, and each probe or
+//   smoke run named so (results/probe-<n>/, results/smoke-<n>/; the difficulty history shows
+//   them, not counted; results/probe/ holds no trials/ and is not a run);
 //   docs/findings.md; results/tasks-final.json (the per-task freeze: each frozen task's world and
 //   the commit that reproduces its records, which the trial State diff reads, R37); fixtures/world.ndjson.gz and
 //   fixtures/manifest.json; and docs/writeup.html, published at data/writeup.html (the Findings view links it there; P24).
@@ -55,7 +57,7 @@ function officialRunFiles(root: string): string[] {
   return runFiles(root, runDir);
 }
 
-const PILOT = /^pilot-[A-Za-z0-9._-]+$/;
+const PILOT = /^(?:pilot|probe|smoke)-[A-Za-z0-9._-]+$/;
 
 function pilotRunFiles(root: string): string[] {
   return ['results', 'results/runs'].flatMap((parent) => {

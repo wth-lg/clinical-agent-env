@@ -84,6 +84,22 @@ describe('--require', () => {
     expect(() => parseRequire('band=0.2-0.7,pass-min=2')).toThrow(/not both/);
   });
 
+  // P21-213 m4: band=0-1 read as the counts 0 to 1, while a reader may mean the proportions 0 to
+  // 1. Both bounds at or under 1 with no decimal point is ambiguous and refused; the aliases
+  // pass-min and pass-max still name counts plainly.
+  it('refuses a count band whose bounds are both 0 or 1 as ambiguous, and names both plain forms', () => {
+    for (const v of ['0-1', '0-0', '1-1']) {
+      const [a, b] = v.split('-');
+      // The message names each plain form once (HARD3-237-1 m5): the proportion with a decimal
+      // point and the count aliases.
+      expect(() => parseRequire(`band=${v}`)).toThrow(new RegExp(`^--require band=${v}: ambiguous, counts or proportions; write a proportion with a decimal point \\(${a}\\.0-${b}\\.0\\) or counts as pass-min=${a},pass-max=${b}$`));
+    }
+    expect(parseRequire('band=0-20')).toEqual({ band: [0, 20] });
+    expect(parseRequire('band=1-7')).toEqual({ band: [1, 7] });
+    expect(parseRequire('band=0.0-1.0')).toEqual({ band_rate: [0, 1] });
+    expect(parseRequire('pass-min=0,pass-max=1')).toEqual({ band: [0, 1] });
+  });
+
   it('the proportion band is k/N inclusive: 3/20 and 15/20 violate, 4/20 and 14/20 hold, and 3/15 holds at 0.2', () => {
     const nOf = (task: string, n: number, passes: number) => Array.from({ length: n }, (_, i) => trial(task, i, i < passes ? 'PASS' : 'FAIL'));
     const req = parseRequire('valid=20,band=0.2-0.7');

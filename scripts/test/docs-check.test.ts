@@ -225,6 +225,102 @@ describe('docs-check', () => {
     }
   });
 
+  // verifier P24A-227-3 R3-F4: the gaps its probes found in the number, claim and dollar rules.
+  it('catches a no-break space, "of the", "out of" and U+FE6A in a k of N or a percent (R3-F4a)', () => {
+    for (const [text, shown] of [['19 of 20', '19 of 20'], ['19 of the 20', '19 of the 20'], ['19 out of 20', '19 out of 20'], ['19 out of the 20', '19 out of the 20']]) {
+      const root = docsRoot();
+      edit(root, 'docs/findings.md', /\n\n/, `\n\nThe model passed ${text} trials.\n\n`);
+      const r = check(regenerated(root));
+      expect(r.status, text).toBe(1);
+      expect(r.stdout, text).toMatch(new RegExp(`number in prose: "${shown}"`));
+    }
+    const root = docsRoot();
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nA rate of 90﹪.\n\n');
+    const r = check(regenerated(root));
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/number in prose: "90%"/);
+  });
+
+  it('catches the claim variants: supports MCP, Harbor-compatible, first FHIR agent benchmark, fully deterministic, MCP **support** (R3-F4b)', () => {
+    for (const phrase of ['supports MCP', 'Harbor-compatible', 'the first FHIR agent benchmark', 'fully deterministic', 'MCP **support**', 'Harbor‑compatible']) {
+      const root = docsRoot();
+      edit(root, 'docs/findings.md', /\n\n/, `\n\nThis is about ${phrase} here.\n\n`);
+      const r = check(regenerated(root));
+      expect(r.status, phrase).toBe(1);
+      expect(r.stdout, phrase).toMatch(/claim phrase: "/);
+      const root2 = regenerated(docsRoot());
+      edit(root2, 'README.md', /\n## Links/, `\nThis is about ${phrase} here.\n\n## Links`);
+      const r2 = check(root2);
+      expect(r2.status, phrase).toBe(1);
+      expect(r2.stdout, phrase).toMatch(/README\.md:\d+: claim phrase: "/);
+    }
+  });
+
+  it('catches the hex entity, U+FF04 and &nbsp; forms of a dollar amount in README.md (R3-F4c)', () => {
+    for (const amount of ['&#x24;900', '&#X24;900', '＄900', '900&nbsp;USD', 'US $900', '900 USD']) {
+      const root = regenerated(docsRoot());
+      edit(root, 'README.md', /\n## Links/, `\nA trial costs about ${amount} here.\n\n## Links`);
+      const r = check(root);
+      expect(r.status, amount).toBe(1);
+      expect(r.stdout, amount).toMatch(/dollar amount outside the caps block/);
+    }
+  });
+
+  it('an ordinal "step 2 of 3" in prose is not a number, in the writeup or in README.md (R3-F4d)', () => {
+    const root = docsRoot();
+    edit(root, 'docs/findings.md', /\n\n/, '\n\nRead step 2 of 3 first, then part 1 of 2, then page 3 of 4.\n\n');
+    const r = check(regenerated(root));
+    expect(errors(r), r.stdout).toEqual([]);
+    expect(r.status).toBe(0);
+    const root2 = regenerated(docsRoot());
+    edit(root2, 'README.md', /\n3\. Open the URL/, '\n3. Do step 3 of 3: open the URL');
+    const r2 = check(root2);
+    expect(errors(r2), r2.stdout).toEqual([]);
+    expect(r2.status).toBe(0);
+    // A rate after an ordinal is still a number.
+    const root3 = docsRoot();
+    edit(root3, 'docs/findings.md', /\n\n/, '\n\nStep 2 of 3 passed 12 of 20 trials.\n\n');
+    const r3 = check(regenerated(root3));
+    expect(r3.status).toBe(1);
+    expect(r3.stdout).toMatch(/number in prose: "12 of 20"/);
+    // A rate after a count-like noun, or one followed by a count noun or verb, is a number
+    // (verifier HARD3-237-1 S1).
+    for (const [text, shown] of [['For this task 14 of 20 trials passed.', '14 of 20'], ['In the pilot 12 of 20 trials passed.', '12 of 20'], ['On the last day 9 of 20 runs passed.', '9 of 20'], ['In step 3 of 20 passed.', '3 of 20'], ['Of page 2 of 20 were kept.', '2 of 20']]) {
+      const root4 = docsRoot();
+      edit(root4, 'docs/findings.md', /\n\n/, `\n\n${text}\n\n`);
+      const r4 = check(regenerated(root4));
+      expect(r4.status, text).toBe(1);
+      expect(r4.stdout, text).toMatch(new RegExp(`number in prose: "${shown}"`));
+    }
+  });
+
+  // verifier HARD3-237-1 m1: only whitespace, a hyphen (ASCII, U+2010, U+2011) or markdown
+  // emphasis may stand between a claim's words, so "At first, clinical staff" is no claim.
+  it('a claim\'s words separated by punctuation are not a claim phrase (HARD3-237-1 m1)', () => {
+    for (const text of ['At first, clinical staff reviewed each trial.', 'The harbor. Compatible tools are listed.', 'It supports (MCP-shaped) tool definitions.']) {
+      const root = docsRoot();
+      edit(root, 'docs/findings.md', /\n\n/, `\n\n${text}\n\n`);
+      const r = check(regenerated(root));
+      expect(errors(r), text).toEqual([]);
+      expect(r.status, text).toBe(0);
+      const root2 = regenerated(docsRoot());
+      edit(root2, 'README.md', /\n## Links/, `\n${text}\n\n## Links`);
+      const r2 = check(root2);
+      expect(errors(r2).filter((l) => /claim phrase/.test(l)), text).toEqual([]);
+    }
+  });
+
+  it('reports a claim phrase at its own source line after entities in the text before it (R3-F4e)', () => {
+    const root = docsRoot();
+    const amps = Array.from({ length: 30 }, (_, i) => `A${i} & B${i}`).join(', ');
+    edit(root, 'docs/findings.md', /\n\n/, `\n\n${amps}.\n\nMCP support is claimed here.\n\n`);
+    const line = readFileSync(join(root, 'docs/findings.md'), 'utf8').split('\n').findIndex((l) => l === 'MCP support is claimed here.') + 1;
+    expect(line).toBeGreaterThan(0);
+    const r = check(regenerated(root));
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain(`docs/findings.md:${line}: claim phrase: "MCP support"`);
+  });
+
   it('every h2 the trace greps for is a required section (P24A-227-2 F3)', () => {
     const trace = JSON.parse(readFileSync(join(repoRoot, 'docs/requirements/trace.json'), 'utf8')) as { rows: Array<{ expect: unknown }> };
     const greps = trace.rows.flatMap((row) => (Array.isArray(row.expect) ? row.expect : [row.expect]) as Array<{ command?: { cmd: string } }>)

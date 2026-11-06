@@ -84,6 +84,25 @@ describe('loadResults with pilot-9 and pilot-10', () => {
   });
 });
 
+// pre-audit-2 S24: the probe and smoke runs (results/probe-<n>, results/smoke-<n>, under results/
+// or results/runs/) load as runs of their own, by name, apart from the pilots: the difficulty
+// history shows them labelled not counted, and the latest pilot stays a pilot.
+describe('loadResults with probe and smoke runs beside a pilot', () => {
+  it('loads them under probes, in name order, and keeps them out of the pilots', async () => {
+    stubFetch(['results/smoke-w5/trials/t/0.json', 'results/probe-1/trials/t/0.json', 'results/pilot-1/trials/t/0.json', 'results/runs/smoke-w4/trials/t/0.json', 'results/probe/t.json']);
+    const r = await (await freshLoad())();
+    expect(r.kind).toBe('ready');
+    if (r.kind !== 'ready') return;
+    expect(r.pilots.map((p) => p.dir)).toEqual(['results/pilot-1']);
+    expect(r.probes.map((p) => p.dir)).toEqual(['results/probe-1', 'results/runs/smoke-w4', 'results/smoke-w5']);
+    expect(r.probes.map((p) => p.runId)).toEqual(['probe-1', 'smoke-w4', 'smoke-w5']);
+    for (const p of r.probes) {
+      expect(p.official).toBe(false);
+      expect(p.trials).toHaveLength(1);
+    }
+  });
+});
+
 // verifier-phase-P17i-F1-preload-1 F-A: only a 404 from index.json means no results are committed
 // (vite dev, see vite.config.ts); any other HTTP error is an error state, not an empty Runs view.
 describe('loadResults when data/index.json answers an HTTP error', () => {
@@ -91,7 +110,7 @@ describe('loadResults when data/index.json answers an HTTP error', () => {
 
   it('a 404 is a ready load with no runs', async () => {
     serveIndex(404);
-    expect(await (await freshLoad())()).toEqual({ kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], frozen: {}, findings: null, files: new Set() });
+    expect(await (await freshLoad())()).toEqual({ kind: 'ready', official: null, officialError: null, superseded: [], pilots: [], probes: [], frozen: {}, findings: null, files: new Set() });
   });
 
   it('a 500 is an error that names the status', async () => {

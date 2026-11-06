@@ -38,22 +38,31 @@ function ratesOf(run: RunData): Record<string, { passes: number; trials: number 
 }
 
 // A run's column heading: the official run's label (all: the task list, or null while it loads),
-// a superseded version's task and version (R42).
-const columnLabel = (run: RunData, all: readonly string[] | null): string => (run.superseded !== null ? `${run.runId} (${run.superseded.task} ${run.superseded.version}, superseded)` : `${run.runId}${run.official && run.summary !== null ? ` ${officialRunLabel(run.summary.tasks, all)}` : ''}`);
+// a superseded version's task and version (R42), a probe or smoke run's kind with "not counted"
+// (pre-audit-2 S24: it is not a pilot and never counts in the band).
+const columnLabel = (run: RunData, all: readonly string[] | null): string => {
+  if (run.superseded !== null) return `${run.runId} (${run.superseded.task} ${run.superseded.version}, superseded)`;
+  if (run.official && run.summary !== null) return `${run.runId} ${officialRunLabel(run.summary.tasks, all)}`;
+  if (run.kind === 'probe' || run.kind === 'smoke') return `${run.runId} (${run.kind}, not counted)`;
+  return run.runId;
+};
 
-// One row per task, one column per run, oldest first (the pilots by number, then each superseded
-// task version beside the official run that replaced it, then the official run, "(final)" only
-// once it covers every task of the environment (the task list, as the band line) at the final
-// sample, else "(official, in progress)"): k/n and the verdict in each cell.
+// One row per task, one column per run, oldest first (the pilots by number, then the probe and
+// smoke runs by name, then each superseded task version beside the official run that replaced
+// it, then the official run, "(final)" only once it covers every task of the environment (the
+// task list, as the band line) at the final sample, else "(official, in progress)"): k/n and the
+// verdict in each cell; a probe or smoke run's cell holds k/n alone, the band being no measure
+// of it (HARD3-237-1 m3).
 export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
   const list = useTaskList().tasks;
   const cols = runs.map((run) => ({ run, rates: ratesOf(run) }));
   const tasks = [...new Set(cols.flatMap((c) => Object.keys(c.rates ?? {})))].sort();
   if (runs.length === 0 || tasks.length === 0) return null;
   const superseded = runs.some((r) => r.superseded !== null);
+  const probes = runs.some((r) => r.kind === 'probe' || r.kind === 'smoke');
   return (
     <Card title="Difficulty history" testId="difficulty-history">
-      <p className="text-xs text-ink-muted">Each task's pass count and verdict in every committed run, oldest first. Pilots are not counted in the results; they show how hard each task was before the final run.{superseded && ' A superseded version is a task as it was before it was changed, beside the version that replaced it; it is not counted either.'}</p>
+      <p className="text-xs text-ink-muted">Each task's pass count and verdict in every committed run, oldest first. Pilots are not counted in the results; they show how hard each task was before the final run.{probes && ' A probe or smoke run, labelled so, tested a grader or the pipeline before a pilot; it is not a pilot and is not counted either.'}{superseded && ' A superseded version is a task as it was before it was changed, beside the version that replaced it; it is not counted either.'}</p>
       {/* Wider than a phone once a superseded column is in it, so the box that scrolls it is a
           focusable, named region the keyboard can reach (axe scrollable-region-focusable; CI's
           fonts overflow at 390 px, verifier-phase-P17i-TWOW-229-1 B1). */}
@@ -62,7 +71,7 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
           <thead className="text-xs text-ink-muted">
             <tr>
               <th scope="col" className="py-1 pr-3 font-medium">Task</th>
-              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run" data-superseded={c.run.superseded === null ? undefined : `${c.run.superseded.task} ${c.run.superseded.version}`}>{columnLabel(c.run, list === null ? null : list.map((t) => t.id))}</th>)}
+              {cols.map((c) => <th key={c.run.runId} scope="col" className="py-1 pr-3 font-medium" data-testid="history-run" data-kind={c.run.kind} data-superseded={c.run.superseded === null ? undefined : `${c.run.superseded.task} ${c.run.superseded.version}`}>{columnLabel(c.run, list === null ? null : list.map((t) => t.id))}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -75,7 +84,8 @@ export function DifficultyHistory({ runs }: { runs: readonly RunData[] }) {
                     <td key={c.run.runId} data-testid="history-cell" data-run={c.run.runId} className="py-1.5 pr-3 align-top">
                       {c.rates === null ? <span className="text-xs text-ink-muted">blocked</span>
                         : r === undefined || r.trials === 0 ? <span className="text-xs text-ink-muted">none</span>
-                          : <><span className="whitespace-nowrap">{r.passes}/{r.trials}</span> <Verdict task={id} passes={r.passes} trials={r.trials} className="block" /></>}
+                          : c.run.kind === 'probe' || c.run.kind === 'smoke' ? <span className="whitespace-nowrap">{r.passes}/{r.trials}</span>
+                            : <><span className="whitespace-nowrap">{r.passes}/{r.trials}</span> <Verdict task={id} passes={r.passes} trials={r.trials} className="block" /></>}
                     </td>
                   );
                 })}

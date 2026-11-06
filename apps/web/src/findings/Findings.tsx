@@ -44,7 +44,7 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
           {results.pilots.length > 0 && <a href={hrefWith(freshView('runs'))} onClick={onNav(freshView('runs'))} className={`mt-2 block w-fit text-xs ${LINK}`}>See the pilot runs</a>}
         </Notice>
         {results.pilots.map((p) => <PilotFindings key={p.runId} run={p} />)}
-        <DifficultyHistory runs={results.pilots} />
+        <DifficultyHistory runs={[...results.pilots, ...results.probes]} />
         {links}
       </Page>
     );
@@ -57,7 +57,7 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       {results.findings !== null && (block === null ? <Markdown text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
       <Charts run={results.official} blocked={block !== null} />
       {block === null && <NoFailures run={results.official} />}
-      <DifficultyHistory runs={[...results.pilots, ...results.superseded, results.official]} />
+      <DifficultyHistory runs={[...results.pilots, ...results.probes, ...results.superseded, results.official]} />
     </Page>
   );
 }
