@@ -108,12 +108,19 @@ describe('message-queue events', () => {
   });
 
   // S5-3's pre-declared softening, applied once as v3 (plan-amendment-w5 S5-3; R45 after pilot-5b,
-  // where A caught 1 of 8 and the fairness audit found it a fair trap): webb-a1's inbox Task says
-  // "Outside results (2)", the count of outside results the packet files (the potassium notified and
-  // the panel filed silently), still no deciding fact (R29). Every other arrival keeps the generic
-  // summary of its focus type.
-  it("webb-a1's inbox summary is the pre-declared softening 'Outside results (2)' (S5-3, R45, v3); every other spec's is generic", () => {
-    for (const s of SPECS) expect(s.summary, s.id).toBe(s.id === 'webb-a1' ? 'Outside results (2)' : undefined);
+  // where A caught 1 of 8 and the fairness audit found it a fair trap; R47 for the wording): webb-a1's
+  // inbox Task says "Results (<n>)", n the number of result Observations the packet files, computed
+  // from the spec's resources and never typed by hand (the results are the clinic's own, so not
+  // "Outside"); still no deciding fact (R29). Every other arrival keeps the generic summary of its
+  // focus type.
+  it("webb-a1's inbox summary is the pre-declared softening 'Results (<n>)', n its result Observations (S5-3, R45, R47, v3); every other spec's is generic", () => {
+    for (const s of SPECS) {
+      const n = s.resources.filter((r) => r.resourceType === 'Observation').length;
+      expect(s.summary, s.id).toBe(s.id === 'webb-a1' ? `Results (${n})` : undefined);
+    }
+    const webb = SPECS.find((s) => s.id === 'webb-a1')!;
+    expect(webb.resources.filter((r) => r.resourceType === 'Observation').length).toBeGreaterThan(1);
+    expect(webb.summary).not.toMatch(/outside/i);
   });
 
   it('the policy carries the shared arrivals sentence word for word', async () => {

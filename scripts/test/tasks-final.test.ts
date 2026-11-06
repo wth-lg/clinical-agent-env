@@ -195,7 +195,14 @@ describe('results/tasks-final.json', () => {
     // earlier version's final-1 records; so is a frozen new version's until its own records land
     // (crc-care-gap v2 over v1: final-1 holds v1's 20 until W5-F moves them to superseded/).
     for (const [id, entry] of Object.entries(d.tasks)) {
-      const t = isPending(entry) ? entry.superseded : entry.replay_at === undefined && entry.superseded?.replay_at !== undefined ? entry.superseded : entry;
+      const fallback = !isPending(entry) && entry.replay_at === undefined && entry.superseded?.replay_at !== undefined;
+      const t = isPending(entry) ? entry.superseded : fallback ? entry.superseded! : entry;
+      // W5H5-235 S1: the superseded pointer stands in only while final-1's records are the ones
+      // its commit holds (byte for byte), never for records of the new version.
+      if (fallback) {
+        const same = spawnSync('git', ['-C', repoRoot, 'diff', '--quiet', t.replay_at!.commit, 'HEAD', '--', `${FINAL_TRIALS}/${id}`]);
+        expect(same.status, `${id}: results/runs/final-1/trials/${id} differs from the superseded freeze's replay_at commit ${t.replay_at!.commit.slice(0, 12)}, so that pointer cannot stand in for the entry's own replay_at`).toBe(0);
+      }
       if (t.replay_at === undefined) {
         expect(finalRecords(id), `${id}: has final-1 records under ${FINAL_TRIALS} and names no replay_at (R37: the tag and commit that reproduce them)`).toBe(0);
         continue;

@@ -190,17 +190,22 @@ describe('visibility', () => {
     expect(ARRIVAL_SUMMARY.DocumentReference).not.toMatch(/creatinine|2\.4/i);
   });
 
-  // A spec may name its own inbox summary (plan-amendment-w5 S5-3: the pre-declared softening
-  // "Outside results (2)", a count, never a deciding fact, R29); the Task's description and the
-  // list_inbox row carry it in place of the focus type's generic line. An empty one is refused.
-  it("a spec's own summary replaces the generic line on its inbox Task and in list_inbox; an empty one is refused", () => {
-    const softened: EventSpec = { ...afterSeen, id: 'evt-s', summary: 'Outside results (2)' };
+  // A spec may name its own inbox summary (plan-amendment-w5 S5-3: the pre-declared softening that
+  // names a count, "Results (9)", never a deciding fact, R29); the Task's description and the
+  // list_inbox row carry it in place of the focus type's generic line. Its shape is 'Label (count)':
+  // a short label of letters and spaces and one parenthesized integer, so no value, analyte or other
+  // digit can ride in it (gate W5H5-235 M1); anything else is refused.
+  it("a spec's own summary replaces the generic line on its inbox Task and in list_inbox; only 'Label (count)' is accepted", () => {
+    const softened: EventSpec = { ...afterSeen, id: 'evt-s', summary: 'Results (9)' };
     const ctx = fresh([softened]);
     ok(call(ctx, 'fhir_read', { resource_type: 'Patient', id: 'pt-0002' }));
     const inbox = ok(call(ctx, 'list_inbox', { queue: 'results', count: 50 })) as { entries: Array<Record<string, unknown>> };
-    expect(inbox.entries.at(-1)).toMatchObject({ task: 'Task/inbox-a0001', focus: 'DocumentReference/doc-evt-test-1', summary: 'Outside results (2)' });
-    expect((ctx.world as Store).get('Task', 'inbox-a0001')).toMatchObject({ description: 'Outside results (2)' });
-    expect(() => checkSpec({ ...afterSeen, summary: '' })).toThrow(/evt-o: summary must be a non-empty line/);
+    expect(inbox.entries.at(-1)).toMatchObject({ task: 'Task/inbox-a0001', focus: 'DocumentReference/doc-evt-test-1', summary: 'Results (9)' });
+    expect((ctx.world as Store).get('Task', 'inbox-a0001')).toMatchObject({ description: 'Results (9)' });
+    for (const good of ['Results (9)', 'Outside documents (2)', 'New results (12)']) expect(() => checkSpec({ ...afterSeen, summary: good }), good).not.toThrow();
+    for (const bad of ['', ' ', 'a\nb', 'Results', 'Results (two)', 'Results (2) x', 'Potassium 4.6 mmol/L, panel normal', 'Results 2 (1)', 'Results (1) (2)', `${'Very long label '.repeat(4)}(1)`]) {
+      expect(() => checkSpec({ ...afterSeen, summary: bad }), JSON.stringify(bad)).toThrow(/evt-o: summary must read 'Label \(count\)'/);
+    }
   });
 
   it('a new result and a message go to their queues with generic summaries', () => {
