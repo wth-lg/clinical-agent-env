@@ -14,7 +14,7 @@ import { PASS_DEFINITION } from '../../packages/core/outcomes.ts';
 import { passK, wilson } from '../../packages/core/summary.ts';
 import { LOCAL_START_COMMAND } from '../../apps/web/src/surface/command.ts';
 import { generate, WRITEUP } from '../docs-gen.ts';
-import { WRITEUP_SECTIONS } from '../docs-lib.ts';
+import { nowrapNumbers, WRITEUP_SECTIONS } from '../docs-lib.ts';
 import { repoRoot, runScript, tempDir } from './helpers.ts';
 
 const check = (root: string, args: string[] = []) => runScript('scripts/docs-check.ts', ['--root', root, ...args], { cwd: repoRoot });
@@ -29,9 +29,33 @@ function docsRoot(): string {
   cpSync(join(repoRoot, 'README.md'), join(root, 'README.md'));
   mkdirSync(join(root, 'results/runs'), { recursive: true });
   symlinkSync(join(repoRoot, 'results/runs/final-1'), join(root, 'results/runs/final-1'));
+  for (const pilot of PILOTS) if (existsSync(join(repoRoot, 'results', pilot))) symlinkSync(join(repoRoot, 'results', pilot), join(root, 'results', pilot));
   symlinkSync(join(repoRoot, 'tasks'), join(root, 'tasks'));
   return root;
 }
+
+// The pilot runs the S5 block and the T2 item B block read (docs/writeup/s5.json names them).
+const PILOTS = ['pilot-5a', 'pilot-5b', 'pilot-5c', 'pilot-5t'];
+
+// A root whose final run is a real directory holding its own summary.json (edited by `patch`) and
+// links to the committed run's trials and classes, so a block that reads summary.json can be shown
+// both before and after another tool writes into it, and a run still in progress can be shown.
+function docsRootWithSummary(patch: (s: Record<string, unknown>) => void): string {
+  const root = docsRoot();
+  const run = join(root, 'results/runs/final-1');
+  rmSync(run);
+  mkdirSync(run);
+  for (const f of ['trials', 'classes.json', 'item-classes.json']) symlinkSync(join(repoRoot, 'results/runs/final-1', f), join(run, f));
+  const s = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/summary.json'), 'utf8')) as Record<string, unknown>;
+  patch(s);
+  writeFileSync(join(run, 'summary.json'), JSON.stringify(s));
+  return root;
+}
+
+// A table row as docs-gen's table() writes it: the first cell a row header, every digit token in a
+// nowrap span.
+const tr = (...cells: string[]) => cells.map((c, i) => (i === 0 ? `<th scope="row">${nowrapNumbers(c)}</th>` : `<td>${nowrapNumbers(c)}</td>`)).join('');
+const blockOf = (html: string, name: string) => new RegExp(`<!-- docs-gen:begin ${name} -->([\\s\\S]*?)<!-- docs-gen:end ${name} -->`).exec(html)![1]!;
 
 // The copy with the writeup and README regenerated from its sources.
 function regenerated(root: string): string {
@@ -47,7 +71,7 @@ const edit = (root: string, rel: string, from: string | RegExp, to: string) => {
   writeFileSync(join(root, rel), text.replace(from, to));
 };
 
-const summary = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/summary.json'), 'utf8')) as { tasks: Record<string, { passes: number; trials: number; pass_k: Record<string, number | null> }> };
+const summary = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/summary.json'), 'utf8')) as { tasks: Record<string, { passes: number; trials: number; band_verdict: string | null; pass_k: Record<string, number | null> }> };
 const errors = (r: { stdout: string }) => r.stdout.split('\n').filter((l) => l !== '' && !l.startsWith('warning:') && !l.startsWith('info:'));
 const warnings = (r: { stdout: string }) => r.stdout.split('\n').filter((l) => l.startsWith('warning:'));
 
@@ -121,6 +145,16 @@ describe('docs-gen', () => {
     expect(() => generate(root2)).toThrow(/60-attribution\.md:\d+: .*docs-gen:end/);
   });
 
+  it('refuses a docs-gen:block comment whose id is unknown or holds a digit, instead of passing it through', () => {
+    const root = docsRoot();
+    edit(root, 'docs/writeup/70-pass-rates.md', /<!-- docs-gen:block cost -->/, '<!-- docs-gen:block s5 -->');
+    expect(() => generate(root)).toThrow(/70-pass-rates\.md:\d+: unknown block s5/);
+    const root2 = docsRoot();
+    edit(root2, 'docs/writeup/70-pass-rates.md', /<!-- docs-gen:block cost -->/, '<!-- docs-gen:block costs -->');
+    expect(() => generate(root2)).toThrow(/unknown block costs; known: /);
+    expect(check(root2).status).toBe(1);
+  });
+
   it('names the required sections once, and reports the ones the sources lack', () => {
     expect(WRITEUP_SECTIONS).toContain('Instructions');
     expect(WRITEUP_SECTIONS).toContain('References');
@@ -147,6 +181,102 @@ describe('docs-gen', () => {
     expect(r.stdout).toContain(WRITEUP);
   });
 
+  // P24 part 2: the final numbers. The run's superseded version is shown beside the current one and
+  // never counted (R42).
+  it('renders the superseded crc-care-gap v1 beside v2 in the pass-rate table, marked not counted', () => {
+    const block = blockOf(generate(docsRoot()).writeup, 'pass-rates');
+    const sup = (summary as unknown as { superseded: Record<string, { summary: { passes: number; trials: number } }> }).superseded['crc-care-gap-v1']!.summary;
+    const w = wilson(sup.passes, sup.trials)!;
+    expect(block).toContain(tr('crc-care-gap v1 (superseded, not counted)', `${sup.passes}/${sup.trials}`, `${Math.round((sup.passes / sup.trials) * 100)}%`, `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`));
+    expect(block).toContain('is shown and never counted');
+  });
+
+  it('renders each lever item of the final run and of pilot-5a from classes.json (catch, Wilson 95%, label split)', () => {
+    const block = blockOf(generate(docsRoot()).writeup, 'lever-items');
+    const classes = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/classes.json'), 'utf8')) as { tasks: Record<string, { lever: { base_pass: number; items: Array<{ id: string; kind: string; spec: string | null; active: boolean; observed: number; passed: number; split: Record<string, number>; sibling_exposed: number }> } | null }> };
+    let active = 0;
+    for (const [id, t] of Object.entries(classes.tasks)) {
+      if (!t.lever) continue;
+      for (const it of t.lever.items.filter((i) => i.active)) {
+        active++;
+        const w = wilson(it.passed, it.observed)!;
+        expect(block, `${id} ${it.id}`).toContain(tr(id, `${it.id} (${it.kind})`, it.spec ?? 'none', `${it.passed}/${it.observed}`, `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`, String(it.split['retrieval']), String(it.split['reasoning']), String(it.split['process']), String(it.split['other']), String(it.sibling_exposed), `${t.lever.base_pass}/20`));
+      }
+    }
+    expect(active).toBe(6);
+    // pilot-5a, both items active: A caught less often than B in every task.
+    expect(block).toContain('<caption>Lever items in pilot-5a, both items active');
+    expect(block).toContain(tr('discharge-medrec', 'A (A)', 'whitcomb-a1', '0/8', '[0.00, 0.32]'));
+    expect(block).toContain(tr('discharge-medrec', 'B (B)', 'none', '8/8', '[0.68, 1.00]'));
+  });
+
+  it('renders the pass rate without the lever item A and the outcome-only sensitivity from the records (S6, S13)', () => {
+    const { writeup } = generate(docsRoot());
+    const without = blockOf(writeup, 'without-lever');
+    // Every renal-dose-review and results-inbox failure is on item A; crc-care-gap's five are on base members; discharge-medrec has no A active; contrast-ct-prep has no lever.
+    expect(without).toContain(tr('renal-dose-review', 'A (fairweather-scr-batch)', '16/20', '20/20', '4'));
+    expect(without).toContain(tr('results-inbox', 'A (marchetti-cr-batch)', '12/20', '20/20', '8'));
+    expect(without).toContain(tr('crc-care-gap', 'A (crc-b3)', '15/20', '15/20', '0'));
+    const mq = summary.tasks['message-queue']!;
+    expect(without).toContain(tr('message-queue', 'A (webb-a1)', `${mq.passes}/${mq.trials}`, `${mq.passes}/${mq.trials}`, '0'));
+    expect(without).toContain(tr('discharge-medrec', 'none active', '20/20', 'n/a', '0'));
+    expect(without).toContain(tr('contrast-ct-prep', 'no lever item', '5/20', 'n/a', '0'));
+    const only = blockOf(writeup, 'outcome-only');
+    // crc-care-gap's failures are review-only (fit_orders names unreviewed members only, plus the process gate); every other failure left the wrong chart.
+    expect(only).toContain(tr('crc-care-gap', '15/20', '20/20', '5'));
+    expect(only).toContain(tr('renal-dose-review', '16/20', '16/20', '0'));
+    expect(only).toContain(tr('results-inbox', '12/20', '12/20', '0'));
+    expect(only).toContain(tr('contrast-ct-prep', '5/20', '5/20', '0'));
+    expect(only).toContain(tr('message-queue', `${mq.passes}/${mq.trials}`, `${mq.passes}/${mq.trials}`, '0'));
+    expect(only).toContain('<code>event_seen</code>');
+    expect(only).toContain('<code>gap_seen_before_order</code>');
+  });
+
+  it('renders the lever rule table from docs/writeup/s5.json, the pilot summaries and the final run', () => {
+    const block = blockOf(generate(docsRoot()).writeup, 'lever-rule');
+    const s5 = JSON.parse(readFileSync(join(repoRoot, 'docs/writeup/s5.json'), 'utf8')) as { tasks: Array<{ id: string; selection: { pred: number | null } }> };
+    expect(s5.tasks.find((t) => t.id === 'renal-dose-review')!.selection.pred).toBe(0.567);
+    // Priors and the pre-registered prediction, the pilot-5a count, the S5-2 selection and its prediction, the final count and verdict.
+    expect(block).toContain(tr('renal-dose-review', '2026-11-04', 'b 0.97, A 0.50, B 0.82', 'both 0.40; {A} 0.49; {B} 0.80', '{A}', 'pilot-5a, {A,B}: 6/8'));
+    expect(block).toContain(tr('renal-dose-review', 'R44 (2026-11-05): {A,B}, predicted 0.567; the set it ran in pilot-5a, so no confirm run; frozen under S5-8', 'none', 'none', 'none', 'v2 {A,B}: 16/20 (Above band)'));
+    expect(block).toContain(tr('message-queue', '2026-11-04', 'b 0.97, A 0.45, B 0.52', 'both 0.23; {A} 0.44; {B} 0.50', '{A}', 'pilot-5a, {A,B}: 2/8'));
+    const mq = summary.tasks['message-queue']!;
+    expect(block).toMatch(new RegExp(`<th scope="row">message-queue</th>[^\\n]*predicted [^\\n]*?0\\.27[^\\n]*pilot-5b,[^\\n]*1/8[^\\n]*Results \\(n\\)[^\\n]*pilot-5c,[^\\n]*8/8[^\\n]*v3</span> \\{A\\}: <span class="nw">${mq.passes}/${mq.trials}</span> \\(${mq.band_verdict}\\)`));
+    expect(block).toContain(tr('crc-care-gap v2', '2026-11-05', 'b 0.90, A 0.50, B none', 'both n/a; {A} 0.45; {B} n/a', '{A} (one item; freeze when the pilot lands inside its range)', 'pilot-5t, {A}: 3/8'));
+    const crc = summary.tasks['crc-care-gap']!;
+    expect(block).toContain(tr('crc-care-gap v2', 'R45 (2026-11-06): {A}, predicted 0.36; the estimate on pilot-5t; the pilot landed inside the pre-registered range, so v2 froze', 'none', 'none', 'none', `v2 {A}: ${crc.passes}/${crc.trials} (${crc.band_verdict})`));
+    // A pilot the root lacks is named, not invented.
+    const root = docsRoot();
+    rmSync(join(root, 'results/pilot-5b'));
+    expect(blockOf(generate(root).writeup, 'lever-rule')).toContain('pilot-5b</span> not committed');
+  });
+
+  it('renders T2 item B against the safe passes of the pilots it was active in, with the harm penalties met', () => {
+    const block = blockOf(generate(docsRoot()).writeup, 'inbox-item-b');
+    // pilot-5b, {B}: 7 of 8 passed, 3 of 8 safe passes, B caught 8 of 8; the four lost safe passes carry reply_names_other_patient.
+    expect(block).toContain(tr('pilot-5b', '{B}', '7/8', '3/8', '8/8', 'reply_names_other_patient: 4'));
+    expect(block).toContain(tr('pilot-5a', '{A,B}', '2/8', '2/8', '8/8', 'none'));
+    expect(block).not.toContain('<th scope="row">pilot-5c</th>');
+    expect(block).not.toContain('nowicki_fax_told_without_citing');
+  });
+
+  it('the judge-agreement block waits for P23 and renders its rates, kappas and the harm penalties met on passes once summary.json has them', () => {
+    const before = blockOf(generate(docsRoot()).writeup, 'judge-agreement');
+    expect(before).toContain('not in summary.json yet');
+    // Harm penalties met come from the records, so they render before P23 too.
+    expect(before).toContain(tr('results-inbox', 'reply_names_other_patient', '2', '3'));
+    const root = docsRootWithSummary((s) => {
+      s['judge_agreement'] = { n_judge: 40, judge_agree: 37, judge_agreement: 0.925, n_extract: 20, extract_agree: 20, extract_agreement: 1, labels: 'results/judge-calibration/hand-labels.jsonl' };
+      s['kappa'] = { double_label: { n: 20, agree: 19, agreement: 0.95, kappa: 0.83, categories: ['model', 'grader'] }, builder_vs_auditor: { n: 33, agree: 33, agreement: 1, kappa: 1, categories: ['model'], note: 'one category on both sides (model): chance agreement is 1, kappa taken as 1' } };
+    });
+    const after = blockOf(generate(root).writeup, 'judge-agreement');
+    expect(after).not.toContain('not in summary.json yet');
+    expect(after).toContain(tr('judged items', '37/40', '0.93'));
+    expect(after).toContain(tr('extractions', '20/20', '1.00'));
+    expect(after).toContain(tr('double label', '19/20', '0.95', '0.83', 'model, grader', ''));
+    expect(after).toContain('chance agreement is');
+  });
+
   it('the committed writeup and README equal a fresh regeneration', () => {
     const r = gen(repoRoot, ['--check']);
     expect(r.stdout + r.stderr).toBe('');
@@ -155,10 +285,12 @@ describe('docs-gen', () => {
 });
 
 describe('docs-check', () => {
-  it('exits 0 on the repo, with warnings only for TODO-W5F and TODO-R16', () => {
+  // The official run is complete (results/official.json names final-1 with every task final), so
+  // no TODO token may stay: the repo check exits 0 with no warning (P24 part 2).
+  it('exits 0 on the repo with no warning', () => {
     const r = check(repoRoot);
     expect(errors(r), r.stdout + r.stderr).toEqual([]);
-    for (const w of warnings(r)) expect(w).toMatch(/TODO-(W5F|R16)/);
+    expect(warnings(r), r.stdout).toEqual([]);
     expect(r.status).toBe(0);
   });
 
@@ -407,9 +539,16 @@ describe('docs-check', () => {
     const r = check(root);
     expect(r.status).toBe(0);
     expect(warnings(r).some((w) => w.includes('TODO-W5F'))).toBe(true);
-    writeFileSync(join(root, 'results/official.json'), JSON.stringify({ run: 'runs/final-1' }));
-    regenerated(root);
-    const r2 = check(root);
+    // An official run still in progress: a summary that holds two of the six tasks (final-1 as it
+    // was between its two batches).
+    const root2 = docsRootWithSummary((s) => {
+      const tasks = s['tasks'] as Record<string, unknown>;
+      for (const id of Object.keys(tasks)) if (id !== 'crc-care-gap' && id !== 'contrast-ct-prep') delete tasks[id];
+    });
+    edit(root2, 'docs/findings.md', /\n\n/, '\n\nTODO-W5F the W5 tasks.\n\n');
+    writeFileSync(join(root2, 'results/official.json'), JSON.stringify({ run: 'runs/final-1' }));
+    regenerated(root2);
+    const r2 = check(root2);
     expect(r2.status, r2.stdout).toBe(0);
     expect(warnings(r2).some((w) => w.includes('TODO-W5F') && w.includes('official run not complete: 4 of 6 tasks have no final result'))).toBe(true);
     const root3 = docsRoot();
