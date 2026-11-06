@@ -23,7 +23,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { isApiHost, MODEL } from '../../../../packages/core/anthropic.ts';
 import type { LedgerRow } from '../../../../packages/core/ledger.ts';
 import { PROJECTED_CAP_USD } from '../../../../packages/core/ledger.ts';
-import { redactText } from '../../../../packages/core/redact.ts';
+import { REDACTED, redactText } from '../../../../packages/core/redact.ts';
 import type { TrialRecord } from '../../../../packages/core/run.ts';
 import { parseDryRun, parseHealth, parseTrialView, TOKEN_HEADER, TOKEN_META, validateWorstCaseUsd } from '../../../../packages/core/runner-api.ts';
 import { LOCAL_START_COMMAND } from '../../src/surface/command.ts';
@@ -46,7 +46,9 @@ test.skip(!KEY && !DRY_RUN, 'ANTHROPIC_API_KEY is not set');
 const secrets = KEY === '' ? [] : [KEY];
 const say = (line: string) => console.log(redactText(line, secrets));
 
-interface Runner { url: string; proc: ChildProcess; capture: string; exited: Promise<number | null>; log: WriteStream }
+// leaks: what the raw stdout or stderr held before redaction, by stream (the key, or the
+// redaction marker, which the runner never prints on its own); never the text itself.
+interface Runner { url: string; proc: ChildProcess; capture: string; exited: Promise<number | null>; log: WriteStream; leaks: string[] }
 
 // The command's environment: the key and any SPEND_LEDGER removed, HOME at a fresh directory, the
 // records under CLINENV_RUNS_DIR in the temp directory, the own-run marker kept as it is.
@@ -58,14 +60,24 @@ function commandEnv(home: string, runsDir: string): Record<string, string> {
 
 // Runs LOCAL_START_COMMAND in `work` through sh, as a user would paste it, in its own process
 // group so the runner (a grandchild of pnpm) gets the stop signal too. Resolves with the URL the
-// runner prints; the capture file gets every line of stdout and stderr, the key redacted.
+// runner prints; the capture file gets every line of stdout and stderr, the key redacted. The raw
+// stream is checked first (verifier-phase-P25-1 N1): a key in the runner's output, or the
+// redaction marker itself, is a leak the test fails on, since the written capture could not show it.
 function startFromCommand(work: string, env: Record<string, string>, capture: string): Promise<Runner> {
   const log = createWriteStream(capture, { flags: 'a' });
   const proc = spawn('sh', ['-c', LOCAL_START_COMMAND], { cwd: work, env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
   const exited = new Promise<number | null>((resolve) => proc.on('exit', (code) => resolve(code)));
   let out = '';
-  const write = (stream: string, chunk: Buffer) => {
-    const text = redactText(chunk.toString(), secrets);
+  const leaks: string[] = [];
+  // The tail of each raw stream, so a key split across two chunks is still seen.
+  const carry: Record<string, string> = { stdout: '', stderr: '' };
+  const write = (stream: 'stdout' | 'stderr', chunk: Buffer) => {
+    const raw = chunk.toString();
+    const joined = carry[stream] + raw;
+    if (KEY !== '' && joined.includes(KEY)) leaks.push(`${stream}: the key`);
+    if (joined.includes(REDACTED)) leaks.push(`${stream}: the marker ${REDACTED}`);
+    carry[stream] = joined.slice(-Math.max(KEY.length, REDACTED.length));
+    const text = redactText(raw, secrets);
     out += text;
     log.write(text.split('\n').filter((l) => l !== '').map((l) => `${stream}| ${l}\n`).join(''));
   };
@@ -77,7 +89,7 @@ function startFromCommand(work: string, env: Record<string, string>, capture: st
       const m = /^clinenv local runner: (http:\/\/127\.0\.0\.1:\d+\/clinical-agent-env\/)$/m.exec(out);
       if (m) {
         clearTimeout(timer);
-        resolve({ url: m[1]!, proc, capture, exited, log });
+        resolve({ url: m[1]!, proc, capture, exited, log, leaks });
       }
     };
     proc.stdout!.on('data', look);
@@ -244,6 +256,7 @@ test('from a clean clone, LOCAL_START_COMMAND starts the runner, the key validat
     const validate = validateWorstCaseUsd();
     say(`local-runner-live dry run: trial projection $${projection.toFixed(6)} + Validate worst case $${validate.toFixed(6)}, 0 calls`);
     say(`LIVE_PROJECTION_USD=${(projection + validate).toFixed(6)}`);
+    expect(runner.leaks, 'the raw runner output before redaction').toEqual([]);
     if (DRY_RUN) return;
     expect(health.ledger.mode, 'the runner meters in the own-run ledger').toBe('own-run');
 
@@ -306,11 +319,15 @@ test('from a clean clone, LOCAL_START_COMMAND starts the runner, the key validat
     expect(await storageDump(page)).not.toContain(KEY);
     expect(readFileSync(capture, 'utf8')).not.toContain(KEY);
 
-    // Stop the runner first: its batches close on the way out.
+    // Stop the runner first: its batches close on the way out. Then the raw output of its whole
+    // life, the shutdown lines included, held neither the key nor the redaction marker.
+    const stopped = runner;
     const code = await stopRunner(runner);
     runner = undefined;
     say(`local-runner-live: runner exit ${code} after SIGTERM`);
     expect(code).toBe(0);
+    expect(stopped.leaks, 'the raw runner output before redaction').toEqual([]);
+    expect(readFileSync(capture, 'utf8')).not.toContain(REDACTED);
 
     // The canonical ledger's new node rows from this runner session: the Validate batch
     // (<session>-key) and the trial batch (<run id>), each opened and closed, every reservation

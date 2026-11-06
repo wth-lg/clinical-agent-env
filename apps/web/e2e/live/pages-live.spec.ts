@@ -6,7 +6,9 @@
 // `pnpm cli hosted-call reserve` before the browser opens the page and settles each at the usage
 // the tab ledger recorded with `pnpm cli hosted-call settle` after (a failed run settles at the
 // worst case, so no reservation stays open). The browser's requests go only to the Pages origin
-// and the relay host, no storage holds the key, and the grade comes back with every check.
+// and the relay host, no storage holds the key, and the grade comes back with every check. Every
+// header set recorded of the relay traffic passes through redactHeaders(): each POST shows its key
+// header as the marker, and each response allows the Pages origin.
 //   LIVE_DRY_RUN=1  prints the two worst cases, Validate (the key gate's own estimate) and the
 //                   trial (the page's projection for Run ×1), as LIVE_PROJECTION_USD (X2 for
 //                   `pnpm cli spend --check`), and stops: no browser, no reservation, no call.
@@ -18,7 +20,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { isApiHost, MODEL } from '../../../../packages/core/anthropic.ts';
 import { PER_TRIAL_CAP_USD } from '../../../../packages/core/cost.ts';
 import type { LedgerRow } from '../../../../packages/core/ledger.ts';
-import { redactText } from '../../../../packages/core/redact.ts';
+import { REDACTED, redactHeaders, redactText } from '../../../../packages/core/redact.ts';
 import type { TrialRecord } from '../../../../packages/core/run.ts';
 import { judgeAllowanceUsd } from '../../../../packages/grader/judge.ts';
 import { checks as taskChecks } from '../../../../tasks/renal-dose-review/tests/grader.ts';
@@ -122,7 +124,16 @@ test('on the hosted site the key validates and one renal-dose-review trial runs 
   try {
     const requests: string[] = [];
     const csp: string[] = [];
-    page.context().on('request', (r) => requests.push(r.url()));
+    // Every header set of the relay traffic, recorded through redactHeaders() (verifier-phase-P25-1
+    // N2): the request's (x-api-key always replaced) and the response's.
+    const headerSets: Array<Promise<{ kind: 'request' | 'response'; method: string; status: number | null; headers: Record<string, string> }>> = [];
+    page.context().on('request', (r) => {
+      requests.push(r.url());
+      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'request', method: r.method(), status: null, headers: redactHeaders(h, secrets) })));
+    });
+    page.context().on('response', (r) => {
+      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'response', method: r.request().method(), status: r.status(), headers: redactHeaders(h, secrets) })));
+    });
     page.on('console', (m) => (/Content Security Policy/i.test(m.text()) ? csp.push(m.text()) : undefined));
     await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => console.error(`Content Security Policy violation: ${e.violatedDirective} ${e.blockedURI}`)));
 
@@ -177,6 +188,15 @@ test('on the hosted site the key validates and one renal-dose-review trial runs 
     expect(requests.some((u) => new URL(u).origin === RELAY_ORIGIN)).toBe(true);
     expect(csp).toEqual([]);
     expect(await storageDump(page)).not.toContain(KEY);
+    // The recorded relay header sets: every POST carried the key header, which redactHeaders()
+    // replaced; no recorded set holds the key; every relay response allows the Pages origin.
+    const sets = await Promise.all(headerSets);
+    const posts = sets.filter((s) => s.kind === 'request' && s.method === 'POST');
+    say(`pages-live: ${sets.length} relay header sets recorded (${posts.length} POST requests), all through redactHeaders()`);
+    expect(posts.length).toBeGreaterThanOrEqual(calls + 1);
+    for (const s of posts) expect(s.headers['x-api-key'], 'x-api-key recorded as redacted').toBe(REDACTED);
+    expect(sets.filter((s) => JSON.stringify(s.headers).includes(KEY))).toEqual([]);
+    for (const s of sets.filter((s) => s.kind === 'response')) expect(s.headers['access-control-allow-origin'], `response ${s.method} ${s.status}`).toBe(new URL(PAGES_URL).origin);
   } finally {
     // A run that stopped early settles what it reserved at the worst case: nothing stays open.
     for (const which of ['validate', 'trial'] as const) if (!settled[which]) say(`pages-live: settling ${ids[which]} at its worst case (cleanup): exit ${settle(which, undefined)}`);

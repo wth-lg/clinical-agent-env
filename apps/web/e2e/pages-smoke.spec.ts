@@ -106,9 +106,43 @@ test('a published trial opens on its Grading tab with the rubric breakdown', asy
   await expect(page.getByRole('tab', { name: 'Grading' })).toHaveAttribute('aria-selected', 'true');
   const grading = page.getByTestId('panel-grading');
   await expect(grading.getByTestId('outcome')).toBeVisible();
-  // The breakdown: the gate checks, and the rubric table on a task with judge items.
-  await expect(grading.locator('[data-testid="gate-check"], [data-testid="rubric-row"]').first()).toBeVisible();
-  expect(await grading.locator('[data-testid="gate-check"], [data-testid="rubric-row"]').count()).toBeGreaterThan(0);
+  // The breakdown: the rubric table (every task has rubric items) and the gate checks, each required.
+  await expect(grading.getByTestId('rubric-row').first()).toBeVisible();
+  await expect(grading.getByTestId('gate-check').first()).toBeVisible();
+  expect(await grading.getByTestId('rubric-row').count()).toBeGreaterThan(0);
+  expect(await grading.getByTestId('gate-check').count()).toBeGreaterThan(0);
+});
+
+// Every chunk the app loads is reached by visiting each view (the chunks load lazily): the URL of
+// each script, stylesheet, document and data request to the Pages origin is recorded, then each
+// one is fetched again and scanned (a body read through the page can be gone after a navigation).
+test('no asset the app loads on any view holds a key-shaped string', async ({ page, request }) => {
+  test.setTimeout(300_000);
+  const urls = new Set<string>();
+  page.on('request', (r) => {
+    if (new URL(r.url()).origin === origin() && ['document', 'script', 'stylesheet', 'fetch', 'xhr'].includes(r.resourceType())) urls.add(r.url());
+  });
+  await browse(page, './?view=overview');
+  await expect(page.getByTestId('overview-row').first()).toBeVisible();
+  for (const path of ['./?view=tasks', `./?view=tasks&task=${T1}`, './?view=runs', './?view=findings', './?view=environment', './?view=glossary']) {
+    await page.goto(at(path));
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  }
+  await page.goto(at('./?view=runs'));
+  const row = page.getByTestId('trial-row').first();
+  await row.getByRole('button', { name: (await row.getAttribute('data-trial'))!, exact: true }).click();
+  await expect(page.getByTestId('trial-detail')).toBeVisible();
+  await page.getByRole('tab', { name: 'State diff' }).click();
+  await expect(page.getByTestId('panel-state-diff')).toBeVisible();
+  const scripts = [...urls].filter((u) => /\.js(\?|$)/.test(new URL(u).pathname));
+  expect(scripts.length).toBeGreaterThan(3);
+  const hits: string[] = [];
+  for (const url of urls) {
+    const res = await request.get(url);
+    expect(res.ok(), url).toBe(true);
+    if (KEY_SHAPE.test((await res.body()).toString('latin1'))) hits.push(url);
+  }
+  expect(hits).toEqual([]);
 });
 
 test(`Findings shows ${TASKS} intervals from final-1`, async ({ page }) => {
