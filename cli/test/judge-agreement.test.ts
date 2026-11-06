@@ -101,6 +101,33 @@ describe('judge-agreement', () => {
     expect(b.out).toContain(`violation: 19 extraction labels, need ${MIN_EXTRACT_LABELS}`);
   });
 
+  it('the extraction floor applies only when the run caches an extraction: a run whose tasks ask none passes at 0 and says so', async () => {
+    // No task of final-1 declares a hybrid item, so its records cache no extraction (builder-323;
+    // coordinator ruling on msg_d69cdbbb675b): the 20-label floor cannot apply there.
+    const dir = run();
+    for (const task of TASKS) {
+      for (let i = 0; i < 20; i++) {
+        const file = join(dir, 'trials', task, `${i}.json`);
+        const r = readJson(file);
+        (r.judge as { cache: Array<{ kind: string }> }).cache = (r.judge as { cache: Array<{ kind: string }> }).cache.filter((e) => e.kind !== 'extract');
+        writeFileSync(file, `${JSON.stringify(r, null, 2)}\n`);
+      }
+    }
+    const r = await check([dir, '--labels', handLabels(dir, { extract: 0 })]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('judge-agreement: n_judge=40 agree=38 (0.950), n_extract=0 of 0 cached: no task of this run asks an extraction');
+    expect(r.out).not.toContain('violation');
+    const j = await check([dir, '--labels', handLabels(dir, { extract: 0 }), '--json']);
+    expect(JSON.parse(j.out)).toMatchObject({ n_judge: 40, n_extract: 0, extract_cached: 0, extract_agreement: null, violations: [] });
+    // With an extraction cached, the floor stands: the clean run at 0 extraction labels exits 1.
+    const cached = run();
+    const c = await check([cached, '--labels', handLabels(cached, { extract: 0 })]);
+    expect(c.code).toBe(1);
+    expect(c.out).toContain(`violation: 0 extraction labels, need ${MIN_EXTRACT_LABELS}`);
+    expect(c.out).toContain('n_extract=0 agree=0 (n/a)');
+    expect(JSON.parse((await check([cached, '--labels', handLabels(cached), '--json'])).out)).toMatchObject({ extract_cached: 40 });
+  });
+
   it('a label whose key the record did not cache, a cached answer that is null, a trial the run has not, or a malformed row is a violation', async () => {
     const dir = run();
     const file = join(dir, 'hand-labels.jsonl');

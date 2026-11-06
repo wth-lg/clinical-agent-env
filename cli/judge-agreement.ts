@@ -17,6 +17,10 @@
 //   key, a cached entry of the other kind or with no answer, a malformed row) is a violation and
 //   is not counted, and so is a (trial, key) pair labelled twice: the floors count distinct items. It prints n_judge, n_extract and both agreement rates, each disagreement, and
 //   exits 1 below MIN_JUDGE_LABELS judge or MIN_EXTRACT_LABELS extraction items or on a violation.
+//   The extraction floor applies only when the run's records cache an extraction (extract_cached,
+//   the entries of kind extract over every record): a run whose tasks declare no hybrid item asks
+//   none, so there is nothing to label, and the line says "n_extract=0 of 0 cached: no task of
+//   this run asks an extraction" (final-1; coordinator ruling on builder-323's msg_d69cdbbb675b).
 //   --double-label: <run>/double-labels.jsonl, written by a labeller who saw the trajectories and
 //   grades but not the builder labels or the auditor's verdicts:
 //     {kind: "sample", seed: <n>, n: <n>, labeller?}       the sample it labels, first
@@ -155,6 +159,8 @@ export interface Agreement {
   n_extract: number;
   extract_agree: number;
   extract_agreement: number | null;
+  // The extraction entries the run's records cache; 0 means no task of the run asks one.
+  extract_cached: number;
   labels: string;
   disagreements: Array<{ trial: string; key: string; kind: 'judge' | 'extract'; hand: unknown; cached: unknown }>;
   violations: string[];
@@ -163,7 +169,8 @@ export interface Agreement {
 // The hand labels of `file` against the records' judge caches (header).
 export function agreement(records: ReadonlyMap<string, BatchRecord>, file: string): Agreement {
   const violations: string[] = [];
-  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, labels: file, disagreements: [], violations };
+  const extractCached = [...records.values()].reduce((n, r) => n + ((r as { judge?: { cache?: JudgeCacheEntry[] } }).judge?.cache ?? []).filter((e) => e.kind === 'extract').length, 0);
+  const out: Agreement = { n_judge: 0, judge_agree: 0, judge_agreement: null, n_extract: 0, extract_agree: 0, extract_agreement: null, extract_cached: extractCached, labels: file, disagreements: [], violations };
   if (!existsSync(file)) violations.push(`${file} is missing`);
   const rows = existsSync(file) ? readJsonl(file, violations) : [];
   const seen = new Set<string>();
@@ -223,7 +230,7 @@ export function agreement(records: ReadonlyMap<string, BatchRecord>, file: strin
   out.judge_agreement = out.n_judge === 0 ? null : round6(out.judge_agree / out.n_judge);
   out.extract_agreement = out.n_extract === 0 ? null : round6(out.extract_agree / out.n_extract);
   if (out.n_judge < MIN_JUDGE_LABELS) violations.push(`${out.n_judge} judge labels, need ${MIN_JUDGE_LABELS}`);
-  if (out.n_extract < MIN_EXTRACT_LABELS) violations.push(`${out.n_extract} extraction labels, need ${MIN_EXTRACT_LABELS}`);
+  if (out.extract_cached > 0 && out.n_extract < MIN_EXTRACT_LABELS) violations.push(`${out.n_extract} extraction labels, need ${MIN_EXTRACT_LABELS}`);
   return out;
 }
 
@@ -416,7 +423,8 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   const shown = (kind: 'judge' | 'extract', v: unknown) => (kind === 'judge' && typeof v === 'string' ? v : canonical(v));
   for (const x of a.disagreements) say(`  - ${x.trial} ${x.key} ${x.kind}: hand ${shown(x.kind, x.hand)}, cached ${shown(x.kind, x.cached)}`);
   for (const v of a.violations) say(`violation: ${v}`);
-  say(`judge-agreement: n_judge=${a.n_judge} agree=${a.judge_agree} (${rate(a.judge_agree, a.n_judge)}), n_extract=${a.n_extract} agree=${a.extract_agree} (${rate(a.extract_agree, a.n_extract)}); labels ${labels}`);
+  const extract = a.extract_cached === 0 ? 'n_extract=0 of 0 cached: no task of this run asks an extraction' : `n_extract=${a.n_extract} agree=${a.extract_agree} (${rate(a.extract_agree, a.n_extract)})`;
+  say(`judge-agreement: n_judge=${a.n_judge} agree=${a.judge_agree} (${rate(a.judge_agree, a.n_judge)}), ${extract}; labels ${labels}`);
   if (json) deps.out(JSON.stringify(a));
   return a.violations.length === 0 ? 0 : 1;
 }
