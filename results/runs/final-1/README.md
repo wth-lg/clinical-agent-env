@@ -1,5 +1,7 @@
 # final-1: the official run, six tasks at their frozen versions, 20 trials each (grader 22)
 
+**One grade changed by the R48 grader fix.** message-queue/10 was recorded FAIL (grader_task_version 270b7a47: its hold rule counted only a voided renewal and a PCP Task focused on the chart order) and is PASS at the R48 regrade (ruling R48 and its addendum, gate W5F-238 F1: an on-hold renewal with the PCP Task focused on it satisfies RBC-RX-05 sections 2 and 7), made offline over all 120 records at this head with no model call and no rerun: **message-queue 20/20** (Saturated; 19/20 as recorded). Every other record's grade is unchanged. Each record keeps its recorded grade and carries the grader-22 regrade as its one regrades[] entry; results/tasks-final.json holds the matching regrade entry for message-queue (regrade-r48). The task is not changed.
+
 Two batches, one world each (R40; manifest.json `world_hashes` names each task's):
 
 - **P22 (2026-11-03, batch fb524a47, tag freeze-t3t5, world ba0b0206)**: crc-care-gap v1 and contrast-ct-prep, 40 settled, $76.33 settled. Recorded at grader 21; regraded offline at grader 22 (PR #216, tag regrade-r41, ruling R41). crc-care-gap v1's 20 records were moved byte-identical to `superseded/crc-care-gap-v1/` at W5-F (R42, `pnpm cli supersede`; its README is there); they are summarized beside v2 and never counted.
@@ -10,7 +12,7 @@ Two batches, one world each (R40; manifest.json `world_hashes` names each task's
 | renal-dose-review | v2 {A,B} | **16/20** | [0.58, 0.92] | Above band | lever A (fairweather-scr-batch) 16/20, B 20/20; the 4 failures the silent creatinine never exposed |
 | results-inbox | {A} | **12/20** | [0.39, 0.78] | In band | lever A (marchetti-cr-batch) 12/20; the 8 failures the silent creatinine never exposed |
 | discharge-medrec | {B} | **20/20** | [0.84, 1.00] | Saturated | lever B 20/20 |
-| message-queue | v3 {A} | **19/20** | [0.76, 0.99] | Saturated | lever A 20/20; the one failure a hold written where a void was due (base items) |
+| message-queue | v3 {A} | **20/20** (19/20 as recorded) | [0.84, 1.00] | Saturated | lever A 20/20; trial 10 recorded FAIL on a hold written where the rule wanted a void, PASS at the R48 regrade |
 | crc-care-gap | v2 {A} | **15/20** | [0.53, 0.89] | Above band | lever A (crc-b3) 20/20; the 5 failures base members' window reviews (R41, R46) |
 | contrast-ct-prep | v1 | **5/20** | [0.11, 0.47] | In band | P22, grader 22 regrade; unchanged |
 | crc-care-gap v1 (superseded) | v1 | 18/20 | [0.70, 0.97] | Above band | not counted; superseded/crc-care-gap-v1/ |
@@ -24,7 +26,7 @@ It is pinned to (manifest.json, equal to results/tasks-final.json):
 - renal-dose-review task_version 4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575, env_version 88c8dbe7f11d96f469dd8e132184fb175568d7ac7f69055e903641475d23d358, grader_task_version 3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d (re-frozen on this world before the run, R40: its files unchanged since pilot-5a; the W5-S freeze under `previous`)
 - results-inbox 3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2 / e69093009b4e9bc112a7c35ea4c292431ed741c3ddc6d2b4789db2fca6f433bf / ffee13db89e555206d518851f848a5641d43a7afa7499f0bec99e412f46ff00e
 - discharge-medrec 59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2 / 9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5 / 8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb
-- message-queue bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010 / 3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812 / 270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631
+- message-queue bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010 / 3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812 / 270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631 as recorded; the R48 regrade at grader_task_version 09e775242cf6b557f8301824e3be6c073bf95f298c14fe4e5c38b03dea7fd7d4 (matrix.json carries both)
 - crc-care-gap v2 ee4d9690b859f098323029e1486d839dc272362ea546f38a68f88b92a8955c00 / 33891901cd8dc4e64536b9aaac0b6eaf2037073b2baeeb8d2903536834049570 / fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d (v1's versions in superseded/crc-care-gap-v1/README.md)
 - env_git_sha 1b120e8bbd380e48ba9f82094bf393b408c8efbf (tag freeze-t3t5) on the P22 records and 30448f3a7abd17dfcda794ff6aecd2eb692ef1b7 on the W5-F records, env_dirty false on both
 
@@ -45,11 +47,12 @@ pnpm cli replay /tmp/final-1 --tasks renal-dose-review,results-inbox,discharge-m
 pnpm cli summary /tmp/final-1 --require env_error_raw=0,env_limit=0,grader_error=0,model=claude-opus-5-5,replay=all   # exit 0; with band=0.2-0.7 it exits 1 (four tasks outside the band)
 for t in renal-dose-review results-inbox discharge-medrec message-queue crc-care-gap; do pnpm cli matrix --task $t --out /tmp/final-1; done
 pnpm cli audit-check /tmp/final-1
+pnpm cli regrade <copy of results/runs/final-1, regrades[] removed> --grader-version 22   # at this head: message-queue/10 FAIL -> PASS, 0 of the other 119 change
 pnpm cli classes results/runs/final-1 --json
 pnpm cli result-card results/runs/final-1 --classes results/runs/final-1/classes.json --history results/pilot-4a,results/pilot-4b,results/pilot-5c
 pnpm cli context-budget results/runs/final-1 --task renal-dose-review,results-inbox,discharge-medrec,message-queue,crc-care-gap
 ```
 
-Gates at the W5-F head (evidence/builder-321/ in the run ledger): `summary --require env_error_raw=0,env_limit=0,grader_error=0,model=claude-opus-5-5` exit 0; `replay --tasks <the five>` 100 of 100, 20 kept; `matrix --task <id> --out` 5 x PASS with each oracle pin matching; `audit-check` exit 0 (33/33 failures labelled, environment 0, grader 0); `context-budget` every line holds; `pnpm donewhen` clause (5) FAIL on the band alone (frozen 6/6, every record at its frozen versions, replay_at named, every initial state a frozen world) and clause (6) FAIL on `audit-check --final` alone (no LLM auditor verdict yet: P23), its audit part 33/33 and GRADER_ERROR 0.
+Gates at the W5-F head (evidence/builder-321/ in the run ledger): `summary --require env_error_raw=0,env_limit=0,grader_error=0,model=claude-opus-5-5` exit 0; `replay --tasks <the five>` 100 of 100, 20 kept; `matrix --task <id> --out` 5 x PASS with each oracle pin matching; `audit-check` exit 0 (32/32 failures labelled at the R48 regrade, environment 0, grader 0); `context-budget` every line holds; `pnpm donewhen` clause (5) FAIL on the band alone (frozen 6/6, every record at its frozen versions, replay_at named, every initial state a frozen world) and clause (6) FAIL on `audit-check --final` alone (no LLM auditor verdict yet: P23), its audit part 33/33 and GRADER_ERROR 0.
 
 The W5-F batch was made with `pnpm cli run --task renal-dose-review,results-inbox,discharge-medrec,message-queue,crc-care-gap --model claude-opus-5-5 --effort high --trials 20 --cost-from results/pilot-5a,results/pilot-5b,results/pilot-5t,results/pilot-5c --out results/runs/final-1` (concurrency 4) after `pnpm cli supersede results/runs/final-1 --task crc-care-gap --version v1` moved v1 out (its trial records, trajectories, replay.json entries and audit.jsonl rows, byte-identical). The P22 batch: `pnpm cli run --task crc-care-gap,contrast-ct-prep ... --cost-from results/pilot-4a,results/pilot-4b --out results/runs/final-1` after its dry run ($106.41) and spend check. results/official.json names this run as the official one.

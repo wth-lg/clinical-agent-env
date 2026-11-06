@@ -11,7 +11,7 @@ Target band 20% to 70%. The verdict is bandVerdict (packages/core/summary.ts); i
 | contrast-ct-prep | 5/20 | [0.11, 0.47] | In band | 0.25 | 0.01 | <0.01 | 0 | 0 | 0 (0) |
 | crc-care-gap | 15/20 | [0.53, 0.89] | Above band | 0.75 | 0.40 | 0.19 | 0 | 0 | 0 (0) |
 | discharge-medrec | 20/20 | [0.84, 1.00] | Saturated | 1.00 | 1.00 | 1.00 | 0 | 0 | 0 (0) |
-| message-queue | 19/20 | [0.76, 0.99] | Saturated | 0.95 | 0.85 | 0.75 | 0 | 0 | 0 (0) |
+| message-queue | 20/20 | [0.84, 1.00] | Saturated | 1.00 | 1.00 | 1.00 | 0 | 0 | 0 (0) |
 | renal-dose-review | 16/20 | [0.58, 0.92] | Above band | 0.80 | 0.49 | 0.28 | 0 | 0 | 0 (0) |
 | results-inbox | 12/20 | [0.39, 0.78] | In band | 0.60 | 0.19 | 0.05 | 0 | 0 | 0 (0) |
 
@@ -30,13 +30,14 @@ A superseded version is a task as it was before it was changed (R42); its trials
 | contrast-ct-prep | 15 | 15 | 0 | 0 | 0 | 0 | audit.jsonl |
 | crc-care-gap | 5 | 5 | 0 | 0 | 0 | 0 | audit.jsonl |
 | discharge-medrec | 0 | 0 | 0 | 0 | 0 | 0 | audit.jsonl |
-| message-queue | 1 | 1 | 0 | 0 | 0 | 0 | audit.jsonl |
+| message-queue | 0 | 0 | 0 | 0 | 0 | 0 | audit.jsonl |
 | renal-dose-review | 4 | 4 | 0 | 0 | 0 | 0 | audit.jsonl |
 | results-inbox | 8 | 8 | 0 | 0 | 0 | 0 | audit.jsonl |
 
 ## Grader faults found and fixed
 
-GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: none.
+GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later grader regraded to another outcome: 1.
+- message-queue/10: FAIL at grader 22, PASS at grader 22
 
 ## Per class and per event
 
@@ -116,8 +117,8 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 | class | instance (item) | fails | class fails / observations | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| hemolyzed_potassium | 1 (m3) | 1/20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
-| creatinine_rise | 1 (m9) | 1/20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
+| hemolyzed_potassium | 1 (m3) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| creatinine_rise | 1 (m9) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | metformin_two_series | 1 (m10) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | same_patient | 1 (m11) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | collection_date | 1 (m12) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
@@ -125,8 +126,8 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 | event | item | class | active | fired | fails / observations | pass rate | Wilson 95% | failure labels |
 |---|---|---|---|---|---|---|---|---|
-| odum-o1 | Task/task-00014 | O | yes | 20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
-| price-b1 | Task/task-00020 | B | yes | 20 | 1/20 | 0.95 | [0.76, 0.99] | #10: amended -> reasoning |
+| odum-o1 | Task/task-00014 | O | yes | 20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| price-b1 | Task/task-00020 | B | yes | 20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | price-d1 | Task/task-00022 | D | yes | 20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 | price-b2 | Task/task-00021 | B | no | 0 | 0/0 | n/a | n/a |  |
 | webb-c1 | Task/task-00023 | C | no | 0 | 0/0 | n/a | n/a |  |
@@ -193,11 +194,12 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 | contrast-ct-prep | 1/4 In band | none | none | none | 5/20 In band |
 | crc-care-gap | 2/4 In band | 4/4 Above band | none | 18/20 Above band | 15/20 Above band |
 | discharge-medrec | 4/4 Above band | none | none | none | 20/20 Saturated |
-| message-queue | 4/4 Above band | none | 8/8 Above band | none | 19/20 Saturated |
+| message-queue | 4/4 Above band | none | 8/8 Above band | none | 20/20 Saturated |
 | renal-dose-review | 4/4 Above band | none | none | none | 16/20 Above band |
 | results-inbox | 4/4 Above band | none | 4/8 In band | none | 12/20 In band |
 
 ## No failures
 
 - discharge-medrec: No failures in 20 trials. Strictness evidence, matrix.json at grader_task_version 8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb: the oracle passes, 39 of 39 mutants fail as declared, 44 of 44 alternatives pass, the null agent fails.
+- message-queue: No failures in 20 trials. Strictness evidence, matrix.json at grader_task_version 09e775242cf6c5a229f60ebd1af34c5ac6d102bdbf83a81fe70a243acb677421: the oracle passes, 34 of 34 mutants fail as declared, 45 of 45 alternatives pass, the null agent fails.
 

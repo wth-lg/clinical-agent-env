@@ -107,7 +107,15 @@
       },
       "evidence": "results/pilot-5c (W5-H5 retune, 2026-11-06, grader 22, world 32515f6a): 8 trials on v3 ({A} with the inbox summary \"Results (9)\"), 8/8 PASS, lever A (webb-a1) 8/8, base 8/8, every trial searched the panel report dr-00602 after the softened inbox row and re-ordered 90 days; pilot-5b on {A} unsoftened: 1/8, A 1/8; lever-select on the run: {A} 0.810 above the band",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b, where {A} undershot at 1/8 and the fairness audit found A a fair trap): S5-3's pre-declared softening applied once as v3, its wording per R47 (\"Results (<n>)\", n counted from the spec), and each retuned version freezes on its pilot-5c result whatever it is (one round only), so v3 freezes above the band; frozen on the W5-H5 world, where its own files are unchanged since pilot-5c",
-      "regrades": []
+      "regrades": [
+        {
+          "grader_version": "22",
+          "grader_task_version": "09e775242cf6c5a229f60ebd1af34c5ac6d102bdbf83a81fe70a243acb677421",
+          "task_version": "1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17",
+          "at": "regrade-r48",
+          "reason": "R48 grader bug fix and its addendum (gate W5F-238 F1, builder-321, PR #238): for a hold item the amended gate counted only entered-in-error, cancelled and stopped as voiding a renewal sent before the arrival, and required the PCP Task to focus the chart order; RBC-RX-05 section 2 allows holding the order and section 7 says to change, hold or stop it, so an on-hold renewal counts as held and a PCP Task focused on that held renewal (the current order for the drug once it exists) or on the chart order counts (tasks/message-queue/tests/grader.ts HELD, holdTasks; tests/event-cases.ts alternatives and the task_wrong_focus mutants). final-1 message-queue/10 FAIL -> PASS (19/20 -> 20/20, still Saturated); every other record of the run unchanged by the offline regrade over all 120. No task file changed: only tasks/message-queue/tests/** (grader-side), so env_version is unchanged."
+        }
+      ]
     },
     "renal-dose-review": {
       "task_version": "4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575",
