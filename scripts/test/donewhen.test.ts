@@ -381,6 +381,22 @@ describe('donewhen', () => {
     expect(named).not.toContain('t2 has');
   });
 
+  // R42: a task frozen on a new version keeps the earlier freeze under `superseded`; while final-1
+  // still holds the earlier version's records, that freeze's replay_at covers them.
+  it("clause 5 accepts a frozen task's final-1 records under its superseded freeze's replay_at, and fails when neither names one", () => {
+    const root = completeRepo();
+    write(root, `${FINAL_RUN}/trials/t1/0.json`, '{}\n');
+    const v1 = { version: 'v1', task_version: 'v-t1-v1', grader_task_version: 'g-t1-v1', env_version: 'e-t1-v1', world_hash: WORLD, oracle_final_hash: '0'.repeat(64), frozen_at: { tag: 'freeze-v1' }, frozen_from_branch: 'a'.repeat(40), regrades: [] };
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t1: { superseded: { ...v1, replay_at: { tag: 'final-1-v1', commit: 'c'.repeat(40) } } } }));
+    const covered = donewhen(root, ALL_STUBS).clause(5);
+    expect(covered).toMatch(/^PASS \(5\)/);
+    expect(covered).not.toContain('names no replay_at');
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t1: { superseded: v1 } }));
+    const bare = donewhen(root, ALL_STUBS).clause(5);
+    expect(bare).toMatch(/^FAIL \(5\)/);
+    expect(bare).toContain('t1 has 1 final-1 record and names no replay_at (R37)');
+  });
+
   // Pre-audit-2 S14: once a frozen task names a replay_at (the commit that reproduces its records,
   // after a regrade moved them off the freeze's grader), the historical line points there.
   it('clause 5 points a moved task at its replay_at tag and commit when the freeze names one', () => {

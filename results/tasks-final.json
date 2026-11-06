@@ -31,8 +31,18 @@
       ]
     },
     "crc-care-gap": {
-      "status": "v2-pending",
-      "reason": "R42 (2026-11-05, user decision 'T3 v2 with a new item'): crc-care-gap gets a v2 with one W5-style lever item (lever.ts LEVER ['A'], the Harbor corrected-report packet, builder-316). The v1 freeze below stays as history: its 20 final-1 trials are reproduced at its tag and its regrade tag per R37/R40, and at W5-F they move byte-identical to results/runs/final-1/superseded/crc-care-gap-v1/. The v2 freeze is written by W5-S once pilot-5t lands 2-5 of 8 (S5).",
+      "task_version": "ee4d9690b859f098323029e1486d839dc272362ea546f38a68f88b92a8955c00",
+      "grader_task_version": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d",
+      "env_version": "33891901cd8dc4e64536b9aaac0b6eaf2037073b2baeeb8d2903536834049570",
+      "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+      "oracle_final_hash": "5b69ad660b3b15d47b55b2fa43b945d3bacc5b832e7b561a6bde3071838003a9",
+      "frozen_at": {
+        "tag": "freeze-w5h5"
+      },
+      "frozen_from_branch": "f673fc75e7fd34e1535a3f6c16788061293fc69d",
+      "evidence": "results/pilot-5t (T3 v2 pilot, 2026-11-06, grader 22, world 2ce2ed71): 8 trials on v2 {A}, 3/8 PASS, lever A (crc-b3) 8/8, base 3/8 (four window-completeness misses after the crc-b2 and crc-o1 arrivals and one over-action from a page-one stop); lever-select on the run: {A} 0.360 in band, PASS 3/8 inside 2-5 of 8",
+      "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5t) and R42's pre-registered rule for T3 v2 (freeze if 2-5 of 8): pilot-5t landed 3/8, so v2 {A} freezes; frozen on the W5-H5 world (results-inbox's A toggle rebuilt it), where its own files are unchanged since pilot-5t. The v1 freeze stays whole under superseded as history (its 20 final-1 trials reproduced at its tags; at W5-F they move to results/runs/final-1/superseded/crc-care-gap-v1/)",
+      "regrades": [],
       "superseded": {
         "version": "v1",
         "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
@@ -58,6 +68,20 @@
           }
         ]
       }
+    },
+    "discharge-medrec": {
+      "task_version": "59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2",
+      "grader_task_version": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
+      "env_version": "9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5",
+      "world_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+      "oracle_final_hash": "17c45c5683d7dd0ca7165e2bcea1fcb48c6d38c8f7f0932683eebfc5aac4474f",
+      "frozen_at": {
+        "tag": "freeze-w5h5"
+      },
+      "frozen_from_branch": "f673fc75e7fd34e1535a3f6c16788061293fc69d",
+      "evidence": "results/pilot-5b (W5-P2, 2026-11-06, grader 22, world 2ce2ed71): 8 trials on {B}, 8/8 PASS, lever B (pruitt-metformin) 8/8, base 8/8; pilot-5a on {A,B}: 0/8, A 0/8, B 8/8; lever-select on pilot-5b: {B} 0.810 above the band",
+      "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b): results-inbox and message-queue, nearer 0.45, take the one retune round of at most 2 tasks, so discharge-medrec, the third, freezes on its latest gated version {B} under S5-5/S5-8 (expected above the band; it goes to the user with its card after W5-F); frozen on the W5-H5 world, where its own files are unchanged since pilot-5b",
+      "regrades": []
     },
     "renal-dose-review": {
       "task_version": "0e0a13f62447fd9d3042ee78bdb5bcc4458ee429b30b6f6cc0572e79109ec069",
