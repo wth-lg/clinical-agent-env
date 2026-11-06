@@ -61,7 +61,9 @@ import { explainContext, metPenalties, readLabels, rowLabel, type TaskChecks } f
 import { lastJsonObject, prompt, refusal } from './probe.ts';
 
 const USAGE = 'usage: pnpm cli audit-llm <run> [--dry-run] [--result-chars <n>]';
-export const AUDITOR_PROMPT_VERSION = 'auditor-v1';
+// v2: the clinically_acceptable bullet says the question is about the grade, not the agent's
+// care (on the first live final-1 batch, v1 got model with no on 13 of 14 failures; builder-323).
+export const AUDITOR_PROMPT_VERSION = 'auditor-v2';
 export const AUDITOR_EFFORT = 'high';
 export const AUDITOR_MAX_TOKENS = 16_000;
 // Each tool result the auditor sees is cut at this many characters; policies never are.

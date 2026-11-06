@@ -114,6 +114,10 @@ describe('audit-llm', () => {
     }
     holds(FAULT_PRECEDENCE_RULE);
     holds(PASS_DEFINITION);
+    // The question clinically_acceptable is about the grade, not the agent's care: on the first live
+    // final-1 batch the auditor read it as the latter and answered model with no on 13 of 14 failures,
+    // which parseVerdict refuses (builder-323).
+    holds('yes means the failure is deserved');
     for (const c of CONFIRMATION_CRITERIA) if (c.id !== 'M5') holds(c.text);
     // The trajectory, numbered as grader/exposure.ts stepsOf numbers the executed calls.
     holds('step 1: fhir_read');
