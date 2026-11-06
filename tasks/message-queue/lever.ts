@@ -10,4 +10,4 @@
 // its outputs, and for the reserve add "corrected_egfr_unread" to task.toml [matrix] traps
 // (tests/lever.test.ts checks each against the list); then refill the judge cache
 // (`pnpm cli oracle --task message-queue --live-judge --misses-only`).
-export const LEVER = ['A', 'B'];
+export const LEVER = ['A'];

@@ -127,5 +127,8 @@ describe('matrixLever reads expected.ts LEVER_ITEMS and LEVER as the loaders han
     expect(() => matrixLever({ LEVER_ITEMS: [{ id: 'A', kind: 'C', item: 'note' }], LEVER: ['A'] }, ['A'], 'tasks/t')).toThrow(/LEVER_ITEMS\[0\]: kind must be A or B/);
     expect(() => matrixLever({ LEVER_ITEMS: [{ id: 'A', kind: 'A', item: 'note', spec: 'e', sibling: 'x' }], LEVER: ['A'] }, ['A'], 'tasks/t')).toThrow(/LEVER_ITEMS\[0\]: sibling must be a list of ids/);
     expect(() => matrixLever({ LEVER_ITEMS: 'x', LEVER: [] }, [], 'tasks/t')).toThrow(/LEVER_ITEMS must be a list/);
+    expect(() => matrixLever({ LEVER_ITEMS: [{ id: 'A', kind: 'A', item: 'note', spec: 'e', world: '' }], LEVER: ['A'] }, ['A'], 'tasks/t')).toThrow(/LEVER_ITEMS\[0\]: world must name the world field the toggle moves/);
+    // W5S-232 F2: an A item may name the world field its toggle moves.
+    expect(matrixLever({ LEVER_ITEMS: [{ id: 'A', kind: 'A', item: 'note', spec: 'e', world: 'the item owner' }], LEVER: ['A'] }, ['A'], 'tasks/t')).toEqual({ active: ['A'], items: [{ id: 'A', kind: 'A', item: 'note', spec: 'e', world: 'the item owner' }] });
   });
 });

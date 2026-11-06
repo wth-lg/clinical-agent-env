@@ -194,7 +194,7 @@ display = "Thyrotropin [Units/volume] in Serum or Plasma"
 # item's own key for its other near misses (pruitt-metformin, salazar-amlodipine). A declared trap
 # needs a mutant, and a lever item's mutants exist only with its patient (the A item's with its event).
 [matrix]
-traps = ["kim-furosemide", "kim-lisinopril", "kim-kcl", "kim-omeprazole", "stark-carvedilol", "stark-atorvastatin", "stark-glipizide", "roberts-lisinopril", "unlisted_drug_changed", "orders_before_reading", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "batch_sibling_unread", "stay_result_as_post_discharge", "pruitt-metformin"]
+traps = ["kim-furosemide", "kim-lisinopril", "kim-kcl", "kim-omeprazole", "stark-carvedilol", "stark-atorvastatin", "stark-glipizide", "roberts-lisinopril", "unlisted_drug_changed", "orders_before_reading", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "stay_result_as_post_discharge", "pruitt-metformin"]
 
 # The judge item reads the flags to the PCP; medium as for T1.
 [judge]

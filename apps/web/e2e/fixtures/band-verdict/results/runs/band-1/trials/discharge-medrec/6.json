@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:discharge-medrec/6",
   "task_id": "discharge-medrec",
-  "task_version": "1bbcb0b8fd31de8c65072152c98741aaa12375823076bea8bc494a1cf408f711",
-  "env_version": "aceb38ca22128e59def31fc16da5024d1fbae413bca99ee588f2448ef2669994",
-  "grader_task_version": "1f9cb1dfb1f6be1244603c75525d95f4c16756b6f010691cbd5da0b224fe0aa5",
-  "fixture_hash": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
+  "task_version": "b914c4e0f81813fadc47f4faa90b5d7e3752eee9928ee96a06105c701bd7df92",
+  "env_version": "51f6d65c330becbd0bc5cb398fdd87585be5ca094adbcf3d40db0c9bfa0a45da",
+  "grader_task_version": "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb",
+  "fixture_hash": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
   "state_hash": {
-    "initial": "1709cfeea8818b738ec0f90e551be455ab8e96684245246c718d6f28e852e7c4",
-    "final": "b54e5f07294042242550c4ec26ea7e35eaa13a8a829c6ce5c1145a1a19a86048",
-    "replay_final": "b54e5f07294042242550c4ec26ea7e35eaa13a8a829c6ce5c1145a1a19a86048"
+    "initial": "bae157e683c570a2d3bd3c46d6acb702b512819703759bba84596f5220eacaf6",
+    "final": "00d5eaeb68bf2c3dff60184da11d79585ad5e4dfefa5cceae0148472dab00682",
+    "replay_final": "00d5eaeb68bf2c3dff60184da11d79585ad5e4dfefa5cceae0148472dab00682"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,7 +18,7 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T13:10:46.000Z",
   "turns": 8,
-  "tool_calls": 59,
+  "tool_calls": 57,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Reconciled the five post-discharge patients under RBC-TOC-02; rechecked the results queue for anything that arrived, made the changes, flagged Dr. Okafor, and wrote a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:13:41.000Z",
+  "ended": "2026-10-23T13:13:36.000Z",
   "judge_cost_usd": 0,
   "grader_version": "22",
   "outcome": "PASS",
@@ -574,19 +574,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -650,19 +637,6 @@
           "evidence": {
             "fired": [
               "roberts-r1"
-            ],
-            "not_fired": []
-          }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
             ],
             "not_fired": []
           }
@@ -732,19 +706,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -798,19 +759,6 @@
             ],
             "not_fired": []
           }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
-            ],
-            "not_fired": []
-          }
         }
       ]
     },
@@ -848,19 +796,6 @@
           "evidence": {
             "fired": [
               "stark-s1"
-            ],
-            "not_fired": []
-          }
-        },
-        {
-          "item": "whitcomb-lisinopril",
-          "met": true,
-          "decisive_ids": [
-            "Observation/obs-09004"
-          ],
-          "evidence": {
-            "fired": [
-              "whitcomb-a1"
             ],
             "not_fired": []
           }

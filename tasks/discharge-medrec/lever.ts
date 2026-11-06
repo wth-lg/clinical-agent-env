@@ -20,4 +20,4 @@
 // traps to each active item's trap (tests/lever.test.ts names them); refill the judge cache
 // (`pnpm cli oracle --task discharge-medrec --live-judge --misses-only`). tests/lever.test.ts checks
 // each of these against LEVER.
-export const LEVER = ['A', 'B'];
+export const LEVER = ['B'];

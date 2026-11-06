@@ -20,7 +20,9 @@ const RUN = 'results/runs/final-1';
 
 const freeze = (over: Record<string, Record<string, unknown>> = {}) => JSON.stringify({
   schema_version: 1, trials_per_task: N, band: FINAL_PASS_BAND,
-  tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: { tag: 'freeze-test' }, frozen_from_branch: 'a'.repeat(40), regrades: [], ...over[id] }])),
+  // Each frozen task names its replay_at, as a real freeze does once its final-1 records exist
+  // (W5S-232 F1: clause (5) requires it for a task with records); `over` can drop it.
+  tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: { tag: 'freeze-test' }, frozen_from_branch: 'a'.repeat(40), replay_at: { tag: 'final-1-test', commit: 'b'.repeat(40) }, regrades: [], ...over[id] }])),
 });
 
 function rootWith(fixture: Fixture): string {
@@ -148,6 +150,15 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     const after = clauses(root);
     expect(after.five).toMatch(new RegExp(`^PASS \\(5\\).*t-alpha ${N / 2}/${N}`));
     expect(after.six).toMatch(/^PASS \(6\).*summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 1/);
+  });
+
+  it(`clause (5) FAILs on a frozen task with ${N} final-1 records and no replay_at (W5S-232 F1), where summary still exits 0`, () => {
+    const root = rootWith('clean');
+    writeFileSync(join(root, 'results/tasks-final.json'), freeze({ 't-alpha': { replay_at: undefined } }));
+    expect(exit(root, SUMMARY)).toBe(0);
+    const c = clauses(root);
+    expect(c.five).toMatch(new RegExp(`^FAIL \\(5\\).*t-alpha has ${N} final-1 records and names no replay_at \\(R37\\)`));
+    expect(c.five).not.toContain('t-beta has');
   });
 
   it('clause (5) FAILs with replay.json removed (replay=all), where summary exits 1', () => {

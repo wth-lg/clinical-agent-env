@@ -350,6 +350,23 @@ describe('donewhen', () => {
     expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).not.toContain('historical');
   });
 
+  // W5S-232 F1: a frozen task with records under results/runs/final-1/trials/<id>/ must name its
+  // replay_at (the pointer R37 reproduces them at); one frozen before its final run need not.
+  it('clause 5 fails when a frozen task has final-1 records and names no replay_at, and passes once it does or while it has none', () => {
+    const root = completeRepo();
+    write(root, `${FINAL_RUN}/trials/t1/0.json`, '{}\n');
+    write(root, `${FINAL_RUN}/trials/t1/1.json`, '{}\n');
+    const bare = donewhen(root, ALL_STUBS).clause(5);
+    expect(bare).toMatch(/^FAIL \(5\)/);
+    expect(bare).toContain('t1 has 2 final-1 records and names no replay_at (R37)');
+    write(root, 'results/tasks-final.json', freeze(TASKS, { t1: { replay_at: { tag: 'final-1-test', commit: 'b'.repeat(40) } } }));
+    const named = donewhen(root, ALL_STUBS).clause(5);
+    expect(named).toMatch(/^PASS \(5\)/);
+    expect(named).not.toContain('names no replay_at');
+    // t2 has no final-1 records and no replay_at: nothing to point at yet.
+    expect(named).not.toContain('t2 has');
+  });
+
   // Pre-audit-2 S14: once a frozen task names a replay_at (the commit that reproduces its records,
   // after a regrade moved them off the freeze's grader), the historical line points there.
   it('clause 5 points a moved task at its replay_at tag and commit when the freeze names one', () => {
