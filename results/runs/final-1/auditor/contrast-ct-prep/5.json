@@ -1,0 +1,30 @@
+{
+  "trial": "contrast-ct-prep/5",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "ea8aab11aae254228652acf27d31fef29002fe9bb64ee8cdc1b1cf34d64190b0",
+  "at": "2026-11-06T17:42:45.776Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 85,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Appointment/appt-00005"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "Of the two results that arrived for Mohr, the agent read only the 10/22 creatinine. It never opened the reachable obs-07501 or re-checked his creatinine history, so it ruled out AKI and ordered no saline before his scan. The event_seen and amended failures are therefore deserved model failures."
+  },
+  "problem": null,
+  "answer": "The agent opened the new 10/22 creatinine for Britt Mohr but never re-checked his creatinine history, so it ruled out AKI and ordered no saline. The failure is the model's and the grade is deserved.\n\n- **What arrived:** Event t5-mohr-scr brought two observations for Mohr (pt-0047) at step 54: obs-07501 and obs-07502.\n- **What the agent did:** It read only obs-07502, the 10/22 creatinine of 1.52. It never opened obs-07501 and never re-searched his creatinine results.\n- **What it concluded:** From the 9/24 value of 0.94 alone, it decided there was no 48-hour or 7-day window, so no AKI.\n- **What it missed:** The `amended` check expects IV saline at 07:00 before his 08:00 scan. That points to obs-07501 showing a rise meeting the policy's AKI definition.\n- **What it sent instead:** At step 85 it told the patient no extra treatment was needed.\n- **No other fault holds:**\n  - The record was reachable: M1 says the reference solution or an accepted alternative reached obs-07501.\n  - There were no tool errors, so every tool rejection was right.\n  - The state hashes match (M3).\n  - The reference solution and all alternatives pass the grader (M4).\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 85, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Appointment/appt-00005\"], \"criteria\": [\"MF1\"], \"reason\": \"Of the two results that arrived for Mohr, the agent read only the 10/22 creatinine. It never opened the reachable obs-07501 or re-checked his creatinine history, so it ruled out AKI and ordered no saline before his scan. The event_seen and amended failures are therefore deserved model failures.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.26514,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

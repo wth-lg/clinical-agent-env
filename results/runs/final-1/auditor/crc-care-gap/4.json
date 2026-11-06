@@ -1,0 +1,29 @@
+{
+  "trial": "crc-care-gap/4",
+  "outcome": "PASS",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "f0915df14ee499c26e71e72bb5e7667049045a252f37214e9ee0e3ad86507120",
+  "at": "2026-11-06T17:44:59.789Z",
+  "verdict": {
+    "label": "pass",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": null,
+    "evidence_ids": [
+      "Condition/cond-00189",
+      "EpisodeOfCare/eoc-00002",
+      "Observation/obs-01732",
+      "Observation/obs-01871",
+      "Observation/obs-05001"
+    ],
+    "criteria": [],
+    "reason": "All five statuses match RBC-QM-02 after the arrivals were applied: pt-0020 is excluded by hospice care in 2026, and the other four have open gaps because their prior tests were corrected, withdrawn or collected before 2026. The orders and truthful messages were placed only for those four, so the PASS is right."
+  },
+  "problem": null,
+  "answer": "The PASS is right. Every gate check is met, and each patient's status follows RBC-QM-02 once the arrivals that came in during the trial are applied:\n\n- **pt-0009:** Not excluded. The frailty entry was marked entered in error, so the age 66+ frailty/advanced-illness exclusion fails despite donepezil. Open gap, FIT kit ordered.\n- **pt-0020:** Excluded. Her hospice episode was active in 2026 and is now finished, which still counts.\n- **pt-0022:** Open gap. Her FIT collection date was corrected to 2025-12-31, outside 2026.\n- **pt-0024:** Open gap. Her sDNA-FIT is entered in error, and the 2025 colonoscopy order was never done.\n- **pt-0073:** Open gap. Her re-issued FIT was collected 2025-12-28, outside 2026.\n\nThe four outreach messages state only true facts. No tool refused a call, and no infra, grader or environment criterion holds. The `outreach_on_topic` result is unknown only on a rubric check, which does not affect the gate outcome.\n\n{\"label\": \"pass\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": null, \"evidence_ids\": [\"Condition/cond-00189\", \"EpisodeOfCare/eoc-00002\", \"Observation/obs-01732\", \"Observation/obs-01871\", \"Observation/obs-05001\"], \"criteria\": [], \"reason\": \"All five statuses match RBC-QM-02 after the arrivals were applied: pt-0020 is excluded by hospice care in 2026, and the other four have open gaps because their prior tests were corrected, withdrawn or collected before 2026. The orders and truthful messages were placed only for those four, so the PASS is right.\"}",
+  "calls": 1,
+  "cost_usd": 0.354144,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

@@ -1,0 +1,30 @@
+{
+  "trial": "results-inbox/19",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "2f31b438f6f3750226c334e1d60d460b84acdcab20642df8a308ec6220b881f5",
+  "at": "2026-11-06T17:49:50.260Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 87,
+    "evidence_ids": [
+      "Observation/obs-06209",
+      "Observation/obs-06210",
+      "Task/inbox-a0003",
+      "DiagnosticReport/dr-64002"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The pt-0064 batch that arrived also filed obs-06210 with no inbox item, and a tool would have returned it, but the agent never re-searched that patient's creatinines. At step 87 it closed inbox-a0003 as not AKI with nothing that closes the loop. All confirming conditions are met and the only tool rejection (step 77, a non-inbox task id) was correct, so this is a deserved model failure."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 87, \"evidence_ids\": [\"Observation/obs-06209\", \"Observation/obs-06210\", \"Task/inbox-a0003\", \"DiagnosticReport/dr-64002\"], \"criteria\": [\"MF1\"], \"reason\": \"The pt-0064 batch that arrived also filed obs-06210 with no inbox item, and a tool would have returned it, but the agent never re-searched that patient's creatinines. At step 87 it closed inbox-a0003 as not AKI with nothing that closes the loop. All confirming conditions are met and the only tool rejection (step 77, a non-inbox task id) was correct, so this is a deserved model failure.\"}",
+  "calls": 1,
+  "cost_usd": 0.254284,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

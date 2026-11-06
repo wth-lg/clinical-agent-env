@@ -1,0 +1,30 @@
+{
+  "trial": "contrast-ct-prep/1",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "1d2ddd4d464c03b0b0845f7c9a2778ce675a8a0e739fcc522d13ba38764f1cf0",
+  "at": "2026-11-06T17:41:43.244Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 93,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Patient/pt-0047",
+      "Appointment/appt-00005"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent read only obs-07502 from Mohr's arrival and never opened obs-07501, which the reference solution could reach. At step 93 it wrongly ruled out acute kidney injury and left out the required pre-scan IV saline; there is no infrastructure, grader or environment fault, so the FAIL stands."
+  },
+  "problem": null,
+  "answer": "The FAIL is the model's fault and clinically deserved.\n\n- **What arrived and what was missed.** For Mohr, the arrival after step 52 (event t5-mohr-scr) delivered two creatinine records, Observation/obs-07501 and Observation/obs-07502. The agent opened only obs-07502 (1.52 mg/dL on 10/22). It never opened obs-07501 and did not search his creatinine results again.\n- **The wrong decision.** At step 93 it compared 1.52 only with the 9/24 value of 0.94, ruled out acute kidney injury, and ordered no pre-scan saline. Both checks that failed (`event_seen` and `amended`) point to Mohr.\n- **No environment fault.** M1 is met: the reference solution reached obs-07501 in the grader validation matrix, so the agent could have found it. There were no internal tool errors (M2), and the state hashes match (M3).\n- **No grader fault.** The reference solution and all accepted alternatives pass this grader version (M4).\n- **Tool rejections were right.** The two INVALID_INPUT errors at steps 56 and 57 came from mixing a date with a dateTime, which the schema rejects. The agent corrected the calls at steps 61 and 62.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 93, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Patient/pt-0047\", \"Appointment/appt-00005\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent read only obs-07502 from Mohr's arrival and never opened obs-07501, which the reference solution could reach. At step 93 it wrongly ruled out acute kidney injury and left out the required pre-scan IV saline; there is no infrastructure, grader or environment fault, so the FAIL stands.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.280632,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

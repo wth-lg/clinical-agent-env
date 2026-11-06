@@ -1,0 +1,31 @@
+{
+  "trial": "contrast-ct-prep/18",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v1",
+  "prompt_sha256": "88b11042d2e0cfd90f01aa41c9cc3679a959e03b9cdc9cded02dd503cf790db6",
+  "at": "2026-11-06T17:40:10.554Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 94,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Appointment/appt-00005",
+      "DocumentReference/doc-t0025"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The arrival for Mohr included Observation/obs-07501, which was reachable but never opened. The agent decided from obs-07502 alone that there was no acute kidney injury and never ordered the 07:00 saline, so event_seen and amended rightly fail. The environment and grader are clean under M1 to M4."
+  },
+  "problem": null,
+  "answer": "The current FAIL is the model's fault: it missed a reachable creatinine result and so left Mohr without the saline the policy requires.\n\n- **The FAIL is valid.** The gates `event_seen` and `amended` both fail on Patient/pt-0047 (Mohr, 08:00 scan). The arrival t5-mohr-scr at step 55 brought two results: Observation/obs-07501 and Observation/obs-07502.\n- **What the agent did.** It read only obs-07502 (creatinine 1.52 on 10/22). It then concluded there was no acute kidney injury because it had no creatinine near enough to compare. It never re-queried Mohr's creatinine results, so it never saw obs-07501. As a result it ordered no saline 1 hour before the scan.\n- **No other fault applies.**\n  - M1 holds: obs-07501 was reachable, because the reference solution reached it in the validation matrix.\n  - M2 holds: there were no internal tool errors.\n  - M3 holds: the start and replayed final state hashes match.\n  - M4 holds: the reference solution and alternatives pass this grader version.\n  - The run stopped normally (tool_use), so no infrastructure fault applies.\n- **The outcome is clinically right.** A saline-prophylaxis order for a likely acute kidney injury was missed.\n- **The tool rejections were correct.** Steps 56 and 59 were refused because `occurrence_end` mixed a date with a dateTime. That is a refusal the input schema itself gives, so it was right.\n- **Decisive step.** Step 94 is where the agent wrote down \"AKI criteria per policy not met\" without looking for the other new result.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 94, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Appointment/appt-00005\", \"DocumentReference/doc-t0025\"], \"criteria\": [\"MF1\"], \"reason\": \"The arrival for Mohr included Observation/obs-07501, which was reachable but never opened. The agent decided from obs-07502 alone that there was no acute kidney injury and never ordered the 07:00 saline, so event_seen and amended rightly fail. The environment and grader are clean under M1 to M4.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.275756,
+  "ledger_batch": "e10a07e3-381d-40fe-af35-ce0481d28154"
+}

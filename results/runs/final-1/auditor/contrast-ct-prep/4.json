@@ -1,0 +1,30 @@
+{
+  "trial": "contrast-ct-prep/4",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "debb2c5450dc026717334cd3491df71831681ba19a315b7b5f12180da7a0f1d4",
+  "at": "2026-11-06T17:42:30.514Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 92,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "DocumentReference/doc-t0029"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent reviewed only obs-07502 of Mohr's late arrival and never opened the reachable obs-07501. It then recorded 'not AKI' and omitted the pre-scan saline, so it fails the arrival-review rule and §5. The environment and grader are clean (M1-M4 met), and the one tool rejection was schema-correct."
+  },
+  "problem": null,
+  "answer": "The FAIL is the model's fault and is clinically deserved: the agent closed out Mr. Mohr's (pt-0047) late-arriving creatinine without opening everything that arrived with it, and so never ordered saline.\n\n1. **What failed.** Two gate checks are not met, both for pt-0047:\n   - `event_seen`: event t5-mohr-scr arrived at step 53 and was never read before finish.\n   - `amended`: there is no IV saline dose at 07:00, one hour before his 08:00 scan.\n   All other gate checks are met.\n\n2. **What the agent did.** The arrival delivered Observation/obs-07501 and Observation/obs-07502.\n   - The agent opened only obs-07502 (creatinine 1.52 on 10/22, step 75).\n   - It compared that value with the 9/24 result and decided the rise was not acute kidney injury.\n   - It recorded that conclusion in its note (step 92) and closed the inbox item (step 95).\n   - It never opened obs-07501 and never searched pt-0047's creatinines again. It did this even though its own note calls the rise \"unexplained … of unknown timing\".\n   - The `amended` check expects saline under §5, which fits obs-07501 being a recent creatinine that makes the rise acute kidney injury.\n\n3. **Why no environment or grader fault applies.**\n   - The record shows obs-07501 was reachable: the reference solution or an accepted alternative reached it in the validation matrix (M1 met), so E5 does not hold.\n   - No tool returned an internal error (M2), and the start and final state hashes match the manifest and the replay (M3).\n   - The reference solution and all alternatives pass this grader version (M4), so no grader criterion holds.\n   - The only tool rejection was step 63. That INVALID_INPUT was correct: the call mixed a date with a dateTime, which the schema refuses.\n\n4. **Decisive step.** Step 92 is where the agent wrote down the wrong kidney decision for pt-0047 instead of retrieving obs-07501.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 92, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"DocumentReference/doc-t0029\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent reviewed only obs-07502 of Mohr's late arrival and never opened the reachable obs-07501. It then recorded 'not AKI' and omitted the pre-scan saline, so it fails the arrival-review rule and §5. The environment and grader are clean (M1-M4 met), and the one tool rejection was schema-correct.\"}",
+  "calls": 1,
+  "cost_usd": 0.27862,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

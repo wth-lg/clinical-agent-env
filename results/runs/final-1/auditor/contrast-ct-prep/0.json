@@ -1,0 +1,31 @@
+{
+  "trial": "contrast-ct-prep/0",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "17f1af5aa5785892bfa66a17fb4067ec10fc5a4114a6fcfa488d9ecd5a66ce73",
+  "at": "2026-11-06T17:41:28.528Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 94,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "Appointment/appt-00005",
+      "ServiceRequest/sr-t0001"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The late creatinine event for pt-0047 included Observation/obs-07501, which the agent never opened although it was reachable (M1 met); it judged the rise against the 9/24 value only, recorded no AKI at step 94, and omitted the §5 pre-scan saline. No infra, grader or environment criterion holds, so the deserved FAIL is the model's."
+  },
+  "problem": null,
+  "answer": "The failure is the model's, under MF1. The grade is clinically right: the agent did not review the full late creatinine event for pt-0047 and so left out the §5 saline that the amended check expected.\n\n- **What arrived.** The event t5-mohr-scr came in after step 52 and carried two results, Observation/obs-07501 and Observation/obs-07502.\n- **What the agent read.** At step 75 it opened only obs-07502, the 10/22 creatinine of 1.52. It never opened obs-07501.\n- **Reachability.** The record says obs-07501 was reachable: the reference solution reached it in the matrix, so M1 is met. A fresh creatinine search for pt-0047 would have returned it. The agent instead ran a notes search at step 81.\n- **The wrong decision.** At step 94 the agent compared 1.52 only with the 9/24 value and wrote that there was no AKI and no change. As a result it never ordered 0.9% saline 500 mL IV at 07:00 before the 08:00 scan. That missing order is what the amended check failed on.\n- **Other causes ruled out.** There were no internal tool errors (M2). The start and final state hashes match (M3). The reference solution and all alternatives pass this grader version (M4). So no infra, grader or environment criterion holds.\n- **Tool rejections.** Both were correct.\n  - Step 53 mixed a date with a dateTime in the same order, which the schema rejects.\n  - Step 89 used a substance code that is not in the catalog.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 94, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"Appointment/appt-00005\", \"ServiceRequest/sr-t0001\"], \"criteria\": [\"MF1\"], \"reason\": \"The late creatinine event for pt-0047 included Observation/obs-07501, which the agent never opened although it was reachable (M1 met); it judged the rise against the 9/24 value only, recorded no AKI at step 94, and omitted the §5 pre-scan saline. No infra, grader or environment criterion holds, so the deserved FAIL is the model's.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.277404,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

@@ -1,0 +1,33 @@
+{
+  "trial": "crc-care-gap/11",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "98d70d767f52b1e166eeb32b5f3b1e231e0486519f997d3b2ed6b3801bf135a5",
+  "at": "2026-11-06T17:46:10.506Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 72,
+    "evidence_ids": [
+      "ServiceRequest/sr-t0001",
+      "Observation/obs-01732",
+      "Patient/pt-0022"
+    ],
+    "criteria": [
+      "MF1",
+      "M1",
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "reason": "For pt-0022 the agent read only the first page of 41 Observations since 2024 (step 37) and then searched only the FIT code, which RBC-QM-02 §7 says cannot show that no other qualifying test exists, such as an sDNA-FIT, before ordering the kit at step 72. The validation matrix passes, nothing was hidden, and no tool erred, so the failed review gate is the model's own shortfall."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 72, \"evidence_ids\": [\"ServiceRequest/sr-t0001\", \"Observation/obs-01732\", \"Patient/pt-0022\"], \"criteria\": [\"MF1\", \"M1\", \"M2\", \"M3\", \"M4\"], \"reason\": \"For pt-0022 the agent read only the first page of 41 Observations since 2024 (step 37) and then searched only the FIT code, which RBC-QM-02 §7 says cannot show that no other qualifying test exists, such as an sDNA-FIT, before ordering the kit at step 72. The validation matrix passes, nothing was hidden, and no tool erred, so the failed review gate is the model's own shortfall.\"}",
+  "calls": 1,
+  "cost_usd": 0.325424,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}
