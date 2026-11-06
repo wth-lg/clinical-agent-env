@@ -208,7 +208,7 @@ function clause3(): Verdict {
 }
 
 // The per-task freeze, results/tasks-final.json: each frozen task's versions. Read once per run.
-type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: { tag: string }; frozen_from_branch: string; replay_at?: { tag: string; commit: string }; regrades?: Array<{ grader_task_version: string }> };
+type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: { tag: string }; frozen_from_branch: string; replay_at?: { tag: string; commit: string }; regrades?: Array<{ grader_task_version: string; task_version?: string }>; superseded?: { task_version?: string; regrades?: Array<{ task_version?: string }>; replay_at?: { tag: string; commit: string } } };
 // A task whose freeze a new version superseded (R42: `status: "v2-pending"`, the earlier freeze
 // kept under `superseded` as history) is not frozen: clause (5) names it as pending and holds no
 // records to it until its new freeze is written.
@@ -314,11 +314,20 @@ function clause5(): Verdict {
     }
   }
   // W5S-232 F1: a frozen task whose final-1 records exist must name replay_at (R37: the tag and
-  // commit that reproduce them); one frozen before its final run has none to point at yet.
+  // commit that reproduce them); one frozen before its final run has none to point at yet. A task
+  // frozen on a new version while final-1 still holds the earlier version's records (R42,
+  // crc-care-gap v2 over v1) is covered by the superseded freeze's replay_at only while every
+  // record is at that freeze's held task_version (W5H5-235 S1: the pointer must reproduce the
+  // records final-1 holds now); records of the new version need the entry's own pointer.
   for (const id of frozenList) {
     const dir = join(root, FINAL_RUN, 'trials', id);
     const n = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).length : 0;
-    if (n > 0 && frozen.tasks[id]!.replay_at === undefined) {
+    const t = frozen.tasks[id]!;
+    const sup = t.superseded;
+    const heldSup = sup?.regrades?.at(-1)?.task_version ?? sup?.task_version;
+    const seen = tasks[id]?.task_versions ?? [];
+    const coveredBySuperseded = sup?.replay_at !== undefined && heldSup !== undefined && seen.length > 0 && seen.every((v) => v === heldSup);
+    if (n > 0 && t.replay_at === undefined && !coveredBySuperseded) {
       pass = false;
       parts.push(`${id} has ${n} final-1 record${n === 1 ? '' : 's'} and names no replay_at (R37)`);
     }

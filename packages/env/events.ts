@@ -56,6 +56,12 @@ export interface EventSpec {
   // '<Type>/<id>.<path>': a field of one of the resources set to the arrival stamp, e.g.
   // 'Observation/obs-x.issued' or 'DocumentReference/doc-x.date'.
   stampFields: readonly string[];
+  // The inbox Task's description in place of ARRIVAL_SUMMARY[focus type]: 'Label (count)', a short
+  // label of letters and spaces and one parenthesized integer (SUMMARY_SHAPE), so it can name a
+  // count and nothing else, never a value or a deciding fact (R29): the pre-declared softening
+  // "Results (<n>)" of plan-amendment-w5 S5-3 (message-queue webb-a1 from v3, R45, R47, n computed
+  // from the spec's resources). Absent: the generic line.
+  summary?: string;
 }
 
 // One fire, as session.fired keeps it and the env_event trajectory event carries it.
@@ -68,6 +74,9 @@ export interface Arrival {
   keys: string[];
 }
 
+// The shape a spec's own summary must have (EventSpec.summary): a label of 1 to 4 words of letters,
+// then one parenthesized integer; nothing else, so no value or other digit can ride in it.
+export const SUMMARY_SHAPE = /^[A-Za-z]+(?: [A-Za-z]+){0,3} \((?:0|[1-9][0-9]*)\)$/;
 // The inbox summary per focus type: generic, never a deciding fact (R29).
 export const ARRIVAL_SUMMARY = {
   Observation: 'New result',
@@ -116,6 +125,7 @@ export function checkSpec(spec: EventSpec): void {
   if (focus === undefined) throw new Error(`${at}: no resources`);
   if (!Object.hasOwn(ARRIVAL_SUMMARY, focus.resourceType)) throw new Error(`${at}: the first resource is a ${focus.resourceType}; it must be one of ${Object.keys(ARRIVAL_SUMMARY).join(', ')}`);
   if (patientOf(focus) === undefined) throw new Error(`${at}: the first resource has no Patient subject`);
+  if (spec.summary !== undefined && (typeof spec.summary !== 'string' || !SUMMARY_SHAPE.test(spec.summary))) throw new Error(`${at}: summary must read 'Label (count)': a short label of letters and spaces and one parenthesized integer, got ${JSON.stringify(spec.summary)}`);
   const keys = spec.resources.map(keyOf);
   if (new Set(keys).size !== keys.length) throw new Error(`${at}: a resource appears twice (${keys.join(', ')})`);
   for (const f of spec.stampFields) stampTarget(spec, f);
@@ -183,7 +193,7 @@ function fire(ctx: WriteContext, spec: EventSpec): void {
     for: { reference: patientOf(focus)! },
     authoredOn: stamp,
     owner: { reference: USER },
-    description: ARRIVAL_SUMMARY[type],
+    description: spec.summary ?? ARRIVAL_SUMMARY[type],
   };
   const all = [...resources, inbox];
   const keys = all.map(keyOf);

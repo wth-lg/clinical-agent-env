@@ -22,6 +22,6 @@
 {"trial":"renal-dose-review/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":64,"evidence_ids":["MedicationRequest/mr-00359"],"llm_auditor_agrees":true}
 {"trial":"renal-dose-review/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":66,"evidence_ids":["Observation/obs-02639","Observation/obs-02640"],"llm_auditor_agrees":true}
 {"trial":"renal-dose-review/10","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":70,"evidence_ids":["Observation/obs-04001"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":51,"evidence_ids":["DocumentReference/doc-06201"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":55,"evidence_ids":["Observation/obs-00708"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":35,"evidence_ids":["Observation/obs-01400"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":56,"evidence_ids":["DocumentReference/doc-06201"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":60,"evidence_ids":["Observation/obs-00708"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":36,"evidence_ids":["Observation/obs-01400"],"llm_auditor_agrees":true}

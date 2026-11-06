@@ -6,10 +6,10 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "86c2e8b42ccf0c217afe715a22fc7f15dcd5057b74a7464d056fbfa1d82dd610"
+        "8a356f9649b582daa1a306be1cca960fa20c68a346907fd477ce7945697601df"
       ],
       "env_versions": [
-        "d4d4f4ab7491c28d75b946ac94aa87ca73ec39c7648b6e1ec8c3564693e4c2f9"
+        "2add66922c3ccee728a6dac6c274001cd88e509eabc6ade9da59f80fb3bd2b07"
       ],
       "grader_task_versions": [
         "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
@@ -105,10 +105,10 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "5cde58471d7dc00568b6a6c7798b5acf25ab81006068158c6249f627c1dc2f75"
+        "59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2"
       ],
       "env_versions": [
-        "063fbbc92044a0790f07be7fee9705280bab4b086d43c0c9742ef8444d8f7651"
+        "9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5"
       ],
       "grader_task_versions": [
         "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb"
@@ -202,13 +202,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "8c0425ad53735c0afbe5d697527d6d5ceac287adabc3409c40bee58c60eb52c4"
+        "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
       ],
       "env_versions": [
-        "8d7078cb17e356dc56c9a732096517d93cf82b07ab2c275815238383e7a6f2ec"
+        "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
       ],
       "grader_task_versions": [
-        "c45e07324915d7382b0a22e8689c129d75ccd13df10a412078cc11a6a27c8048"
+        "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
       ],
       "records": 20,
       "trials": 20,
@@ -311,7 +311,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5"
+    "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
   ],
   "replay": {
     "ran": false,
@@ -326,14 +326,14 @@
       "version": "v1",
       "dir": "superseded/contrast-ct-prep-v1",
       "initial_state_hashes": [
-        "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5"
+        "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
       ],
       "summary": {
         "task_versions": [
-          "86c2e8b42ccf0c217afe715a22fc7f15dcd5057b74a7464d056fbfa1d82dd610"
+          "8a356f9649b582daa1a306be1cca960fa20c68a346907fd477ce7945697601df"
         ],
         "env_versions": [
-          "d4d4f4ab7491c28d75b946ac94aa87ca73ec39c7648b6e1ec8c3564693e4c2f9"
+          "2add66922c3ccee728a6dac6c274001cd88e509eabc6ade9da59f80fb3bd2b07"
         ],
         "grader_task_versions": [
           "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"

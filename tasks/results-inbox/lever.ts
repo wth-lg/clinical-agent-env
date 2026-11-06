@@ -6,4 +6,4 @@
 // (the hemolyzed potassium under RBC-LAB-03 §2's exception). Every host is in the world in every
 // state; a toggle moves only its inbox item's owner (the expected.ts header), so B and the reserve
 // still need `pnpm fixtures:build` (the owner is a world field, R40).
-export const LEVER = ['B'];
+export const LEVER = ['A'];

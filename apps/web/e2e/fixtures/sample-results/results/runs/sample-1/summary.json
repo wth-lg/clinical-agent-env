@@ -6,10 +6,10 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "86c2e8b42ccf0c217afe715a22fc7f15dcd5057b74a7464d056fbfa1d82dd610"
+        "8a356f9649b582daa1a306be1cca960fa20c68a346907fd477ce7945697601df"
       ],
       "env_versions": [
-        "d4d4f4ab7491c28d75b946ac94aa87ca73ec39c7648b6e1ec8c3564693e4c2f9"
+        "2add66922c3ccee728a6dac6c274001cd88e509eabc6ade9da59f80fb3bd2b07"
       ],
       "grader_task_versions": [
         "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528"
@@ -126,10 +126,10 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "41822d92b78faac5a3caf6fd29f9168d980bc0ee85124d2ba0883f2a4724417b"
+        "ee4d9690b859f098323029e1486d839dc272362ea546f38a68f88b92a8955c00"
       ],
       "env_versions": [
-        "de1d15d15e0d4aa349ae34d140ddfea9c3b4f7013eb2508ace788a04418b4fd8"
+        "33891901cd8dc4e64536b9aaac0b6eaf2037073b2baeeb8d2903536834049570"
       ],
       "grader_task_versions": [
         "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d"
@@ -234,10 +234,10 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "5cde58471d7dc00568b6a6c7798b5acf25ab81006068158c6249f627c1dc2f75"
+        "59be9d3de447cf692da12366c085b18557bd2d98824bba511a9860983130a7e2"
       ],
       "env_versions": [
-        "063fbbc92044a0790f07be7fee9705280bab4b086d43c0c9742ef8444d8f7651"
+        "9c12d584af1d4fbeedea1699171020ab88c0a30c623a33cd89c08ca53870fdf5"
       ],
       "grader_task_versions": [
         "8f1468c535b9d939fb5187839afc9335c2764a8bd1acf9d2a2db636613134eeb"
@@ -342,13 +342,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "8c0425ad53735c0afbe5d697527d6d5ceac287adabc3409c40bee58c60eb52c4"
+        "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010"
       ],
       "env_versions": [
-        "8d7078cb17e356dc56c9a732096517d93cf82b07ab2c275815238383e7a6f2ec"
+        "3a0faaf31d0f279105d23f7925475d8676d150af732c546ce1052c647e980812"
       ],
       "grader_task_versions": [
-        "c45e07324915d7382b0a22e8689c129d75ccd13df10a412078cc11a6a27c8048"
+        "270b7a476985968576f9a47ce5314de6e3488745736f624c67e110cbafe3b631"
       ],
       "records": 12,
       "trials": 12,
@@ -449,10 +449,10 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "52fa89a8c3c9026cbe557453026a026a4274d57ab518f80135ebbd9769ac5709"
+        "4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575"
       ],
       "env_versions": [
-        "af50b717687799583cf73ceacf9e5a00e527782c14c0e14de96f957a33de2a4e"
+        "88c8dbe7f11d96f469dd8e132184fb175568d7ac7f69055e903641475d23d358"
       ],
       "grader_task_versions": [
         "3b7fa10adea1750cecbafcac64d7d479a9bb7c058aa5e34a97cb1e9323e2c16d"
@@ -563,13 +563,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "eaa60acbc3e70353871692d51ac212ffcafe31047bc8d4bd0323692e4b5ce6ba"
+        "3e403540df819f207d960041807fd7f94755612a42602feb6f0f23154e3cf3c2"
       ],
       "env_versions": [
-        "cbd5e736b3b3051d33484c44228c6766435a81a603c4434fa69fad21b7a915f3"
+        "e69093009b4e9bc112a7c35ea4c292431ed741c3ddc6d2b4789db2fca6f433bf"
       ],
       "grader_task_versions": [
-        "aacbd8cd1fec9299f508e529d860ee6db060b37da199a50015203c277b8cb4d3"
+        "ffee13db89e555206d518851f848a5641d43a7afa7499f0bec99e412f46ff00e"
       ],
       "records": 13,
       "trials": 12,
@@ -699,7 +699,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "0dc800b2f9dacc59582b1a437284a316d5737d511caf2b7dfcccf72d783ebac5"
+    "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a"
   ],
   "replay": {
     "ran": false,

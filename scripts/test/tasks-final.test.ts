@@ -54,6 +54,10 @@ export interface FrozenTask {
   // the frozen world and the grader of the current grade.
   replay_at?: { tag: string; commit: string };
   regrades: FrozenRegrade[];
+  // The earlier version's freeze, kept whole as history once the new version is frozen (R42:
+  // crc-care-gap v2 over v1), with its `version`; pinned by its files at its tags like a pending
+  // task's.
+  superseded?: FrozenTask & { version: string };
 }
 // A task whose freeze a new version superseded (R42, T3 v2): `status: "v2-pending"`, the reason,
 // and the earlier freeze kept whole under `superseded` with its `version`. It is not frozen (its
@@ -148,12 +152,13 @@ describe('results/tasks-final.json', () => {
 
   // R42, R37, R40: a superseded freeze is history. Its recorded files, as the tag of its last
   // regrade (else its freeze tag) holds them, still give the versions it records at its world,
-  // and the checkout's files have moved on from them (the task is pending its new version).
-  it("a v2-pending task's superseded freeze is pinned by its files at their tag, and the checkout's task has moved on from it", async () => {
+  // and the checkout's files have moved on from them (the task is pending its new version, or
+  // frozen on it with the earlier freeze kept under `superseded`).
+  it("a superseded freeze (under a v2-pending or a frozen entry) is pinned by its files at their tag, and the checkout's task has moved on from it", async () => {
     const d = doc();
     const source = nodeTaskSource({ testMode: false });
     for (const [id, entry] of Object.entries(d.tasks)) {
-      if (!isPending(entry)) continue;
+      if (entry.superseded === undefined) continue;
       const t = entry.superseded;
       const held = currentVersions(t);
       const tag = t.regrades.at(-1)?.at ?? t.frozen_at.tag;
@@ -187,9 +192,17 @@ describe('results/tasks-final.json', () => {
   it('replay_at is required for a frozen task with final-1 records, and where named is a tag and a commit of this repository whose tree holds results/runs/final-1 and the frozen world', () => {
     const d = doc();
     // A v2-pending task's replay_at is its superseded freeze's (R42): the commit that holds its
-    // earlier version's final-1 records.
+    // earlier version's final-1 records; so is a frozen new version's until its own records land
+    // (crc-care-gap v2 over v1: final-1 holds v1's 20 until W5-F moves them to superseded/).
     for (const [id, entry] of Object.entries(d.tasks)) {
-      const t = isPending(entry) ? entry.superseded : entry;
+      const fallback = !isPending(entry) && entry.replay_at === undefined && entry.superseded?.replay_at !== undefined;
+      const t = isPending(entry) ? entry.superseded : fallback ? entry.superseded! : entry;
+      // W5H5-235 S1: the superseded pointer stands in only while final-1's records are the ones
+      // its commit holds (byte for byte), never for records of the new version.
+      if (fallback) {
+        const same = spawnSync('git', ['-C', repoRoot, 'diff', '--quiet', t.replay_at!.commit, 'HEAD', '--', `${FINAL_TRIALS}/${id}`]);
+        expect(same.status, `${id}: results/runs/final-1/trials/${id} differs from the superseded freeze's replay_at commit ${t.replay_at!.commit.slice(0, 12)}, so that pointer cannot stand in for the entry's own replay_at`).toBe(0);
+      }
       if (t.replay_at === undefined) {
         expect(finalRecords(id), `${id}: has final-1 records under ${FINAL_TRIALS} and names no replay_at (R37: the tag and commit that reproduce them)`).toBe(0);
         continue;
