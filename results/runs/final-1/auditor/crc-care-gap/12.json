@@ -1,0 +1,30 @@
+{
+  "trial": "crc-care-gap/12",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "04590a2a50e01210c1db0166405762a28f39efc9145bf469f1c207e72f75cf33",
+  "at": "2026-11-06T17:46:28.889Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 86,
+    "evidence_ids": [
+      "ServiceRequest/sr-t0007",
+      "Patient/pt-0009",
+      "Condition/cond-00189",
+      "Communication/comm-00301"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent ordered a FIT kit for pt-0009 at step 86 without a complete unfiltered review of her Observations from 2024-01-01: the code-narrowed search does not count under §7, and the 2017-2025 search was never paged. The reference solution passes this gate and the environment was sound, so the FAIL is the model's and is deserved."
+  },
+  "problem": null,
+  "answer": "**Verdict: model fault; the FAIL stands.**\n\n1. **The failed check is supported by the record.**\n   - Both failed gates (fit_orders and gap_seen_before_order) concern only pt-0009.\n   - At step 86 the agent ordered a FIT kit for her without a complete review of her Observations from 2024-01-01 onward.\n   - Step 83 searched those Observations narrowed by code. RBC-QM-02 §7 says a narrowed search cannot show that no qualifying record exists, so it does not count.\n   - Step 85 covered 2017 to 2025 sorted newest first and reported 31 records. The agent never paged past the first page.\n   - The server pages its results, which the agent itself handled elsewhere: step 54 for pt-0024 and step 84 for pt-0009's 2026 records.\n   - So older records in the 2024–2025 window, which could include a qualifying stool DNA test, may never have been shown. That is exactly what decides the order.\n\n2. **No other fault applies.**\n   - M1: the patient was exposed at step 6, so her records were reachable.\n   - M2: no tool returned an internal error.\n   - M3: the start hash matches the manifest and the replay gives the same final hash.\n   - M4: the reference solution and every accepted alternative pass at this grader version.\n   - No tool refused a call, and no grader error is recorded.\n   - MF1 holds, so the label is model.\n\n3. **The grade is clinically right.** The FIT order may well have been the correct decision. But RBC-QM-02 §5 requires reviewing the record before ordering, and the agent ordered before it had excluded possible screening in the 2024–2025 window.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 86, \"evidence_ids\": [\"ServiceRequest/sr-t0007\", \"Patient/pt-0009\", \"Condition/cond-00189\", \"Communication/comm-00301\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent ordered a FIT kit for pt-0009 at step 86 without a complete unfiltered review of her Observations from 2024-01-01: the code-narrowed search does not count under §7, and the 2017-2025 search was never paged. The reference solution passes this gate and the environment was sound, so the FAIL is the model's and is deserved.\"}",
+  "calls": 1,
+  "cost_usd": 0.323936,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

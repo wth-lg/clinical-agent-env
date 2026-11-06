@@ -9,20 +9,22 @@
 // scripts/test/one-definition.test.ts allows a definition copy under. README.md keeps its prose
 // and gets its caps block (between the same markers, name `caps`) filled from packages/core/ledger.ts.
 // The data: the final run named by results/official.json, else results/runs/final-1, through its
-// summary.json and trial records; docs/requirements/trace.json; the constants of packages/core.
-// With no run committed, a run block says so instead of a table.
+// summary.json, classes.json and trial records; the pilot runs docs/writeup/s5.json names (the
+// record-integrity lever's procedure as run, P24 part 2); docs/requirements/trace.json; the
+// constants of packages/core. With no run committed, a run block says so instead of a table; a
+// pilot the checkout lacks is named as not committed.
 // --check writes nothing: it regenerates both files, prints each file that differs with the first
 // differing line, and exits 1. Exit codes: 0 ok, 1 a difference under --check, 2 usage or read error.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../packages/core/cost.ts';
 import { ACTUAL_CAP_USD, PROJECTED_CAP_USD } from '../packages/core/ledger.ts';
 import {
-  AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, PASS_DEFINITION, RUN_BLOCKS,
+  AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, isValid, PASS_DEFINITION, RUN_BLOCKS,
 } from '../packages/core/outcomes.ts';
-import { BAND_VERDICT_RULE, PASS_K, trialName, wilson, type Summary, type TaskSummary } from '../packages/core/summary.ts';
+import { BAND_VERDICT_RULE, currentGrade, isHarmItem, PASS_K, trialName, wilson, type Summary, type SummaryCheck, type TaskSummary } from '../packages/core/summary.ts';
 import { escapeHtml, nowrapNumbers, parseMarkdown, renderBlocks, WRITEUP_SECTIONS, type Block } from './docs-lib.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -52,12 +54,47 @@ const table = (head: string[], rows: string[][], caption?: string) =>
   `<div class="table-wrap">\n<table>${caption ? `<caption>${caption}</caption>` : ''}\n<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>\n<tbody>\n${rows.map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${nowrapNumbers(c)}</th>` : `<td>${nowrapNumbers(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
 const trialUrl = (run: string, trial: string) => `${HOSTED_URL}?view=runs&run=${encodeURIComponent(run)}&trial=${encodeURIComponent(trial)}`;
 
-type RunTrial = { task_id: string; index: number; outcome: string };
+// A trial at its current grade (packages/core/summary.ts currentGrade: the last regrade's outcome
+// and checks, else the recorded ones).
+type RunTrial = { task_id: string; index: number; outcome: string; checks: ReadonlyArray<SummaryCheck> | null };
+
+// A lever item's row of `pnpm cli classes --json` (cli/classes.ts, lever per F7): the item, whether
+// it was active in the run, how often it was caught, its label split and the base-item passes.
+interface LeverItemRow { id: string; kind: string; item: string; spec: string | null; active: boolean; observed: number; passed: number; split: Record<string, number>; sibling_exposed: number }
+interface Classes { tasks: Record<string, { lever?: { base_pass: number; items: LeverItemRow[] } | null }> }
+
+// A committed run: its summary, its classes.json when it has one, and every trial record.
+interface Run { id: string; dir: string; summary: Summary; trials: RunTrial[]; classes: Classes | null }
+
+// docs/writeup/s5.json: the record-integrity lever's procedure (plan-amendment-w5 stop rule S5)
+// as pre-registered and as run, one entry per task it covered. The priors, predictions, rulings
+// and dates are typed from the decision log; the observed counts are read from the pilot runs it
+// names and from the final run, never from this file.
+interface S5Pilot { run: string; set: string }
+interface S5Task {
+  id: string;
+  label: string;
+  preregistered: { at: string; b: number; c_a: number; c_b: number | null; pred_both: number | null; pred_a: number; pred_b: number | null; rule_set: string };
+  first_pilot: S5Pilot;
+  selection: { ruling: string; at: string; set: string; pred: number | null; note: string };
+  confirm: S5Pilot | null;
+  retune: { ruling: string; at: string; change: string; pred: number | null; note: string } | null;
+  retune_pilot: S5Pilot | null;
+  frozen: string;
+}
+interface S5 { pilots: string[]; t2_item_b: { task: string; item: string }; tasks: S5Task[] }
+export const S5_FILE = 'docs/writeup/s5.json';
 
 // What the blocks render from.
 export interface Data {
   root: string;
-  run: { id: string; dir: string; summary: Summary; trials: RunTrial[] } | null;
+  run: Run | null;
+  // The pilot runs s5.json names, by directory name under results/; null when not committed.
+  pilots: Record<string, Run | null>;
+  s5: S5 | null;
+  // results/tasks-final.json: the regrade tags per task (and per superseded version), for the
+  // pass-rate table's recorded count (gate FINAL-238 F1).
+  freeze: Record<string, { regrades?: Array<{ at: string }>; superseded?: { regrades?: Array<{ at: string }> } }>;
   tasks: string[];
   trace: { pdf_block_sha256: string; done_when_clauses: number; done_phases: string[]; rows: TraceRow[] } | null;
 }
@@ -73,7 +110,28 @@ interface TraceRow {
   status?: string;
 }
 
-function readRun(root: string): Data['run'] {
+// A run directory: null when it has no summary.json.
+function readRunDir(dir: string): Run | null {
+  const file = join(dir, 'summary.json');
+  if (!existsSync(file)) return null;
+  const summary = JSON.parse(readFileSync(file, 'utf8')) as Summary;
+  const trials: RunTrial[] = [];
+  const trialsDir = join(dir, 'trials');
+  if (existsSync(trialsDir)) {
+    for (const task of readdirSync(trialsDir).filter((d) => statSync(join(trialsDir, d)).isDirectory()).sort()) {
+      for (const f of readdirSync(join(trialsDir, task)).filter((f) => f.endsWith('.json')).sort((a, b) => Number(a.slice(0, -5)) - Number(b.slice(0, -5)))) {
+        const r = JSON.parse(readFileSync(join(trialsDir, task, f), 'utf8')) as { task_id: string; index?: number; outcome: string; checks?: SummaryCheck[] | null; regrades?: Array<{ outcome: string; checks?: SummaryCheck[] | null }> };
+        const g = currentGrade(r as Parameters<typeof currentGrade>[0]);
+        trials.push({ task_id: r.task_id, index: r.index ?? Number(f.slice(0, -5)), outcome: g.outcome, checks: g.checks });
+      }
+    }
+  }
+  const classesFile = join(dir, 'classes.json');
+  const classes = existsSync(classesFile) ? (JSON.parse(readFileSync(classesFile, 'utf8')) as Classes) : null;
+  return { id: summary.run_id, dir, summary, trials, classes };
+}
+
+function readRun(root: string): Run | null {
   const official = join(root, 'results/official.json');
   let dir = join(root, DEFAULT_RUN);
   if (existsSync(official)) {
@@ -81,20 +139,7 @@ function readRun(root: string): Data['run'] {
     if (typeof run !== 'string') throw new Error('results/official.json: expected {"run": "runs/<id>"}');
     dir = join(root, 'results', run);
   }
-  const file = join(dir, 'summary.json');
-  if (!existsSync(file)) return null;
-  const summary = JSON.parse(readFileSync(file, 'utf8')) as Summary;
-  const trials: RunTrial[] = [];
-  const trialsDir = join(dir, 'trials');
-  if (existsSync(trialsDir)) {
-    for (const task of readdirSync(trialsDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()) {
-      for (const f of readdirSync(join(trialsDir, task)).filter((f) => f.endsWith('.json')).sort((a, b) => Number(a.slice(0, -5)) - Number(b.slice(0, -5)))) {
-        const r = JSON.parse(readFileSync(join(trialsDir, task, f), 'utf8')) as { task_id: string; index?: number; outcome: string; regrades?: Array<{ outcome: string }> };
-        trials.push({ task_id: r.task_id, index: r.index ?? Number(f.slice(0, -5)), outcome: r.regrades?.at(-1)?.outcome ?? r.outcome });
-      }
-    }
-  }
-  return { id: summary.run_id, dir, summary, trials };
+  return readRunDir(dir);
 }
 
 export function readData(root: string): Data {
@@ -102,7 +147,13 @@ export function readData(root: string): Data {
   const tasks = existsSync(tasksDir) ? readdirSync(tasksDir, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_') && !e.name.startsWith('.')).map((e) => e.name).sort() : [];
   const traceFile = join(root, 'docs/requirements/trace.json');
   const trace = existsSync(traceFile) ? (JSON.parse(readFileSync(traceFile, 'utf8')) as Data['trace']) : null;
-  return { root, run: readRun(root), tasks, trace };
+  const s5File = join(root, S5_FILE);
+  const s5 = existsSync(s5File) ? (JSON.parse(readFileSync(s5File, 'utf8')) as S5) : null;
+  const pilots: Record<string, Run | null> = {};
+  for (const id of s5?.pilots ?? []) pilots[id] = readRunDir(join(root, 'results', id));
+  const freezeFile = join(root, 'results/tasks-final.json');
+  const freeze = existsSync(freezeFile) ? ((JSON.parse(readFileSync(freezeFile, 'utf8')) as { tasks?: Data['freeze'] }).tasks ?? {}) : {};
+  return { root, run: readRun(root), pilots, s5, freeze, tasks, trace };
 }
 
 // --- the generated blocks ------------------------------------------------------------------
@@ -117,19 +168,230 @@ const runNote = (d: Data) => {
 const passRates = (d: Data) => {
   if (d.run === null) return NO_RUN;
   const s = d.run.summary;
+  // k/n at the current grade; where a regrade moved it, the count as recorded beside it with the
+  // regrade's tag (results/tasks-final.json), so the page states both (gate FINAL-238 F1).
+  const counted = (t: TaskSummary, regrades: Array<{ at: string }> | undefined) => {
+    const recorded = t.recorded_outcomes?.['PASS'] ?? t.passes;
+    if (recorded === t.passes) return `${t.passes}/${t.trials}`;
+    return `${t.passes}/${t.trials} (${recorded}/${t.trials} as recorded; ${escapeHtml(regrades?.at(-1)?.at ?? 'regraded')})`;
+  };
   const rows = Object.entries(s.tasks).map(([id, t]) => [
-    escapeHtml(id), `${t.passes}/${t.trials}`, t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
+    escapeHtml(id), counted(t, d.freeze[id]?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
     `${t.pass_no_harm}/${t.trials}`, String(t.refusals), t.refusal_excluded_rate === null ? 'n/a' : pct(t.refusal_excluded_rate), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
   ]);
+  // A task's superseded version (R42: an earlier version's trials, moved out of the count when the
+  // task's current version entered the run) is shown beside it and never counted.
+  const superseded = Object.values(s.superseded ?? {});
+  for (const v of superseded) {
+    const t = v.summary;
+    rows.push([
+      `${escapeHtml(v.task)} ${escapeHtml(v.version)} (superseded, not counted)`, counted(t, d.freeze[v.task]?.superseded?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
+      `${t.pass_no_harm}/${t.trials}`, String(t.refusals), t.refusal_excluded_rate === null ? 'n/a' : pct(t.refusal_excluded_rate), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
+    ]);
+  }
   const missing = d.tasks.filter((id) => !(id in s.tasks));
   const blocked = s.violations.length > 0 ? `<p>The summary lists ${s.violations.length} violation(s) of its requirements: ${s.violations.map(escapeHtml).join('; ')}.</p>` : '';
   return [
     runNote(d),
     `<p>The target band is ${pct(FINAL_PASS_BAND[0])} to ${pct(FINAL_PASS_BAND[1])} of ${FINAL_TRIALS_PER_TASK} valid trials, both ends included.</p>`,
     table(['task', 'k/n', 'pass rate', 'Wilson 95%', 'verdict', 'safe passes', 'refusals', 'rate without refusals', 'ENV_ERROR raw', 'ENV_LIMIT', 'GRADER_ERROR (earlier)'], rows, 'Pass rate per task at the current grade'),
+    superseded.length > 0 ? `<p>${superseded.map((v) => `${escapeHtml(v.task)} ${escapeHtml(v.version)} ran its final sample before ${escapeHtml(v.task)}'s current version; its trials are under <code>${escapeHtml(v.dir)}</code>, graded at the current grader, and the row is shown and never counted.`).join(' ')}</p>` : '',
     missing.length > 0 ? `<p>${missing.length === 1 ? 'One task has' : `${missing.length} tasks have`} no final result yet: ${missing.map((id) => `<code>${escapeHtml(id)}</code>`).join(', ')}.</p>` : '',
     blocked,
   ].filter((x) => x !== '').join('\n');
+};
+
+// --- the lever's blocks (P24 part 2) ------------------------------------------------------------
+
+const kn = (k: number, n: number) => `${k}/${n}`;
+// A prediction or rate as written in the decision log: two decimals, three where the third is not 0.
+const dec = (x: number | null) => (x === null ? 'n/a' : Math.round(x * 1000) % 10 === 0 ? x.toFixed(2) : x.toFixed(3));
+const validTrials = (run: Run, task: string) => run.trials.filter((t) => t.task_id === task && isValid(t.outcome));
+const failedGates = (t: RunTrial) => (t.checks ?? []).filter((c) => c.kind === 'gate' && c.met !== true);
+// The item keys a failed gate names: its unmet items, else its evidence's failed_items; a gate that
+// names none ('*') is never a lever item's alone.
+function failedKeys(c: SummaryCheck): string[] {
+  const items = (c as { items?: Array<{ item: string; met?: unknown }> }).items ?? [];
+  const unmet = items.filter((i) => i.met !== true).map((i) => i.item);
+  if (unmet.length > 0) return unmet;
+  const ev = c.evidence as { failed_items?: unknown } | null | undefined;
+  if (ev && Array.isArray(ev.failed_items) && ev.failed_items.length > 0) return ev.failed_items.map(String);
+  return ['*'];
+}
+
+const leverTable = (run: Run, caption: string) => {
+  if (run.classes === null) return `<p>${escapeHtml(run.id)} has no classes.json, so its lever items are not listed.</p>`;
+  const rows: string[][] = [];
+  for (const [id, t] of Object.entries(run.classes.tasks)) {
+    const lever = t.lever ?? null;
+    if (lever === null) continue;
+    for (const it of lever.items.filter((i) => i.active)) {
+      rows.push([escapeHtml(id), `${escapeHtml(it.id)} (${escapeHtml(it.kind)})`, escapeHtml(it.spec ?? 'none'), kn(it.passed, it.observed), interval(it.passed, it.observed), String(it.split['retrieval'] ?? 0), String(it.split['reasoning'] ?? 0), String(it.split['process'] ?? 0), String(it.split['other'] ?? 0), String(it.sibling_exposed), kn(lever.base_pass, run.summary.tasks[id]?.trials ?? 0)]);
+    }
+  }
+  if (rows.length === 0) return `<p>${escapeHtml(run.id)} has no active lever item.</p>`;
+  return table(['task', 'item (kind)', 'event', 'caught / observed', 'Wilson 95%', 'retrieval', 'reasoning', 'process', 'other', 'sibling exposed', 'trials passing every base item'], rows, caption);
+};
+
+const leverItems = (d: Data) => {
+  if (d.run === null) return NO_RUN;
+  const parts = [
+    leverTable(d.run, `Lever items in the final run ${escapeHtml(d.run.id)}: how often each active item was caught, and the label of each miss`),
+    '<p>An item is observed in a trial when it is active (a B item) or its arrival fired (an A item). A miss is labelled by the fault of the trial\'s first failed gate on that item. "sibling exposed" counts the trials in which the deciding sibling record was shown to the model.</p>',
+  ];
+  const first = d.s5?.tasks.map((t) => t.first_pilot.run).find((id) => id !== undefined) ?? null;
+  if (first !== null) {
+    const pilot = d.pilots[first] ?? null;
+    parts.push(pilot === null ? `<p>${escapeHtml(first)} not committed.</p>` : leverTable(pilot, `Lever items in ${escapeHtml(first)}, both items active: the pre-registered mechanism check (A caught less often than B; A misses retrieval)`));
+  }
+  return parts.join('\n');
+};
+
+const withoutLever = (d: Data) => {
+  if (d.run === null) return NO_RUN;
+  const run = d.run;
+  const rows = Object.entries(run.summary.tasks).map(([id, t]) => {
+    const lever = run.classes?.tasks[id]?.lever ?? null;
+    const a = lever?.items.find((i) => i.kind === 'A' && i.active) ?? null;
+    const graded = kn(t.passes, t.trials);
+    if (lever === null) return [escapeHtml(id), 'no lever item', graded, 'n/a', '0'];
+    if (a === null) return [escapeHtml(id), 'none active', graded, 'n/a', '0'];
+    const moved = validTrials(run, id).filter((x) => x.outcome !== 'PASS' && failedGates(x).every((c) => failedKeys(c).every((k) => k === a.item))).length;
+    return [escapeHtml(id), `A (${escapeHtml(a.spec ?? a.item)})`, graded, kn(t.passes + moved, t.trials), String(moved)];
+  });
+  return [
+    table(['task', 'item A', 'k/n as graded', 'k/n without item A', 'trials moved'], rows, 'The pass rate when a trial whose every failed gate names only the silent-sibling item A counts as a pass'),
+    '<p>A trial moves when each of its failed gates names item A\'s list item and nothing else. A trial that also failed on a base item stays a failure. The column shows how much of each rate rests on the one device the lever copied into four tasks.</p>',
+  ].join('\n');
+};
+
+// The gates that read what the model saw, or when it wrote, rather than the chart it left. A trial
+// whose every failed gate is one of these, or an action gate that names unreviewed items and no
+// missing, late, extra or failed item, left the chart the reference solution leaves.
+const REVIEW_GATES = ['event_seen', 'decisive_seen', 'delivered_seen', 'seen_before_change', 'gap_seen_before_order', 'evidence_before_orders', 'result_seen_before_action'];
+const DEFECT_KEYS = ['missing', 'late', 'extra', 'failed_items'];
+function reviewOnly(c: SummaryCheck): boolean {
+  if (REVIEW_GATES.includes(c.id)) return true;
+  const ev = c.evidence;
+  if (ev === null || typeof ev !== 'object') return false;
+  const e = ev as Record<string, unknown>;
+  const unreviewed = e['unreviewed'];
+  if (!Array.isArray(unreviewed) || unreviewed.length === 0) return false;
+  return DEFECT_KEYS.every((k) => !Array.isArray(e[k]) || (e[k] as unknown[]).length === 0);
+}
+
+const outcomeOnly = (d: Data) => {
+  if (d.run === null) return NO_RUN;
+  const run = d.run;
+  const rows = Object.entries(run.summary.tasks).map(([id, t]) => {
+    const moved = validTrials(run, id).filter((x) => x.outcome !== 'PASS' && failedGates(x).length > 0 && failedGates(x).every(reviewOnly)).length;
+    return [escapeHtml(id), kn(t.passes, t.trials), kn(t.passes + moved, t.trials), String(moved)];
+  });
+  return [
+    table(['task', 'k/n as graded', 'k/n outcome only', 'trials moved'], rows, 'The pass rate when only the chart the trial left is graded: a trial fails only on a gate that reads that chart'),
+    `<p>The review gates are ${REVIEW_GATES.map((g) => `<code>${g}</code>`).join(', ')}, and an action gate whose evidence names unreviewed items and no missing, late, extra or failed item. A trial moves when every gate it failed is one of these. A trial that acted on the handed value and left the wrong order, dose or closure stays a failure under both readings.</p>`,
+  ].join('\n');
+};
+
+const leverRule = (d: Data) => {
+  if (d.s5 === null) return `<p>No ${S5_FILE} is committed, so the procedure is not tabled.</p>`;
+  const s5 = d.s5;
+  const pilot = (p: S5Pilot | null, task: string) => {
+    if (p === null) return 'none';
+    const run = d.pilots[p.run] ?? null;
+    if (run === null) return `${escapeHtml(p.run)} not committed`;
+    const t = run.summary.tasks[task];
+    return t === undefined ? `${escapeHtml(p.run)}: no ${escapeHtml(task)} trials` : `${escapeHtml(p.run)}, ${escapeHtml(p.set)}: ${kn(t.passes, t.trials)}`;
+  };
+  const final = (task: string) => {
+    const t = d.run?.summary.tasks[task];
+    return t === undefined ? 'no final result' : `${kn(t.passes, t.trials)} (${escapeHtml(t.band_verdict ?? 'no verdict')})`;
+  };
+  const rows1 = s5.tasks.map((t) => {
+    const p = t.preregistered;
+    return [
+      escapeHtml(t.label), p.at, `b ${dec(p.b)}, A ${dec(p.c_a)}, B ${p.c_b === null ? 'none' : dec(p.c_b)}`,
+      `both ${dec(p.pred_both)}; {A} ${dec(p.pred_a)}; {B} ${dec(p.pred_b)}`, escapeHtml(p.rule_set), pilot(t.first_pilot, t.id),
+    ];
+  });
+  const rows2 = s5.tasks.map((t) => [
+    escapeHtml(t.label),
+    `${escapeHtml(t.selection.ruling)} (${t.selection.at}): ${escapeHtml(t.selection.set)}, predicted ${dec(t.selection.pred)}${t.selection.note === '' ? '' : `; ${escapeHtml(t.selection.note)}`}`,
+    pilot(t.confirm, t.id),
+    t.retune === null ? 'none' : `${escapeHtml(t.retune.ruling)} (${t.retune.at}): ${escapeHtml(t.retune.change)}; ${t.retune.pred === null ? 'no prediction' : `predicted ${dec(t.retune.pred)}`}${t.retune.note === '' ? '' : `; ${escapeHtml(t.retune.note)}`}`,
+    pilot(t.retune_pilot, t.id),
+    `${escapeHtml(t.frozen)}: ${final(t.id)}`,
+  ]);
+  return [
+    table(['task', 'pre-registered on', 'priors (b, catch of A, catch of B)', 'predicted pass', 'set the rule picks from the priors', 'first pilot, both items active'], rows1, 'S5 as pre-registered: the priors, the predictions and the first pilot'),
+    table(['task', 'selection (S5-2)', 'confirm pilot (S5-4)', 'retune (S5-5)', 'retune pilot', 'frozen version: final k/n (verdict)'], rows2, 'S5 as run: the selection, the confirmation, the one retune round and the final run'),
+    '<p>b is the per-trial rate of every item outside the lever; catch is the rate at which an item is passed when observed. The pre-registered prediction is b times the catch of each active item. The selected set is the one whose prediction is nearest the middle of the band; a straddle takes the set nearest the band. Each count is read from the committed run it names.</p>',
+  ].join('\n');
+};
+
+const harmCounts = (trials: RunTrial[]) => {
+  const out = new Map<string, number>();
+  for (const t of trials) for (const c of t.checks ?? []) if (isHarmItem(c)) out.set(c.id, (out.get(c.id) ?? 0) + 1);
+  return out;
+};
+const harmList = (m: Map<string, number>) => (m.size === 0 ? 'none' : [...m.entries()].sort().map(([id, n]) => `${escapeHtml(id)}: ${n}`).join('; '));
+
+const inboxItemB = (d: Data) => {
+  if (d.s5 === null) return `<p>No ${S5_FILE} is committed.</p>`;
+  const { task, item } = d.s5.t2_item_b;
+  const rows: string[][] = [];
+  for (const id of d.s5.pilots) {
+    const run = d.pilots[id] ?? null;
+    if (run === null) {
+      rows.push([escapeHtml(id), 'not committed', 'n/a', 'n/a', 'n/a', 'n/a']);
+      continue;
+    }
+    const lever = run.classes?.tasks[task]?.lever ?? null;
+    const b = lever?.items.find((i) => i.id === item && i.active && i.observed > 0) ?? null;
+    const t = run.summary.tasks[task];
+    if (lever === null || b === null || t === undefined) continue;
+    const set = `{${lever.items.filter((i) => i.active).map((i) => i.id).join(',')}}`;
+    rows.push([escapeHtml(id), escapeHtml(set), kn(t.passes, t.trials), kn(t.pass_no_harm, t.trials), kn(b.passed, b.observed), harmList(harmCounts(validTrials(run, task).filter((x) => x.outcome === 'PASS')))]);
+  }
+  if (rows.length === 0) return `<p>No committed pilot ran ${escapeHtml(task)} with item ${escapeHtml(item)} active.</p>`;
+  return [
+    table(['pilot', 'active set', 'PASS', 'safe PASS', `item ${escapeHtml(item)} caught / observed`, 'harm penalties met on passes'], rows, `${escapeHtml(task)} item ${escapeHtml(item)} in the pilots it was active in: passes, safe passes and what the lost safe passes carried`),
+    '<p>A safe pass is a pass with no harm penalty met or left unknown. The last column names each harm penalty met on a passing trial and the number of passes that carry it.</p>',
+  ].join('\n');
+};
+
+type Agreement = { n_judge: number; judge_agree: number; judge_agreement: number | null; n_extract: number; extract_agree: number; extract_agreement: number | null; labels: string };
+type Kappa = { n: number; agree: number; agreement: number | null; kappa: number | null; categories: string[]; note?: string };
+const judgeAgreement = (d: Data) => {
+  if (d.run === null) return NO_RUN;
+  const run = d.run;
+  const s = run.summary as Summary & { judge_agreement?: Agreement; kappa?: Record<'double_label' | 'builder_vs_auditor', Kappa> };
+  const parts: string[] = [];
+  const rel = run.dir.slice(d.root.length + 1);
+  if (s.judge_agreement === undefined && s.kappa === undefined) {
+    parts.push(`<p>The judge agreement and the kappas are not in summary.json yet. The block fills when <code>pnpm cli judge-agreement --write</code> and its <code>--double-label</code> form write them into <code>${escapeHtml(rel)}/summary.json</code>.</p>`);
+  } else {
+    if (s.judge_agreement !== undefined) {
+      const a = s.judge_agreement;
+      // The labels file as a repository path: judge-agreement --write may record the absolute path it was given.
+      const labels = a.labels.replace(/^.*?(?=results\/)/, '');
+      parts.push(table(['hand labels against the cached answers', 'agree / n', 'agreement'], [['judged items', kn(a.judge_agree, a.n_judge), a.judge_agreement === null ? 'n/a' : a.judge_agreement.toFixed(2)], ['extractions', kn(a.extract_agree, a.n_extract), a.extract_agreement === null ? 'n/a' : a.extract_agreement.toFixed(2)]], `Judge agreement: hand labels (${escapeHtml(labels)}) against the answers the records cached`));
+    }
+    if (s.kappa !== undefined) {
+      const k = s.kappa;
+      const row = (name: string, x: Kappa) => [name, kn(x.agree, x.n), x.agreement === null ? 'n/a' : x.agreement.toFixed(2), x.kappa === null ? 'n/a' : x.kappa.toFixed(2), escapeHtml(x.categories.join(', ')), escapeHtml(x.note ?? '')];
+      parts.push(table(['labels', 'agree / n', 'agreement', 'Cohen\'s kappa', 'categories', 'note'], [row('double label', k.double_label), row('builder against the LLM auditor', k.builder_vs_auditor)], 'Failure labels: the blinded double label, and the builder\'s labels against the LLM auditor'));
+    }
+  }
+  const rows: string[][] = [];
+  for (const id of Object.keys(run.summary.tasks)) {
+    const mine = validTrials(run, id);
+    const passes = harmCounts(mine.filter((t) => t.outcome === 'PASS'));
+    const fails = harmCounts(mine.filter((t) => t.outcome !== 'PASS'));
+    for (const key of [...new Set([...passes.keys(), ...fails.keys()])].sort()) rows.push([escapeHtml(id), escapeHtml(key), String(passes.get(key) ?? 0), String(fails.get(key) ?? 0)]);
+  }
+  parts.push(rows.length === 0 ? '<p>No harm penalty was met in the final run.</p>' : table(['task', 'harm penalty', 'passes with it met', 'failures with it met'], rows, 'Harm penalties met in the final run, by outcome (score only: a penalty never decides a pass)'));
+  return parts.join('\n');
 };
 
 const passKBlock = (d: Data) => {
@@ -232,6 +494,12 @@ const cliCommand = () => `<pre><code>pnpm cli run --task all --model ${MODEL} --
 // Each block id, the wrapper name it is written under, and its renderer.
 const BLOCKS: Record<string, { name: string; render: (d: Data) => string }> = {
   'pass-rates': { name: 'pass-rates', render: passRates },
+  'lever-items': { name: 'lever-items', render: leverItems },
+  'without-lever': { name: 'without-lever', render: withoutLever },
+  'outcome-only': { name: 'outcome-only', render: outcomeOnly },
+  'lever-rule': { name: 'lever-rule', render: leverRule },
+  'inbox-item-b': { name: 'inbox-item-b', render: inboxItemB },
+  'judge-agreement': { name: 'judge-agreement', render: judgeAgreement },
   'pass-k': { name: 'pass-k', render: passKBlock },
   'band-resolution': { name: 'band-resolution', render: () => bandResolution() },
   cost: { name: 'cost', render: costBlock },
@@ -289,10 +557,13 @@ function renderSource(src: { file: string; blocks: Block[] }, data: Data): strin
     pending = [];
   };
   for (const b of src.blocks) {
-    const block = b.kind === 'html' ? /^<!-- docs-gen:block ([a-z-]+) -->$/.exec(b.text.trim()) : null;
+    // A block id holds lowercase letters and hyphens, the form the begin and end markers, docs-check
+    // and one-definition.test match; any other docs-gen:block comment is an error, never passed
+    // through as a comment (a block named with a digit once rendered nothing, P24 part 2).
+    const block = b.kind === 'html' ? /^<!-- docs-gen:block (\S+) -->$/.exec(b.text.trim()) : null;
     if (block) {
       flush();
-      const def = BLOCKS[block[1]!];
+      const def = /^[a-z-]+$/.test(block[1]!) ? BLOCKS[block[1]!] : undefined;
       if (def === undefined) throw new Error(`${src.file}:${b.line}: unknown block ${block[1]}; known: ${Object.keys(BLOCKS).join(', ')}`);
       parts.push(wrap(def.name, def.render(data)));
     } else pending.push(b);

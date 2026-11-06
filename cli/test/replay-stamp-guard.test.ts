@@ -2,7 +2,8 @@
 // unstamped as tag final-1-t3t5 writes it, stamps with e8ef8c4d because each record is at the
 // env_version results/tasks-final.json freezes its task at with replay_at at that commit; a
 // record rewritten at another env_version under the same name (crc-care-gap v2 under v1's name,
-// P5c) is refused, so step 2 of the two-step replay can never stamp a v1 entry as v2's verdict.
+// P5c; since W5-F the v2 records are the ones under that name) is refused, so step 2 of the
+// two-step replay can never stamp a v1 entry as v2's verdict.
 import { cpSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -19,12 +20,17 @@ async function cli(args: string[]) {
   return { code, text: lines.join('\n') };
 }
 
-function unstampedCopy(name: string): string {
+// The committed file holds the verdicts of two replays: tag final-1-t3t5's (stamped with COMMIT:
+// the frozen tasks whose replay_at is COMMIT, contrast-ct-prep) and this checkout's (the W5-F
+// tasks, made and stamped at their own commit, builder-321). Only the first are unstamped here,
+// as that tag's replay wrote them, plus any trial named in `also`.
+function unstampedCopy(name: string, tasksAt: readonly string[], also: readonly string[] = []): string {
   const copy = join(tempDir(name), 'final-1');
   cpSync(FINAL, copy, { recursive: true });
   const file = join(copy, 'replay.json');
   const j = JSON.parse(readFileSync(file, 'utf8')) as File;
   for (const [k, e] of Object.entries(j.trials)) {
+    if (!tasksAt.includes(k.split('/')[0]!) && !also.includes(k)) continue;
     const { replayed_at: _at, verdict: _v, ...rest } = e;
     j.trials[k] = rest;
   }
@@ -38,12 +44,14 @@ describe('replay --stamp on the committed final-1 (m1)', () => {
     const crc = frozen.tasks['crc-care-gap']!;
     const at = crc.replay_at?.commit === COMMIT ? crc : crc.superseded;
     expect(at?.replay_at?.commit).toBe(COMMIT);
-    const copy = unstampedCopy('stamp-guard-ok');
+    const tasksAt = Object.entries(frozen.tasks).filter(([, t]) => t.replay_at?.commit === COMMIT).map(([id]) => id);
+    expect(tasksAt).toContain('contrast-ct-prep');
+    const copy = unstampedCopy('stamp-guard-ok', tasksAt);
     const ok = await cli([copy, '--stamp', COMMIT]);
     expect(ok.code, ok.text).toBe(0);
     expect(readFileSync(join(copy, 'replay.json'), 'utf8')).toBe(readFileSync(join(FINAL, 'replay.json'), 'utf8'));
 
-    const stale = unstampedCopy('stamp-guard-p5c');
+    const stale = unstampedCopy('stamp-guard-p5c', tasksAt, ['crc-care-gap/3']);
     const rec = join(stale, 'trials/crc-care-gap/3.json');
     writeFileSync(rec, JSON.stringify({ ...(JSON.parse(readFileSync(rec, 'utf8')) as object), env_version: 'e'.repeat(64) }, null, 2));
     const before = readFileSync(join(stale, 'replay.json'), 'utf8');

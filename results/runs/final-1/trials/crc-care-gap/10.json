@@ -1,14 +1,14 @@
 {
   "trial_id": "run:final-1:crc-care-gap/10",
   "task_id": "crc-care-gap",
-  "task_version": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535",
-  "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "385c668dcaee778ebbfbf548d2354c8ba48a8bcbd37c6579d5486c291b5c7ba3",
-  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "task_version": "ee4d9690b859f098323029e1486d839dc272362ea546f38a68f88b92a8955c00",
+  "env_version": "33891901cd8dc4e64536b9aaac0b6eaf2037073b2baeeb8d2903536834049570",
+  "grader_task_version": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d",
+  "fixture_hash": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
   "state_hash": {
-    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "0de3826824cec155976a1e5ffa5fdde9d4fcfcdbe560540f08dfb843f2d949e5",
-    "replay_final": "0de3826824cec155976a1e5ffa5fdde9d4fcfcdbe560540f08dfb843f2d949e5"
+    "initial": "32515f6aa1d27ad3756ca33fb8c782a5d611c3d5bd42c9778d074c7590a73f2a",
+    "final": "6baf128b70618265696b04832cca5536cca6cab8d63a1ecd26c93f49b2c3ac37",
+    "replay_final": "6baf128b70618265696b04832cca5536cca6cab8d63a1ecd26c93f49b2c3ac37"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-11-03T10:36:44.083Z",
-  "turns": 28,
-  "tool_calls": 91,
+  "started": "2026-11-06T13:23:14.055Z",
+  "turns": 39,
+  "tool_calls": 116,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -27,12 +27,12 @@
     "INTERNAL": 0
   },
   "usage": {
-    "input": 58,
-    "cache_write": 203207,
-    "cache_read": 3862159,
-    "output": 15925
+    "input": 80,
+    "cache_write": 196026,
+    "cache_read": 5912475,
+    "output": 21040
   },
-  "cost_usd": 2.1071988000000004,
+  "cost_usd": 2.583745000000001,
   "api_retries": 0,
   "retry_wait_ms": 0,
   "stop_reason": "tool_use",
@@ -40,12 +40,12 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "CRC outreach worklist 'Okafor CRC 2026' (grp-okafor-crc) per RBC-QM-02: 4 members, all aged 46-75 at end of 2026.\n\n| Patient | Status | Reason |\n|---|---|---|\n| pt-0009 Elly Trantow (72) | Open gap: FIT ordered (sr-t0005), message sent (comm-t0006) | Looked excluded at first (frailty plus donepezil), but Dr. Lin's message that arrived during the work says the Frailty entry belonged to another patient (cond-00189, now entered in error). No frailty means no exclusion. No nursing home, hospice or palliative care, and no colorectal cancer. No qualifying screening on record. Note written (doc-t0011). |\n| pt-0020 Kelsie Rohan (52) | Excluded | Hospice care during 2026: finished hospice episode eoc-00002, 2026-06-16 to 2026-08-21, for pancreatic cancer. She revoked hospice for a clinical trial, but a finished episode still counts. No order, no contact. |\n| pt-0022 Tiny Koss (51) | Open gap: FIT ordered (sr-t0001), message sent (comm-t0003) | Her only stool test (FIT obs-01732) was corrected: collected 2025-12-31, not 2026-01-05, so it is outside the 2026 period. No other screening. |\n| pt-0024 Delaine MacGyver (51) | Open gap: FIT ordered (sr-t0002), message sent (comm-t0004) | The 2024 sDNA-FIT (obs-01871) is entered in error; Harbor Lab says the specimen belonged to another patient. The 2025 colonoscopy order (sr-00003) is only an order, not a completed test. No other screening. |\n\nAll FIT orders run 2026-10-23 to 2026-12-31. No patient had an active FIT order beforehand. Four new inbox items came in while I worked and are now closed with comments: inbox-a0001 changed pt-0009 from excluded to open gap; a0002, a0003 and a0004 left the existing decisions unchanged. No other new items.",
+  "summary": "Okafor CRC 2026 worklist (RBC-QM-02): all 5 members reviewed. Four have an open gap and one is excluded. New records arrived while I worked and changed four of the five decisions. I reviewed each one and acted on it.\n\n| Patient | Status | Reason | Action |\n|---|---|---|---|\n| pt-0009 Elly Trantow (72) | Open gap | No qualifying screening on record. She first looked excluded for frailty plus advanced illness (donepezil), but Dr. Lin marked the Frailty entry (cond-00189) entered in error today: it belonged to another patient. Without frailty that exclusion doesn't apply. No hospice/palliative care, colorectal cancer or nursing home. | FIT kit ordered (sr-t0001), outreach message sent (comm-t0003), note doc-t0005 |\n| pt-0020 Kelsie Rohan (52) | Excluded | Hospice episode (eoc-00002) active 06/16 to 08/21/2026, within the measurement period. The St. Brigid summary (doc-00402) says she revoked hospice to join a clinical trial, but the episode still counts. | No order, no contact |\n| pt-0022 Tiny Koss (52) | Open gap | The lab corrected the FIT (obs-01732) collection date to 12/31/2025. The 01/05/2026 date first reported was when the lab received the sample. A FIT counts only if collected in 2026, and nothing else qualifies. | FIT kit ordered (sr-t0015), outreach sent (comm-t0016), note doc-t0017 |\n| pt-0024 Delaine MacGyver (51) | Open gap | Harbor Lab withdrew her 06/2024 stool DNA-FIT result (obs-01871, now entered in error; notice doc-00401) because the sample was someone else's. The 2025 colonoscopy order (sr-00003) was never done, and an order doesn't count. | FIT kit ordered (sr-t0002), outreach sent (comm-t0004), note doc-t0006 |\n| pt-0073 Marisol Quintero (58) | Open gap | Harbor Lab cancelled the FIT dated 01/08/2026 (obs-73001) and re-issued it (obs-05001; notice doc-00403) with a collection date of 12/28/2025, outside 2026. Nothing else qualifies. | FIT kit ordered (sr-t0011), outreach sent (comm-t0012), note doc-t0013 |\n\n**Correction:** I closed the pt-0022 result item (inbox-a0003) as \"screening up to date\" before I saw the corrected collection date. Closed items can't be reopened, so note doc-t0017 records that this decision is withdrawn and why. I then placed her FIT order and sent her message.\n\n**Details:**\n- All FIT order windows run 10/23 to 12/31/2026. None of the four had an active FIT order already.\n- The patient messages say the kit is coming, give step-by-step return instructions and make no false claims about past screening.\n- I closed the five new inbox items (inbox-a0001 to a0005) with comments, linking the orders and messages for the patients who got kits.\n- I left the earlier inbox items about other patients alone.\n\n**For you to decide:** pt-0024's 2025 colonoscopy order (sr-00003) is still open, so you may want to say whether it's still wanted.",
   "resumed": false,
-  "env_git_sha": "1b120e8bbd380e48ba9f82094bf393b408c8efbf",
-  "ended": "2026-11-03T10:39:49.168Z",
-  "judge_cost_usd": 0.060344,
-  "grader_version": "21",
+  "env_git_sha": "30448f3a7abd17dfcda794ff6aecd2eb692ef1b7",
+  "ended": "2026-11-06T13:27:08.709Z",
+  "judge_cost_usd": 0.089848,
+  "grader_version": "22",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -61,17 +61,21 @@
         "want": [
           "Patient/pt-0009",
           "Patient/pt-0022",
-          "Patient/pt-0024"
+          "Patient/pt-0024",
+          "Patient/pt-0073"
         ],
         "ordered": {
-          "Patient/pt-0022": [
+          "Patient/pt-0009": [
             "ServiceRequest/sr-t0001"
           ],
           "Patient/pt-0024": [
             "ServiceRequest/sr-t0002"
           ],
-          "Patient/pt-0009": [
-            "ServiceRequest/sr-t0005"
+          "Patient/pt-0073": [
+            "ServiceRequest/sr-t0011"
+          ],
+          "Patient/pt-0022": [
+            "ServiceRequest/sr-t0015"
           ]
         },
         "missing": [],
@@ -83,7 +87,8 @@
       "ids": [
         "ServiceRequest/sr-t0001",
         "ServiceRequest/sr-t0002",
-        "ServiceRequest/sr-t0005"
+        "ServiceRequest/sr-t0011",
+        "ServiceRequest/sr-t0015"
       ],
       "items": [
         {
@@ -117,6 +122,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         },
@@ -140,7 +153,8 @@
         "messaged": [
           "Patient/pt-0009",
           "Patient/pt-0022",
-          "Patient/pt-0024"
+          "Patient/pt-0024",
+          "Patient/pt-0073"
         ],
         "not_about_order": [],
         "about_own_record": [],
@@ -149,7 +163,8 @@
       "ids": [
         "Communication/comm-t0003",
         "Communication/comm-t0004",
-        "Communication/comm-t0006"
+        "Communication/comm-t0012",
+        "Communication/comm-t0016"
       ],
       "items": [
         {
@@ -183,6 +198,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -235,6 +258,14 @@
           "evidence": {}
         },
         {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
+          ],
+          "evidence": {}
+        },
+        {
           "item": "outside",
           "met": true,
           "decisive_ids": [],
@@ -253,33 +284,44 @@
         "seen": [
           {
             "patient": "Patient/pt-0009",
-            "first_order": 82,
+            "first_order": 81,
             "exposed": [
               {
                 "id": "Patient/pt-0009",
-                "step": 74
+                "step": 57
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 65,
+            "first_order": 109,
             "exposed": [
               {
                 "id": "Patient/pt-0022",
-                "step": 43
+                "step": 106
               }
             ],
             "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 66,
+            "first_order": 82,
             "exposed": [
               {
                 "id": "Patient/pt-0024",
-                "step": 58
+                "step": 46
+              }
+            ],
+            "missing_kinds": []
+          },
+          {
+            "patient": "Patient/pt-0073",
+            "first_order": 99,
+            "exposed": [
+              {
+                "id": "Patient/pt-0073",
+                "step": 74
               }
             ],
             "missing_kinds": []
@@ -320,6 +362,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -368,6 +418,14 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-01871"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-73001"
           ],
           "evidence": {}
         }
@@ -433,6 +491,19 @@
           "evidence": {
             "fired": [
               "crc-d1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
             ],
             "not_fired": []
           }
@@ -502,6 +573,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -568,6 +652,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -618,6 +715,19 @@
           "evidence": {
             "fired": [
               "crc-o1"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
             ],
             "not_fired": []
           }
@@ -674,6 +784,19 @@
             ],
             "not_fired": []
           }
+        },
+        {
+          "item": "Patient/pt-0073",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-05001"
+          ],
+          "evidence": {
+            "fired": [
+              "crc-b3"
+            ],
+            "not_fired": []
+          }
         }
       ]
     },
@@ -716,8 +839,8 @@
         "status": "gap",
         "reason": "frailty_entered_in_error",
         "verdict": "met",
-        "quote": "Open gap: FIT ordered (sr-t0005), message sent (comm-t0006) | Looked excluded at first (frailty plus donepezil), but Dr. Lin's message that arrived during the work says the Frailty entry belonged to another patient (cond-00189, now entered in error). No frailty means no exclusion. No nursing home, hospice or palliative care, and no colorectal cancer. No qualifying screening on record.",
-        "cache_key": "f2a79225970c261fd718e66057e71b3cdfb52aafa746306e5f0fe8a67baeb90c"
+        "quote": "pt-0009 Elly Trantow (72) | Open gap | No qualifying screening on record. She first looked excluded for frailty plus advanced illness (donepezil), but Dr. Lin marked the Frailty entry (cond-00189) entered in error today: it belonged to another patient. Without frailty that exclusion doesn't apply.",
+        "cache_key": "8d5f5fc9303d6564554e3a0d15174d9054138b7a5da999908472bae5496806c8"
       }
     },
     {
@@ -732,8 +855,8 @@
         "status": "excluded",
         "reason": "hospice",
         "verdict": "met",
-        "quote": "| pt-0020 Kelsie Rohan (52) | Excluded | Hospice care during 2026: finished hospice episode eoc-00002, 2026-06-16 to 2026-08-21, for pancreatic cancer. She revoked hospice for a clinical trial, but a finished episode still counts.",
-        "cache_key": "c5d1957364fc7ae55b911f5c46fb1c06569e2244f5da75db7b22b6415f1e3223"
+        "quote": "pt-0020 Kelsie Rohan (52) | Excluded | Hospice episode (eoc-00002) active 06/16 to 08/21/2026, within the measurement period. The St. Brigid summary (doc-00402) says she revoked hospice to join a clinical trial, but the episode still counts.",
+        "cache_key": "3cc5c397375e128ab9f10ed3af2d50ed08f0ad4f832923cc1769d5f147af595c"
       }
     },
     {
@@ -748,8 +871,8 @@
         "status": "gap",
         "reason": "fit_collected_before_period",
         "verdict": "met",
-        "quote": "Open gap: FIT ordered (sr-t0001), message sent (comm-t0003) | Her only stool test (FIT obs-01732) was corrected: collected 2025-12-31, not 2026-01-05, so it is outside the 2026 period. No other screening.",
-        "cache_key": "c7bc69fb97e8f647d93161c578105a4b0a6dac459d5c10307ac8d72d4f66e62c"
+        "quote": "| pt-0022 Tiny Koss (52) | Open gap | The lab corrected the FIT (obs-01732) collection date to 12/31/2025. The 01/05/2026 date first reported was when the lab received the sample. A FIT counts only if collected in 2026, and nothing else qualifies. |",
+        "cache_key": "f45b5f96fe7e7d727298d435562f5fd94fa09d213d787ac9bdb05d9bc00ee8bc"
       }
     },
     {
@@ -764,8 +887,24 @@
         "status": "gap",
         "reason": "sdna_withdrawn",
         "verdict": "met",
-        "quote": "| pt-0024 Delaine MacGyver (51) | Open gap: FIT ordered (sr-t0002), message sent (comm-t0004) | The 2024 sDNA-FIT (obs-01871) is entered in error; Harbor Lab says the specimen belonged to another patient. The 2025 colonoscopy order (sr-00003) is only an order, not a completed test. No other screening. |",
-        "cache_key": "56d2436c9de053b2ddfdcc89fc92ca56701b7efd46dad42c993e3589111975e1"
+        "quote": "| pt-0024 Delaine MacGyver (51) | Open gap | Harbor Lab withdrew her 06/2024 stool DNA-FIT result (obs-01871, now entered in error; notice doc-00401) because the sample was someone else's. The 2025 colonoscopy order (sr-00003) was never done, and an order doesn't count.",
+        "cache_key": "7bad5da37a437de5b5688e9acef5cf6f15095050f62bad9d88ce2b048c6c86ef"
+      }
+    },
+    {
+      "id": "table_pt_0073",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "named": true,
+        "status": "gap",
+        "reason": "fit_reissued_before_period",
+        "verdict": "met",
+        "quote": "| pt-0073 Marisol Quintero (58) | Open gap | Harbor Lab cancelled the FIT dated 01/08/2026 (obs-73001) and re-issued it (obs-05001; notice doc-00403) with a collection date of 12/28/2025, outside 2026. Nothing else qualifies. |",
+        "cache_key": "a67bc9b1134205e53ed6bae7bc51a376da76591b21fac65be7b41cd2f039821c"
       }
     },
     {
@@ -824,12 +963,13 @@
       "evidence": {
         "patient": "Patient/pt-0009",
         "verdict": "not_met",
-        "quote": "Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file.",
-        "cache_key": "fe33dcf6288645ffd72f861f618c93ba3de946731d39c17ed1fcf5549b85a005",
+        "quote": "Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you. It will arrive by mail soon.",
+        "cache_key": "d87e242e31664d90a14c9ba3e13f73923ff76d700838f62beb3992d5ea881ca9",
         "patients": [
           "Patient/pt-0009 false",
           "Patient/pt-0022 false",
-          "Patient/pt-0024 false"
+          "Patient/pt-0024 false",
+          "Patient/pt-0073 false"
         ]
       }
     },
@@ -843,91 +983,108 @@
       "evidence": {
         "patient": "Patient/pt-0009",
         "verdict": "not_met",
-        "quote": "Our records show you are due for colorectal cancer screening, so Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file.",
-        "cache_key": "9da6e2a8fa1821ab48bcc7d9ce600ef4ded789f26aab356cef799ae10f6ada17",
+        "quote": "Our records do not show a colorectal cancer screening test for you that is up to date, so Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you.",
+        "cache_key": "94ef980df3c5aa3724e504e312934a17c931de89b0e976c103b1ff1663247f8c",
         "patients": [
           "Patient/pt-0009 false",
           "Patient/pt-0022 false",
-          "Patient/pt-0024 false"
+          "Patient/pt-0024 false",
+          "Patient/pt-0073 false"
         ]
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 10,
+    "calls": 13,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "fe33dcf6288645ffd72f861f618c93ba3de946731d39c17ed1fcf5549b85a005",
-      "d35d3ac6763ab236234ce3745ef50243da2d9dd3928524c112126072cffc794d",
-      "6f4a997c989ca3d7babadf517db0bb02adedd9de06aae3515cb1172eab14620d",
-      "9da6e2a8fa1821ab48bcc7d9ce600ef4ded789f26aab356cef799ae10f6ada17",
-      "086c69dd0c10d0be2e96d3fea0ab126d8c56e8a7f56eaead8f15287425adad9d",
-      "0e60057b9f4759b64f857dc6e06258c9b6d8c698f67bbee354586da9209e4ceb",
-      "f2a79225970c261fd718e66057e71b3cdfb52aafa746306e5f0fe8a67baeb90c",
-      "c5d1957364fc7ae55b911f5c46fb1c06569e2244f5da75db7b22b6415f1e3223",
-      "c7bc69fb97e8f647d93161c578105a4b0a6dac459d5c10307ac8d72d4f66e62c",
-      "56d2436c9de053b2ddfdcc89fc92ca56701b7efd46dad42c993e3589111975e1"
+      "d87e242e31664d90a14c9ba3e13f73923ff76d700838f62beb3992d5ea881ca9",
+      "8c4b5a88ec7fb315dea7abc0e438c681a74133eeb3ed408ae599f32dc81178db",
+      "f1058c19d99fe5a965bd3cdb8ce3bd197f5f6a3f577f664078b7c945a12995aa",
+      "e2d96f16ae879dacf00a833e923c2d4e3a8a9b641388864b2189d9c74fa4ca2b",
+      "94ef980df3c5aa3724e504e312934a17c931de89b0e976c103b1ff1663247f8c",
+      "20a908a42772618de402e93ff59378a95ac3e69a594471d14713c63decec0b9c",
+      "76c404544a34fa751b14a47039813c426fd21429d121257ba915ad7d2a4b79ed",
+      "ed9e0713231771070dc7e1fa4ba1a5c627829993125a842b2459775e290a9d22",
+      "8d5f5fc9303d6564554e3a0d15174d9054138b7a5da999908472bae5496806c8",
+      "3cc5c397375e128ab9f10ed3af2d50ed08f0ad4f832923cc1769d5f147af595c",
+      "f45b5f96fe7e7d727298d435562f5fd94fa09d213d787ac9bdb05d9bc00ee8bc",
+      "7bad5da37a437de5b5688e9acef5cf6f15095050f62bad9d88ce2b048c6c86ef",
+      "a67bc9b1134205e53ed6bae7bc51a376da76591b21fac65be7b41cd2f039821c"
     ],
     "cache": [
       {
-        "key": "fe33dcf6288645ffd72f861f618c93ba3de946731d39c17ed1fcf5549b85a005",
+        "key": "d87e242e31664d90a14c9ba3e13f73923ff76d700838f62beb3992d5ea881ca9",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file."
+          "quote": "Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you. It will arrive by mail soon."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "d35d3ac6763ab236234ce3745ef50243da2d9dd3928524c112126072cffc794d",
+        "key": "8c4b5a88ec7fb315dea7abc0e438c681a74133eeb3ed408ae599f32dc81178db",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file."
+          "quote": "Dr. Okafor has ordered a free at-home FIT kit for you, and it will arrive by mail soon."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "6f4a997c989ca3d7babadf517db0bb02adedd9de06aae3515cb1172eab14620d",
+        "key": "f1058c19d99fe5a965bd3cdb8ce3bd197f5f6a3f577f664078b7c945a12995aa",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file."
+          "quote": "Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you. It will arrive by mail soon."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "9da6e2a8fa1821ab48bcc7d9ce600ef4ded789f26aab356cef799ae10f6ada17",
+        "key": "e2d96f16ae879dacf00a833e923c2d4e3a8a9b641388864b2189d9c74fa4ca2b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Our records show you are due for colorectal cancer screening, so Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file."
+          "quote": "Dr. Okafor has ordered a free at-home FIT kit for you, and it will arrive by mail soon."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "086c69dd0c10d0be2e96d3fea0ab126d8c56e8a7f56eaead8f15287425adad9d",
+        "key": "94ef980df3c5aa3724e504e312934a17c931de89b0e976c103b1ff1663247f8c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Our records do not show a colorectal cancer screening test for you that is up to date, so Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "20a908a42772618de402e93ff59378a95ac3e69a594471d14713c63decec0b9c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -940,7 +1097,7 @@
         "calls": 1
       },
       {
-        "key": "0e60057b9f4759b64f857dc6e06258c9b6d8c698f67bbee354586da9209e4ceb",
+        "key": "76c404544a34fa751b14a47039813c426fd21429d121257ba915ad7d2a4b79ed",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -953,53 +1110,79 @@
         "calls": 1
       },
       {
-        "key": "f2a79225970c261fd718e66057e71b3cdfb52aafa746306e5f0fe8a67baeb90c",
+        "key": "ed9e0713231771070dc7e1fa4ba1a5c627829993125a842b2459775e290a9d22",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
-          "verdict": "met",
-          "quote": "Open gap: FIT ordered (sr-t0005), message sent (comm-t0006) | Looked excluded at first (frailty plus donepezil), but Dr. Lin's message that arrived during the work says the Frailty entry belonged to another patient (cond-00189, now entered in error). No frailty means no exclusion. No nursing home, hospice or palliative care, and no colorectal cancer. No qualifying screening on record."
+          "verdict": "not_met",
+          "quote": ""
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "c5d1957364fc7ae55b911f5c46fb1c06569e2244f5da75db7b22b6415f1e3223",
+        "key": "8d5f5fc9303d6564554e3a0d15174d9054138b7a5da999908472bae5496806c8",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "| pt-0020 Kelsie Rohan (52) | Excluded | Hospice care during 2026: finished hospice episode eoc-00002, 2026-06-16 to 2026-08-21, for pancreatic cancer. She revoked hospice for a clinical trial, but a finished episode still counts."
+          "quote": "pt-0009 Elly Trantow (72) | Open gap | No qualifying screening on record. She first looked excluded for frailty plus advanced illness (donepezil), but Dr. Lin marked the Frailty entry (cond-00189) entered in error today: it belonged to another patient. Without frailty that exclusion doesn't apply."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "c7bc69fb97e8f647d93161c578105a4b0a6dac459d5c10307ac8d72d4f66e62c",
+        "key": "3cc5c397375e128ab9f10ed3af2d50ed08f0ad4f832923cc1769d5f147af595c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Open gap: FIT ordered (sr-t0001), message sent (comm-t0003) | Her only stool test (FIT obs-01732) was corrected: collected 2025-12-31, not 2026-01-05, so it is outside the 2026 period. No other screening."
+          "quote": "pt-0020 Kelsie Rohan (52) | Excluded | Hospice episode (eoc-00002) active 06/16 to 08/21/2026, within the measurement period. The St. Brigid summary (doc-00402) says she revoked hospice to join a clinical trial, but the episode still counts."
         },
         "error": null,
         "calls": 1
       },
       {
-        "key": "56d2436c9de053b2ddfdcc89fc92ca56701b7efd46dad42c993e3589111975e1",
+        "key": "f45b5f96fe7e7d727298d435562f5fd94fa09d213d787ac9bdb05d9bc00ee8bc",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "| pt-0024 Delaine MacGyver (51) | Open gap: FIT ordered (sr-t0002), message sent (comm-t0004) | The 2024 sDNA-FIT (obs-01871) is entered in error; Harbor Lab says the specimen belonged to another patient. The 2025 colonoscopy order (sr-00003) is only an order, not a completed test. No other screening. |"
+          "quote": "| pt-0022 Tiny Koss (52) | Open gap | The lab corrected the FIT (obs-01732) collection date to 12/31/2025. The 01/05/2026 date first reported was when the lab received the sample. A FIT counts only if collected in 2026, and nothing else qualifies. |"
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "7bad5da37a437de5b5688e9acef5cf6f15095050f62bad9d88ce2b048c6c86ef",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "| pt-0024 Delaine MacGyver (51) | Open gap | Harbor Lab withdrew her 06/2024 stool DNA-FIT result (obs-01871, now entered in error; notice doc-00401) because the sample was someone else's. The 2025 colonoscopy order (sr-00003) was never done, and an order doesn't count."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "a67bc9b1134205e53ed6bae7bc51a376da76591b21fac65be7b41cd2f039821c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "| pt-0073 Marisol Quintero (58) | Open gap | Harbor Lab cancelled the FIT dated 01/08/2026 (obs-73001) and re-issued it (obs-05001; notice doc-00403) with a collection date of 12/28/2025, outside 2026. Nothing else qualifies. |"
         },
         "error": null,
         "calls": 1
@@ -1010,14 +1193,14 @@
   "error": null,
   "run_id": "final-1",
   "index": 10,
-  "attempt": "fb524a47-11",
+  "attempt": "5a45f225-91",
   "mode": "live",
   "settled": true,
   "trajectory": "trajectories/crc-care-gap/10.jsonl",
   "regrades": [
     {
       "grader_version": "22",
-      "grader_task_version": "f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740",
+      "grader_task_version": "fa1792d716e6c8049b75c9f9f95972b668a064e736b3c391ca325ccca180b04d",
       "outcome": "PASS",
       "score": 1,
       "valid": true,
@@ -1033,17 +1216,21 @@
             "want": [
               "Patient/pt-0009",
               "Patient/pt-0022",
-              "Patient/pt-0024"
+              "Patient/pt-0024",
+              "Patient/pt-0073"
             ],
             "ordered": {
-              "Patient/pt-0022": [
+              "Patient/pt-0009": [
                 "ServiceRequest/sr-t0001"
               ],
               "Patient/pt-0024": [
                 "ServiceRequest/sr-t0002"
               ],
-              "Patient/pt-0009": [
-                "ServiceRequest/sr-t0005"
+              "Patient/pt-0073": [
+                "ServiceRequest/sr-t0011"
+              ],
+              "Patient/pt-0022": [
+                "ServiceRequest/sr-t0015"
               ]
             },
             "missing": [],
@@ -1055,7 +1242,8 @@
           "ids": [
             "ServiceRequest/sr-t0001",
             "ServiceRequest/sr-t0002",
-            "ServiceRequest/sr-t0005"
+            "ServiceRequest/sr-t0011",
+            "ServiceRequest/sr-t0015"
           ],
           "items": [
             {
@@ -1089,6 +1277,14 @@
               "met": true,
               "decisive_ids": [
                 "Observation/obs-01871"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-73001"
               ],
               "evidence": {}
             },
@@ -1112,7 +1308,8 @@
             "messaged": [
               "Patient/pt-0009",
               "Patient/pt-0022",
-              "Patient/pt-0024"
+              "Patient/pt-0024",
+              "Patient/pt-0073"
             ],
             "not_about_order": [],
             "about_own_record": [],
@@ -1121,7 +1318,8 @@
           "ids": [
             "Communication/comm-t0003",
             "Communication/comm-t0004",
-            "Communication/comm-t0006"
+            "Communication/comm-t0012",
+            "Communication/comm-t0016"
           ],
           "items": [
             {
@@ -1155,6 +1353,14 @@
               "met": true,
               "decisive_ids": [
                 "Observation/obs-01871"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-73001"
               ],
               "evidence": {}
             }
@@ -1207,6 +1413,14 @@
               "evidence": {}
             },
             {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-73001"
+              ],
+              "evidence": {}
+            },
+            {
               "item": "outside",
               "met": true,
               "decisive_ids": [],
@@ -1225,33 +1439,44 @@
             "seen": [
               {
                 "patient": "Patient/pt-0009",
-                "first_order": 82,
+                "first_order": 81,
                 "exposed": [
                   {
                     "id": "Patient/pt-0009",
-                    "step": 74
+                    "step": 57
                   }
                 ],
                 "missing_kinds": []
               },
               {
                 "patient": "Patient/pt-0022",
-                "first_order": 65,
+                "first_order": 109,
                 "exposed": [
                   {
                     "id": "Patient/pt-0022",
-                    "step": 43
+                    "step": 106
                   }
                 ],
                 "missing_kinds": []
               },
               {
                 "patient": "Patient/pt-0024",
-                "first_order": 66,
+                "first_order": 82,
                 "exposed": [
                   {
                     "id": "Patient/pt-0024",
-                    "step": 58
+                    "step": 46
+                  }
+                ],
+                "missing_kinds": []
+              },
+              {
+                "patient": "Patient/pt-0073",
+                "first_order": 99,
+                "exposed": [
+                  {
+                    "id": "Patient/pt-0073",
+                    "step": 74
                   }
                 ],
                 "missing_kinds": []
@@ -1292,6 +1517,14 @@
               "met": true,
               "decisive_ids": [
                 "Observation/obs-01871"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-73001"
               ],
               "evidence": {}
             }
@@ -1340,6 +1573,14 @@
               "met": true,
               "decisive_ids": [
                 "Observation/obs-01871"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-73001"
               ],
               "evidence": {}
             }
@@ -1405,6 +1646,19 @@
               "evidence": {
                 "fired": [
                   "crc-d1"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-05001"
+              ],
+              "evidence": {
+                "fired": [
+                  "crc-b3"
                 ],
                 "not_fired": []
               }
@@ -1474,6 +1728,19 @@
                 ],
                 "not_fired": []
               }
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-05001"
+              ],
+              "evidence": {
+                "fired": [
+                  "crc-b3"
+                ],
+                "not_fired": []
+              }
             }
           ]
         },
@@ -1540,6 +1807,19 @@
                 ],
                 "not_fired": []
               }
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-05001"
+              ],
+              "evidence": {
+                "fired": [
+                  "crc-b3"
+                ],
+                "not_fired": []
+              }
             }
           ]
         },
@@ -1590,6 +1870,19 @@
               "evidence": {
                 "fired": [
                   "crc-o1"
+                ],
+                "not_fired": []
+              }
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-05001"
+              ],
+              "evidence": {
+                "fired": [
+                  "crc-b3"
                 ],
                 "not_fired": []
               }
@@ -1646,6 +1939,19 @@
                 ],
                 "not_fired": []
               }
+            },
+            {
+              "item": "Patient/pt-0073",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-05001"
+              ],
+              "evidence": {
+                "fired": [
+                  "crc-b3"
+                ],
+                "not_fired": []
+              }
             }
           ]
         },
@@ -1688,8 +1994,8 @@
             "status": "gap",
             "reason": "frailty_entered_in_error",
             "verdict": "met",
-            "quote": "Open gap: FIT ordered (sr-t0005), message sent (comm-t0006) | Looked excluded at first (frailty plus donepezil), but Dr. Lin's message that arrived during the work says the Frailty entry belonged to another patient (cond-00189, now entered in error). No frailty means no exclusion. No nursing home, hospice or palliative care, and no colorectal cancer. No qualifying screening on record.",
-            "cache_key": "f2a79225970c261fd718e66057e71b3cdfb52aafa746306e5f0fe8a67baeb90c"
+            "quote": "pt-0009 Elly Trantow (72) | Open gap | No qualifying screening on record. She first looked excluded for frailty plus advanced illness (donepezil), but Dr. Lin marked the Frailty entry (cond-00189) entered in error today: it belonged to another patient. Without frailty that exclusion doesn't apply.",
+            "cache_key": "8d5f5fc9303d6564554e3a0d15174d9054138b7a5da999908472bae5496806c8"
           }
         },
         {
@@ -1704,8 +2010,8 @@
             "status": "excluded",
             "reason": "hospice",
             "verdict": "met",
-            "quote": "| pt-0020 Kelsie Rohan (52) | Excluded | Hospice care during 2026: finished hospice episode eoc-00002, 2026-06-16 to 2026-08-21, for pancreatic cancer. She revoked hospice for a clinical trial, but a finished episode still counts.",
-            "cache_key": "c5d1957364fc7ae55b911f5c46fb1c06569e2244f5da75db7b22b6415f1e3223"
+            "quote": "pt-0020 Kelsie Rohan (52) | Excluded | Hospice episode (eoc-00002) active 06/16 to 08/21/2026, within the measurement period. The St. Brigid summary (doc-00402) says she revoked hospice to join a clinical trial, but the episode still counts.",
+            "cache_key": "3cc5c397375e128ab9f10ed3af2d50ed08f0ad4f832923cc1769d5f147af595c"
           }
         },
         {
@@ -1720,8 +2026,8 @@
             "status": "gap",
             "reason": "fit_collected_before_period",
             "verdict": "met",
-            "quote": "Open gap: FIT ordered (sr-t0001), message sent (comm-t0003) | Her only stool test (FIT obs-01732) was corrected: collected 2025-12-31, not 2026-01-05, so it is outside the 2026 period. No other screening.",
-            "cache_key": "c7bc69fb97e8f647d93161c578105a4b0a6dac459d5c10307ac8d72d4f66e62c"
+            "quote": "| pt-0022 Tiny Koss (52) | Open gap | The lab corrected the FIT (obs-01732) collection date to 12/31/2025. The 01/05/2026 date first reported was when the lab received the sample. A FIT counts only if collected in 2026, and nothing else qualifies. |",
+            "cache_key": "f45b5f96fe7e7d727298d435562f5fd94fa09d213d787ac9bdb05d9bc00ee8bc"
           }
         },
         {
@@ -1736,8 +2042,24 @@
             "status": "gap",
             "reason": "sdna_withdrawn",
             "verdict": "met",
-            "quote": "| pt-0024 Delaine MacGyver (51) | Open gap: FIT ordered (sr-t0002), message sent (comm-t0004) | The 2024 sDNA-FIT (obs-01871) is entered in error; Harbor Lab says the specimen belonged to another patient. The 2025 colonoscopy order (sr-00003) is only an order, not a completed test. No other screening. |",
-            "cache_key": "56d2436c9de053b2ddfdcc89fc92ca56701b7efd46dad42c993e3589111975e1"
+            "quote": "| pt-0024 Delaine MacGyver (51) | Open gap | Harbor Lab withdrew her 06/2024 stool DNA-FIT result (obs-01871, now entered in error; notice doc-00401) because the sample was someone else's. The 2025 colonoscopy order (sr-00003) was never done, and an order doesn't count.",
+            "cache_key": "7bad5da37a437de5b5688e9acef5cf6f15095050f62bad9d88ce2b048c6c86ef"
+          }
+        },
+        {
+          "id": "table_pt_0073",
+          "kind": "rubric",
+          "method": "hybrid",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "named": true,
+            "status": "gap",
+            "reason": "fit_reissued_before_period",
+            "verdict": "met",
+            "quote": "| pt-0073 Marisol Quintero (58) | Open gap | Harbor Lab cancelled the FIT dated 01/08/2026 (obs-73001) and re-issued it (obs-05001; notice doc-00403) with a collection date of 12/28/2025, outside 2026. Nothing else qualifies. |",
+            "cache_key": "a67bc9b1134205e53ed6bae7bc51a376da76591b21fac65be7b41cd2f039821c"
           }
         },
         {
@@ -1796,12 +2118,13 @@
           "evidence": {
             "patient": "Patient/pt-0009",
             "verdict": "not_met",
-            "quote": "Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file.",
-            "cache_key": "fe33dcf6288645ffd72f861f618c93ba3de946731d39c17ed1fcf5549b85a005",
+            "quote": "Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you. It will arrive by mail soon.",
+            "cache_key": "d87e242e31664d90a14c9ba3e13f73923ff76d700838f62beb3992d5ea881ca9",
             "patients": [
               "Patient/pt-0009 false",
               "Patient/pt-0022 false",
-              "Patient/pt-0024 false"
+              "Patient/pt-0024 false",
+              "Patient/pt-0073 false"
             ]
           }
         },
@@ -1815,12 +2138,13 @@
           "evidence": {
             "patient": "Patient/pt-0009",
             "verdict": "not_met",
-            "quote": "Our records show you are due for colorectal cancer screening, so Dr. Okafor has ordered a FIT kit (fecal immunochemical test) for you. The kit is being mailed to your home address on file.",
-            "cache_key": "9da6e2a8fa1821ab48bcc7d9ce600ef4ded789f26aab356cef799ae10f6ada17",
+            "quote": "Our records do not show a colorectal cancer screening test for you that is up to date, so Dr. Okafor has ordered a free at-home FIT (fecal immunochemical test) kit for you.",
+            "cache_key": "94ef980df3c5aa3724e504e312934a17c931de89b0e976c103b1ff1663247f8c",
             "patients": [
               "Patient/pt-0009 false",
               "Patient/pt-0022 false",
-              "Patient/pt-0024 false"
+              "Patient/pt-0024 false",
+              "Patient/pt-0073 false"
             ]
           }
         }
@@ -1828,7 +2152,7 @@
       "error": null,
       "changed": false,
       "attribution": null,
-      "at": "2026-11-03T17:22:06.937Z"
+      "at": "2026-11-06T17:59:22.814Z"
     }
   ]
 }

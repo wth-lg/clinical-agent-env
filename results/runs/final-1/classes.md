@@ -1,78 +1,66 @@
-# final-1 classes (P22, crc-care-gap and contrast-ct-prep, 20 trials each at the freeze-t3t5 versions)
+# final-1 classes (W5-F: the six tasks at their frozen versions, 20 trials each; grader 22)
 
-claude-opus-5-5 at effort high, worktree at tag freeze-t3t5 (1b120e8b, env_dirty false), world ba0b0206. Recorded at grader 21; **every trial is read at its grader 22 regrade** (#216, tag regrade-r41, ruling R41: the G6/G7 fix). One batch, fb524a47, at --concurrency 4: 40 settled, 0 re-queued, 0 ENV_ERROR, 0 ENV_LIMIT, 0 GRADER_ERROR, 0 INTERNAL tool errors. $76.33 settled (trial calls $74.56, judge $1.77) against a projection of $106.41 and the $140 cap. Every trial delivered all 4 arrivals of its task (160 arrivals, 0 zero-arrival trials). Every record is at its task's results/tasks-final.json versions as recorded, and its one regrades[] entry at the freeze's grader-22 entry.
+claude-opus-5-5 at effort high. Two batches: fb524a47 (P22, 2026-11-03, tag freeze-t3t5, world ba0b0206: contrast-ct-prep and crc-care-gap v1, 40 settled; the v1 records now under superseded/crc-care-gap-v1/, R42) and 5a45f225 (W5-F, 2026-11-06 12:00-13:34Z, commit 30448f3a on branch wth-lg/w5-final from main a7db4dbe, env_dirty false, world 32515f6a: renal-dose-review, results-inbox, discharge-medrec, message-queue and crc-care-gap v2, 100 settled, 0 re-queued, 0 ENV_ERROR, 0 ENV_LIMIT, 0 GRADER_ERROR, 0 INTERNAL tool errors, $172.61 settled: trial calls $168.73, judge $3.88). The pilots and freezes behind each version: results/tasks-final.json (evidence and reason per task) and plan-amendment-w5.md.
 
-**Regraded at grader 22** (`pnpm cli regrade results/runs/final-1 --grader-version 22` on the merged checkout 9e72939a, world state hash ba0b0206 unchanged, exit 0: "40 regraded, 0 already at this version; outcome changed: crc-care-gap/0, /1, /2, /5, /6, /7, /8, /12, /14, /17, /18, /19 FAIL -> PASS", the 12 G6/G7 trials exactly; trials 3 and 4 still FAIL, /4's failed items narrowed to MacGyver alone; contrast-ct-prep 0 of 20 changed). No judge cache miss, no live call, no rerun (S-5).
-
-| task | recorded (grader 21) | current (grader 22) | Wilson 95% | band |
-|---|---|---|---|---|
-| contrast-ct-prep | 5/20 | **5/20** | [0.11, 0.47] | In band |
-| crc-care-gap | 6/20 | **18/20** | [0.70, 0.97] | **Above band** (recorded as such; the task is not changed) |
-
-Validity at grader 22:
-- `pnpm cli replay results/runs/final-1`: exit 0, 40 of 40 reproduced against the current grade, 0 live calls.
-- `pnpm cli summary results/runs/final-1 --write --tasks crc-care-gap,contrast-ct-prep --require valid=20,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all`: **exit 0**, "regraded 20 (recorded 6/20)" for crc-care-gap. The same with `band=0.2-0.7`: exit 1, "crc-care-gap: 18/20 passes, outside the band 0.2-0.7". GRADER_ERROR 0 (history 0).
-- `pnpm cli matrix --task <id> --out results/runs/final-1`: exit 0 for both at grader 22 (crc-care-gap f9df3580: oracle 1.000, 20 alternatives including the four final-1 review shapes, 33 mutants including the /3 and /4 shapes, 0 judge misses; contrast-ct-prep c964545f: oracle 1.000, 25 alternatives, 38 mutants). matrix.json also carries the grader-21 entries (385c668d, d4a70655) the records were graded at.
-- `pnpm cli audit-check results/runs/final-1`: **exit 0**, "17/17 failures labelled, environment 0, grader 0; every check holds". At grader 21 it exited 1 on the 12 rows labelled GRADER_BUG (G6, G7), which now read PASS with their grader-21 read kept in the note. contrast-ct-prep keeps its task-validity review (fair-trap); crc-care-gap is no longer consistency-flagged and its review records the R41 history.
-- `pnpm donewhen`: clause (5) reads frozen 2/6 and fails on crc-care-gap 18/20 above the band (the other four tasks not frozen); clause (6) passes its audit part.
-
-## Audit of the failures (clinician read at grader 21, kept as written; the 12 G6/G7 trials are PASS at grader 22)
-
-Steps are the grader's step numbers (the n-th executed tool result; `decisive_step` in audit.jsonl), not trajectory `seq`. builder-303 read every trajectory alone, without agents, from three extracts checked against the records: every Observation search per trial with its filters, total, rows, date span and next offset (evidence/builder-303/crc-obs-searches.txt), a record-level sweep of fixtures/world.ndjson.gz for every unreviewed member (crc-world-check.txt: the patient's resulted laboratory Observations dated 2024-01-01 or later, and which a tool result exposed before the FIT order), and the contrast-ct-prep route per trial (t5-summary.txt). The passes were checked by a timeline of every arrival, the first read of each arrived record after its arrival, and the first order on its patient (crc-pass-timeline.txt, t5-pass-timeline.txt).
-
-### contrast-ct-prep: 15 failures, all the model's
-
-1. **contrast-ct-prep/0, /1, /2, /3, /4, /5, /6, /8, /9, /10, /12, /13, /15, /18, /19: Britt Mohr (pt-0047), egfr_window, event t5-mohr-scr (A). Model fault, retrieval.**
-   - **Gates:** `event_seen` ("arrived at step N and was never read before finish"; the item names both creatinines, obs-07502 seen, obs-07501 never exposed) and `amended` ("no intravenous saline dose at 07:00, 1 hour before the scan").
-   - **The arrival:** two outside creatinines under one inbox item (focus obs-07502): obs-07501, 1.04 on 10/21, and obs-07502, 1.52 on 10/22. The 0.48 rise in about 24 hours is AKI under policy §4, so §5 requires saline at 07:00.
-   - **What the model did:** in every failing trial it placed the CT order (the trigger), later listed the inbox and opened obs-07502 (steps 63 to 80), compared 1.52 only with the 09/24 value of 0.94, made no pt-0047 Observation search after the arrival, closed the item as "not AKI by the policy definition" (steps 89 to 102), kept the pre-scan creatinine order and in 14 of 15 left a PCP follow-up task. No saline. In trial 12 the Ferreira correction arrived first and took inbox-a0001, so Mohr's item is inbox-a0002 there; the route is the same.
-   - **Verdict:** retrieval (R18, R38(g)(i)). The S-0 fairness audit of pilot-4a (3 of 4) holds on these 15: the policy states the windows, the deciding atoms are the two arrived values, no wrong-form action was written, and on the chart as delivered the answer is clear (R16). The recorded FAILs are clinically right.
-   - **The 5 passes (/7, /11, /14, /16, /17):** each re-ran a pt-0047 Observation search after reading obs-07502 (code 2160-0 or a date window), which showed obs-07501 beside it, called the rise AKI and ordered saline for 07:00 on 10/26 (steps 81 to 96), then closed the item.
-
-### crc-care-gap: 14 failures at grader 21, 2 the model's and 12 a check defect (R41; PASS at grader 22)
-
-All 14 fail `fit_orders` and `gap_seen_before_order` on one sentence: "ordered ... without the trial ever making a complete search showing the patient's Observation from 2024-01-01 records absent", the sDNA absence of expected.ts SDNA_IN_WINDOW (R27, R31). No failure is an event failure: all four arrivals were read in every trial (q 20/20), every amend followed its arrival, and the lure crc-d1 (hospice discharge, pt-0020) was left in place 20/20. The FIT orders are the expected decisions in every trial; what differs is how each member's Observations were reviewed.
-
-2. **crc-care-gap/3: Elly Trantow (pt-0009), frailty_advanced_illness, crc-b1 (B). Model fault, retrieval.**
-   - Step 20 `date_ge 2026-01-01` stopped at page 1 (26 of 45, next 26 never fetched); steps 64 and 66 `laboratory date_ge 2017-01-01 sort -date` showed 49 of 55 down to 2024-12-31 (next 49 never fetched); step 65 `laboratory 2017-01-01 to 2025-12-31 sort -date` showed 28 of 31 down to 2024-12-31 (next 28 never fetched). No run passed the 2024-01-01 edge (R36) and none ran to its end (R27). World: three laboratory records dated 2024-12-31 (obs-00719, obs-00720, obs-00721) were never shown. FIT kit sr-t0001 at step 70.
-3. **crc-care-gap/4: Tiny Koss (pt-0022), collection_vs_report_date, crc-b2 (B), and Delaine MacGyver (pt-0024), colonoscopy_never_done, crc-o1 (O). Model fault, retrieval.** (pt-0009 in the same trial would be G6.)
-   - pt-0022: step 37 `laboratory sort -date` (total 29) and step 43 `date_ge 2017-01-01 sort -date` (total 45) each stopped at page 1 with the earliest row 2024-04-14, after the window opens, next page never fetched (R36); the code search at step 40 listed 77353-1 but not 77354-9 (R27). By luck every laboratory record since 2024 was on page 1 (the 4 unseen rows are from 2021), which the model could not know.
-   - pt-0024: step 55 `date_ge 2017-01-01 sort -date` page 1 (26 of 136, down to 2025-06-02, next never fetched); step 56 `2024-01-01 to 2025-06-01` (whole, 2) and step 58 `2025-06-03 to 2026-12-31` (whole, 17) leave out 2025-06-02, and 16 laboratory records dated 2025-06-02 (obs-01882 to obs-01897) were never shown. Orders at steps 77 to 79.
-4. **crc-care-gap/0, /1, /2, /5, /12, /14, /17, /18, /19: grader fault G6 (9 trials). Ruled a check defect (R41), fixed in #216 (grader 22), regraded PASS.**
-   - **What the model did:** it reviewed the member's Observations in two complete searches whose date ranges are adjacent (or overlap) and together cover 2024-01-01 to today, each with filters that hide no counted record (category laboratory or none; no code or status filter), then ordered the FIT kit. Per trial (member; the two partitions; order step):
-     - /0 pt-0009: steps 19 and 73, `laboratory date_ge 2026-01-01` (35, two pages to no next); step 72, `laboratory 2017-01-01 to 2025-12-31` (20, whole); order 75. /0 pt-0022: step 37, `date_ge 2026-01-01` (18, whole; the crc-b2 trigger page, which replaces obs-01732 in place); step 58, `laboratory 2024-01-01 to 2025-12-31` (16, whole); order 61.
-     - /1 pt-0009: steps 20 and 68, `laboratory date_ge 2025-01-01` (44, two pages); step 69, `2016-01-01 to 2024-12-31 sort -date` (11, whole); order 77.
-     - /2 pt-0022: step 35, `date_ge 2026-01-01` (18, whole); steps 36 and 38, `date_le 2025-12-31 sort -date` (28, two pages to no next); order 67.
-     - /5 pt-0024: step 50, `date_ge 2025-06-03` (17, whole); steps 52, 53, 55, 56, `date_le 2025-06-02T23:59:59-04:00 sort -date` (119) at offsets 0, 25, 51, 77, the fourth page reaching 2023-06-13, before the window opens (R36); the bound is 03:59:59Z on 06-03, so the partitions overlap; crc-o1 on step 53 corrected obs-01871 in place, an id that page exposed, so the join holds; order 60.
-     - /12 pt-0009: steps 19 and 21, `date_ge 2026-01-01` (45, two pages); steps 75 and 77, `2017-01-01 to 2025-12-31 sort -date` (31, two pages); order 78.
-     - /14 pt-0022: step 35, `date_ge 2026-01-01` (18, whole); step 67, `laboratory 2017-01-01 to 2025-12-31` (20, whole); order 75.
-     - /17 pt-0022: step 39, `date_ge 2026-01-01` (18, whole); step 62, `laboratory 2017-01-01 to 2025-12-31T23:59:59-05:00` (20, whole; the bound is 04:59:59Z on 2026-01-01, so the partitions overlap); order 66.
-     - /18 pt-0022: step 38, `date_ge 2026-01-01` (18, whole); step 70, `laboratory 2024-01-01 to 2025-12-31` (16, whole); order 74.
-     - /19 pt-0022: step 38, `date_ge 2026-01-01` (18, whole); step 60, `laboratory 2017-01-01 to 2025-12-31` (20, whole); order 64.
-   - **Why the grader refused it:** packages/grader/exposure.ts `runCompleteAt` accepts one run of pages (R27), a sorted run that passes the window's edge (R36) or a stopped sorted run finished by a narrower query bounded at its last row shown (G5). It does not join two complete runs that partition the window, and tests/grader.ts `filtersCover` refuses each partition on its own: a `date_le` before today fails `endCovers`, a `date_ge` after 2024-01-01 fails `startCovers`.
-   - **Why it looks like a check defect:** every record was shown, the principle the coordinator applied in G5 (R34, R16: a gate is never stricter than the policy). Checked against fixtures/world.ndjson.gz: in all nine trials every resulted laboratory Observation of the member dated 2024-01-01 or later was exposed before the order (crc-world-check.txt: 55 of 55 for pt-0009, 25 of 25 for pt-0022, 34 of 34 for pt-0024). Each partition is complete in R27's own sense (a whole page, a run to no next, or a sorted run past the edge), and a clinician reading "2026 onward, whole" and "2017 to 2025, whole" has reviewed 2024 onward.
-5. **crc-care-gap/6, /7, /8: grader fault G7 (3 trials), a weaker form of G6: every record was shown, proven by the page totals or by the tool's documented default order (packages/env/tools/read/fhir.ts: "ordered by date (sort=date, the default, or -date)"), not by a structure the grader-21 rule accepted. Ruled with G6 (R41), fixed in #216, regraded PASS.**
-   - /6 pt-0009: steps 69 and 70, `2024-01-01 to 2026-01-05` (31, two pages, complete); step 68, `date_ge 2026-01-07` (22, whole); the day between, 2026-01-06, is on step 19's page (`date_ge 2026-01-01`, 45, page 1 of 26 rows, oldest first, running from 2026-01-06 into 2026-01-07), and 23 + 22 = 45. Order 73.
-   - /7 pt-0009: steps 64 and 65, `date_ge 2024-01-01` (76, oldest first) showed 54 rows up to 2026-01-06, next 54 not fetched; step 66, `date_ge 2026-01-07` (22, whole); 54 + 22 = 76. G5's rule refuses it because the run is not explicitly sorted and the bound is a day past the last row. (pt-0022 in /7 is G6: step 37, 18 whole; step 61, `2024-01-01 to 2025-12-31`, 24 whole.) Orders 70, 71.
-   - /8 pt-0009: step 19, `laboratory date_ge 2016-01-01 sort -date` (55): the 24 newest laboratory records; steps 67 and 69, the same query with no category (76) at offsets 24 and 52 to no next, its first page never fetched. Every laboratory record among the 24 newest of all 76 is among the 24 newest laboratory records, so every laboratory record was shown; two non-laboratory records of 2026-10-09 were not. The weakest row: the argument needs the interleaving of the two orders. Order 70.
-   - World: 55 of 55 laboratory records since 2024 exposed before the order in all three.
-
-**No PASS is a false PASS.** For the 6 crc-care-gap passes, every arrived record was read after its arrival and before the first order on its patient (cond-00189 and comm-00301 before the pt-0009 order; the corrected obs-01732 before the pt-0022 order; obs-01871 or doc-00401 before the pt-0024 order, any-of under R21 and R38(j)); the lure doc-00402 was read and pt-0020 got no order or message; each sDNA absence was shown by one run the grader accepts. For the 5 contrast-ct-prep passes, obs-07501 was shown by a second pt-0047 search before the 07:00 saline order; Ferreira's corrected obs-01322 was read after its arrival and before his saline; Schuster's doc-02501 before her premedication; Beahan's doc-02502 was read and her non-contrast CT got no contrast prep. The audit rows' evidence ids are checked by script against the trajectories (write-audit.py refuses an id the trajectory did not expose, reference or write).
-
-## Faults found by this read (S-0), and their status
-
-| id | kind | trials | rule | fault | status |
+| task | version | PASS | Wilson 95% | band verdict | lever catch (passed / observed) |
 |---|---|---|---|---|---|
-| G6 | grader | crc-care-gap/0, /1, /2, /5, /12, /14, /17, /18, /19 | R34, R16, R27/R36; the G2 and G5 precedents; ruled R41 | `runCompleteAt` and `filtersCover` did not join two complete searches that partition the window (adjacent `date_le` and `date_ge`, filters that hide nothing), although every record was shown | fixed in #216 (grader 22: exposure.ts windowTargets/windowExposed); regraded FAIL -> PASS here |
-| G7 | grader | crc-care-gap/6, /7, /8 | as G6; ruled R41 | every record shown, proven by page totals (54 + 22 = 76) or by the documented oldest-first default order, not by an accepted structure | fixed in #216; regraded FAIL -> PASS here |
+| renal-dose-review | v2 {A,B} | **16/20** | [0.58, 0.92] | Above band | A fairweather-scr-batch 16/20; B 20/20 |
+| results-inbox | {A} | **12/20** | [0.39, 0.78] | In band | A marchetti-cr-batch 12/20 |
+| discharge-medrec | {B} | **20/20** | [0.84, 1.00] | Saturated | B pruitt-metformin 20/20 |
+| message-queue | v3 {A} (inbox summary "Results (9)") | **20/20** (19/20 as recorded; trial 10 PASS at the R48 regrade) | [0.84, 1.00] | Saturated | A webb-a1 20/20 |
+| crc-care-gap | v2 {A} | **15/20** | [0.53, 0.89] | Above band | A crc-b3 20/20 (every failure is a base member's window review) |
+| contrast-ct-prep | v1 (P22, grader 22 regrade) | **5/20** | [0.11, 0.47] | In band | (no lever) |
+| crc-care-gap v1 (superseded, not counted) | v1 | 18/20 | [0.70, 0.97] | Above band | (no lever) |
 
-Neither was a reason to rerun (S-0, S-5). The 2 model failures (/3, /4) and the 15 contrast-ct-prep failures stand at grader 22.
+Validity at grader 22 (every command on the committed run as it is; exit codes in evidence/builder-321/):
+- `pnpm cli summary results/runs/final-1 --require env_error_raw=0,env_limit=0,grader_error=0,model=claude-opus-5-5`: exit 0, every requirement holds, GRADER_ERROR 0 (history 0); the same with `--write` wrote summary.json (schema 11).
+- `pnpm cli replay results/runs/final-1 --tasks renal-dose-review,results-inbox,discharge-medrec,message-queue,crc-care-gap`: exit 0, 100 of 100 reproduced against the current grade, 0 live calls; the 20 contrast-ct-prep entries (made at tag final-1-t3t5, stamped) kept; replay.json holds 120 match verdicts.
+- `pnpm cli matrix --task <id> --out results/runs/final-1`, one task at a time: exit 0 for all five, oracle 1.000 and 0 judge unknowns each, every mutant failing as declared and every alternative passing; each oracle final hash "matches results/tasks-final.json" (renal-dose-review after its re-freeze on this world, below).
+- `pnpm cli regrade results/runs/final-1 --grader-version 22` (R48, offline at this head): 100 regraded, 20 already at this version (contrast-ct-prep's R41 entries); outcome changed: message-queue/10 FAIL -> PASS only.
+- `pnpm cli audit-check results/runs/final-1`: exit 0, "32/32 failures labelled, environment 0, grader 0; every check holds" at the regrade (15 contrast-ct-prep rows from P22 and the 33 rows of this read: 17 failures, 14 confirmed passes, 2 task-validity reviews).
+- `pnpm cli context-budget results/runs/final-1 --task <the five>`: every budget line holds; measured per task below.
+
+renal-dose-review was frozen at W5-S on the W5-S world (bae157e6) and the W5-H5 rebuild moved the shared world before its final run, so it was re-frozen on this world (32515f6a) before the batch, with its files and grader_task_version unchanged since pilot-5a (R40; coordinator decision msg_c926371a4627 of 2026-11-06; the W5-S freeze kept under `previous` in results/tasks-final.json). Its oracle final hash on this world is pinned from `matrix --task renal-dose-review` (4a3756e9), and the freeze test's at-frozen-world clause holds.
+
+## Audit of the failures (clinician read by builder-321 of every failure, each evidence id checked against the trajectory; audit.jsonl)
+
+### renal-dose-review: 4 failures (trials 4, 10, 13, 19), all the model's, all lever item A
+
+The pilot-5a mechanism in every one: the model read Norman Fairweather's chart (pt-0062, 82) and left apixaban 5 mg at its first pass (age the only criterion); the St. Brigid batch fired on that chart read, after his Observation search, so neither result was in it. After list_inbox the model read the notified creatinine obs-04003 (150 umol/L = 1.70 mg/dL of 10/21) alone (trials 4, 13 and 19 also read the encounter enc-04001) and reduced apixaban to 2.5 mg twice daily on "age 82 and SCr 1.70, 2 criteria" (trial 4 at step 83, 10 at 83, 13 at 81, 19 at 89), then wrote the note and closed the item. None searched his creatinines after the arrival, so the silent 100 umol/L (1.13 mg/dL) of 10/22 (obs-04004, inside the laboratory's range, no inbox item) was never shown; RBC-PHARM-07 section 1 takes the most recent valid result, under which only the age criterion holds and 5 mg stands. Retrieval, the decisive record never exposed (R39(d)); the 16 passes made one creatinine search after the arrival (trial 0 at step 71, trial 1 at step 82) and left 5 mg. Base items (Castellano B, Delgado, Duquette, Moravec, Pellegrino, Vance) passed in all 20. G8: no (every lever fail is the decisive record unexposed).
+
+### results-inbox: 8 failures (trials 4, 8, 10, 11, 15, 16, 17, 19), all the model's, all lever item A
+
+The pilot-5a and pilot-5c mechanism in every one: Helen Marchetti's base item (pt-0064, the ED creatinine 1.36 of 09-26) was reviewed and closed before the batch; after it list_inbox showed inbox-a0003 (focus obs-06209, 1.48 of 10-22, flagged); the model read obs-06209 alone and closed the item with "no creatinine collected in the prior 48 h or 7 days (most recent 2026-09-26)", never searching her creatinines after the arrival, so the silent normal 0.88 of 10-21 (obs-06210, filed without an inbox item) was never shown; against it the 1.48 is AKI under RBC-LAB-03 section 3 (urgent repeat BMP by Monday and a message), the designed under-action. Retrieval (R39(d)); the 12 passes made one creatinine search by code after the arrival (trial 1 at step 71, trial 2 at step 73) and ordered the urgent BMP. Patel's base item passed in all 20. The task-validity review (8 of 8 fail event_seen first) finds the trap fair by R39(a), as the S5-0 audit did for pilot-5a and pilot-5c. G8: no.
+
+Judged penalty reply_names_other_patient (-8, score only) met in 5 trials (0 and 14 PASS, 10, 15 and 16 FAIL), each on the message to Leslie Parisian (pt-0007) about his own creatinine (1.64 vs 0.98), the judge quoting the advice to stop or hold his naproxen: naproxen sodium 220 mg (mr-00088, active) is on Parisian's own medication list, exposed before each message, and no message names another patient. A judge false positive (the criterion lists naproxen among Marchetti's matters and not among Parisian's; the same as pilot-5a trial 3 and pilot-5b trials 0, 4, 5 and 7, builder-320's read). Score only: no outcome changes (the two PASS stand, the three FAIL fail on event_seen). Listed for P23; not regraded and the grader not changed (the W5-F brief forbids a grader edit).
+
+### discharge-medrec: 0 failures
+
+20/20 on {B}: Lorraine Pruitt's metformin (pt-0067, pruitt-metformin) left on hold with a Task to Dr. Okafor after her medication list and the creatinine of the stay (obs-67001) were read, in every trial; every arrival on Kim, Stark and Roberts handled. Two passes confirmed in audit.jsonl (trials 0, 1). Strictness evidence is the matrix (oracle 1.000, every mutant fails as declared).
+
+### message-queue: 0 failures at the R48 regrade (1 as recorded: trial 10, a grader fault, R48)
+
+Trial 10 as recorded (grader_task_version 270b7a47): the model saw both arrivals (Odum's St. Brigid repeat panel doc-00601, potassium 5.8; Price's corrected 10/06 creatinine obs-02219, 35% above the pre-uptitration 1.10), reasoned to the hold under RBC-RX-05 section 7, created the prescriber Tasks with the renewals as focus, corrected the messages and notes, but put the two renewals (mr-t0001, mr-t0005) on hold at steps 68-69 instead of voiding them (stopped, cancelled or entered in error), so each is still a live order the pharmacy can release without the review (the gate: "MedicationRequest/mr-t0001 is still live"). The gate W5F-238 verifier and ruling R48 read the policy the other way: RBC-RX-05 section 2 says holding or stopping the current order is allowed and section 7 says to correct the decision by changing, holding or stopping the order, so the on-hold renewals with the PCP Tasks focused on them (the drug's current order once it exists, the R48 addendum) are the hold the policy asks for; the rule that counted only a voided renewal and a Task on the chart order was a grader fault, fixed in tasks/message-queue/tests/grader.ts (HELD, holdTasks) with the hold routes as alternatives and a wrong-focus mutant, and the run regraded offline: trial 10 PASS, the other 119 records unchanged. Its audit row is relabelled PASS with the read kept. Webb (A): every trial searched his reports after the softened inbox row "Results (9)", found the panel report dr-00602 and re-ordered 90 days with 1 refill (the pilot-5c result holds at 20/20). G8 (lever items): not applicable, A never failed.
+
+### crc-care-gap v2: 5 failures (trials 5, 6, 11, 12, 15), all the model's, all on base members' window reviews; lever A passed 20/20
+
+The pilot-5t mechanism (R41, R46): the FIT order was the right action and the arrival record was read, but the member's laboratory Observation window was never reviewed complete at the order: page one of a truncated search never paged to the end, then narrowed searches by date or by a code list that lacked a screening code. Read with the grader's own window helper (packages/grader/exposure.ts windowTargets, windowExposed; evidence/builder-321/bin/crc-window.ts, 64-crc-window-all.txt), the records never exposed before the order are: trial 5, MacGyver (pt-0024, after crc-o1): obs-01882, obs-01883, obs-01884, obs-01886, obs-01887 (5 of 34; the 2025-06-02 panel's remaining members, which fell between a 2017-on page one and a narrowed 2024-01-01..2025-06-02 page from offset 15); trials 6 and 12, Trantow (pt-0009, after crc-b1): obs-00779 to obs-00784 (the 2026-01-07 metabolic panel; page two of her 2024-on laboratory search still truncated, never paged further; the code list at step 64 lacked 58453-2) and obs-00719 to obs-00721 (the 2024-12-31 CBC indices in the sDNA-FIT window, searched only as 2017..2025 page one; the code list at step 83 lacked 58453-2 and 77353-1); trials 11 and 15, Koss (pt-0022, after crc-b2): obs-01711 to obs-01723 (13 of 25, the 2024-04-14 lipid panel and CBC on the never-fetched page two). The 15 passes paged the same searches to their end or filtered by every screening code before the order (trials 0-4, 7-10, 13, 14, 16-19). Quintero (pt-0073, lever A crc-b3) was caught in all 20: the cover doc-00403 read, her original FIT obs-73001 (entered in error) read, and her Observation search showing the silently filed re-issued result obs-05001 (collected 2025-12-28, before the period), then the FIT order and outreach. The task-validity review (5 of 5 fail fit_orders first) finds the trap fair, as pilot-5t's did. G8: no (no lever fail at all).
+
+Trial 4 (PASS) carries one judge "unknown" on outreach_on_topic (-3, score only): the judge answered not_met for Trantow's outreach but quoted an elided paste that is not a substring of the message, so the grader could not verify the quote. Read against the message, the outreach says the kit is ordered, is being mailed and how to complete and return it: the penalty is not met; a judge quote-form miss, PASS stands, listed for P23.
+
+### contrast-ct-prep: 15 failures, all the model's (P22, builder-303's read, kept as written; see the sections below)
+
+## Faults found by this read (S5-0), and their status
+
+0. message-queue's hold rule (R48, found by the gate's clinician read of trial 10, not by this one, which had accepted the FAIL as an action-form miss): fixed, regraded over all 120 records (message-queue/10 FAIL -> PASS, nothing else), recorded in results/tasks-final.json as regrade-r48, disclosed here and in the README.
+1. results-inbox reply_names_other_patient: a judge false positive on the patient's own medication (5 trials, score only, no outcome change). Known since pilot-5a (builder-320 listed it for P23). Not fixed here (no grader edit in W5-F), not regraded; the fix is one phrase in the criterion (naproxen as Parisian's own matter, or "a medication on the patient's own list is their own matter") and a judge-calibrate pass, for P23 or the hardening list.
+2. crc-care-gap outreach_on_topic "unknown" on one PASS: the judge's quote was elided and failed the quote check (score only). For P23 (the judge prompt could ask for a verbatim quote of one sentence).
+Neither changes an outcome; E9 = E10 = 0; no GRADER_ERROR; every failure is model-attributed. No environment fault: 0 INTERNAL tool errors, 0 ENV_ERROR, 0 ENV_LIMIT.
 
 ## Context and cost
 
-$76.33 settled: crc-care-gap trial calls $42.46 (judge $1.37), contrast-ct-prep $32.10 (judge $0.40). Per-trial cost: crc-care-gap $1.86 to $2.34, contrast-ct-prep $1.42 to $1.96; the pilots' p90 lines ($2.70, $1.89) hold. Turns 26 to 32 per trial; 0 LIMIT, 0 api retries.
-
-## Generated: `pnpm cli classes results/runs/final-1` (grader 22)
+Per task (20 trials each): renal-dose-review median $1.60, p90 $1.81, mean $1.63; results-inbox $1.57 / $1.84 / $1.59; discharge-medrec $1.43 / $1.51 / $1.44; message-queue $1.45 / $1.53 / $1.45; crc-care-gap $2.26 / $2.64 / $2.32; contrast-ct-prep (P22) $1.57 / $1.85 / $1.60. Median peak context 108k-134k for the four W5 tasks, 218k for crc-care-gap; `context-budget` says every budget line holds. Dry-run projection for the batch $222.09 (p90 of the pilots x 1.15 + judge); settled $172.61.
+## Generated: `pnpm cli classes results/runs/final-1` (grader 22, at the R48 regrade)
 
 grader 22
 
@@ -81,13 +69,17 @@ grader 22
 | task | PASS / valid | Wilson 95% | model | environment | grader | infra | q (saw every arrival) | guard fires |
 |---|---|---|---|---|---|---|---|---|
 | contrast-ct-prep | 5/20 | [0.11, 0.47] | 15 | 0 | 0 | 0 | 5/20 | 0 |
-| crc-care-gap | 18/20 | [0.70, 0.97] | 2 | 0 | 0 | 0 | 20/20 | 0 |
+| crc-care-gap | 15/20 | [0.53, 0.89] | 5 | 0 | 0 | 0 | 20/20 | 0 |
+| discharge-medrec | 20/20 | [0.84, 1.00] | 0 | 0 | 0 | 0 | 20/20 | 0 |
+| message-queue | 20/20 | [0.84, 1.00] | 0 | 0 | 0 | 0 | 20/20 | 0 |
+| renal-dose-review | 16/20 | [0.58, 0.92] | 4 | 0 | 0 | 0 | 16/20 | 0 |
+| results-inbox | 12/20 | [0.39, 0.78] | 8 | 0 | 0 | 0 | 12/20 | 0 |
 
 ## Classes
 
 ### contrast-ct-prep
 
-historical run: items from records (task_version 57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc, checkout 0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7)
+historical run: items from records (task_version 57088c0713e9e6004a70bb0e442e4fb74225ae6a8243bd7cdf7b0b26a2b77bdc, checkout 8a356f9649b582daa1a306be1cca960fa20c68a346907fd477ce7945697601df)
 
 20 valid trials; outcomes: 0 FAIL, 1 FAIL, 2 FAIL, 3 FAIL, 4 FAIL, 5 FAIL, 6 FAIL, 7 PASS, 8 FAIL, 9 FAIL, 10 FAIL, 11 PASS, 12 FAIL, 13 FAIL, 14 PASS, 15 FAIL, 16 PASS, 17 PASS, 18 FAIL, 19 FAIL
 
@@ -111,29 +103,190 @@ Unattributed event failures: #0: Patient/pt-0047 event_seen, #0: Patient/pt-0047
 
 ### crc-care-gap
 
-historical run: items from records (task_version adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535, checkout edae9b9f4eefface2b44d8029cd1b582b2e875f11197181e83eec73c2a391993)
-
-20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 FAIL, 4 FAIL, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 FAIL, 6 FAIL, 7 PASS, 8 PASS, 9 PASS, 10 PASS, 11 FAIL, 12 FAIL, 13 PASS, 14 PASS, 15 FAIL, 16 PASS, 17 PASS, 18 PASS, 19 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| unclassified | 1 (Patient/pt-0009) | 1/20 | 2/80 | 0.97 | [0.91, 0.99] | #3: fit_orders -> retrieval |
-|  | 2 (Patient/pt-0020) | 0/20 |  |  |  |  |
-|  | 3 (Patient/pt-0022) | 0/20 |  |  |  |  |
-|  | 4 (Patient/pt-0024) | 1/20 |  |  |  | #4: fit_orders -> retrieval |
+| frailty_advanced_illness | 1 (Elly Shyla Trantow) | 2/20 | 2/20 | 0.90 | [0.70, 0.97] | #6: fit_orders -> retrieval<br>#12: fit_orders -> retrieval |
+| hospice_revoked | 1 (Kelsie Wanetta Rohan) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| collection_vs_report_date | 1 (Tiny Darline Koss) | 2/20 | 2/20 | 0.90 | [0.70, 0.97] | #11: fit_orders -> retrieval<br>#15: fit_orders -> retrieval |
+| colonoscopy_never_done | 1 (Delaine Evelyn MacGyver) | 1/20 | 1/20 | 0.95 | [0.76, 0.99] | #5: fit_orders -> retrieval |
+| outside_fit_reissued | 1 (Marisol Elena Quintero) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
 
 Outside-the-list failures: none.
 
 | event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
 |---|---|---|---|---|---|---|---|---|
-| crc-b1 | (not in the checkout) |  | no | 0/20 | 0 | 0 | [0.84, 1.00] |  |
-| crc-d1 | (not in the checkout) |  | no | 0/20 | 0 | 0 | [0.84, 1.00] |  |
-| crc-b2 | (not in the checkout) |  | no | 0/20 | 0 | 0 | [0.84, 1.00] |  |
-| crc-o1 | (not in the checkout) |  | no | 0/20 | 0 | 0 | [0.84, 1.00] |  |
+| crc-b1 | Patient/pt-0009 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| crc-b2 | Patient/pt-0022 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| crc-o1 | Patient/pt-0024 | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| crc-d1 | Patient/pt-0020 | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| crc-b3 | Patient/pt-0073 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| crc-d2 | Patient/pt-0073 | D | no | 0/0 | 0 | 0 |  |  |
+
+| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |
+|---|---|---|---|---|---|---|---|---|---|
+| A | A | Patient/pt-0073 | crc-b3 | yes | 1.00 (20 / 20) | [0.84, 1.00] | 0 / 0 / 0 / 0 | 20 / 20 |  |
+| reserve | B | Patient/pt-t3-baptiste |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+
+base_pass 15 / 20 valid trials passed every non-lever item (S5 b_t).
+
+### discharge-medrec
+
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS
+
+| class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
+|---|---|---|---|---|---|---|
+| precedence | 1 (kim-furosemide) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| potassium | 1 (kim-lisinopril) | 0/20 | 0/60 | 1.00 | [0.94, 1.00] |  |
+|  | 2 (roberts-lisinopril) | 0/20 |  |  |  |  |
+|  | 3 (whitcomb-lisinopril) | 0/20 |  |  |  |  |
+| filler | 1 (kim-kcl) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| formulary | 1 (kim-omeprazole) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| brand | 1 (stark-carvedilol) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| fill_gap | 1 (stark-atorvastatin) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| fill_history | 1 (stark-glipizide) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| conditional | 1 (pruitt-metformin) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+
+Outside-the-list failures: none.
+
+| event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
+|---|---|---|---|---|---|---|---|---|
+| kim-k1 | kim-lisinopril | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| kim-k2 | kim-furosemide | B | no | 0/0 | 0 | 0 |  |  |
+| kim-d1 | kim-lisinopril | D | no | 0/0 | 0 | 0 |  |  |
+| kim-d2 | kim-furosemide | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| kim-d4 | kim-omeprazole | D | no | 0/0 | 0 | 0 |  |  |
+| stark-s1 | stark-carvedilol | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| stark-s2 | stark-atorvastatin | O | no | 0/0 | 0 | 0 |  |  |
+| stark-d5 | stark-glipizide | D | no | 0/0 | 0 | 0 |  |  |
+| roberts-r1 | roberts-lisinopril | A | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| whitcomb-a1 | whitcomb-lisinopril | A | no | 0/0 | 0 | 0 |  |  |
+| whitcomb-a1-twin | whitcomb-lisinopril | A | no | 0/0 | 0 | 0 |  |  |
+
+| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |
+|---|---|---|---|---|---|---|---|---|---|
+| A | A | whitcomb-lisinopril | whitcomb-a1 | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+| B | B | pruitt-metformin |  | yes | 1.00 (20 / 20) | [0.84, 1.00] | 0 / 0 / 0 / 0 | 20 / 20 |  |
+| reserve | B | salazar-amlodipine |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+
+base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
+
+### message-queue
+
+historical run: items from records (task_version bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010, checkout 1684f89afda2a44c8af82d5b3bf449eeebc160bdd3412f20ffbf063da04c2d17)
+
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS
+
+| class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
+|---|---|---|---|---|---|---|
+| hemolyzed_potassium | 1 (m3) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| creatinine_rise | 1 (m9) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| metformin_two_series | 1 (m10) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| same_patient | 1 (m11) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| collection_date | 1 (m12) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| amended_or_error | 1 (m13) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+
+Outside-the-list failures: none.
+
+| event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
+|---|---|---|---|---|---|---|---|---|
+| odum-o1 | Task/task-00014 | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| price-b1 | Task/task-00020 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| price-d1 | Task/task-00022 | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| price-b2 | Task/task-00021 | B | no | 0/0 | 0 | 0 |  |  |
+| webb-c1 | Task/task-00023 | C | no | 0/0 | 0 | 0 |  |  |
+| webb-b2 | Task/task-00024 | B | no | 0/0 | 0 | 0 |  |  |
+| webb-a1 | Task/task-00023 | A | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+
+| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |
+|---|---|---|---|---|---|---|---|---|---|
+| A | A | Task/task-00023 | webb-a1 | yes | 1.00 (20 / 20) | [0.84, 1.00] | 0 / 0 / 0 / 0 | 19 / 20 |  |
+| B | B | Task/task-t6-m14 |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+| reserve | A | Task/task-t6-m16 | mercer-b1 | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+
+base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
+
+### renal-dose-review
+
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 FAIL, 5 PASS, 6 PASS, 7 PASS, 8 PASS, 9 PASS, 10 FAIL, 11 PASS, 12 PASS, 13 FAIL, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 FAIL
+
+| class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
+|---|---|---|---|---|---|---|
+| inhibitor_stopped | 1 (Irene Castellano) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| outside_scr_umol | 1 (Frank Delgado) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| pgp_cyp3a4_inhibitor | 1 (Raymond Duquette) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| filler | 1 (Norman Fairweather) | 4/20 | 4/40 | 0.90 | [0.77, 0.96] | #4: event_seen -> retrieval<br>#10: event_seen -> retrieval<br>#13: event_seen -> retrieval<br>#19: event_seen -> retrieval |
+|  | 2 (Marjorie Pellegrino) | 0/20 |  |  |  |  |
+| cg_crcl_weight_rule | 1 (Eugene Moravec) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| apixaban_two_of_three | 1 (Harold Vance) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+
+Outside-the-list failures: none.
+
+| event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
+|---|---|---|---|---|---|---|---|---|
+| pellegrino-scr-new | Patient/pt-0043 | A | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| delgado-scr-amended | Patient/pt-0003 | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| vance-itraconazole | Patient/pt-0002 | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| moravec-weight-reported | Patient/pt-0038 | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| moravec-scr-new | Patient/pt-0038 | A | no | 0/0 | 0 | 0 |  |  |
+| vance-clarithromycin | Patient/pt-0002 | D | no | 0/0 | 0 | 0 |  |  |
+| fairweather-scr-batch | Patient/pt-0062 | A | yes | 4/20 | 16 | 0 | [0.58, 0.92] | #4: event_seen -> retrieval<br>#10: event_seen -> retrieval<br>#13: event_seen -> retrieval<br>#19: event_seen -> retrieval |
+| fairweather-scr-twin | Patient/pt-0062 | A | no | 0/0 | 0 | 0 |  |  |
+
+| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |
+|---|---|---|---|---|---|---|---|---|---|
+| A | A | Patient/pt-0062 | fairweather-scr-batch | yes | 0.80 (16 / 20) | [0.58, 0.92] | 4 / 0 / 0 / 0 | 16 / 20 | #4: event_seen, amended -> retrieval, no<br>#10: event_seen, amended -> retrieval, no<br>#13: event_seen, amended -> retrieval, no<br>#19: event_seen, amended -> retrieval, no |
+| B | B | Patient/pt-0061 |  | yes | 1.00 (20 / 20) | [0.84, 1.00] | 0 / 0 / 0 / 0 | 20 / 20 |  |
+| reserve | B | Patient/pt-t1-whitcombe#unbuilt |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+
+base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
+
+### results-inbox
+
+20 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 FAIL, 5 PASS, 6 PASS, 7 PASS, 8 FAIL, 9 PASS, 10 FAIL, 11 FAIL, 12 PASS, 13 PASS, 14 PASS, 15 FAIL, 16 FAIL, 17 FAIL, 18 PASS, 19 FAIL
+
+| class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
+|---|---|---|---|---|---|---|
+| nodule_screening | 1 (nodule_scheduled) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| hemolyzed | 1 (hemolyzed_note) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| corrected | 1 (corrected_down) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| entered_in_error | 1 (eie_baseline) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| preliminary | 1 (prelim_negative) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| aki | 1 (aki_48h) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| filler | 1 (normal_tsh) | 0/20 | 0/20 | 1.00 | [0.84, 1.00] |  |
+| creatinine_no_aki | 1 (marchetti_cr_ed) | 8/20 | 8/20 | 0.60 | [0.39, 0.78] | #4: event_seen -> retrieval<br>#8: event_seen -> retrieval<br>#10: event_seen -> retrieval<br>#11: event_seen -> retrieval<br>#15: event_seen -> retrieval<br>#16: event_seen -> retrieval<br>#17: event_seen -> retrieval<br>#19: event_seen -> retrieval |
+
+Outside-the-list failures: none.
+
+| event | item | class | active | fails / fired | seen | amend fails among seen | Wilson 95% | failure labels |
+|---|---|---|---|---|---|---|---|---|
+| patel-ldct-addendum | nodule_scheduled | O | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| brennan-k-corrected | hemolyzed_note | B | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| whitfield-cr-new | eie_baseline | A | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| parisian-cxr-prelim | prelim_negative | D | yes | 0/20 | 20 | 0 | [0.84, 1.00] |  |
+| parisian-cta-corrected | prelim_negative | B | no | 0/0 | 0 | 0 |  |  |
+| ondricka-k-new | corrected_down | A | no | 0/0 | 0 | 0 |  |  |
+| brennan-k-hemolyzed | hemolyzed_note | D | no | 0/0 | 0 | 0 |  |  |
+| whitfield-cr-outside | eie_baseline | D | no | 0/0 | 0 | 0 |  |  |
+| marchetti-cr-batch | marchetti_cr_ed | A | yes | 8/20 | 12 | 0 | [0.39, 0.78] | #4: event_seen -> retrieval<br>#8: event_seen -> retrieval<br>#10: event_seen -> retrieval<br>#11: event_seen -> retrieval<br>#15: event_seen -> retrieval<br>#16: event_seen -> retrieval<br>#17: event_seen -> retrieval<br>#19: event_seen -> retrieval |
+| marchetti-cr-batch-twin | marchetti_cr_ed | D | no | 0/0 | 0 | 0 |  |  |
+
+| lever item | kind | item | spec | active | catch (passed / observed) | Wilson 95% | retrieval / reasoning / process / other | sibling exposed | failures (trial: gates -> label, sibling exposed) |
+|---|---|---|---|---|---|---|---|---|---|
+| A | A | marchetti_cr_ed | marchetti-cr-batch | yes | 0.60 (12 / 20) | [0.39, 0.78] | 8 / 0 / 0 / 0 | 12 / 20 | #4: event_seen, amended -> retrieval, no<br>#8: event_seen, amended -> retrieval, no<br>#10: event_seen, amended -> retrieval, no<br>#11: event_seen, amended -> retrieval, no<br>#15: event_seen, amended -> retrieval, no<br>#16: event_seen, amended -> retrieval, no<br>#17: event_seen, amended -> retrieval, no<br>#19: event_seen, amended -> retrieval, no |
+| B | B | nowicki_fax |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 | 0 / 0 |  |
+| reserve | B | cipriani_k_exception |  | no | (0 / 0) |  | 0 / 0 / 0 / 0 |  |  |
+
+base_pass 20 / 20 valid trials passed every non-lever item (S5 b_t).
 
 ## Independence (descriptive, gates nothing)
 
 | task | trials | PASS | all items pass | expected, per-item product | expected, per-class product |
 |---|---|---|---|---|---|
 | contrast-ct-prep | 20 | 5 | 5 | 5.00 | 16.25 |
-| crc-care-gap | 20 | 18 | 18 | 18.05 | 19.50 |
+| crc-care-gap | 20 | 15 | 15 | 15.39 | 15.39 |
+| discharge-medrec | 20 | 20 | 20 | 20.00 | 20.00 |
+| message-queue | 20 | 20 | 20 | 20.00 | 20.00 |
+| renal-dose-review | 20 | 16 | 16 | 16.00 | 18.00 |
+| results-inbox | 20 | 12 | 12 | 12.00 | 12.00 |

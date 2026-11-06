@@ -1,0 +1,31 @@
+{
+  "trial": "contrast-ct-prep/10",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "7765e6db8820d701d3ba254ee3db4b0727ad8be3d3efcc9a3f962b1b3599ba2c",
+  "at": "2026-11-06T17:43:47.876Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 95,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Task/inbox-a0001",
+      "ServiceRequest/sr-t0001",
+      "DocumentReference/doc-t0029"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent read only one of the two creatinine results that arrived for pt-0047 and never retrieved the reachable obs-07501, so it ruled out acute kidney injury and omitted the 07:00 IV saline the policy requires. M1-M4 are all met, so the failure is the model's and the FAIL is deserved."
+  },
+  "problem": null,
+  "answer": "The failure is the model's own and is clinically deserved: after the new kidney result for Mr. Mohr arrived, the agent never looked for the second creatinine that came in with it, decided he had no acute kidney injury, and gave no saline.\n\n**What happened**\n- The event t5-mohr-scr arrived after step 55 and brought two creatinine results for pt-0047: Observation/obs-07501 and Observation/obs-07502.\n- The agent read only obs-07502 (1.52 mg/dL on 10/22). It compared that value only with the 09/24 result (0.94) and judged no acute kidney injury.\n- At step 95 it recorded \"no change\": no 0.9% sodium chloride at 07:00, one hour before the 08:00 scan.\n- obs-07501 was never retrieved. It was reachable, since the reference solution or an accepted alternative reached it in the matrix (M1 met). A search of Mohr's creatinine results after the arrival would have found it.\n- The grade expects saline for this patient, so the arrived results evidently establish kidney injury under §4 and §5. Both the event_seen and amended gate checks therefore fail fairly.\n\n**Why no other fault applies**\n- Environment: M1, M2 and M3 are met. There were no internal tool errors, the start hash matches the manifest, and the replay gives the same final hash.\n- Grader: M4 is met; the reference solution and all accepted alternatives pass this grader version.\n- Model: MF1 holds (a gate check failed in the current grade).\n\n**Tool rejections:** The only refusals were steps 59 and 60 (INVALID_INPUT). Each mixed a date with a dateTime in occurrence_start and occurrence_end. The tool's input rules refuse that, so both refusals were right.\n\n**Decisive step:** step 95, the addendum where the agent recorded that its protocol decisions for Mr. Mohr were unchanged.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 95, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Task/inbox-a0001\", \"ServiceRequest/sr-t0001\", \"DocumentReference/doc-t0029\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent read only one of the two creatinine results that arrived for pt-0047 and never retrieved the reachable obs-07501, so it ruled out acute kidney injury and omitted the 07:00 IV saline the policy requires. M1-M4 are all met, so the failure is the model's and the FAIL is deserved.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.30008,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

@@ -1,0 +1,29 @@
+{
+  "trial": "results-inbox/15",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "6d1998b8d87c57c27015f05d0f59dc8d0c118848d5a01d9034840e46d7f7e2de",
+  "at": "2026-11-06T17:49:25.813Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 85,
+    "evidence_ids": [
+      "Task/inbox-a0003",
+      "Observation/obs-06209",
+      "Observation/obs-06210"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The marchetti-cr-batch arrival included a second creatinine, obs-06210, that was reachable but never read. The agent then closed inbox-a0003 with no action, stating no comparison creatinine existed, so both the event_seen and amended gates fairly fail; M1 through M4 are met, and the step 87 rejection was a correct schema refusal (that task was not an inbox item)."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 85, \"evidence_ids\": [\"Task/inbox-a0003\", \"Observation/obs-06209\", \"Observation/obs-06210\"], \"criteria\": [\"MF1\"], \"reason\": \"The marchetti-cr-batch arrival included a second creatinine, obs-06210, that was reachable but never read. The agent then closed inbox-a0003 with no action, stating no comparison creatinine existed, so both the event_seen and amended gates fairly fail; M1 through M4 are met, and the step 87 rejection was a correct schema refusal (that task was not an inbox item).\"}",
+  "calls": 1,
+  "cost_usd": 0.255872,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

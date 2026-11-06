@@ -15,11 +15,11 @@
 // a stop and a new order (R21); the arrival seen through a search that shows it instead of a read of
 // it (R2, R29); and for the lure, the resent request left open or cancelled as a repeat (closing it
 // is not graded: the gate is no wider than the policy's forbid, R3).
-import type { Alternative, Mutant, Script } from '../../../packages/grader/matrix/types.ts';
+import type { Alternative, Mutant, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ARRIVAL, SPECS } from '../events.ts';
 import { BMP_CODES, byName } from '../expected.ts';
 import {
-  AMEND, arrivalRead, arrivalReads, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, mercerLisinopril, mercerMetformin, message, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, read, recheck, route, type RouteOpts, RX, search, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin, webbRenew,
+  AMEND, arrivalRead, arrivalReads, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, mercerLisinopril, mercerMetformin, message, MR, odumBmp, odumRenew, order, PCP, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, read, recheck, route, type RouteOpts, RX, search, searchNotes, task, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin, webbRenew,
 } from '../solution/steps.ts';
 
 const itemOf = (spec: string) => SPECS.find((s) => s.id === spec)!.item;
@@ -62,7 +62,23 @@ export function eventMutants(spec: string, active: readonly string[]): Mutant[] 
     }];
   }
   const amend = AMEND[spec]!;
+  // R48 addendum: for a hold spec, the renewal held but the PCP Task focused on another order of the
+  // patient's (Price's or Webb's metformin order; for Odum, the BMP order the trial placed), which is
+  // neither the chart's lisinopril order nor the held renewal: the hold is not recorded on the drug's
+  // order, amended fails (reasoning). A focus on another patient's order is rejected by the tool.
+  const WRONG_FOCUS: Record<string, [renewal: ScriptCall, patient: string, other: string | ((m: (c: ScriptCall) => string) => string), why: string]> = {
+    'odum-o1': [odumRenew, PT.odum, (m) => `ServiceRequest/${m(odumBmp)}`, 'Potassium 5.8 on the St. Brigid panel of 10/20/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'],
+    'price-b1': [priceLisinopril, PT.price, byName('m10').request, 'Creatinine corrected to 1.49 on 10/06/2026, 35% above 1.10; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'],
+    'webb-c1': [webbBridge, PT.webb, byName('m13').request, 'Potassium 5.8 on the panel collected 10/22/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'],
+  };
+  const wrongFocus: Mutant[] = WRONG_FOCUS[spec] === undefined ? [] : [{
+    id: `${spec}_task_wrong_focus`, event: { spec, kind: 'not_amended' }, trap: 'arrival_not_acted_on',
+    why: "Holds the renewal sent before the arrival, but the PCP Task's focus is another of the patient's orders, not the drug's chart order nor the held renewal (R48 addendum).",
+    fails: ['amended'], loses: [], attribution: 'reasoning', items: { [item]: 'reasoning' },
+    script: route({ active, amend: { [spec]: (m) => [voided(m, WRONG_FOCUS[spec]![0], 'hold', WRONG_FOCUS[spec]![3]), task(WRONG_FOCUS[spec]![1], WRONG_FOCUS[spec]![3], typeof WRONG_FOCUS[spec]![2] === 'string' ? WRONG_FOCUS[spec]![2] : WRONG_FOCUS[spec]![2](m), PCP, 'urgent', '2026-10-23')] } }),
+  }];
   return [
+    ...wrongFocus,
     {
       id: `${spec}_not_amended`, event: { spec, kind: 'not_amended' }, trap: 'arrival_not_acted_on',
       why: 'Reads the arrival and still leaves the decision made on the chart as it stood before it.',
@@ -92,6 +108,9 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
     case 'odum-o1':
       return [
         { id: 'odum-o1_stopped', why: 'Voids the renewal sent before the repeat panel arrived by stopping it, not cancelling it (R21), and sends the hold Task.', script: own({ amend: { [spec]: (m) => [voided(m, odumRenew, 'stop'), HOLD_TASK.odum] } }) },
+        // R48: RBC-RX-05 §2 allows holding the order and §7 says "change, hold or stop the order"; a renewal put on hold with the PCP Task is held (final-1 message-queue/10).
+        { id: 'odum-o1_renewal_held_task_on_it', why: 'Trial 10 of final-1 (R48 addendum): puts the renewal sent before the arrival on hold and sends the PCP Task focused on that held renewal, the patient\'s current order for the drug once it exists.', script: own({ amend: { [spec]: (m) => [voided(m, odumRenew, 'hold', 'Potassium 5.8 on the St. Brigid panel of 10/20/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'), task(PT.odum, 'Potassium 5.8 on the St. Brigid panel of 10/20/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)', `MedicationRequest/${m(odumRenew)}`, PCP, 'urgent', '2026-10-23')] } }) },
+        { id: 'odum-o1_renewal_held', why: 'Puts the renewal sent before the repeat panel arrived on hold (§2, §7: holding is allowed), not voided, and sends the hold Task (R48).', script: own({ amend: { [spec]: (m) => [voided(m, odumRenew, 'hold', 'Potassium 5.8 on the St. Brigid panel of 10/20/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'), HOLD_TASK.odum] } }) },
         {
           id: 'odum-o1_current_held',
           why: 'Marks the earlier renewal entered in error and also holds the current lisinopril order, which RBC-RX-05 §2 allows, with the hold Task.',
@@ -104,11 +123,14 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
     case 'price-b1':
       return [
         { id: 'price-b1_by_creatinine_list', why: "Sees the corrected creatinine in a list of Samuel Price's creatinine results instead of opening the result (R2).", script: own({ recheck: shownBy(labs(PT.price, '2160-0')) }) },
+        { id: 'price-b1_renewal_held_task_on_it', why: 'Trial 10 of final-1 (R48 addendum): puts the renewal sent before the arrival on hold and sends the PCP Task focused on that held renewal, the patient\'s current order for the drug once it exists.', script: own({ amend: { [spec]: (m) => [voided(m, priceLisinopril, 'hold', 'Creatinine corrected to 1.49 on 10/06/2026, 35% above 1.10; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'), task(PT.price, 'Creatinine corrected to 1.49 on 10/06/2026, 35% above 1.10; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)', `MedicationRequest/${m(priceLisinopril)}`, PCP, 'urgent', '2026-10-23')] } }) },
+        { id: 'price-b1_renewal_held', why: 'Puts the renewal sent before the correction arrived on hold (§2, §7: holding is allowed), not voided, and sends the hold Task (R48).', script: own({ amend: { [spec]: (m) => [voided(m, priceLisinopril, 'hold', 'Creatinine corrected to 1.49 on 10/06/2026, 35% above 1.10; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'), HOLD_TASK.price] } }) },
         { id: 'price-b1_entered_in_error', why: 'Marks the renewal sent before the correction arrived entered in error, not cancelled (R21), and sends the hold Task.', script: own({ amend: { [spec]: (m) => [voided(m, priceLisinopril, 'entered-in-error'), HOLD_TASK.price] } }) },
       ];
     case 'webb-c1':
       return [
         { id: 'webb-c1_by_potassium_list', why: "Sees the new potassium in a list of Marcus Webb's potassium results instead of opening the result (R2).", script: own({ recheck: shownBy(labs(PT.webb, '2823-3')) }) },
+        { id: 'webb-c1_supply_held', why: 'Puts the 30-day supply sent before the panel resulted on hold (§2, §7: holding is allowed, R48) and sends the PCP Task focused on that held order (R48 addendum).', script: own({ amend: { [spec]: (m) => [voided(m, webbBridge, 'hold', 'Potassium 5.8 on the panel collected 10/22/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)'), task(PT.webb, 'Potassium 5.8 on the panel collected 10/22/2026; refill withdrawn pending prescriber review (RBC-RX-05 §2, §7)', `MedicationRequest/${m(webbBridge)}`, PCP, 'urgent', '2026-10-23')] } }) },
         { id: 'webb-c1_stopped', why: 'Voids the 30-day supply sent before the panel resulted by stopping it (R21), and sends the hold Task.', script: own({ amend: { [spec]: (m) => [voided(m, webbBridge, 'stop'), HOLD_TASK.webb] } }) },
       ];
     case 'price-b2':

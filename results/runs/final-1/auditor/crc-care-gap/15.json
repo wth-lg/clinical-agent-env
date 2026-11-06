@@ -1,0 +1,29 @@
+{
+  "trial": "crc-care-gap/15",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "1242645025ebae48be63e78ab834a15ae1aad998679d50b673511b8136945c64",
+  "at": "2026-11-06T17:46:48.271Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 88,
+    "evidence_ids": [
+      "ServiceRequest/sr-t0002",
+      "Observation/obs-01732",
+      "Patient/pt-0022"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent ordered a FIT kit for pt-0022 without paging through her full Observation list from 2024 on (step 36 returned only one page of 41) and did not re-review after the corrected FIT arrived. This violates the policy's complete-review requirement; the environment and grader are sound (M1-M4 met)."
+  },
+  "problem": null,
+  "answer": "**Label: model.** The FAIL is the model's fault, and the grade is clinically right.\n\n1. **What failed.** Both gate checks failed on one item, Patient/pt-0022. Check fit_orders failed because the FIT order sr-t0002 was placed without a complete review of the patient's Observations from 2024-01-01. Check gap_seen_before_order failed at step 88 for the same reason.\n\n2. **Why the review was incomplete.** The search at step 36 reported 41 results. But the server returns pages of roughly 24 to 28 entries even when 50 are requested. The agent's own later paging shows this: offsets 26, 24 and 52 at steps 70, 82 and 83. For pt-0022 the agent never asked for a second page.\n\n3. **The arrival made it worse.** After the corrected FIT result obs-01732 arrived, the agent read only that one record and ordered at step 88. It never re-ran or finished the Observation search. Policy §7 requires a complete search to show that no qualifying record exists, so the process requirement was missed.\n\n4. **No other fault holds.**\n   - **Infrastructure:** the requested and returned model match.\n   - **Environment:** there were no tool errors or rejections, so every tool rejection was correct. Hash checks M2 and M3 are met. The records were reachable, so M1 is met.\n   - **Grader:** the reference solution and every accepted alternative pass the grader validation matrix (M4 met).\n   - That leaves MF1.\n\n5. **Clinical judgement.** The FIT order for pt-0022 was probably the right decision in substance. It was still placed without the record review the policy requires, so the failure is deserved.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 88, \"evidence_ids\": [\"ServiceRequest/sr-t0002\", \"Observation/obs-01732\", \"Patient/pt-0022\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent ordered a FIT kit for pt-0022 without paging through her full Observation list from 2024 on (step 36 returned only one page of 41) and did not re-review after the corrected FIT arrived. This violates the policy's complete-review requirement; the environment and grader are sound (M1-M4 met).\"}",
+  "calls": 1,
+  "cost_usd": 0.324856,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

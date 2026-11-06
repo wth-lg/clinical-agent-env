@@ -448,7 +448,7 @@ describe('donewhen', () => {
     const pass = donewhen(completeRepo(), ALL_STUBS);
     expect(pass.calls).toContain('docs-check');
     // The clause names the sections docs:check requires, from the one WRITEUP_SECTIONS constant.
-    expect(pass.clause(7)).toBe(`PASS (7) docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check: docs:check: exit 0; 0 error line(s), 2 warning(s)`);
+    expect(pass.clause(7)).toBe(`PASS (7) docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check: docs:check: exit 0; 0 error line(s), 0 warning(s)`);
     const fail = donewhen(completeRepo(), { ...ALL_STUBS, 'docs-check': 'docs-check-fail' }).clause(7);
     expect(fail).toMatch(/^FAIL \(7\)/);
     expect(fail).toContain('docs:check: exit 1; 2 error line(s), 1 warning(s)');

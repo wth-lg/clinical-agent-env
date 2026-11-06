@@ -1,0 +1,31 @@
+{
+  "trial": "results-inbox/0",
+  "outcome": "PASS",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "32bfeba4f3ca8386a1c5a92a90bbc22fccdff052499053b58ace3dee93bfc82e",
+  "at": "2026-11-06T17:48:23.275Z",
+  "verdict": {
+    "label": "pass",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": null,
+    "evidence_ids": [
+      "Observation/obs-00708",
+      "ServiceRequest/sr-t0020",
+      "DocumentReference/doc-06201",
+      "ServiceRequest/sr-t0034",
+      "Observation/obs-06209",
+      "Observation/obs-06203",
+      "DiagnosticReport/dr-06204"
+    ],
+    "criteria": [],
+    "reason": "Every inbox item and every late arrival was handled as the policies require. Brennan's de-hemolyzed potassium was escalated under §1, the Lung-RADS 3 addendum was re-timed from the index study, both new AKI creatinines were acted on, and the preliminary chest X-ray was correctly left open; the only tool rejection (step 99, a non-inbox task) was right. The -8 'names other patient' rubric hit lowers the score but does not affect the gates, so the PASS stands."
+  },
+  "problem": null,
+  "answer": "{\"label\": \"pass\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": null, \"evidence_ids\": [\"Observation/obs-00708\", \"ServiceRequest/sr-t0020\", \"DocumentReference/doc-06201\", \"ServiceRequest/sr-t0034\", \"Observation/obs-06209\", \"Observation/obs-06203\", \"DiagnosticReport/dr-06204\"], \"criteria\": [], \"reason\": \"Every inbox item and every late arrival was handled as the policies require. Brennan's de-hemolyzed potassium was escalated under §1, the Lung-RADS 3 addendum was re-timed from the index study, both new AKI creatinines were acted on, and the preliminary chest X-ray was correctly left open; the only tool rejection (step 99, a non-inbox task) was right. The -8 'names other patient' rubric hit lowers the score but does not affect the gates, so the PASS stands.\"}",
+  "calls": 1,
+  "cost_usd": 0.306716,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

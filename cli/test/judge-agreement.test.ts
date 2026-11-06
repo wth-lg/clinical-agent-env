@@ -3,8 +3,10 @@
 // kappa of the blinded double label and of the builder labels against the LLM auditor's verdicts,
 // recomputed from the stored files. Exit 1 below 40 judge or 20 extraction labels, below 20 double
 // labels, or when either kappa is below 0.6. Mocked: fixture runs in temp dirs, no call.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { AUDIT_LABELS } from '../../packages/core/outcomes.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
@@ -101,6 +103,33 @@ describe('judge-agreement', () => {
     expect(b.out).toContain(`violation: 19 extraction labels, need ${MIN_EXTRACT_LABELS}`);
   });
 
+  it('the extraction floor applies only when the run caches an extraction: a run whose tasks ask none passes at 0 and says so', async () => {
+    // No task of final-1 declares a hybrid item, so its records cache no extraction (builder-323;
+    // coordinator ruling on msg_d69cdbbb675b): the 20-label floor cannot apply there.
+    const dir = run();
+    for (const task of TASKS) {
+      for (let i = 0; i < 20; i++) {
+        const file = join(dir, 'trials', task, `${i}.json`);
+        const r = readJson(file);
+        (r.judge as { cache: Array<{ kind: string }> }).cache = (r.judge as { cache: Array<{ kind: string }> }).cache.filter((e) => e.kind !== 'extract');
+        writeFileSync(file, `${JSON.stringify(r, null, 2)}\n`);
+      }
+    }
+    const r = await check([dir, '--labels', handLabels(dir, { extract: 0 })]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('judge-agreement: n_judge=40 agree=38 (0.950), n_extract=0 of 0 cached: no task of this run asks an extraction');
+    expect(r.out).not.toContain('violation');
+    const j = await check([dir, '--labels', handLabels(dir, { extract: 0 }), '--json']);
+    expect(JSON.parse(j.out)).toMatchObject({ n_judge: 40, n_extract: 0, extract_cached: 0, extract_agreement: null, violations: [] });
+    // With an extraction cached, the floor stands: the clean run at 0 extraction labels exits 1.
+    const cached = run();
+    const c = await check([cached, '--labels', handLabels(cached, { extract: 0 })]);
+    expect(c.code).toBe(1);
+    expect(c.out).toContain(`violation: 0 extraction labels, need ${MIN_EXTRACT_LABELS}`);
+    expect(c.out).toContain('n_extract=0 agree=0 (n/a)');
+    expect(JSON.parse((await check([cached, '--labels', handLabels(cached), '--json'])).out)).toMatchObject({ extract_cached: 40 });
+  });
+
   it('a label whose key the record did not cache, a cached answer that is null, a trial the run has not, or a malformed row is a violation', async () => {
     const dir = run();
     const file = join(dir, 'hand-labels.jsonl');
@@ -141,22 +170,47 @@ describe('judge-agreement', () => {
     expect(again.out).toContain('n_judge=40 agree=38');
   });
 
-  it('--write puts the agreement into <run>/summary.json and leaves the rest of it as it was', async () => {
+  it('--write puts the agreement into <run>/summary.json and leaves the rest of it as it was; the labels file is recorded by its real repository path', async () => {
     const dir = run();
     writeFileSync(join(dir, 'summary.json'), `${JSON.stringify({ schema_version: 10, run_id: 'final-1', tasks: {} }, null, 2)}\n`);
-    expect((await check([dir, '--labels', handLabels(dir), '--write'])).code).toBe(0);
-    const s = readJson(join(dir, 'summary.json'));
-    expect(s).toMatchObject({ schema_version: 10, run_id: 'final-1', judge_agreement: { n_judge: 40, judge_agreement: 0.95, n_extract: 20, extract_agreement: 0.95 } });
-    expect(typeof (s.judge_agreement as Row).labels).toBe('string');
-    // Written twice, the file is the same.
-    const text = readFileSync(join(dir, 'summary.json'), 'utf8');
-    expect((await check([dir, '--labels', handLabels(dir), '--write'])).code).toBe(0);
-    expect(readFileSync(join(dir, 'summary.json'), 'utf8')).toBe(text);
-    // Without a summary.json, --write is refused.
-    const bare = run();
-    const r = await check([bare, '--labels', handLabels(bare), '--write']);
-    expect(r.code).toBe(1);
-    expect(r.out).toContain('summary.json is missing; run pnpm cli summary <run> --write first');
+    // The labels file lives under the repository and is named through a symlink in a temp
+    // directory (on macOS /tmp is itself a symlink): the written path is the real repository
+    // path, never the path given and never absolute (gate R48-238; FINAL-238 m3).
+    const REPO = fileURLToPath(new URL('../../', import.meta.url));
+    const name = `.judge-agreement-test-${process.pid}.jsonl`;
+    const inRepo = join(REPO, 'results', 'judge-calibration', name);
+    copyFileSync(handLabels(dir), inRepo);
+    const link = join(mkdtempSync(join(tmpdir(), 'judge-agreement-link-')), 'calibration');
+    symlinkSync(join(REPO, 'results', 'judge-calibration'), link);
+    try {
+      const given = join(link, name);
+      expect((await check([dir, '--labels', given, '--write'])).code).toBe(0);
+      const s = readJson(join(dir, 'summary.json'));
+      expect(s).toMatchObject({ schema_version: 10, run_id: 'final-1', judge_agreement: { n_judge: 40, judge_agreement: 0.95, n_extract: 20, extract_agreement: 0.95 } });
+      const written = (s.judge_agreement as Row).labels as string;
+      expect(written).toBe(`results/judge-calibration/${name}`);
+      expect(isAbsolute(written)).toBe(false);
+      expect(resolve(REPO, written)).toBe(inRepo);
+      // Written twice, the file is the same.
+      const text = readFileSync(join(dir, 'summary.json'), 'utf8');
+      expect((await check([dir, '--labels', given, '--write'])).code).toBe(0);
+      expect(readFileSync(join(dir, 'summary.json'), 'utf8')).toBe(text);
+      // Without a summary.json, --write is refused.
+      const bare = run();
+      const r = await check([bare, '--labels', given, '--write']);
+      expect(r.code).toBe(1);
+      expect(r.out).toContain('summary.json is missing; run pnpm cli summary <run> --write first');
+    } finally {
+      rmSync(inRepo, { force: true });
+    }
+    // A labels file outside the repository is read without --write and refused with it.
+    const outside = handLabels(dir);
+    expect((await check([dir, '--labels', outside])).code).toBe(0);
+    const before = readFileSync(join(dir, 'summary.json'), 'utf8');
+    const refused = await check([dir, '--labels', outside, '--write']);
+    expect(refused.code).toBe(1);
+    expect(refused.out).toContain('outside the repository');
+    expect(readFileSync(join(dir, 'summary.json'), 'utf8')).toBe(before);
   });
 
   it('cohenKappa: the textbook example, perfect agreement, one category, and no pairs', () => {

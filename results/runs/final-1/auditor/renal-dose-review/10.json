@@ -1,0 +1,31 @@
+{
+  "trial": "renal-dose-review/10",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "ac2426a6506e51b134c1ea5cdb7712346a6d805975718f092ca455fb44f092ba",
+  "at": "2026-11-06T17:47:44.733Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 83,
+    "evidence_ids": [
+      "Observation/obs-04003",
+      "Observation/obs-04004",
+      "Task/inbox-a0001",
+      "MedicationRequest/mr-62001",
+      "MedicationRequest/mr-t0015"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "For Fairweather the agent opened only obs-04003 from the arrival batch and cut apixaban to 2.5 mg BID without reading obs-04004, a reachable record in the same batch that per the grader keeps 5 mg BID; no environment or grader criterion holds (M1-M4 met), so the FAIL is the model's."
+  },
+  "problem": null,
+  "answer": "**Verdict: model fault (MF1); the FAIL is deserved.**\n\n- **What arrived and what the agent read.** The Fairweather arrival after step 30 was a batch: Encounter/enc-04001, Observation/obs-04003, Observation/obs-04004 and Task/inbox-a0001. The agent read only obs-04003, the result the inbox task pointed to (150 µmol/L, drawn 10/21). It never re-searched pt-0062's observations, so it never opened obs-04004 or the encounter.\n- **The wrong write.** At step 83 it cut apixaban to 2.5 mg twice daily on the 1.70 mg/dL value. RBC-PHARM-07 §1 requires the most recent valid creatinine.\n- **What the grader expected.** The amended check expected 5 mg twice daily to stay after the batch arrived. That shows obs-04004 changes the decision; I infer it is a later or corrected creatinine below 1.5 mg/dL, but its value is not shown in the record.\n- **Why no other fault holds.**\n  - M1 is met: obs-04004 was reachable, and the reference or an accepted alternative reached it.\n  - M2 is met: no internal tool errors.\n  - M3 is met: the start hash matches the manifest and the replay matches the final hash.\n  - M4 is met: the reference and all alternatives pass at this grader version.\n  - The trial completed normally and no tool refused any call.\n- **Other patients.** Every other patient was handled correctly, including the §5 corrections for Delgado and Vance and the reported-weight addendum for Moravec.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 83, \"evidence_ids\": [\"Observation/obs-04003\", \"Observation/obs-04004\", \"Task/inbox-a0001\", \"MedicationRequest/mr-62001\", \"MedicationRequest/mr-t0015\"], \"criteria\": [\"MF1\"], \"reason\": \"For Fairweather the agent opened only obs-04003 from the arrival batch and cut apixaban to 2.5 mg BID without reading obs-04004, a reachable record in the same batch that per the grader keeps 5 mg BID; no environment or grader criterion holds (M1-M4 met), so the FAIL is the model's.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.308232,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

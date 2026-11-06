@@ -1,0 +1,35 @@
+{
+  "trial": "renal-dose-review/13",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "070a6a03e924662816e3da6e62b8ffa4aa508f8a398d0a915afa881402e10e81",
+  "at": "2026-11-06T17:47:58.119Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 81,
+    "evidence_ids": [
+      "Observation/obs-04004",
+      "Observation/obs-04003",
+      "Encounter/enc-04001",
+      "MedicationRequest/mr-62001",
+      "MedicationRequest/mr-t0013"
+    ],
+    "criteria": [
+      "MF1",
+      "M1",
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "reason": "The St. Brigid batch for pt-0062 included Observation/obs-04004, which was reachable but never opened. The agent reduced apixaban to 2.5 mg BID from the earlier obs-04003 value, while the grader expects 5 mg BID to stand, so the failure is the model's."
+  },
+  "problem": null,
+  "answer": "**Verdict: model fault (MF1); the FAIL is deserved.**\n\n**What arrived.** At step 39 a St. Brigid ED batch arrived for pt-0062 (Fairweather). It held:\n- Encounter/enc-04001, running 10/21 05:40 to 10/22 09:10\n- Observation/obs-04003, the 10/21 06:10 creatinine of 150 µmol/L\n- Observation/obs-04004, a second result from the same batch\n\n**What the agent did.** It opened the encounter and obs-04003 but never opened obs-04004. At step 81 it cut apixaban to 2.5 mg twice daily, using obs-04003 as the most recent creatinine. It never searched pt-0062's observations again after the arrival.\n\n**What the grader found.** Two gate checks failed:\n- event_seen: the arrival for pt-0062 was never fully opened before finish.\n- amended: the expected dose after the arrival was apixaban 5 mg twice daily, but the chart has 2.5 mg.\n\nTaken together, obs-04004 most likely held a later creatinine that kept the 5 mg dose. That is an inference; the record never shows its value.\n\n**Why no other fault applies.**\n- Infra: the model requested and returned matched.\n- Environment: there were no tool errors, so there were no tool rejections to judge. Both state hashes match (M3).\n- Grader: the reference solution and every accepted alternative pass at this grader version (M4).\n- Reachability: the record marks obs-04004 as never shown but reachable (M1). The agent simply did not read it.\n\n**Clinical result.** The agent reduced the anticoagulant on an incomplete set of results, and the grade correctly holds that the change was wrong.\n\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 81, \"evidence_ids\": [\"Observation/obs-04004\", \"Observation/obs-04003\", \"Encounter/enc-04001\", \"MedicationRequest/mr-62001\", \"MedicationRequest/mr-t0013\"], \"criteria\": [\"MF1\", \"M1\", \"M2\", \"M3\", \"M4\"], \"reason\": \"The St. Brigid batch for pt-0062 included Observation/obs-04004, which was reachable but never opened. The agent reduced apixaban to 2.5 mg BID from the earlier obs-04003 value, while the grader expects 5 mg BID to stand, so the failure is the model's.\"}",
+  "calls": 1,
+  "cost_usd": 0.307044,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

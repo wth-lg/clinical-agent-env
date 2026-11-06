@@ -83,7 +83,12 @@
           "refusal": 0,
           "unattributed": 0
         },
-        "label": null,
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
         "infra_reruns": 0
       },
       "top_failed_checks": []
@@ -175,7 +180,12 @@
           "refusal": 0,
           "unattributed": 0
         },
-        "label": null,
+        "label": {
+          "model": 4,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
         "infra_reruns": 0
       },
       "top_failed_checks": [

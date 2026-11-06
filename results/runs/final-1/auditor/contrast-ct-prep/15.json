@@ -1,0 +1,31 @@
+{
+  "trial": "contrast-ct-prep/15",
+  "outcome": "FAIL",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "prompt_version": "auditor-v2",
+  "prompt_sha256": "d2b4e511a0795075599466928e01fd2af9cfbf7c3238fceac3f94c4d7c47a91e",
+  "at": "2026-11-06T17:44:35.559Z",
+  "verdict": {
+    "label": "model",
+    "clinically_acceptable": "yes",
+    "tool_rejections_correct": "yes",
+    "decisive_step": 90,
+    "evidence_ids": [
+      "Observation/obs-07501",
+      "Observation/obs-07502",
+      "Observation/obs-03085",
+      "Task/inbox-a0001",
+      "ServiceRequest/sr-t0001"
+    ],
+    "criteria": [
+      "MF1"
+    ],
+    "reason": "The agent read only obs-07502 from the Mohr arrival and never opened the reachable obs-07501. It wrongly ruled out acute kidney injury and closed the item without the required 07:00 IV saline. No infrastructure, grader or environment criterion holds (M1-M4 met), and both INVALID_INPUT refusals were schema-correct."
+  },
+  "problem": null,
+  "answer": "**Verdict: the FAIL is the model's fault, and the grade is clinically right.**\n\n- **No infrastructure, grader or environment criterion holds.**\n  - The model requested and returned matched.\n  - There were no INTERNAL errors.\n  - The start and replay state hashes match.\n  - The reference solution and every accepted alternative pass the grader validation matrix, so M4 is met.\n- **The unread record was reachable, so E5 does not apply.** The arrival after step 49 delivered two records for pt-0047. The agent opened Observation/obs-07502 at step 68, which showed a creatinine of 1.52 on 10/22. It never opened Observation/obs-07501, but the reference solution reached that record in the matrix, so M1 is met.\n- **The missed record changed the decision.** Without obs-07501, the agent compared 1.52 only with the 09/24 value of 0.94 and concluded there was no acute kidney injury. The failed `amended` check expects 0.9% saline 500 mL IV at 07:00, one hour before the 08:00 scan. That means the grader's reference treats the new data as acute kidney injury, which the agent would have seen by reading obs-07501 or re-searching the patient's observations. It instead closed the inbox item at step 90 with no saline order. That is a real clinical shortfall, so the FAIL is deserved (MF1).\n- **Both tool rejections were correct.** Steps 53 and 54 were refused because `occurrence_end` and `occurrence_start` had different forms (a date and a dateTime). The schema gives that refusal, so E6 does not apply.\n\n```json\n{\"label\": \"model\", \"clinically_acceptable\": \"yes\", \"tool_rejections_correct\": \"yes\", \"decisive_step\": 90, \"evidence_ids\": [\"Observation/obs-07501\", \"Observation/obs-07502\", \"Observation/obs-03085\", \"Task/inbox-a0001\", \"ServiceRequest/sr-t0001\"], \"criteria\": [\"MF1\"], \"reason\": \"The agent read only obs-07502 from the Mohr arrival and never opened the reachable obs-07501. It wrongly ruled out acute kidney injury and closed the item without the required 07:00 IV saline. No infrastructure, grader or environment criterion holds (M1-M4 met), and both INVALID_INPUT refusals were schema-correct.\"}\n```",
+  "calls": 1,
+  "cost_usd": 0.289532,
+  "ledger_batch": "a9d8bd6b-5f22-484c-89d6-19c11eb869ba"
+}

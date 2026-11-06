@@ -1,0 +1,62 @@
+{
+  "note": "The record-integrity lever's stop rule S5 (plan amendment W5) as pre-registered and as run, typed from the decision log for scripts/docs-gen.ts (the s5 block of the writeup). Priors, predictions, rulings and dates come from the log rows named in docs/decisions.md; every observed count is read from the committed run it names (results/<pilot>/summary.json and the final run), never from this file. A prediction is b times the catch of each active item; b is the per-trial rate of every item outside the lever; a catch is the rate at which an item is passed when observed.",
+  "pilots": ["pilot-5a", "pilot-5b", "pilot-5c", "pilot-5t"],
+  "t2_item_b": { "task": "results-inbox", "item": "B" },
+  "tasks": [
+    {
+      "id": "renal-dose-review",
+      "label": "renal-dose-review",
+      "preregistered": { "at": "2026-11-04", "b": 0.97, "c_a": 0.5, "c_b": 0.82, "pred_both": 0.4, "pred_a": 0.49, "pred_b": 0.8, "rule_set": "{A}" },
+      "first_pilot": { "run": "pilot-5a", "set": "{A,B}" },
+      "selection": { "ruling": "R44", "at": "2026-11-05", "set": "{A,B}", "pred": 0.567, "note": "the set it ran in pilot-5a, so no confirm run; frozen under S5-8" },
+      "confirm": null,
+      "retune": null,
+      "retune_pilot": null,
+      "frozen": "v2 {A,B}"
+    },
+    {
+      "id": "results-inbox",
+      "label": "results-inbox",
+      "preregistered": { "at": "2026-11-04", "b": 0.97, "c_a": 0.45, "c_b": 0.9, "pred_both": 0.39, "pred_a": 0.44, "pred_b": 0.87, "rule_set": "{A}" },
+      "first_pilot": { "run": "pilot-5a", "set": "{A,B}" },
+      "selection": { "ruling": "R44", "at": "2026-11-05", "set": "{B}", "pred": 0.54, "note": "" },
+      "confirm": { "run": "pilot-5b", "set": "{B}" },
+      "retune": { "ruling": "R45", "at": "2026-11-06", "change": "toggle to {A}", "pred": 0.36, "note": "estimated on pilot-5a and pilot-5b pooled" },
+      "retune_pilot": { "run": "pilot-5c", "set": "{A}" },
+      "frozen": "{A}"
+    },
+    {
+      "id": "discharge-medrec",
+      "label": "discharge-medrec",
+      "preregistered": { "at": "2026-11-04", "b": 0.97, "c_a": 0.5, "c_b": 0.7, "pred_both": 0.34, "pred_a": 0.48, "pred_b": 0.68, "rule_set": "{A}" },
+      "first_pilot": { "run": "pilot-5a", "set": "{A,B}" },
+      "selection": { "ruling": "R44", "at": "2026-11-05", "set": "{B}", "pred": 0.81, "note": "a straddle: {A} and {B} sat at the same distance from the band, and the measured item costs broke the tie" },
+      "confirm": { "run": "pilot-5b", "set": "{B}" },
+      "retune": null,
+      "retune_pilot": null,
+      "frozen": "{B} (the third task of three outside the range: the retune round covered two)"
+    },
+    {
+      "id": "message-queue",
+      "label": "message-queue",
+      "preregistered": { "at": "2026-11-04", "b": 0.97, "c_a": 0.45, "c_b": 0.52, "pred_both": 0.23, "pred_a": 0.44, "pred_b": 0.5, "rule_set": "{A}" },
+      "first_pilot": { "run": "pilot-5a", "set": "{A,B}" },
+      "selection": { "ruling": "R44", "at": "2026-11-05", "set": "{A}", "pred": 0.27, "note": "a straddle: {A} was nearest the band" },
+      "confirm": { "run": "pilot-5b", "set": "{A}" },
+      "retune": { "ruling": "R45", "at": "2026-11-06", "change": "the pre-declared softening applied once, worded per R47: the inbox summary reads Results (n)", "pred": null, "note": "a softening carries no prediction" },
+      "retune_pilot": { "run": "pilot-5c", "set": "v3 {A}" },
+      "frozen": "v3 {A}"
+    },
+    {
+      "id": "crc-care-gap",
+      "label": "crc-care-gap v2",
+      "preregistered": { "at": "2026-11-05", "b": 0.9, "c_a": 0.5, "c_b": null, "pred_both": null, "pred_a": 0.45, "pred_b": null, "rule_set": "{A} (one item; freeze when the pilot lands inside its range)" },
+      "first_pilot": { "run": "pilot-5t", "set": "{A}" },
+      "selection": { "ruling": "R45", "at": "2026-11-06", "set": "{A}", "pred": 0.36, "note": "the estimate on pilot-5t; the pilot landed inside the pre-registered range, so v2 froze" },
+      "confirm": null,
+      "retune": null,
+      "retune_pilot": null,
+      "frozen": "v2 {A}"
+    }
+  ]
+}

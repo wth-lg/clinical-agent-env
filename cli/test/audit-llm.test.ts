@@ -3,8 +3,10 @@
 // scripted, HOME a temp dir. The checks the gate names: the auditor's input omits the builder's
 // labels; the rendered prompt holds every FAULT_DEFINITIONS sentence and criterion; the dry run
 // makes no call and prints the projection; with the ledger one cent over PROJECTED_CAP_USD less
-// the projection it makes 0 calls and writes no row; a recorded verdict is not asked again.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+// the projection it makes 0 calls and writes no row; a recorded verdict is not asked again. The
+// blinding check reads every request whole (the system field included) and the same fixture with
+// no audit.jsonl must get byte-identical requests (verifier-phase-P17i-P23CODE-226-2-1 m-a).
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scriptedTransport, type MockTurn } from '../../apps/web/src/harness/scenarios.ts';
@@ -74,20 +76,34 @@ describe('audit-llm', () => {
 
   it('the rendered prompt holds every FAULT_DEFINITIONS sentence and criterion, the trajectory by step, the grade, and no builder label', async () => {
     const dir = run();
-    // Every note of audit.jsonl (failure rows, PASS rows and the task-validity reviews), read before the run.
-    const notes = rows(dir).map((r) => r.note as string);
+    // Every note of audit.jsonl (failure rows, PASS rows and the task-validity reviews) and every
+    // taxonomy value its rows give, read before the run.
+    const before = rows(dir);
+    const notes = before.map((r) => r.note as string);
     expect(notes).toContain(BUILDER_NOTE);
     expect(notes.length).toBeGreaterThan(12);
+    const taxonomies = [...new Set(before.flatMap((r) => (typeof r.taxonomy === 'string' ? [r.taxonomy] : [])))];
+    expect(taxonomies).toEqual(['reasoning']);
     const t = scriptedTransport((n) => ({ text: verdict(n === 1 ? 'pass' : 'model') }));
     const h = harness(t.transport, { ANTHROPIC_API_KEY: fakeKey('A') });
     expect(await h.audit([dir])).toBe(0);
     expect(t.bodies).toHaveLength(11);
-    // Blind: nothing of the builder's audit rows reaches the auditor, in any request.
+    // Blind: nothing of the builder's audit rows reaches the auditor, in any request and in any
+    // field of it (the system field included): no note, no row key, no taxonomy value.
     for (const b of t.bodies) {
-      const text = JSON.stringify(b.messages);
+      const text = JSON.stringify(b);
       for (const note of notes) expect(text, note).not.toContain(note);
-      for (const field of ['taxonomy', 'model_fault', 'llm_auditor_agrees', 'adjudicated_label', 'fixture-auditor']) expect(text, field).not.toContain(field);
+      for (const field of ['taxonomy', 'model_fault', 'llm_auditor_agrees', 'adjudicated_label', 'fixture-auditor', ...taxonomies]) expect(text, field).not.toContain(field);
     }
+    // The rows' model_fault values (yes, no) are words the prompt itself uses, so a leak of any row
+    // value is checked by construction: the same fixture with no audit.jsonl at all gets
+    // byte-identical requests.
+    const blind = run();
+    rmSync(join(blind, 'audit.jsonl'));
+    const t2 = scriptedTransport((n) => ({ text: verdict(n === 1 ? 'pass' : 'model') }));
+    const h2 = harness(t2.transport, { ANTHROPIC_API_KEY: fakeKey('A') });
+    expect(await h2.audit([blind])).toBe(0);
+    expect(t2.raw).toEqual(t.raw);
     const first = t.bodies[0]!;
     expect(first.max_tokens).toBeGreaterThan(0);
     const body = JSON.stringify(first.messages);
@@ -98,6 +114,10 @@ describe('audit-llm', () => {
     }
     holds(FAULT_PRECEDENCE_RULE);
     holds(PASS_DEFINITION);
+    // The question clinically_acceptable is about the grade, not the agent's care: on the first live
+    // final-1 batch the auditor read it as the latter and answered model with no on 13 of 14 failures,
+    // which parseVerdict refuses (builder-323).
+    holds('yes means the failure is deserved');
     for (const c of CONFIRMATION_CRITERIA) if (c.id !== 'M5') holds(c.text);
     // The trajectory, numbered as grader/exposure.ts stepsOf numbers the executed calls.
     holds('step 1: fhir_read');
@@ -225,6 +245,10 @@ describe('audit-llm', () => {
     // A clinically acceptable solution that was failed is never the model's fault (R14-31).
     expect(parseVerdict(verdict('model', { clinically_acceptable: 'no' }), 'FAIL', 2)).toMatchObject({ problem: expect.stringContaining('clinically_acceptable no') });
     expect(parseVerdict(verdict('grader', { clinically_acceptable: 'no' }), 'FAIL', 2)).toMatchObject({ verdict: { label: 'grader' } });
+    // A PASS that is not clinically right is a false PASS, labelled grader: pass with no is refused
+    // (verifier-phase-P17i-P23CODE-226-2-1 m-b).
+    expect(parseVerdict(verdict('pass', { clinically_acceptable: 'no', decisive_step: null, evidence_ids: [] }), 'PASS', 2)).toMatchObject({ problem: expect.stringContaining('label pass with clinically_acceptable no') });
+    expect(parseVerdict(verdict('grader', { clinically_acceptable: 'no' }), 'PASS', 2)).toMatchObject({ verdict: { label: 'grader', clinically_acceptable: 'no' } });
   });
 
   it('usage errors exit 2 and a run without trials exits 1', async () => {

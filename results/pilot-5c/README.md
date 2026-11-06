@@ -2,7 +2,7 @@
 
 results-inbox {A} and message-queue v3 ({A} with the pre-declared inbox softening "Results (9)"; plan-amendment-w5 S5-5 and S5-3, rulings R45 and R47), claude-opus-5-5 at effort high, `pnpm cli run --task results-inbox,message-queue --model claude-opus-5-5 --effort high --trials 8 --concurrency 4 --out results/pilot-5c` once, on main 40d31865 (#235, the retune, merged; tag freeze-w5h5).
 
-- Batch 7042d5cb-7072-48d7-911e-a473b1e639c2, 2026-11-06 10:48-11:04Z, 16 settled, 0 re-queued, $25.51 settled. PASS: results-inbox 4/8, message-queue 8/8.
+- Batch 7042d5cb-7072-48d7-911e-a473b1e639c2, 2026-11-06 10:48-11:04Z, 16 settled, 0 re-queued, $25.50 settled. PASS: results-inbox 4/8, message-queue 8/8.
 - Lever items (passed/observed): T2 A 4/8 (each failure the silent creatinine obs-06210 never exposed after the arrival, retrieval, as in pilot-5a; each pass one creatinine search after it and the urgent repeat BMP); T6 A 8/8 (every trial searched the panel report dr-00602 after the softened inbox row and re-ordered 90 days with 1 refill). No judged penalty met in any trial.
 - `pnpm cli lever-select results/pilot-5c`: results-inbox {A} 0.450 in band and 4/8 inside 3-5 of 8 (S5-2 freeze); message-queue {A} 0.810 above the band. R45: each retuned version freezes on this result whatever it is (one round only); both freezes are in results/tasks-final.json (tag freeze-t2t6).
 
