@@ -261,17 +261,25 @@ describe('docs-gen', () => {
   });
 
   it('the judge-agreement block waits for P23 and renders its rates, kappas and the harm penalties met on passes once summary.json has them', () => {
-    const before = blockOf(generate(docsRoot()).writeup, 'judge-agreement');
+    // The committed run carries P23's fields; the waiting case drops them.
+    const bare = docsRootWithSummary((s) => {
+      delete s['judge_agreement'];
+      delete s['kappa'];
+    });
+    const before = blockOf(generate(bare).writeup, 'judge-agreement');
     expect(before).toContain('not in summary.json yet');
     // Harm penalties met come from the records, so they render before P23 too.
     expect(before).toContain(tr('results-inbox', 'reply_names_other_patient', '2', '3'));
     const root = docsRootWithSummary((s) => {
-      s['judge_agreement'] = { n_judge: 40, judge_agree: 37, judge_agreement: 0.925, n_extract: 20, extract_agree: 20, extract_agreement: 1, labels: 'results/judge-calibration/hand-labels.jsonl' };
+      s['judge_agreement'] = { n_judge: 40, judge_agree: 37, judge_agreement: 0.925, n_extract: 20, extract_agree: 20, extract_agreement: 1, labels: '/Users/someone/checkout/results/judge-calibration/hand-labels.jsonl' };
       s['kappa'] = { double_label: { n: 20, agree: 19, agreement: 0.95, kappa: 0.83, categories: ['model', 'grader'] }, builder_vs_auditor: { n: 33, agree: 33, agreement: 1, kappa: 1, categories: ['model'], note: 'one category on both sides (model): chance agreement is 1, kappa taken as 1' } };
     });
     const after = blockOf(generate(root).writeup, 'judge-agreement');
     expect(after).not.toContain('not in summary.json yet');
     expect(after).toContain(tr('judged items', '37/40', '0.93'));
+    // An absolute labels path renders as its repository path.
+    expect(after).toContain('hand labels (results/judge-calibration/hand-labels.jsonl)');
+    expect(after).not.toContain('/Users/');
     expect(after).toContain(tr('extractions', '20/20', '1.00'));
     expect(after).toContain(tr('double label', '19/20', '0.95', '0.83', 'model, grader', ''));
     expect(after).toContain('chance agreement is');

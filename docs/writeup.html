@@ -441,7 +441,24 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="judge-agreement-and-harm-penalties" data-src="docs/writeup/70-pass-rates.md:47">Judge agreement and harm penalties</h3>
 <p data-src="docs/writeup/70-pass-rates.md:49">The judge never gates. The audit phase samples judged items and extractions from the final run, labels them by hand with the judge's answers hidden, and reports the agreement. A blinded second labeller and an LLM auditor read the failure labels, and the two kappas are reported. The block fills from <code>summary.json</code> once that phase has written it.</p>
 <!-- docs-gen:begin judge-agreement -->
-<p>The judge agreement and the kappas are not in summary.json yet. The block fills when <code>pnpm cli judge-agreement --write</code> and its <code>--double-label</code> form write them into <code>results/runs/final-1/summary.json</code>.</p>
+<div class="table-wrap">
+<table><caption>Judge agreement: hand labels (results/judge-calibration/hand-labels.jsonl) against the answers the records cached</caption>
+<thead><tr><th scope="col">hand labels against the cached answers</th><th scope="col">agree / n</th><th scope="col">agreement</th></tr></thead>
+<tbody>
+<tr><th scope="row">judged items</th><td><span class="nw">48/53</span></td><td><span class="nw">0.91</span></td></tr>
+<tr><th scope="row">extractions</th><td><span class="nw">0/0</span></td><td>n/a</td></tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrap">
+<table><caption>Failure labels: the blinded double label, and the builder's labels against the LLM auditor</caption>
+<thead><tr><th scope="col">labels</th><th scope="col">agree / n</th><th scope="col">agreement</th><th scope="col">Cohen's kappa</th><th scope="col">categories</th><th scope="col">note</th></tr></thead>
+<tbody>
+<tr><th scope="row">double label</th><td><span class="nw">20/20</span></td><td><span class="nw">1.00</span></td><td><span class="nw">1.00</span></td><td>model</td><td>one category on both sides (model): chance agreement is <span class="nw">1,</span> kappa taken as <span class="nw">1</span></td></tr>
+<tr><th scope="row">builder against the LLM auditor</th><td><span class="nw">35/35</span></td><td><span class="nw">1.00</span></td><td><span class="nw">1.00</span></td><td>model, pass</td><td></td></tr>
+</tbody>
+</table>
+</div>
 <div class="table-wrap">
 <table><caption>Harm penalties met in the final run, by outcome (score only: a penalty never decides a pass)</caption>
 <thead><tr><th scope="col">task</th><th scope="col">harm penalty</th><th scope="col">passes with it met</th><th scope="col">failures with it met</th></tr></thead>

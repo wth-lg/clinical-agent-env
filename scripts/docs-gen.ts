@@ -361,7 +361,9 @@ const judgeAgreement = (d: Data) => {
   } else {
     if (s.judge_agreement !== undefined) {
       const a = s.judge_agreement;
-      parts.push(table(['hand labels against the cached answers', 'agree / n', 'agreement'], [['judged items', kn(a.judge_agree, a.n_judge), a.judge_agreement === null ? 'n/a' : a.judge_agreement.toFixed(2)], ['extractions', kn(a.extract_agree, a.n_extract), a.extract_agreement === null ? 'n/a' : a.extract_agreement.toFixed(2)]], `Judge agreement: hand labels (${escapeHtml(a.labels)}) against the answers the records cached`));
+      // The labels file as a repository path: judge-agreement --write may record the absolute path it was given.
+      const labels = a.labels.replace(/^.*?(?=results\/)/, '');
+      parts.push(table(['hand labels against the cached answers', 'agree / n', 'agreement'], [['judged items', kn(a.judge_agree, a.n_judge), a.judge_agreement === null ? 'n/a' : a.judge_agreement.toFixed(2)], ['extractions', kn(a.extract_agree, a.n_extract), a.extract_agreement === null ? 'n/a' : a.extract_agreement.toFixed(2)]], `Judge agreement: hand labels (${escapeHtml(labels)}) against the answers the records cached`));
     }
     if (s.kappa !== undefined) {
       const k = s.kappa;
