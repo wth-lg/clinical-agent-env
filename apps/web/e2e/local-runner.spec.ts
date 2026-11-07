@@ -527,6 +527,10 @@ test('a runner killed mid-trial: the card says the runner stopped, Stop is disab
     const error = page.getByTestId('runs-error');
     await expect(error).toContainText(RUNNER_STOPPED);
     await expect(error).not.toContainText('The other pages still work.');
+    // Gate F5: the trial's row no longer claims to be running; the runner that ran it is gone.
+    const row = page.locator(`[data-testid="live-row"][data-trial="${await trial(page).getAttribute('data-trial')}"]`);
+    await expect(row).toContainText('unknown');
+    await expect(row).not.toContainText('running');
     // The page keeps probing for the runner, as the runner-down screen does.
     const before = probes;
     await expect.poll(() => probes, { timeout: 15_000 }).toBeGreaterThan(before + 1);

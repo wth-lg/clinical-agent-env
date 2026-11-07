@@ -18,7 +18,7 @@
 // stopped says so (A1b). The card's and each row's explanation is the session trial page's (A4),
 // the grade is one button named by the outcome (A5), a finished card offers Run again (A16), and
 // Your runs shows the latest five runs, one line per trial (A15).
-import { ChevronDown, ChevronRight, CircleAlert, Dot, Loader2, Play, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleAlert, CircleHelp, Dot, Loader2, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, type Explanation, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
@@ -31,7 +31,7 @@ import { fetchEvents, useResults, type RunData } from '../data/results.ts';
 import { medianDuration } from '../data/duration.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, CHIP, ErrorNote, FaultLabel, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, CHIP, ErrorNote, FaultLabel, GlossaryLink, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { liveTaskTitle } from '../tasks/title.ts';
@@ -40,12 +40,12 @@ import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { costLine, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, neededCap, parseCap, raiseTo } from '../spend/cap.ts';
 import { refreshSpent, sessionCap, setSessionCap, setSpent, useSessionSpend } from '../spend/session.ts';
-import { detectSurface, type Surface } from '../surface/detect.ts';
+import { runnerGone, type Surface } from '../surface/detect.ts';
 import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { useRunnerRetry } from '../surface/RunnerDown.tsx';
 import {
-  durationWords, gradeButtonLabel, overCapText, REPLAY_STOPPED, RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, RUNNER_STOPPED_SHORT, runsErrorLead, runsShown, scoreLine, STOPPED_LABEL, STOPPED_REASON, writeWords,
+  durationWords, gradeButtonLabel, infraWords, overCapText, REPLAY_STOPPED, RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, RUNNER_STOPPED_SHORT, runsErrorLead, runsShown, scoreLine, STATE_UNKNOWN, STOPPED_LABEL, STOPPED_REASON, writeWords,
 } from './copy.ts';
 import { liveExplanation } from './explain.ts';
 import { fold, type Item } from './fold.ts';
@@ -70,7 +70,7 @@ const CAP_REFUSALS: readonly string[] = [REFUSAL_TEXT.trials.spend_refused_ceili
 const wasResumed = (record: ExplainRecord | null) => (record as { resumed?: boolean } | null)?.resumed === true;
 const Resumed = () => <span data-testid="resumed" className="text-xs text-ink-muted">resumed after reload</span>;
 
-const runnerUp = async (): Promise<boolean> => (await detectSurface()).kind === 'local-runner';
+const runnerUp = async (): Promise<boolean> => !(await runnerGone());
 
 // J14: the official run's median duration per task, in seconds.
 const taskMedians = (run: RunData): number[] => {
@@ -268,6 +268,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         {!noKey && over.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
             <p id={`${costId}-over`} data-testid="size-reason" className="text-ink-muted">{overCapText(over, costs, committed)}</p>
+            {/* No button when the need is above the session maximum (gate F3): it could not lift the refusal. */}
             {raise !== null && raise > cap && <button type="button" className={BUTTON} onClick={() => setSessionCap(raise)}>Raise cap to ${raise}</button>}
           </div>
         )}
@@ -307,7 +308,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           </Notice>
         )}
         <div className="space-y-3">
-          {shown.map((r) => <RunRows key={r.runId} run={r} name={names.get(r.runId)!} current={replay === null ? current : null} onOpen={open} />)}
+          {shown.map((r) => <RunRows key={r.runId} run={r} name={names.get(r.runId)!} current={replay === null ? current : null} onOpen={open} down={down} />)}
         </div>
         {hidden > 0 && (
           <button type="button" className={`${BUTTON} mt-3`} onClick={() => setShowAll(true)}>Show older runs ({hidden})</button>
@@ -418,7 +419,9 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
   const lost = end?.message === RUNNER_STOPPED;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
   const explanation = useExplanation(record, events, task, !running);
-  // A1b: the user pressed Stop.
+  // A1: a trial that is not counted, in words that agree with its outcome (gate F1); CANCELLED is
+  // the user's Stop (A1b).
+  const infra = explanation === null ? null : infraWords(explanation.outcome, record?.detail);
   const cancelled = explanation?.outcome === 'CANCELLED';
   // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
   // gets the key gate's fallback (ruling 2026-10-28T02:00).
@@ -435,7 +438,7 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
   const status = running
     ? f.turn === 0 ? 'Starting' : <><span data-testid="status-turn" className="max-sm:sr-only">Turn {f.turn}, </span><span className="max-sm:capitalize">running</span></>
     : lost ? RUNNER_STOPPED_SHORT
-      : end.state === 'graded' && explanation ? `Finished: ${finalWords(explanation)}` : end.state === 'cancelled' ? (replay ? REPLAY_STOPPED : 'Stopped') : 'Stopped with an error';
+      : end.state === 'graded' && explanation ? `Finished: ${infra?.status ?? finalWords(explanation)}` : end.state === 'cancelled' ? (replay ? REPLAY_STOPPED : 'Stopped') : 'Stopped with an error';
 
   async function stop() {
     setStopping(true);
@@ -514,7 +517,7 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
           {explanation && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <OutcomeChip outcome={explanation.outcome} fault={shownFault(explanation)} />
-              {cancelled ? <StoppedChip /> : explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
+              {infra !== null ? <InfraChip words={infra.chip} outcome={explanation.outcome} /> : explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
               {score !== null && <GradeButton outcome={explanation.outcome} patch={gradeHref} />}
               {!replay && onRunAgain !== undefined && (
                 <button type="button" className={BUTTON} onClick={() => onRunAgain(task)}>
@@ -547,9 +550,21 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
   );
 }
 
-// A1b: the chip for a trial the user stopped (copy rule C4), in place of the infra label.
-function StoppedChip() {
-  return <span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}><span data-testid="label" data-label="stopped">{STOPPED_LABEL}</span></span>;
+// A1: the chip for a trial that is not counted, in words that agree with its outcome (infraWords;
+// copy rule C4), in place of FaultLabel's one infra chip; the help icon opens the glossary at the
+// infra label, as FaultLabel's does.
+function InfraChip({ words, outcome }: { words: string; outcome: string }) {
+  return (
+    <span className="inline-flex items-center gap-x-1">
+      <span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>
+        <span data-testid="label" data-label={outcome === 'CANCELLED' ? 'stopped' : 'infra'} data-outcome={outcome}>{words}</span>
+      </span>
+      <GlossaryLink anchor="fault-infra" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md no-underline text-ink-muted hover:bg-canvas hover:text-ink pointer-coarse:h-11 pointer-coarse:w-11">
+        <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span className="sr-only">How the infra label is given</span>
+      </GlossaryLink>
+    </span>
+  );
 }
 
 // A5: the full grade (every gate check, the rubric rows, the attribution, the trajectory) one
@@ -659,16 +674,17 @@ function ItemRow({ item }: { item: Item }) {
   );
 }
 
-// A15: the run's heading, with its raw id in the title only, then one line per trial.
-function RunRows({ run, name, current, onOpen }: { run: LiveRun; name: string; current: string | null; onOpen: (id: string) => void }) {
+// A15: the run's heading, with its raw id in the title only, then one line per trial. down (gate
+// F5): the runner is gone, so a run or a row that was running is of unknown state, not running.
+function RunRows({ run, name, current, onOpen, down }: { run: LiveRun; name: string; current: string | null; onOpen: (id: string) => void; down: boolean }) {
   return (
     <div data-testid="live-run" data-run={run.runId} data-trials={run.rows.length}>
       <p className="text-ink-muted">
         <span data-testid="run-name" title={run.runId} className="font-medium text-ink">{name}</span>
-        {run.done ? '' : ', running'}{run.stopped ? `, stopped: ${run.stopped}` : ''}
+        {run.done ? '' : down ? `, ${STATE_UNKNOWN}` : ', running'}{run.stopped ? `, stopped: ${run.stopped}` : ''}
       </p>
       <ul className="mt-1 divide-y divide-line rounded-sm border border-line">
-        {run.rows.map((row) => <LiveRow key={row.trialId} row={row} runName={name} current={current === row.trialId} onOpen={onOpen} />)}
+        {run.rows.map((row) => <LiveRow key={row.trialId} row={row} runName={name} current={current === row.trialId} onOpen={onOpen} down={down} />)}
       </ul>
     </div>
   );
@@ -681,22 +697,25 @@ const labelled = (e: Explanation) => e.outcome !== 'PASS' && e.fault !== 'infra'
 // runName: the run's heading; each row button's name carries it, so two runs' "Trial 1" rows are
 // told apart by a screen reader (#185 m1). One line (A15): the outcome, the label, the decisive
 // check, the score and the grade button; the reason is on the card and the trial page.
-function LiveRow({ row, runName, current, onOpen }: { row: LiveRun['rows'][number]; runName: string; current: boolean; onOpen: (id: string) => void }) {
+function LiveRow({ row, runName, current, onOpen, down }: { row: LiveRun['rows'][number]; runName: string; current: boolean; onOpen: (id: string) => void; down: boolean }) {
   const [events, setEvents] = useState<TrialEvent[]>([]);
   useEffect(() => {
     if (row.record !== null) void readEvents(row.trialId).then(setEvents, () => undefined);
   }, [row.trialId, row.record]);
   const e = useExplanation(row.record, events, row.taskId, row.record !== null);
+  const infra = e === null ? null : infraWords(e.outcome, row.record?.detail);
   const cancelled = e?.outcome === 'CANCELLED';
   const score = row.state === 'graded' && row.record !== null ? liveScore(row.record) : null;
+  // Gate F5: a row that was queued or running when the runner died is of unknown state.
+  const stale = down && (row.state === 'queued' || row.state === 'running');
   return (
-    <li data-testid="live-row" data-trial={row.trialId} data-state={row.state} data-outcome={e?.outcome ?? ''} className="px-3 py-2">
+    <li data-testid="live-row" data-trial={row.trialId} data-state={stale ? 'unknown' : row.state} data-outcome={e?.outcome ?? ''} className="px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} aria-label={`${runName}, trial ${row.index + 1}`} title={row.trialId} className="min-w-0 break-all text-left font-medium text-ink hover:underline pointer-coarse:min-h-11">
           Trial {row.index + 1}
         </button>
-        {e ? <OutcomeChip outcome={e.outcome} fault={shownFault(e)} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
-        {e && (cancelled ? <StoppedChip /> : e.outcome !== 'PASS' && <FaultLabel e={e} />)}
+        {e ? <OutcomeChip outcome={e.outcome} fault={shownFault(e)} /> : <span className="text-xs text-ink-muted">{stale ? STATE_UNKNOWN : row.state}</span>}
+        {e && (infra !== null ? <InfraChip words={infra.chip} outcome={e.outcome} /> : e.outcome !== 'PASS' && <FaultLabel e={e} />)}
         {e && !cancelled && e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         {e && !cancelled && !e.audited && !labelled(e) && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
         {wasResumed(row.record) && <Resumed />}

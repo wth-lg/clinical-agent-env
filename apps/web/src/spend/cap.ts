@@ -24,8 +24,9 @@ export function parseCap(text: string): number | null {
 export const neededCap = (cost: number, committed: number): number => Math.ceil((µ(cost) + µ(committed)) / 1e6);
 
 // The cap the "Raise cap to $<n>" button sets: the next multiple of $5 at or above the need,
-// never above the session maximum.
-export const raiseTo = (need: number): number => Math.min(MAX_SESSION_CAP_USD, Math.ceil(need / 5) * 5);
+// within the session maximum; null when the need is above it (gate F3: no button that cannot
+// lift the refusal).
+export const raiseTo = (need: number): number | null => (need > MAX_SESSION_CAP_USD ? null : Math.min(MAX_SESSION_CAP_USD, Math.ceil(need / 5) * 5));
 
 export type Admission = { ok: true } | { ok: false; reason: string };
 

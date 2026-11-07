@@ -6,7 +6,7 @@
 // runs shows the latest five runs (A15).
 import { describe, expect, it } from 'vitest';
 import {
-  durationWords, gradeButtonLabel, overCapText, RUNNER_STOPPED, runsErrorLead, runsShown, scoreLine, STOPPED_LABEL, STOPPED_REASON, writeWords,
+  durationWords, gradeButtonLabel, infraWords, overCapText, RUNNER_STOPPED, runsErrorLead, runsShown, scoreLine, STOPPED_LABEL, STOPPED_REASON, writeWords,
 } from '../src/live/copy.ts';
 import { costLine } from '../src/live/typical.ts';
 import { neededCap, raiseTo } from '../src/spend/cap.ts';
@@ -15,6 +15,36 @@ describe('A1b: a trial the user stopped', () => {
   it('says the user stopped it, that it is not counted, and that it says nothing about the model', () => {
     expect(STOPPED_REASON).toBe('You stopped this trial. It is not counted and says nothing about the model.');
     expect(STOPPED_LABEL).toBe('Stopped: not counted');
+  });
+});
+
+// Gate P25U-S4 F1: "API problem" only when the API failed (copy rule C4); a harness defect says
+// so; a spend refusal never advises "run again", since the same cap refuses it again.
+describe('A1: the infra chip and status words agree with the outcome', () => {
+  it('INFRA_API is an API problem, to run again', () => {
+    expect(infraWords('INFRA_API', 'overloaded_error')).toEqual({ chip: 'API problem: not counted, run again', status: 'API problem, not counted' });
+  });
+
+  it('INFRA_HARNESS with an unpriced usage is an infrastructure problem', () => {
+    expect(infraWords('INFRA_HARNESS', 'unpriced_usage')).toEqual({ chip: 'Infrastructure problem: not counted, run again', status: 'Infrastructure problem, not counted' });
+  });
+
+  it('INFRA_HARNESS with a client error is an infrastructure problem', () => {
+    expect(infraWords('INFRA_HARNESS', 'client_error')).toEqual({ chip: 'Infrastructure problem: not counted, run again', status: 'Infrastructure problem, not counted' });
+  });
+
+  it('INFRA_HARNESS from a spend refusal says so and does not advise running again', () => {
+    expect(infraWords('INFRA_HARNESS', 'spend_refused_session')).toEqual({ chip: 'Spend refused: not counted', status: 'Spend refused, not counted' });
+    expect(infraWords('INFRA_HARNESS', 'spend_refused_ceiling')!.chip).not.toMatch(/run again/);
+  });
+
+  it('CANCELLED is the stopped trial', () => {
+    expect(infraWords('CANCELLED', null)).toEqual({ chip: STOPPED_LABEL, status: STOPPED_LABEL });
+  });
+
+  it('a counted outcome has no infra words', () => {
+    expect(infraWords('FAIL', null)).toBeNull();
+    expect(infraWords('PASS', 'x')).toBeNull();
   });
 });
 
@@ -60,11 +90,19 @@ describe('A7: the cost beside each Run button', () => {
     expect(neededCap(7.60768, 0.011)).toBe(8);
   });
 
-  it('the cap to raise to is the next multiple of $5 at or above the need, within the session maximum', () => {
+  it('the cap to raise to is the next multiple of $5 at or above the need; none above the session maximum (gate F3)', () => {
     expect(raiseTo(22)).toBe(25);
     expect(raiseTo(20)).toBe(20);
     expect(raiseTo(140)).toBe(140);
-    expect(raiseTo(10_000)).toBeLessThanOrEqual(950);
+    expect(raiseTo(950)).toBe(950);
+    expect(raiseTo(951)).toBeNull();
+    expect(raiseTo(10_000)).toBeNull();
+  });
+
+  it('a batch that needs more than the session maximum says so instead of asking for a cap the field refuses (gate F3)', () => {
+    expect(overCapText([20], { 20: 999.5 }, 0.5)).toBe('Run ×20 needs $1000, more than the session maximum of $950.');
+    expect(overCapText([10, 20], { 10: 960, 20: 1900 }, 0)).toBe('Run ×10 needs $960, more than the session maximum of $950; ×20 needs more still.');
+    expect(overCapText([3, 20], { 3: 21.7, 20: 1900 }, 0.19)).toBe('Run ×3 needs a cap of $22 or more; ×20 needs more still.');
   });
 
   it('the over-cap sentence names the cap the smallest over size needs, and says the larger ones need more', () => {

@@ -2,7 +2,7 @@
 // apps/web/test/live-copy.test.ts can load them in Node: what a stopped trial and a dead runner
 // say, the grade button's name, the score line, the over-cap sentence, writes in words, the
 // duration of a trial from the official run, and how many runs Your runs shows.
-import { neededCap } from '../spend/cap.ts';
+import { MAX_SESSION_CAP_USD, neededCap } from '../spend/cap.ts';
 import { SCORE_TITLE } from '../trial/rubric.ts';
 
 // A1b: a trial the user stopped. The chip is copy rule C4's; the sentence replaces the grader's
@@ -24,6 +24,22 @@ export const runsErrorLead = (hosted: boolean): string => (hosted ? 'Your runs d
 // A14: a replay the viewer stopped.
 export const REPLAY_STOPPED = 'Replay stopped';
 
+// A1 (gate P25U-S4 F1): the chip and the status words of a trial that is not counted, by its
+// outcome and the record's detail. "API problem" only when the API failed (INFRA_API, copy rule
+// C4); a harness defect (INFRA_HARNESS: an unpriced usage, a client error, a bound) is an
+// infrastructure problem; a spend refusal says so and never advises running again, since the
+// same cap refuses it again; CANCELLED is the stopped trial. Null for a counted outcome.
+export function infraWords(outcome: string, detail: string | null | undefined): { chip: string; status: string } | null {
+  if (outcome === 'CANCELLED') return { chip: STOPPED_LABEL, status: STOPPED_LABEL };
+  if (outcome === 'INFRA_API') return { chip: 'API problem: not counted, run again', status: 'API problem, not counted' };
+  if (outcome !== 'INFRA_HARNESS') return null;
+  if ((detail ?? '').startsWith('spend_refused')) return { chip: 'Spend refused: not counted', status: 'Spend refused, not counted' };
+  return { chip: 'Infrastructure problem: not counted, run again', status: 'Infrastructure problem, not counted' };
+}
+
+// F5: a row of a runner that is gone; its state is not known any more.
+export const STATE_UNKNOWN = 'unknown (the runner stopped)';
+
 // A5: the grade is one click away, named by what the reader will find.
 export const gradeButtonLabel = (outcome: string): string => (outcome === 'PASS' ? 'See the grade' : 'See why it failed');
 
@@ -34,11 +50,15 @@ export const RUBRIC_GLOSS = 'Extra credit only; the pass or fail comes from the 
 export const scoreLine = (score: string, gloss = true): string => `${SCORE_TITLE} ${score} of 1${gloss ? `. ${RUBRIC_GLOSS}` : ''}`;
 
 // A7: why the sizes in `over` (ascending) are disabled: the smallest names the whole-dollar cap
-// it needs; the larger ones need more still.
+// it needs; the larger ones need more still. Gate F3: a need above the session maximum says so,
+// since the cap field refuses such a value.
 export function overCapText(over: readonly number[], costs: Partial<Record<number, number>>, committed: number): string {
   const first = over[0]!;
   const rest = over.slice(1).map((n) => `×${n}`);
-  const need = `Run ×${first} needs a cap of $${neededCap(costs[first]!, committed)} or more`;
+  const dollars = neededCap(costs[first]!, committed);
+  const need = dollars > MAX_SESSION_CAP_USD
+    ? `Run ×${first} needs $${dollars}, more than the session maximum of $${MAX_SESSION_CAP_USD}`
+    : `Run ×${first} needs a cap of $${dollars} or more`;
   if (rest.length === 0) return `${need}.`;
   const list = rest.length === 1 ? rest[0]! : `${rest.slice(0, -1).join(', ')} and ${rest.at(-1)}`;
   return `${need}; ${list} need${rest.length === 1 ? 's' : ''} more still.`;
