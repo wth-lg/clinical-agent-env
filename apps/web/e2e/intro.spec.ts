@@ -120,8 +120,13 @@ test.describe('Overview after the UI/UX audit', () => {
   test('V10, V11: the swatches sit in rows of ten, the verdict is a chip with an icon, and the interval row has ticks at 0, 50 and 100', async ({ page }) => {
     await browse(page, './?view=overview');
     const row = page.locator('[data-testid="overview-row"][data-task="contrast-ct-prep"]');
-    const tops = await row.getByTestId('swatches').getByRole('img').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    expect(tops.length).toBe(records.filter((r) => r.task_id === 'contrast-ct-prep').length);
+    const n = records.filter((r) => r.task_id === 'contrast-ct-prep').length;
+    // The row renders once the records load; a one-shot read right after browse() can see fewer
+    // swatches (gate P25U-S1-2 F5), so wait for the full count first.
+    const swatches = row.getByTestId('swatches').getByRole('img');
+    await expect(swatches).toHaveCount(n);
+    const tops = await swatches.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    expect(tops.length).toBe(n);
     expect(new Set(tops.slice(0, 10)).size, 'the first ten swatches share one row').toBe(1);
     expect(tops[10]!, 'the eleventh starts the next row').toBeGreaterThan(tops[0]!);
     const verdict = row.getByTestId('band-verdict');
