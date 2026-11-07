@@ -27,7 +27,7 @@ import { shownFault, shownLabel } from '../data/failures.ts';
 import { isValid } from '../../../../packages/core/outcomes.ts';
 import { markLabel, markOf } from '../data/marks.ts';
 import { RowItem } from '../trial/Trajectory.tsx';
-import { fetchEvents, useResults, type RunData } from '../data/results.ts';
+import { fetchEvents, reloadResults, useResults, type RunData } from '../data/results.ts';
 import { medianDuration } from '../data/duration.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -263,6 +263,10 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           <p data-testid="typical-cost" className="mt-2 text-ink-muted">
             “About {usd(typical.usd)} a trial” is the median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}. {HOLD_NOTE}
           </p>
+        ) : results?.kind === 'error' ? (
+          // The typical cost and the duration come from the published results; a load that
+          // failed is said, not shown as "no pilot" (verifier P25u-final-copy-1 claim 4).
+          <p data-testid="results-failed" className="mt-2 text-ink-muted">The published results did not load, so the typical cost and the duration of a trial are missing here. <button type="button" className={`${LINK} text-ink`} onClick={reloadResults}>Retry</button> {HOLD_NOTE}</p>
         ) : (
           <p data-testid="no-typical" className="mt-2 text-ink-muted">No pilot has run this task, so there is no typical cost yet. {HOLD_NOTE}</p>
         )}
