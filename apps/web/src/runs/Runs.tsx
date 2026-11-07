@@ -366,7 +366,7 @@ function TrialRow({ t, run, later, sameAs = null }: { t: Trial; run: RunData; la
             {t.name}
           </a>
           <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
-          {faulted && <FaultChip e={e} />}
+          {faulted && <FaultChip e={e} detail={t.record.detail ?? null} />}
           {e.decisive_check && <span className="inline-flex min-w-0 items-center gap-1 text-xs text-ink-muted">check <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code></span>}
         </div>
         <span className="whitespace-nowrap pt-1 text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
