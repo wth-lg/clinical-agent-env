@@ -1,0 +1,1 @@
+- P25u cleanup (builder-332): the plain-text Verdict in apps/web/src/findings/verdict.tsx is deleted; nothing imported it once the Runs header and the task cards (#254) and Findings (#253) took the shared VerdictChip. VerdictLink, DifficultyHistory and NoFailures stay. No screen changes.
