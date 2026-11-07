@@ -37,6 +37,8 @@ import type { Surface } from '../surface/detect.ts';
 import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { fold, type Item } from './fold.ts';
+import { liveScore, sessionTrialPatch } from './grade.ts';
+import { SCORE_TITLE } from '../trial/rubric.ts';
 import { readEvents } from './store.ts';
 import { theTransport } from './transport/select.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
@@ -362,6 +364,7 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
               {explanation.outcome !== 'PASS' && explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="basis-full text-xs text-ink-muted">{explanation.secondary_reason}</span>}
             </div>
           )}
+          {end.state === 'graded' && record !== null && <p data-testid="live-grade" className="flex flex-wrap items-baseline gap-x-4 gap-y-1"><GradeLine id={id} record={record} /></p>}
           {relay !== null && f.end?.type === 'error' ? (
             <>
               <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={errorLine}>
@@ -379,6 +382,20 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
         </footer>
       )}
     </section>
+  );
+}
+
+// The graded result on the card and on its Your runs row (trace row N10): the rubric score under
+// the Score card's title, and the full grade (every gate check, the rubric rows, the attribution,
+// the trajectory) one click away on the trial page of run=session.
+function GradeLine({ id, record }: { id: string; record: ExplainRecord }) {
+  const score = liveScore(record);
+  const patch = sessionTrialPatch(id);
+  return (
+    <>
+      {score !== null && <span data-testid="live-score" className="text-ink-muted">{SCORE_TITLE} <span className="font-medium tabular-nums text-ink">{score}</span></span>}
+      <a data-testid="open-grade" href={hrefWith(patch)} onClick={onNav(patch)} className={`text-xs ${LINK}`}>Open the full grade</a>
+    </>
   );
 }
 
@@ -513,6 +530,7 @@ function LiveRow({ row, runName, current, onOpen }: { row: LiveRun['rows'][numbe
         {e && !e.audited && !labelled(e) && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
         {wasResumed(row.record) && <Resumed />}
       </div>
+      {row.state === 'graded' && row.record !== null && <p data-testid="live-grade" className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs"><GradeLine id={row.trialId} record={row.record} /></p>}
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
       {e && e.outcome !== 'PASS' && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words text-xs text-ink-muted">{e.secondary_reason}</p>}
       {!e && row.error !== null && <p className="mt-1 break-words text-ink-muted">{row.error}</p>}
