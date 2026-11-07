@@ -333,6 +333,18 @@ launcher (P15) shows the Run lines.
 - `not human-audited`: the marker next to the fault label on a trial with no audit row (every
   live trial run from the UI). Every non-pass trial of final-1 is audited in P23, so the marker
   is checked on the first non-pass trial of `run=session`.
+- The audit (M5) is never called "the human audit" on screen, and no screen says a person
+  reviewed a trial. The published run's audit reads were LLM sessions (docs/findings.md next
+  step 10; results/runs/final-1/README.md P23), so the copy says so where M5 is explained: the
+  trial header's "Why it is the model's fault" and the Attribution tab's plain line name
+  `the auditor (an LLM session)`, the fault box on Findings and Overview reads
+  `Whose fault, by the audit (LLM sessions in this run)`, copy rule C5's phrase reads
+  `confirmed by the record (M1–M4) and the audit (M5)`, and the glossary's M1–M5 term and its
+  "Confirming a label" card say who performed the audit. One constant holds the words
+  (apps/web/src/trial/headline.ts AUDITOR, AUDIT_BY), so a run with a clinician's read changes one
+  line. The marker `not human-audited` keeps its contract text: it is true of a trial with no
+  audit row. Reason: eval-p25u-1 defect 1 (must-fix, false statement on screen). The requirement
+  (every screen names the M5 confirmation and its count the same way) is unchanged.
 - The Score card on a trial's Grading tab and on a graded live trial is titled
   `Rubric score (does not decide pass)`. The UI polish gave it that title
   (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in

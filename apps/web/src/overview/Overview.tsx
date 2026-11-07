@@ -8,7 +8,7 @@
 // (P17j JU8), the refusal-excluded rate and the median duration over the task's records (design
 // section 7; P25c); under the lead, one plain takeaway built from the summary (the hardest task,
 // whose fault the failures are, their kind and the checks that failed most; P25u J5); with the
-// run's fault box under the table and the human audit's count in the one confirmation phrase
+// run's fault box under the table and the audit's count in the one confirmation phrase
 // (P25u J8a); a run with a trial that blocks it (DENOMINATOR_RULE) says so in place of the
 // headline pass rate, and names its false PASSes beside k/n. With none yet: the six tasks, the
 // environment every trial starts from, and the committed pilot runs, which are not counted in the
@@ -22,6 +22,7 @@ import { FAILURE_KINDS, type Summary } from '../../../../packages/core/summary.t
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { formatDuration, medianDuration } from '../data/duration.ts';
 import { checkTextOf, pilotRates, useResults, type RunData } from '../data/results.ts';
+import { ResultsError } from '../data/results-error.tsx';
 import { useTaskList } from '../data/tasks.ts';
 import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
@@ -59,14 +60,18 @@ export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   const results = useResults();
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
   if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
-  const error = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError;
+  // A load that failed gets the plain notice with Retry (data/results-error.tsx); a summary that
+  // is not one is said as it is.
+  const failed = results.kind === 'error' ? results.message : null;
+  const error = results.kind === 'ready' ? results.officialError : null;
   const pilots = results.kind === 'ready' && results.pilots.length > 0;
   return (
     <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
       <IntroCard />
+      {failed !== null && <ResultsError message={failed} cannot="the final run is missing from this page" />}
       {error !== null && <Notice testId="error-state" icon={CircleAlert}>{error}</Notice>}
       <TaskSummary />
-      {error === null && <Notice testId="no-official" tone="info" icon={Info}>The final run is not published yet.{pilots && ' Pilot runs are below.'}</Notice>}
+      {failed === null && error === null && <Notice testId="no-official" tone="info" icon={Info}>The final run is not published yet.{pilots && ' Pilot runs are below.'}</Notice>}
       <EnvironmentSummary />
       {results.kind === 'ready' && results.pilots.length > 0 && <PilotSummary pilots={results.pilots} />}
     </Page>
@@ -154,7 +159,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
       <p className="text-xs text-ink-muted"><span data-testid="rubric-note">Rubric score is {RUBRIC_NOTE}: a trial passes only when it meets every gate check.</span> Each task's title opens the task; its trials open in Runs.{block === null && <> <PassKLink /> <VerdictLink /></>}</p>
       <SupersededLines summary={summary!} />
       <Card title="Who is at fault, all tasks">
-        {/* The fault box (findings/why.tsx, S5's) carries the human audit's count in the one
+        {/* The fault box (findings/why.tsx, S5's) carries the audit's count in the one
             confirmation phrase, "audit agrees: n of N" (P25u J8a, copy rule C5); this card only places it. */}
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
@@ -183,12 +188,17 @@ function Takeaway({ summary, titles, runId }: { summary: Summary; titles: Readon
   const top = [...checks].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]));
   const first = { view: 'runs', run: runId, trial: 'first-nonpass', task: null, label: null, tab: null, check: null, audit: null };
   const hardest = titles?.get(hid) === undefined ? hid : `${titles.get(hid)} (${hid})`;
+  // The fault sentence follows the hardest task's, so its count is scoped to the run in words
+  // ("Across the 6 tasks, all 32 failures ..."), never read as that task's (eval-p25u-1 defect 4).
+  // With one task there is nothing to confuse.
+  const scope = tasks.length > 1 ? `Across the ${tasks.length} tasks, ` : '';
+  const cap = (s: string) => (scope === '' ? s.charAt(0).toUpperCase() + s.slice(1) : `${scope}${s}`);
   const fault = failures === 0
     ? 'No valid trial failed.'
-    : !labelled ? `${failures} ${failures === 1 ? 'failure' : 'failures'}; no human audit is published yet, so none has a fault label.`
-      : failures === 1 ? `The one failure is the ${label('model') === 1 ? "model's" : label('environment') === 1 ? "environment's" : label('grader') === 1 ? "grader's" : 'audit\'s to label'} fault.`
-        : label('model') === failures ? `All ${failures} failures are the model's fault.`
-          : `Of ${failures} failures, ${label('model')} are the model's fault, ${label('environment')} the environment's and ${label('grader')} the grader's${label('unlabelled') > 0 ? `; ${label('unlabelled')} not yet audited` : ''}.`;
+    : !labelled ? cap(`${failures} ${failures === 1 ? 'failure' : 'failures'} ${failures === 1 ? 'has' : 'have'} no fault label yet: no audit is published.`)
+      : failures === 1 ? cap(`the one failure is the ${label('model') === 1 ? "model's" : label('environment') === 1 ? "environment's" : label('grader') === 1 ? "grader's" : 'audit\'s to label'} fault.`)
+        : label('model') === failures ? cap(`all ${failures} failures are the model's fault.`)
+          : cap(`${label('model')} of ${failures} failures are the model's fault, ${label('environment')} the environment's and ${label('grader')} the grader's${label('unlabelled') > 0 ? `; ${label('unlabelled')} not yet audited` : ''}.`);
   const kind = failures === 0 || kinds.length === 0 ? null
     : kinds[0]!.count === failures ? `Every one is the same kind: ${kindWords(kinds[0]!.kind)}.` : `The most common kind is ${kindWords(kinds[0]!.kind)} (${kinds[0]!.count} of ${failures}).`;
   const shown = top.slice(0, 3);

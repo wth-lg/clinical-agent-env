@@ -80,8 +80,10 @@ test.describe('Overview after the UI/UX audit', () => {
     await expect(titleOfHardest).not.toHaveText(hardest[0]);
     await expect(t).toContainText(`${await titleOfHardest.innerText()} (${hardest[0]})`);
     await expect(t).toContainText(`${hardest[1].passes} of ${hardest[1].trials} trials pass`);
-    // Whose fault, in the fault words of copy rule C4.
-    await expect(t).toContainText(model === failures ? `All ${failures} failures are the model's fault` : `${model} are the model's fault`);
+    // Whose fault, in the fault words of copy rule C4, scoped to the run so the count never reads
+    // as the hardest task's (eval-p25u-1 defect 4).
+    const scope = `Across the ${tasks.filter(([, s]) => s.trials > 0).length} tasks, `;
+    await expect(t).toContainText(model === failures ? `${scope}all ${failures} failures are the model's fault` : `${scope}${model} of ${failures} failures are the model's fault`);
     // The kind that fails most, in words, and the check that decided most failures, by id and count.
     await expect(t).toContainText(kindWords(byKind[0]!.kind));
     await expect(t.locator('code', { hasText: topCheck })).toBeVisible();

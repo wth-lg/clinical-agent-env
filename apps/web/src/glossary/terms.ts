@@ -29,7 +29,9 @@ export const PLAIN_TERMS: readonly PlainTerm[] = [
   { id: 'term-harm-item', term: 'harm item', text: 'A rubric item that marks something harmful the model did, such as an unsafe order, so a pass that meets one is a PASS with harm.' },
   { id: 'term-kind', term: 'kind of failure', text: 'The nearest cause of a model failure, such as retrieval (a needed record was never read) or reasoning (every record was read and the decision was still wrong).' },
   { id: 'term-fault', term: 'fault', text: 'Whose failure a non-pass trial is: the model\'s, the environment\'s, the grader\'s or the infrastructure\'s, and only the model\'s fault counts against the model.' },
-  { id: 'term-m1-m5', term: 'M1–M5', text: 'Five checks that a model fault was a fair test: the records were reachable (M1), no tool broke (M2), the world matched (M3), the reference solution passes the grader (M4) and a human audit agrees (M5).' },
+  // M5 names who audited (eval-p25u-1 defect 1): the published run's audit reads were LLM
+  // sessions, not clinicians (docs/findings.md next step 10; headline.ts AUDITOR).
+  { id: 'term-m1-m5', term: 'M1–M5', text: 'Five checks that a model fault was a fair test: records reachable (M1), no tool broke (M2), the world matched (M3), the reference solution passes the grader (M4) and the auditor, an LLM session in this run, agrees (M5).' },
   { id: 'term-fhir-r4', term: 'FHIR R4', text: 'The standard format for electronic health records: the world is a set of FHIR R4 resources such as Patient, Observation and MedicationRequest.' },
   { id: 'term-world-hash', term: 'world hash', text: 'A fingerprint of every record in the world, so two worlds with one hash hold the same data and a trial\'s hash says which world it started from.' },
   { id: 'term-frozen-world', term: 'frozen world', text: 'The world a task was pinned to when its design was final: every official trial of that task starts from it, even after the build world moves on.' },

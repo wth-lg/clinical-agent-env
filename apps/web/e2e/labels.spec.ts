@@ -63,7 +63,7 @@ test('a non-pass trial header keeps the M1-M5 row', async ({ page }) => {
   await expect(page.getByTestId('trial-header').getByTestId('header-criteria').locator('li')).toHaveCount(5);
 });
 
-test('a PASS that a human audit says did not pass shows Contradicted, in the danger colour, not pending (verifier JU1-1 F1)', async ({ page }) => {
+test('a PASS that an audit says did not pass shows Contradicted, in the danger colour, not pending (verifier JU1-1 F1)', async ({ page }) => {
   // The fixture PASS gets an audit row whose outcome is FAIL: M5 on a PASS is not met.
   await page.route(`**/data/results/runs/${RUN_ID}/audit.jsonl`, async (route) => {
     const res = await route.fetch();
@@ -74,8 +74,8 @@ test('a PASS that a human audit says did not pass shows Contradicted, in the dan
   await browse(page, new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.pass)}`, base).href);
   const c = page.getByTestId('trial-header').getByTestId('header-confirmation');
   await expect(c).toHaveAttribute('data-state', 'contradicted');
-  await expect(c).toContainText('This PASS is contradicted: the human audit says this trial did not pass.');
-  await expect(c).not.toContainText('still needs a human audit');
+  await expect(c).toContainText('This PASS is contradicted: the audit says this trial did not pass.');
+  await expect(c).not.toContainText('still needs an audit');
   await expect(c.locator('.text-danger')).toHaveCount(1);
 });
 

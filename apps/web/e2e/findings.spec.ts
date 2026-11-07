@@ -105,7 +105,10 @@ test('Findings: the kind bar is to scale and the fault box gives the record\'s c
     // The filled part is the model mark, never the LIMIT tone (copy rule C8).
     for (const seg of await bar.locator('[data-kind]').all()) await expect(seg).toHaveAttribute('data-mark', 'model');
     const box = page.locator(`[data-testid="fault-box"][data-task="${id}"]`);
-    await expect(box).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
+    // Never "the human audit": the run's audit reads were LLM sessions (eval-p25u-1 defect 1).
+    await expect(box).toContainText('Confirmed by the record (M1–M4) and the audit (M5)');
+    await expect(box).toContainText('Whose fault, by the audit (LLM sessions in this run):');
+    await expect(box).not.toContainText('human');
     await expect(box).toContainText(`audit agrees: ${auditAgrees(id)} of ${t.fault_counts.failures}`);
     await expect(box.getByTestId('m5')).toHaveAttribute('data-agrees', String(auditAgrees(id)));
   }

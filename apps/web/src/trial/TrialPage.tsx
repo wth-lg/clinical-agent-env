@@ -26,6 +26,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { fittingAttribution, MET_TEXT, type Explanation, type ExplainRecord } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { ResultsError } from '../data/results-error.tsx';
 import { theTransport } from '../live/transport/select.ts';
 import type { LiveRun, TrialTransport } from '../live/types.ts';
 import { resolveSessionTrial, SESSION_RUN } from './session.ts';
@@ -141,7 +142,7 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   // The session page reads no published results, so it shows while they load or fail to load.
   if (runId === SESSION_RUN) return <SessionTrialPage trial={trial} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
   if (results === null) return <Frame title={title} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
-  if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
+  if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><ResultsError message={results.message} cannot="this trial cannot be shown" /></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.superseded, ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
@@ -186,12 +187,15 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   // The steps that explain the failure (where.ts, J4): the exposure of the decisive ids from the
   // current grade's attribution, the arrivals from the trajectory, and the decisive step; shown
   // under Where in the header and on the Attribution tab.
+  const exposure = useMemo(() => (fittingAttribution(t.record as ExplainRecord) as { exposure?: Array<{ id: string; first_exposed_step: number | null }> } | null)?.exposure ?? null, [t.record]);
   const where = useMemo<WhereStep[]>(() => {
-    const auto = fittingAttribution(t.record as ExplainRecord) as { exposure?: Array<{ id: string; first_exposed_step: number | null }> } | null;
     const modelFault = e.fault === 'model' || e.fault === 'refusal';
     const arrivals = (traj?.rows ?? []).flatMap((r) => (r.kind === 'arrival' ? [{ step: r.step, keys: r.keys }] : []));
-    return whereSteps({ decisiveStep: e.decisive_step, exposure: modelFault ? (auto?.exposure ?? []) : [], arrivals });
-  }, [t.record, e, traj]);
+    return whereSteps({ decisiveStep: e.decisive_step, exposure: modelFault ? (exposure ?? []) : [], arrivals });
+  }, [exposure, e, traj]);
+  // The header's plain line, and the Attribution tab's (headline.ts): the same exposure tells
+  // which records of an arrival the model opened (eval-p25u-1 defect 2).
+  const headline = plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, shownKind(e) === null ? null : e.taxonomy, exposure);
   return (
     <Frame title={<TrialHeading t={t} run={run} />} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
       {run.kind === 'session' && <SessionBanner />}
@@ -211,12 +215,12 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
             : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
           {' '}<WorldLine t={t} freezes={freezes} official={run.official} />
         </p>
-        <Header t={t} e={e} rows={traj?.rows ?? null} where={where} onStep={onStep} official={run.official} />
+        <Header t={t} e={e} rows={traj?.rows ?? null} where={where} lead={headline} onStep={onStep} official={run.official} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
-              attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} where={where} headline={plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, shownKind(e) === null ? null : e.taxonomy)} onStep={onStep} />,
+              attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} where={where} headline={headline} onStep={onStep} />,
               'state-diff': <StateDiff official={run.official} superseded={run.superseded} frozen={frozen} freezes={freezes} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
@@ -357,8 +361,9 @@ const FAULT_GLOSS: Readonly<Record<Fault, string>> = {
 // disclosure under the one reason sentence the Runs row shows (trace row U31 reads it here), and
 // the confirmation count with copy rule C5's phrase (J8b). rows: the trajectory, once it loads; an
 // ENV_ERROR's Where is the tool call that failed with an internal error. official: the trial is of
-// the official run; only it can be blocked, so only it takes the danger rule.
-function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanation; rows: readonly Row[] | null; where: readonly WhereStep[]; onStep: (n: number) => void; official: boolean }) {
+// the official run; only it can be blocked, so only it takes the danger rule. lead: the plain
+// headline (headline.ts plainHeadline, computed once in Detail with the record's exposure).
+function Header({ t, e, rows, where, lead, onStep, official }: { t: Trial; e: Explanation; rows: readonly Row[] | null; where: readonly WhereStep[]; lead: string | null; onStep: (n: number) => void; official: boolean }) {
   // A fault to show: every non-pass, and a false PASS (GR5, P17j JG5), which the grader decided.
   const nonPass = e.outcome !== 'PASS' || e.fault !== null;
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
@@ -378,7 +383,6 @@ function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanat
   const kind = shownKind(e);
   const blocking = fault === 'env' || fault === 'grader';
   const stopped = e.outcome === 'CANCELLED';
-  const lead = plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, kind === null ? null : e.taxonomy);
   const why = from === null ? faultWhy(e) : null;
   const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a');
   const open = e.criteria.filter((c) => !confirmed.includes(c));
@@ -512,7 +516,7 @@ function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
 
 // On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
 // provisional, one not met is contradicted): "Confirmed" when every check holds; "This PASS is
-// contradicted: ..." in the danger colour when a check found the opposite (a human audit that says the trial did not
+// contradicted: ..." in the danger colour when a check found the opposite (an audit that says the trial did not
 // pass, an internal tool error, a state hash that does not match); else "Checks pending: this trial
 // still needs ...". The codes and their evidence are in the Attribution tab (pre-audit S9, P17j
 // JU1). A check with no phrase here says its evidence. M2 is never pending, so it has no phrase there.
@@ -520,7 +524,7 @@ const STILL_NEEDS: Readonly<Record<string, string>> = {
   M1: 'a record of what the model was shown',
   M3: 'a start and end state check against the run manifest',
   M4: 'a grader check of this task version',
-  M5: 'a human audit',
+  M5: 'an audit',
 };
 // On a PASS, M1 is not applicable (no gate check failed) and M4 holds (none failed for the
 // reference solution to fail too), so their phrases below cannot show; they stay for a PASS a
@@ -530,7 +534,7 @@ const FOUND_OTHERWISE: Readonly<Record<string, string>> = {
   M2: 'a tool call returned an internal error',
   M3: 'the saved start or end state of the record does not match or is missing',
   M4: 'the reference solution or an accepted alternative fails this check',
-  M5: 'the human audit says this trial did not pass',
+  M5: 'the audit says this trial did not pass',
 };
 const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 function Confirmation({ e }: { e: Explanation }) {

@@ -84,7 +84,9 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
         </Card>
       ))}
       <Card title="Confirming a label" id="confirmation">
-        <p className="text-ink-muted">A model fault is confirmed when the record meets M1 to M4 and a human audit agrees (M5). Findings and Overview count both: the failures the record confirms, and the failures the audit agrees with.</p>
+        {/* Who performs the audit is said here, where M5 is defined (eval-p25u-1 defect 1; the
+            run's README and docs/findings.md next step 10 record the fact). */}
+        <p className="text-ink-muted">A model fault is confirmed when the record meets M1 to M4 and the audit agrees (M5). In the published run the audit was done by LLM sessions, not by clinicians: one session labelled each failure, a second session double-labelled a blinded sample, and a blinded LLM auditor checked every label (a trial's Attribution tab shows its verdict as "LLM auditor agrees"). A clinician's read is a next step in Findings. Findings and Overview count both: the failures the record confirms, and the failures the audit agrees with.</p>
         <ul className="mt-2 space-y-1.5">
           {CONFIRMATION_CRITERIA.map((c) => <li key={c.id} id={`criterion-${c.id}`} className="scroll-mt-4 text-ink-muted"><span className="mr-1.5 font-medium text-ink">{c.id}</span>{c.text}</li>)}
         </ul>

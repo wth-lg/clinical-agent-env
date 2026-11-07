@@ -10,13 +10,13 @@
 // criteria, with no click), and the fault criteria are one click away, under "Show the fault
 // criteria checked (N)" (ui-polish 3.4).
 import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type Fault } from '../../../../packages/core/outcomes.ts';
-import { fittingAttribution, MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type ExplainRecord, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
+import { fittingAttribution, MET_TEXT, NOT_AUDITED_MARKER, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type ExplainRecord, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import type { Trial } from '../data/results.ts';
 import { shownFault } from '../data/failures.ts';
 import { GlossaryLink, HashText } from '../data/ui.tsx';
 import { CARD_TABLE, CELL_LABEL, EvidenceId, Section } from './Grading.tsx';
-import { confirmationWords, isModelFault } from './headline.ts';
+import { AUDITOR, confirmationWords, isModelFault } from './headline.ts';
 import type { WhereStep } from './where.ts';
 
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
@@ -156,13 +156,14 @@ export function Attribution({ t, e, steps, where = [], headline = null, onStep }
         </dd>
         <dt>Where</dt>
         <dd>{where.length === 0 ? 'no step recorded' : <WhereList where={where} onStep={onStep} />}</dd>
-        <dt>Human audit</dt>
+        <dt>Audit</dt>
         <dd data-testid="audit-notes">
-          {audit === null ? 'not human-audited' : (
+          {audit === null ? NOT_AUDITED_MARKER : (
             <>
-              {/* The plain account first (J17); the auditor's own note, in the audit's shorthand,
-                  behind a disclosure. */}
-              {headline !== null && <span data-testid="audit-plain" className="block text-ink">A person reviewed this trial and {audit.model_fault === 'yes' ? 'agrees it is the model\'s fault' : audit.model_fault === 'no' ? 'says it is not the model\'s fault' : 'did not decide whose fault it is'}: {headline.charAt(0).toLowerCase()}{headline.slice(1)}</span>}
+              {/* The plain account first (J17), naming the auditor as what it was in this run (an
+                  LLM session, headline.ts AUDITOR; eval-p25u-1 defect 1); the auditor's own note,
+                  in the audit's shorthand, behind a disclosure. */}
+              {headline !== null && <span data-testid="audit-plain" className="block text-ink">{AUDITOR.charAt(0).toUpperCase()}{AUDITOR.slice(1)} reviewed this trial and {audit.model_fault === 'yes' ? 'agrees it is the model\'s fault' : audit.model_fault === 'no' ? 'says it is not the model\'s fault' : 'did not decide whose fault it is'}: {headline.charAt(0).toLowerCase()}{headline.slice(1)}</span>}
               <span className="mt-1 block text-xs text-ink-muted">label {e.audit_label ?? 'none'}{audit.taxonomy ? `, kind ${audit.taxonomy.replace(/_/g, ' ')}` : ''}; model fault: {audit.model_fault ?? 'not said'}; LLM auditor agrees: {yesNo(audit.llm_auditor_agrees)}</span>
               {audit.evidence_ids.length > 0 && <span className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1"><span className="text-xs text-ink-muted">Evidence:</span>{audit.evidence_ids.map((id) => <EvidenceId key={id} id={id} steps={steps} onStep={onStep} />)}</span>}
               {audit.note && (
@@ -207,7 +208,7 @@ export function Attribution({ t, e, steps, where = [], headline = null, onStep }
           <CriteriaSummary e={e} />
           <div data-testid="confirmation-criteria">
             {/* M1-M5 confirm a model fault; for another fault they are the criteria checked (gate N3). */}
-            <h4 className="text-xs font-medium text-ink">{isModelFault(e) ? 'Confirmed by the record (M1–M4) and the human audit (M5)' : 'Attribution criteria (M1–M5)'} <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
+            <h4 className="text-xs font-medium text-ink">{isModelFault(e) ? 'Confirmed by the record (M1–M4) and the audit (M5)' : 'Attribution criteria (M1–M5)'} <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
             <ul data-testid="detail-criteria" className="divide-y divide-line">
               {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
             </ul>

@@ -29,6 +29,7 @@ import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { AUDIT_LABELS, OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { FAILURE_LABELS, wilson, type TaskSummary } from '../../../../packages/core/summary.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
+import { ResultsError } from '../data/results-error.tsx';
 import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
@@ -52,7 +53,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const later = usePendingOpen();
   if (params.get('trial')) return <TrialPage headingRef={headingRef} />;
   if (results === null) return <Page title="Runs" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
-  if (results.kind === 'error') return <Page title="Runs" headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Page>;
+  if (results.kind === 'error') return <Page title="Runs" headingRef={headingRef}><ResultsError message={results.message} cannot="there are no runs to list" /></Page>;
   const { official, superseded, pilots, officialError } = results;
   const runs = [...(official ? [official] : []), ...superseded, ...pilots];
   const task = params.get('task') ?? '';
@@ -157,7 +158,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
       {(check !== '' || audit !== '') && (
         <p data-testid="extra-filter" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
           {check !== '' && <span>Failed trials decided by the gate check <code className="text-ink">{check}</code> <button type="button" aria-label="Remove the check filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ check: null, trial: null })}>Remove</button></span>}
-          {audit !== '' && <span>Failed trials the human audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
+          {audit !== '' && <span>Failed trials the audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
         </p>
       )}
       {official && <RunList run={official} matches={matches} filtered={filtered} later={later} />}
@@ -192,7 +193,7 @@ function FaultSummary({ rows }: { rows: readonly TaskSummary[] }) {
       Failures by fault:{' '}
       {labelled
         ? <><span data-testid="runs-fault-counts">{sum('model')} model, {sum('environment')} environment, {sum('grader')} grader</span>{sum('unlabelled') > 0 && <span className="text-ink-muted">, {sum('unlabelled')} not yet audited</span>}</>
-        : <span className="text-ink-muted">no human audit is published, so the failures have no fault labels yet</span>}
+        : <span className="text-ink-muted">no audit is published, so the failures have no fault labels yet</span>}
       {/* The link keeps its underline (V4): a className replaces LINK, so it carries it. */}
       {' '}<GlossaryLink anchor="fault-labels" className={`${LINK} text-xs`}>What the labels mean</GlossaryLink>
     </p>

@@ -118,3 +118,29 @@ describe('loadResults when data/index.json answers an HTTP error', () => {
     expect(await (await freshLoad())()).toEqual({ kind: 'error', message: 'data/index.json: HTTP 500' });
   });
 });
+
+// eval-p25u-1 defect 5: a failed load gets a Retry. reloadResults drops the cached load and wakes
+// every mounted useResults, so the next loadResults fetches again instead of answering the old error.
+describe('reloadResults after a failed load', () => {
+  it('fetches again, and tells each listener once', async () => {
+    let status = 500;
+    let fetches = 0;
+    vi.stubGlobal('fetch', async () => {
+      fetches++;
+      return new Response(status === 200 ? JSON.stringify({ files: [] }) : '', { status });
+    });
+    const mod = await import('./results.ts');
+    expect(await mod.loadResults()).toEqual({ kind: 'error', message: 'data/index.json: HTTP 500' });
+    expect(fetches).toBe(1);
+    let woken = 0;
+    const stop = mod.onResultsReload(() => woken++);
+    status = 200;
+    mod.reloadResults();
+    expect(woken).toBe(1);
+    expect(await mod.loadResults()).toMatchObject({ kind: 'ready', official: null });
+    expect(fetches).toBe(2);
+    stop();
+    mod.reloadResults();
+    expect(woken).toBe(1);
+  });
+});

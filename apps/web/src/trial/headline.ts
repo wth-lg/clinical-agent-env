@@ -6,11 +6,26 @@ import type { Explanation } from '../../../../packages/core/explain.ts';
 
 // The decisive check as the record holds it: a gate over a worklist records each item, and the
 // first failed one carries why, the records that decide it and, on an event gate, the step its
-// arrival fired at.
+// arrival fired at; on an order gate, the step of the order (at) and what the order lacked
+// (evidence.missing_kinds, evidence.unseen).
 export interface HeadlineCheck {
   id: string;
-  items?: readonly { item: string; met: boolean; why?: string; decisive_ids?: readonly string[]; evidence?: Record<string, unknown> }[];
+  items?: readonly { item: string; met: boolean; why?: string; decisive_ids?: readonly string[]; ids?: readonly string[]; evidence?: Record<string, unknown>; at?: unknown }[];
 }
+
+// The exposure of the decisive ids (the record's attribution.exposure): the step each was first
+// returned to the model, null when it never was.
+export type HeadlineExposure = ReadonlyArray<{ id: string; first_exposed_step: number | null }>;
+
+// Who performs the audit (M5) in the published run: LLM sessions, not clinicians. docs/findings.md
+// next step 10 says it ("The reads in this run were LLM sessions"), and the run's README names
+// them: a labelling session wrote each audit row, a second session gave the blinded double label,
+// and `pnpm cli audit-llm` gave the blinded LLM auditor's verdict ("LLM auditor agrees" on the
+// Attribution tab). One constant, so every screen says the same and a run with a human read
+// changes one line (eval-p25u-1 defect 1: no screen may say a person reviewed a trial).
+export const AUDITOR = 'the auditor (an LLM session)';
+// The same fact beside a count of the audit's labels: "Whose fault, by the audit (LLM sessions in this run)".
+export const AUDIT_BY = 'by the audit (LLM sessions in this run)';
 
 // What each kind of model failure means, as the first words of the headline (TAXONOMY_TEXT says
 // the same at length on the Attribution tab and in the glossary).
@@ -51,12 +66,34 @@ function arrivalWords(ids: readonly string[]): { words: string; plural: boolean 
   return { words: plural ? `new ${kinds[0]}s` : `a new ${kinds[0] ?? 'record'}`, plural };
 }
 
+// A kind the order gate names as missing, "Observation from 2024-01-01" (the records of that kind
+// in the screening window), in the reader's words: "results from 2024-01-01 on".
+function missingKindWords(kind: string): string {
+  const m = /^(\w+) from (\d{4}-\d{2}-\d{2})$/.exec(kind.trim());
+  if (m === null) return kind.trim().toLowerCase();
+  return `${KIND_WORD[m[1]!] ?? 'record'}s from ${m[2]} on`;
+}
+const strings = (x: unknown): string[] => (Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : []);
+
+// What the model wrote on an order gate, from the check text's found clause ("a FIT order for
+// Patient/pt-0024 (Delaine Evelyn MacGyver) without ..."): the order and its patient; else "an
+// order" for the patient the text or the item names.
+function orderWords(found: string, item: string): string {
+  const m = /^(an? .*? order) for (Patient\/pt-\d+(?: \([^)]*\))?)/.exec(found);
+  if (m !== null) return `${m[1]} for ${m[2]}`;
+  const who = patientIn(found) ?? patientIn(item) ?? item;
+  return `an order for ${who}`;
+}
+
 // What the decisive check found, in the reader's words. On the gate that checks each arrival was
 // read (event_seen, or an item that says it was never read before the finish): what arrived, for
-// whom, at which step, and that the model never opened it. On any other gate over a worklist: the
-// check text's found value when it is a sentence; the subject and the item's reason when it is a
-// name. Else the found value, else the check's name. Never an event's id (F5).
-function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined): string {
+// whom, at which step, and, with the exposure of the batch, which records the model opened and
+// which it never did (eval-p25u-1 defect 2: "did not review them" overstated a miss of one record
+// in two). On an order gate whose item says what the order lacked (missing_kinds, unseen): what
+// the model wrote, at which step, and what it never reviewed (defect 3). On any other gate over a
+// worklist: the check text's found value when it is a sentence; the subject and the item's reason
+// when it is a name. Else the found value, else the check's name. Never an event's id (F5).
+function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, exposure: HeadlineExposure | null | undefined): string {
   const d = e.decisive_check!;
   const failed = checks?.find((c) => c.id === d.id)?.items?.find((i) => !i.met);
   const found = d.found.trim();
@@ -70,7 +107,24 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
     const who = patientIn(found) ?? patientIn(failed?.item ?? '') ?? subject;
     const { words, plural } = arrivalWords(ids);
     const what = who !== null ? `${words} for ${who}` : ids.length > 0 ? `${words} (${andList(ids)})` : words;
+    // The batch's exposure, when it covers every record that arrived.
+    const seen = ids.map((id) => exposure?.find((x) => x.id === id)).filter((x) => x !== undefined);
+    if (plural && seen.length === ids.length) {
+      const opened = seen.filter((x) => x.first_exposed_step !== null);
+      const missed = seen.filter((x) => x.first_exposed_step === null);
+      if (opened.length > 0 && missed.length > 0) return `${what} arrived at step ${arrived}. The model opened ${andList(opened.map((x) => `${x.id} at step ${x.first_exposed_step}`))} and never opened ${andList(missed.map((x) => x.id))}`;
+      if (missed.length === ids.length) return `${what} arrived at step ${arrived}, and the model opened none of them before finishing`;
+    }
     return `${what} arrived at step ${arrived}, and the model ${plural ? 'did not review them' : 'never opened it'} before finishing`;
+  }
+  const missingKinds = strings(failed?.evidence?.missing_kinds);
+  const unseen = strings(failed?.evidence?.unseen);
+  if (failed !== undefined && typeof failed.at === 'number' && (missingKinds.length > 0 || unseen.length > 0)) {
+    const lacked = [
+      ...(missingKinds.length > 0 ? [`without a complete review of the patient's ${andList(missingKinds.map(missingKindWords))}`] : []),
+      ...(unseen.length > 0 ? [`without opening ${andList(unseen)}`] : []),
+    ];
+    return `the model wrote ${orderWords(found, failed.item)} at step ${failed.at} ${lacked.join(' and ')}, the records that decide the order`;
   }
   if (failed?.why !== undefined && failed.why !== '') {
     const why = noSlugs(failed.why);
@@ -82,14 +136,15 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
 }
 
 // The headline above the verdict chips. taxonomy: the kind of failure the header shows, null when
-// the audit relabelled the trial (data/failures.ts shownKind) or the record has none. Null on an
-// excluded trial, whose "Not counted" line leads instead.
-export function plainHeadline(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, taxonomy: string | null): string | null {
+// the audit relabelled the trial (data/failures.ts shownKind) or the record has none. exposure:
+// the record's attribution.exposure when the caller has it (TrialPage fittingAttribution). Null
+// on an excluded trial, whose "Not counted" line leads instead.
+export function plainHeadline(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, taxonomy: string | null, exposure?: HeadlineExposure | null): string | null {
   if (!e.valid) return null;
   if (e.outcome === 'PASS') return e.fault === 'grader' ? 'Passed, but the grader was wrong: an audit found a false PASS.' : 'Passed every gate check.';
   if (e.outcome === 'REFUSAL') return 'The model refused the task.';
   if (e.outcome === 'LIMIT') return 'The model did not finish: the trial stopped at a limit.';
-  if (e.decisive_check) return sentence(`${(taxonomy !== null && KIND_LEAD[taxonomy]) || 'Failed a gate check'}: ${specific(e, checks)}`);
+  if (e.decisive_check) return sentence(`${(taxonomy !== null && KIND_LEAD[taxonomy]) || 'Failed a gate check'}: ${specific(e, checks, exposure)}`);
   return `The trial ended ${e.outcome}.`;
 }
 
@@ -99,7 +154,7 @@ export function plainHeadline(e: Explanation, checks: readonly HeadlineCheck[] |
 const MET_WORDS: Readonly<Record<string, string>> = {
   M1: 'the records it needed were shown to it or within reach (M1)',
   M2: 'no tool failed inside the environment (M2)',
-  M5: 'a person reviewed it and agrees (M5)',
+  M5: `${AUDITOR} agrees (M5)`,
 };
 export function faultWhy(e: Explanation): string | null {
   if (!e.valid || (e.fault !== 'model' && e.fault !== 'refusal')) return null;
@@ -107,10 +162,11 @@ export function faultWhy(e: Explanation): string | null {
   return parts.length === 0 ? null : `Why it is the model's fault: ${andList(parts)}.`;
 }
 
-// Copy rule C5: "confirmed by the record (M1–M4) and the human audit (M5)", and what is pending or
-// not met when the trial is not there yet. M1-M5 confirm a model fault; for the environment, the
-// grader or infra the label's own definition speaks (F4), so callers use this only on a model or
-// refusal fault (isModelFault).
+// Copy rule C5: "confirmed by the record (M1–M4) and the audit (M5)", and what is pending or not
+// met when the trial is not there yet. The audit is never called human here: who performed it is
+// AUDITOR's fact, said where the criterion is explained (the glossary, faultWhy, the Attribution
+// tab). M1-M5 confirm a model fault; for the environment, the grader or infra the label's own
+// definition speaks (F4), so callers use this only on a model or refusal fault (isModelFault).
 export const isModelFault = (e: Pick<Explanation, 'fault'>): boolean => e.fault === 'model' || e.fault === 'refusal';
 export function confirmationWords(criteria: ReadonlyArray<{ id: string; met: unknown }>): string {
   const metOf = (id: string) => criteria.find((c) => c.id === id)?.met;
@@ -119,6 +175,6 @@ export function confirmationWords(criteria: ReadonlyArray<{ id: string; met: unk
   const pending = record.filter((id) => metOf(id) === 'pending');
   const first = notMet.length > 0 ? `not confirmed by the record (${notMet.join(', ')} not met)` : pending.length > 0 ? `confirmed by the record so far (${pending.join(', ')} pending)` : 'confirmed by the record (M1–M4)';
   const m5 = metOf('M5');
-  const second = m5 === true ? 'and the human audit (M5)' : m5 === 'pending' ? 'while the human audit (M5) is pending' : m5 === false ? 'and the human audit (M5) disagrees' : 'and the human audit (M5) does not apply';
+  const second = m5 === true ? 'and the audit (M5)' : m5 === 'pending' ? 'while the audit (M5) is pending' : m5 === false ? 'and the audit (M5) disagrees' : 'and the audit (M5) does not apply';
   return `${first}${notMet.length > 0 ? ',' : ''} ${second}`;
 }

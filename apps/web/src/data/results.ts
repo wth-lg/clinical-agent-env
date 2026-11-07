@@ -324,14 +324,32 @@ export function loadResults(): Promise<Results> {
   }));
 }
 
+// Retry (eval-p25u-1 defect 5): the error notice's button drops the cached load and wakes every
+// mounted useResults, which shows the loading line and loads again in place. onResultsReload
+// registers a listener and returns the function that removes it.
+const listeners = new Set<() => void>();
+export function onResultsReload(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+export function reloadResults(): void {
+  cached = undefined;
+  for (const l of listeners) l();
+}
+
 export function useResults(): Results | null {
   const [r, setR] = useState<Results | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => onResultsReload(() => setAttempt((n) => n + 1)), []);
   useEffect(() => {
     let live = true;
+    setR(null);
     void loadResults().then((x) => live && setR(x));
     return () => {
       live = false;
     };
-  }, []);
+  }, [attempt]);
   return r;
 }
