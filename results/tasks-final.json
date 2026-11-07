@@ -71,6 +71,14 @@
             "reason": "R41 grader bug fix (builder-304 to builder-307, PR wth-lg/r41-fix): window completeness by exposure of the target set, not by search shape, the target set being the one owed at the decision's turn (packages/grader/exposure.ts windowTargets, windowExposed); final-1 crc-care-gap 6/20 -> 18/20 (G6, G7 regraded FAIL -> PASS), contrast-ct-prep 5/20 unchanged. No task file changed except crc-care-gap's grader-side tests."
           }
         ]
+      },
+      "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
+        "verdict": "Above band",
+        "decision": "accept and disclose",
+        "decided_by": "user",
+        "date": "2026-11-06",
+        "source": "decisions.tsv 2026-11-06T17:27Z (reports/builder-321.md): final-1 stands as measured, no second final run; the writeup discloses each out-of-band result with its Wilson 95% interval and the S5 procedure"
       }
     },
     "discharge-medrec": {
@@ -89,7 +97,15 @@
       },
       "evidence": "results/pilot-5b (W5-P2, 2026-11-06, grader 22, world 2ce2ed71): 8 trials on {B}, 8/8 PASS, lever B (pruitt-metformin) 8/8, base 8/8; pilot-5a on {A,B}: 0/8, A 0/8, B 8/8; lever-select on pilot-5b: {B} 0.810 above the band",
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b): results-inbox and message-queue, nearer 0.45, take the one retune round of at most 2 tasks, so discharge-medrec, the third, freezes on its latest gated version {B} under S5-5/S5-8 (expected above the band; it goes to the user with its card after W5-F); frozen on the W5-H5 world, where its own files are unchanged since pilot-5b",
-      "regrades": []
+      "regrades": [],
+      "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
+        "verdict": "Saturated",
+        "decision": "accept and disclose",
+        "decided_by": "user",
+        "date": "2026-11-06",
+        "source": "decisions.tsv 2026-11-06T17:27Z (reports/builder-321.md): final-1 stands as measured, no second final run; the writeup discloses each out-of-band result with its Wilson 95% interval and the S5 procedure"
+      }
     },
     "message-queue": {
       "task_version": "bacd9df602c4cbd6a63aaab114d0330825534ee9c5812c8c803c15c5f4f96010",
@@ -115,7 +131,15 @@
           "at": "regrade-r48",
           "reason": "R48 grader bug fix and its addendum (gate W5F-238 F1, builder-321, PR #238): for a hold item the amended gate counted only entered-in-error, cancelled and stopped as voiding a renewal sent before the arrival, and required the PCP Task to focus the chart order; RBC-RX-05 section 2 allows holding the order and section 7 says to change, hold or stop it, so an on-hold renewal counts as held and a PCP Task focused on that held renewal (the current order for the drug once it exists) or on the chart order counts (tasks/message-queue/tests/grader.ts HELD, holdTasks; tests/event-cases.ts alternatives and the task_wrong_focus mutants). final-1 message-queue/10 FAIL -> PASS (19/20 -> 20/20, still Saturated); every other record of the run unchanged by the offline regrade over all 120. No task file changed: only tasks/message-queue/tests/** (grader-side), so env_version is unchanged."
         }
-      ]
+      ],
+      "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
+        "verdict": "Saturated",
+        "decision": "accept and disclose",
+        "decided_by": "user",
+        "date": "2026-11-06",
+        "source": "decisions.tsv 2026-11-06T17:27Z (reports/builder-321.md): final-1 stands as measured, no second final run; the writeup discloses each out-of-band result with its Wilson 95% interval and the S5 procedure"
+      }
     },
     "renal-dose-review": {
       "task_version": "4e4f06ca0dc8e6f987f74c8d22da6d2a9667935fa50d39aa6246c777c882d575",
@@ -144,6 +168,14 @@
         },
         "frozen_from_branch": "662f7378d97fe7b683555c224dcd423dd1bcd5df",
         "note": "the W5-S freeze (R44/S5-8) on the W5-S world bae157e6, tag freeze-t1; superseded by the re-freeze on the W5-H5 world above before any final-1 record of the task existed"
+      },
+      "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
+        "verdict": "Above band",
+        "decision": "accept and disclose",
+        "decided_by": "user",
+        "date": "2026-11-06",
+        "source": "decisions.tsv 2026-11-06T17:27Z (reports/builder-321.md): final-1 stands as measured, no second final run; the writeup discloses each out-of-band result with its Wilson 95% interval and the S5 procedure"
       }
     },
     "results-inbox": {

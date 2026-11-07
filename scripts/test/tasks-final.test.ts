@@ -25,6 +25,8 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import type { TaskSource } from '../../packages/core/tasks.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
+import { parseDisclosures, RECOGNISED_DECISIONS } from '../../packages/core/disclosure.ts';
+import type { Summary } from '../../packages/core/summary.ts';
 import { taskVersions } from '../../packages/core/tasks.ts';
 import { repoRoot } from './helpers.ts';
 
@@ -224,6 +226,27 @@ describe('results/tasks-final.json', () => {
   // After a squash merge the PR-branch commit a pointer named is gone from main; the pointer must
   // name a commit on the line of this checkout (the squash commit that holds the run), or a
   // clone cannot reproduce the run (gate FINAL-238 follow-up).
+  // The user's accept-and-disclose decision (decisions.tsv 2026-11-06T17:27Z): every task outside
+  // the band in final-1 carries a disclosure that names its current verdict, the decision and the
+  // date; one on an in-band task, or with another verdict, is stale (packages/core/disclosure.ts).
+  it('every out-of-band task of final-1 has a well-formed disclosure at its current verdict, and no in-band task has one', () => {
+    const disclosures = parseDisclosures(doc());
+    const summary = JSON.parse(readFileSync(join(repoRoot, 'results/runs/final-1/summary.json'), 'utf8')) as Summary;
+    for (const [id, t] of Object.entries(summary.tasks)) {
+      const x = disclosures[id];
+      if (t.band_verdict === 'In band' || t.band_verdict === null) expect(x, `${id} is in the band and holds a disclosure (stale)`).toBeUndefined();
+      else {
+        expect(x, `${id} is ${t.band_verdict} and has no disclosure`).toBeDefined();
+        expect(x!.verdict, `${id}.disclosure.verdict`).toBe(t.band_verdict);
+        expect(x!.decision_id).toBe('user-2026-11-06T17:27Z-accept-and-disclose');
+        expect(RECOGNISED_DECISIONS.map((d) => d.id)).toContain(x!.decision_id);
+        expect(x!.decided_by).toBe('user');
+        expect(x!.date).toBe('2026-11-06');
+      }
+    }
+    for (const id of Object.keys(disclosures)) expect(summary.tasks[id], `${id} is disclosed but not in final-1`).toBeDefined();
+  });
+
   it('every replay_at.commit, entry or superseded, is an ancestor of HEAD', () => {
     const d = doc();
     for (const [id, entry] of Object.entries(d.tasks)) {

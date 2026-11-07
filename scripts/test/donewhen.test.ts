@@ -18,8 +18,10 @@ const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check
 const TASKS = ['t1', 't2', 't3', 't4', 't5'];
 const FINAL_RUN = 'results/runs/final-1';
 const WORLD = '9f2c';
-// Clause (5)'s summary call: the frozen tasks, N and the band from the constants (P21).
-const SUMMARY_CALL = `summary ${FINAL_RUN} --tasks ${TASKS.join(',')} --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`;
+// Clause (5)'s summary call: the frozen tasks, N and the band from the constants (P21), in the
+// band-or-disclosed form (the user's accept-and-disclose decision of 2026-11-06).
+const REQUIRE = `valid=${FINAL_TRIALS_PER_TASK},band-or-disclosed=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0`;
+const SUMMARY_CALL = `summary ${FINAL_RUN} --tasks ${TASKS.join(',')} --require ${REQUIRE} --json`;
 const GRADER_ERROR_CALL = `summary ${FINAL_RUN} --require grader_error=0 --json`;
 const AUDIT_CALL = `audit-check ${FINAL_RUN} --final --json`;
 
@@ -294,10 +296,25 @@ describe('donewhen', () => {
     expect(fail).toContain('t5 3/19');
   });
 
+  // The accept-and-disclose decision: clause 5 reads summary's verdicts and disclosures (never
+  // computed here) and prints the out-of-band count with the decision date, or the tasks not
+  // disclosed and summary's violations.
+  it('clause 5 prints the out-of-band count with the decision date from summary, and the violations when summary fails', () => {
+    const pass = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-disclosed' }).clause(5);
+    expect(pass).toMatch(/^PASS \(5\)/);
+    expect(pass).toContain('t1 16/20, t2 14/20, t3 9/20, t4 20/20, t5 7/20; 2 of 5 outside 0.2-0.7, disclosed: user decision 2026-11-06');
+    const fail = donewhen(completeRepo(), { ...ALL_STUBS, summary: 'summary-undisclosed' }).clause(5);
+    expect(fail).toMatch(/^FAIL \(5\)/);
+    expect(fail).toContain('summary: exit 1');
+    expect(fail).toContain('2 of 5 outside 0.2-0.7, disclosed: user decision 2026-11-06, not disclosed: t4');
+    expect(fail).toContain('violations: t4: 20/20 passes, outside the band 0.2-0.7 of its valid trials, and results/tasks-final.json holds no disclosure for it');
+    expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).toContain('0 of 5 outside 0.2-0.7');
+  });
+
   it('clause 5 fails until every task is frozen, and names the tasks results/tasks-final.json lacks', () => {
     const root = completeRepo();
     write(root, 'results/tasks-final.json', freeze(['t1', 't2', 't3']));
-    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t3 --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`]: 'summary-pass' }).clause(5);
+    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t3 --require ${REQUIRE} --json`]: 'summary-pass' }).clause(5);
     expect(line).toMatch(/^FAIL \(5\)/);
     expect(line).toContain('frozen 3/5, not frozen: t4, t5');
     // The frozen tasks are still summarized, so progress shows while the rest are redesigned.
@@ -312,7 +329,7 @@ describe('donewhen', () => {
     const all = JSON.parse(freeze(TASKS)) as { tasks: Record<string, Record<string, unknown>> };
     all.tasks.t3 = { status: 'v2-pending', reason: 'R42', superseded: { version: 'v1', ...all.tasks.t3 } };
     write(root, 'results/tasks-final.json', JSON.stringify(all));
-    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t4,t5 --require valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0 --json`]: 'summary-pass' }).clause(5);
+    const line = donewhen(root, { ...ALL_STUBS, [SUMMARY_CALL]: 'summary-pass', [`summary ${FINAL_RUN} --tasks t1,t2,t4,t5 --require ${REQUIRE} --json`]: 'summary-pass' }).clause(5);
     expect(line).toMatch(/^FAIL \(5\)/);
     expect(line).toContain('frozen 4/5, not frozen: t3 (v2 pending, its v1 freeze superseded)');
     expect(line).not.toContain('t3 at ');
