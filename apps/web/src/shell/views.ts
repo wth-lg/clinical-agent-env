@@ -24,6 +24,14 @@ export const DEFAULT_VIEW = VIEWS[0]!;
 
 export const viewFromUrl = (href: string): View => VIEWS.find((v) => v.id === new URL(href).searchParams.get('view')) ?? DEFAULT_VIEW;
 
+// The rail item to mark for a URL: the view, except that a session trial's page
+// (?view=runs&run=session, trial/session.ts) belongs to the Live trial view, where its Your runs
+// list is and where Back to Live trial returns (P25u A19); the body still renders the runs view.
+export const railViewFromUrl = (href: string): View => {
+  const params = new URL(href).searchParams;
+  return params.get('view') === 'runs' && params.get('run') === 'session' ? (VIEWS.find((v) => v.id === 'live') ?? DEFAULT_VIEW) : viewFromUrl(href);
+};
+
 // A rail link opens the view fresh: the task, label, open trial, its run and its tab of the view
 // left behind would be filters nobody set on the new one (review-ui-P14-2 F2, verifier-phase-P16-1
 // N1); only the trial detail reads run, and only it and an open task read tab, so nothing else is

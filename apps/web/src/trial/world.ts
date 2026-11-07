@@ -50,15 +50,17 @@ export function worldStatus(initial: string | null | undefined, manifest: string
 export const shortHash = (hash: string): string => `${hash.slice(0, 12)}…`;
 
 // "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep." The strings are in
-// docs/requirements/ui-contract.md (`matches the manifest`, `matches the frozen world of`).
+// docs/requirements/ui-contract.md (`matches the manifest`, `matches the frozen world of`). The
+// manifest world is "today's build" on every screen (P25u J3, copy rule C3; the Environment view
+// says the same), so the contract string reads "matches the manifest, today's build".
 export function worldLine(w: WorldStatus, task: string, freezes: readonly FrozenWorld[] = []): string {
   if (w.kind === 'none') return 'World not recorded.';
   const current = freezes.find((f) => f.role === 'current');
-  if (w.kind === 'manifest') return `World ${shortHash(w.hash!)}: matches the manifest${w.missesFrozen && current ? `, not the frozen world of ${task} (${shortHash(current.world_hash)})` : ''}.`;
+  if (w.kind === 'manifest') return `World ${shortHash(w.hash!)}: matches the manifest, today's build${w.missesFrozen && current ? `, not the frozen world of ${task} (${shortHash(current.world_hash)})` : ''}.`;
   if (w.kind === 'frozen') {
     const m = w.match!;
     const which = m.role === 'superseded' ? ` ${m.version ?? 'superseded'} (superseded)` : m.role === 'previous' ? ` before its re-freeze${m.tag ? ` (tag ${m.tag})` : ''}` : '';
     return `World ${shortHash(w.hash!)}: matches the frozen world of ${task}${which}.`;
   }
-  return `World ${shortHash(w.hash!)}: matches neither today's manifest nor a frozen world of ${task}.`;
+  return `World ${shortHash(w.hash!)}: matches neither today's build nor a frozen world of ${task}.`;
 }

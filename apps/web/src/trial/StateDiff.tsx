@@ -56,32 +56,33 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
   return (
     <div className="space-y-4">
       {!otherWorld ? (
-        <p data-testid="manifest-line" className="break-words text-ink">Initial state hash matches the manifest: the trial started from the world every trial starts from.</p>
+        <p data-testid="manifest-line" className="break-words text-ink">Initial world hash matches the manifest, today's build: the trial started from the world a trial run today starts from.</p>
       ) : onFrozen ? (
         <p data-testid="manifest-line" data-tone="frozen" className="break-words text-ink-muted">
-          Initial state hash {shortHash(h.initial!)} matches the frozen world of {t.task} (results/tasks-final.json), not today's manifest ({shortHash(manifest)}). Its records are historical and are reproduced at {reproduce !== null ? <>tag <code className="text-xs text-ink">{reproduce.tag}</code> ({reproduce.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{frozen.frozen_at.tag}</code></>}, not here.
+          Initial world hash {shortHash(h.initial!)} matches the frozen world of {t.task} (results/tasks-final.json), not today's build ({shortHash(manifest)}). Its records are historical and are reproduced at {reproduce !== null ? <>tag <code className="text-xs text-ink">{reproduce.tag}</code> ({reproduce.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{frozen.frozen_at.tag}</code></>}, not here.
         </p>
       ) : official ? (
-        <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
+        <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial world hash does not match the manifest, today's build: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
       ) : superseded !== null ? (
         <p data-testid="manifest-line" data-tone={world.kind === 'frozen' ? 'frozen' : 'neutral'} className="break-words text-ink-muted">
           This trial is of {superseded.task} {superseded.version}, a superseded version of the official run {superseded.of}, not counted in the results.{' '}
           {world.kind === 'frozen' && matched !== null ? (
             <>
-              Its initial state hash {shortHash(world.hash!)} matches {matched.role === 'superseded' ? 'that version\'s frozen world' : `the frozen world of ${t.task}${matched.role === 'previous' ? ' before its re-freeze' : ''}`} (results/tasks-final.json), not today's manifest ({shortHash(manifest)}). Its records are historical and are reproduced at {matched.replay_at !== null ? <>tag <code className="text-xs text-ink">{matched.replay_at.tag}</code> ({matched.replay_at.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{matched.frozen_at.tag}</code></>}, not here.
+              Its initial world hash {shortHash(world.hash!)} matches {matched.role === 'superseded' ? 'that version\'s frozen world' : `the frozen world of ${t.task}${matched.role === 'previous' ? ' before its re-freeze' : ''}`} (results/tasks-final.json), not today's build ({shortHash(manifest)}). Its records are historical and are reproduced at {matched.replay_at !== null ? <>tag <code className="text-xs text-ink">{matched.replay_at.tag}</code> ({matched.replay_at.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{matched.frozen_at.tag}</code></>}, not here.
             </>
-          ) : world.kind === 'none' ? `Its record has no initial state hash, so the world it ran on is not known. Today's world is ${manifest.slice(0, 4)}….`
-            : `It ran on another world version (${world.hash!.slice(0, 4)}…). Today's world is ${manifest.slice(0, 4)}….`}
+          ) : world.kind === 'none' ? `Its record has no initial world hash, so the world it ran on is not known. Today's build is ${manifest.slice(0, 4)}….`
+            : `It ran on another world version (${world.hash!.slice(0, 4)}…). Today's build is ${manifest.slice(0, 4)}….`}
         </p>
       ) : (
         <p data-testid="manifest-line" data-tone="neutral" className="break-words text-ink-muted">
-          {h.initial === null ? 'This pilot\'s record has no initial state hash, so the world it ran on is not known.' : `This pilot ran on another world version (${h.initial.slice(0, 4)}…).`} Today's world is {manifest.slice(0, 4)}….
+          {h.initial === null ? 'This pilot\'s record has no initial world hash, so the world it ran on is not known.' : `This pilot ran on another world version (${h.initial.slice(0, 4)}…).`} Today's build is {manifest.slice(0, 4)}….
         </p>
       )}
+      {/* The hashes by name (P25u J3: "world hash", "today's build", never "state hash" on screen). */}
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dt]:text-ink-muted">
-        <dt>Manifest</dt><dd><Hash value={manifest} testId="hash-manifest" /></dd>
-        <dt>Initial</dt><dd><Hash value={h.initial} testId="hash-initial" /></dd>
-        <dt>Final</dt><dd><Hash value={h.final} testId="hash-final" /></dd>
+        <dt>Today's build</dt><dd><Hash value={manifest} testId="hash-manifest" /></dd>
+        <dt>Initial world hash</dt><dd><Hash value={h.initial} testId="hash-initial" /></dd>
+        <dt>Final world hash</dt><dd><Hash value={h.final} testId="hash-final" /></dd>
         <dt>Replay at grading</dt><dd><Hash value={h.replay_final ?? null} testId="hash-replay" /></dd>
       </dl>
       {decisiveIds.length > 0 && events?.state === 'ready' && (
@@ -140,7 +141,7 @@ function Result({ r, recorded, decisiveIds, otherWorld }: { r: StateRun; recorde
   return (
     <div data-testid="replay-result" data-match={String(match)} data-expected={String(expected)} data-final={r.final ?? ''} className="space-y-3">
       <p data-testid="replay-line" className={`break-words ${match ? 'text-ink' : expected ? 'text-ink-muted' : 'font-medium text-danger'}`}>
-        {r.error !== null ? `A tool call failed on replay: ${r.error}${expected ? ' This is expected: the trial started from another world.' : ''}` : recorded === null ? 'The record has no final hash to compare.' : match ? 'The replayed final state hash matches the record.' : expected ? 'The replayed final state hash differs from the record, as expected: the trial started from another world than today\'s.' : 'The replayed final state hash differs from the record.'}
+        {r.error !== null ? `A tool call failed on replay: ${r.error}${expected ? ' This is expected: the trial started from another world.' : ''}` : recorded === null ? 'The record has no final hash to compare.' : match ? 'The replayed final world hash matches the record.' : expected ? 'The replayed final world hash differs from the record, as expected: the trial started from another world than today\'s.' : 'The replayed final world hash differs from the record.'}
       </p>
       <p className="flex flex-wrap items-center gap-x-1 text-ink-muted">Replayed final <Hash value={r.final} testId="hash-replayed" /></p>
       <Section title={`Created (${r.diff.created.length}), changed (${r.diff.updated.length})`}>
