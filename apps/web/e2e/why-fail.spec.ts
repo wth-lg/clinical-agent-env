@@ -274,7 +274,9 @@ test('a blocked pilot gives no pass count: its Runs header, its Overview line an
 // (verifier-phase-P17i-UI-FU-1 B1; coordinator, builder-227 handshake).
 // Any form of the Runs count line (runs/count.ts, P25u J9): "Showing <n> ...", or the older
 // "<k> of <n> trials". Not a bare "\d+ trials": the grading line "(20 trials, ...)" holds one.
-const anyCount = /\bShowing \d+|\d+ of \d+ (official )?trials/;
+// No \b before "Showing": toContainText reads textContent, which joins adjacent elements with
+// no space ("...a fixShowing 3 trials..."), so a boundary there never matches a leaked line.
+const anyCount = /Showing \d+|\d+ of \d+ (official )?trials/;
 const LABELS = ['', 'model', 'grader', 'environment', 'infra', 'pass'];
 const queries = LABELS.flatMap((l) => ['', '&task=renal-dose-review'].map((t) => `./?view=runs${l === '' ? '' : `&label=${l}`}${t}`));
 async function noCount(page: Page, trials: number) {
