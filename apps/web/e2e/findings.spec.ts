@@ -84,7 +84,10 @@ test('Findings: the analysis is closed at first under the difficulty history; th
   await page.getByTestId('plain-terms-exact').getByRole('link', { name: 'Exact rules' }).click();
   await expect(page).toHaveURL(/#pass$/);
   await expect(rules).toHaveAttribute('open', '');
-  await expect(page.getByTestId('glossary-pass')).toBeVisible();
+  // The #pass section and its plain rules show; PASS_DEFINITION itself (glossary-pass) stays
+  // behind the plain rules' own inner "Exact rule" toggle, as on every page that renders them.
+  await expect(page.locator('#pass')).toBeVisible();
+  await expect(page.locator('#pass').getByTestId('plain-rules')).toBeVisible();
   // The link from Findings to the Fault labels table opens the disclosure it sits in.
   await browse(page, './?view=findings');
   await page.getByRole('link', { name: 'whose fault each failure is' }).click();
