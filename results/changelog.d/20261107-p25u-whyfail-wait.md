@@ -1,0 +1,1 @@
+- why-fail.spec (builder-332): the three Runs count tests wait for the Runs header card before they read a count, so a read before the routed index and the results have loaded on a busy machine no longer fails them; no assertion changed. No screen changes.

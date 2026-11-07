@@ -279,9 +279,18 @@ test('a blocked pilot gives no pass count: its Runs header, its Overview line an
 const anyCount = /Showing \d+|\d+ of \d+ (official )?trials/;
 const LABELS = ['', 'model', 'grader', 'environment', 'infra', 'pass'];
 const queries = LABELS.flatMap((l) => ['', '&task=renal-dose-review'].map((t) => `./?view=runs${l === '' ? '' : `&label=${l}`}${t}`));
+// The Runs header card renders once the published results (and the routed index) have loaded:
+// read a count only after it, with time for a loaded machine, so a read before the data is in
+// does not fail the test (two builders saw a 5 s miss at load average 900). Each assertion after
+// it keeps its own default timeout.
+async function runsLoaded(page: Page, q: string) {
+  await browse(page, q);
+  await expect(page.getByTestId('runs-summary'), q).toBeVisible({ timeout: 60_000 });
+}
+
 async function noCount(page: Page, trials: number) {
   for (const q of queries) {
-    await browse(page, q);
+    await runsLoaded(page, q);
     await expect(page.getByTestId('shown-count-held'), q).toHaveText(`Count hidden while ${trials} ${trials === 1 ? 'trial needs' : 'trials need'} a fix`);
     await expect(page.getByTestId('shown-count'), q).toHaveCount(0);
     await expect(page.locator('main'), q).not.toContainText(anyCount);
@@ -308,13 +317,13 @@ test('Runs keeps its trial count for every label when no run in the list is bloc
     await route.fulfill({ response: res, json: { ...rest, files: files.filter((f) => !f.startsWith(`results/${BLOCKED_PILOT}/`)) } });
   });
   for (const q of queries) {
-    await browse(page, q);
+    await runsLoaded(page, q);
     // The count leads with the official trials (P25u J9, runs/count.ts).
     await expect(page.getByTestId('shown-count'), q).toHaveText(/^Showing \d+( of \d+)? official trials?( \(\d+ more in [a-z ]+, not counted\))?$/);
     await expect(page.getByTestId('run-blocked'), q).toHaveCount(0);
     await expect(page.getByTestId('shown-count-held'), q).toHaveCount(0);
   }
-  await browse(page, './?view=runs&label=pass');
+  await runsLoaded(page, './?view=runs&label=pass');
   await expect(page.getByTestId('shown-count')).toHaveText(/^Showing [1-9]\d* of \d+ official trials?( \(\d+ more in [a-z ]+, not counted\))?$/);
 });
 
