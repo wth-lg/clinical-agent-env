@@ -4,7 +4,7 @@
 // with the M1-M4 count (failures with M1-M4 all met, of the valid failures). Hand counts over the
 // clean fixture run: per task 5 PASS and 5 FAIL, each FAIL failing G1, attributed reasoning and
 // labelled model.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
@@ -65,6 +65,9 @@ describe('pnpm cli summary --require env_limit=0', () => {
     const out: string[] = [];
     expect(await summary([dir, '--allow-mock', '--require', 'env_limit=0', '--write'], { out: (l) => out.push(l), err: (l) => out.push(l) })).toBe(1);
     expect(out).toContain(`violation: ENV_LIMIT in 1 attempt (never rerun: ${NOT_RERUN_REASON.ENV_LIMIT}), required at most 0`);
+    // A failed --require writes nothing (builder-328); the counts are read from a write without it.
+    expect(existsSync(join(dir, 'summary.json'))).toBe(false);
+    expect(await summary([dir, '--allow-mock', '--write'], { out: () => {}, err: () => {} })).toBe(0);
     const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { totals: { env_limit: number }; tasks: Record<string, { env_limit: number }> };
     expect(s.totals.env_limit).toBe(1);
     expect(s.tasks['t-alpha']!.env_limit).toBe(1);

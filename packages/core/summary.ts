@@ -439,8 +439,8 @@ export interface Summary {
   // With band-or-disclosed: the disclosure of each out-of-band task the requirement accepted, by
   // task ({} when every task is in the band); scripts/donewhen.ts prints them.
   disclosed?: Record<string, Disclosure>;
-  // Written by cli/judge-agreement.ts --write after `summary --write` (which rewrites the file
-  // without them): the hand labels' agreement with the judge and extractor answers the records
+  // Written by cli/judge-agreement.ts --write after `summary --write`, which carries them
+  // through a later rewrite (cli/summary.ts CARRIED_FIELDS): the hand labels' agreement with the judge and extractor answers the records
   // cached, and, from --double-label, Cohen's kappa of the blinded double label and of the
   // builder labels against the LLM auditor (P23, R14-33). validateSummary does not read them.
   judge_agreement?: { n_judge: number; judge_agree: number; judge_agreement: number | null; n_extract: number; extract_agree: number; extract_agreement: number | null; labels: string };
