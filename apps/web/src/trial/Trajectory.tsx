@@ -103,12 +103,13 @@ function KeyValues({ caption, value, testId }: { caption: string; value: unknown
           {entries.map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="break-all font-mono text-ink-muted">{k}</dt>
-              <dd className="min-w-0 break-words">{scalar(v) ?? <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono">{JSON.stringify(v, null, 2)}</pre>}</dd>
+              {/* A block that can scroll is a Tab stop, so the keyboard can reach its content (gate F8). */}
+              <dd className="min-w-0 break-words">{scalar(v) ?? <pre tabIndex={0} className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm font-mono focus-visible:outline-2 focus-visible:outline-accent">{JSON.stringify(v, null, 2)}</pre>}</dd>
             </div>
           ))}
         </dl>
       ) : (
-        <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono">{scalar(value) ?? JSON.stringify(value, null, 2)}</pre>
+        <pre tabIndex={0} className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm font-mono focus-visible:outline-2 focus-visible:outline-accent">{scalar(value) ?? JSON.stringify(value, null, 2)}</pre>
       )}
     </div>
   );

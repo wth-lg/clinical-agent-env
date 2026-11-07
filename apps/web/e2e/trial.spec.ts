@@ -140,9 +140,9 @@ test('the header shows outcome, label, decisive check and reason of each non-pas
     if (e.fault === 'infra') await expect(h.getByTestId('label')).toHaveText('API problem: not counted, run again');
     else await expect(h.getByTestId('label')).toHaveText(`${e.label}${e.label_subtype ? ` (${e.label_subtype})` : ''}`);
     await expect(h.getByTestId('not-audited')).toHaveCount(e.audited || e.fault === 'infra' ? 0 : 1);
-    // The exact check sits behind a closed disclosure on a valid trial (P25u J2); its text is in
-    // the DOM either way. An excluded trial has no Exact check row: its record reason leads.
-    if (e.decisive_check && e.valid) {
+    // The exact check sits behind a closed disclosure (P25u J2); its text is in the DOM either
+    // way. An excluded trial keeps the row too, under its record reason (gate F6).
+    if (e.decisive_check) {
       const d = h.getByTestId('decisive-check');
       await expect(d).toHaveAttribute('data-id', e.decisive_check.id);
       await expect(d.getByTestId('decisive')).toHaveText(e.decisive_check.id);

@@ -36,13 +36,47 @@ const base = (over: Partial<Explanation>): Explanation => ({
   ...over,
 });
 
-// The decisive check's items, as the record holds them (the first failed item carries why and, on
-// an event gate, the step the arrival fired at).
-const EVENT_CHECKS = [{ id: 'event_seen', items: [{ item: 'Patient/pt-0047', met: false, why: 'event t5-mohr-scr arrived at step 52 and was never read before finish', evidence: { arrived_at: 52 } }, { item: 'Patient/pt-0015', met: true }] }];
+// The decisive check's items, as the record holds them (the first failed item carries why, the
+// records it turns on and, on an event gate, the step the arrival fired at): final-1
+// contrast-ct-prep/0's event_seen.
+const EVENT_CHECKS = [{ id: 'event_seen', items: [{ item: 'Patient/pt-0047', met: false, why: 'event t5-mohr-scr arrived at step 52 and was never read before finish', decisive_ids: ['Observation/obs-07502', 'Observation/obs-07501'], evidence: { arrived_at: 52 } }, { item: 'Patient/pt-0015', met: true }] }];
+const eventCheck = (item: string, why: string, decisive_ids: string[], arrived_at: number, id = 'event_seen') => [{ id, items: [{ item, met: false, why, decisive_ids, evidence: { arrived_at } }] }];
 
 describe('plainHeadline', () => {
-  it('opens with the kind of failure in words, then what was missed, with the arrival step on an event gate', () => {
-    expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval')).toBe('Missed a record it needed: a new result for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model never opened it before finishing.');
+  it('opens with the kind of failure in words, then what arrived for whom and at which step on an event gate', () => {
+    expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval')).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model did not review them before finishing.');
+  });
+  it('names the patient from the found text when that text is a clause, never pasting the clause in (gate F2: renal-dose-review/4, 10, 13, 19)', () => {
+    const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0062 (Norman Fairweather) had an arrival that was never opened before the review finished' } });
+    const checks = eventCheck('Patient/pt-0062', 'event fairweather-scr-batch arrived at step 30 and was never read before finish', ['Observation/obs-04004'], 30);
+    expect(plainHeadline(e, checks, 'retrieval')).toBe('Missed a record it needed: a new result for Patient/pt-0062 (Norman Fairweather) arrived at step 30, and the model never opened it before finishing.');
+  });
+  it('names the patient, not the event slug, when the item is a slug (gate F5: results-inbox)', () => {
+    const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'marchetti_cr_ed (Patient/pt-0064)' } });
+    const checks = eventCheck('marchetti_cr_ed', 'event marchetti-cr-batch arrived at step 41 and was never read before finish', ['Observation/obs-06209', 'Observation/obs-06210'], 41);
+    const line = plainHeadline(e, checks, 'retrieval')!;
+    expect(line).toBe('Missed a record it needed: new results for Patient/pt-0064 arrived at step 41, and the model did not review them before finishing.');
+    expect(line).not.toContain('marchetti');
+  });
+  it('says what kind of record arrived: a message, a report', () => {
+    const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0012 (Ira Moravec)' } });
+    expect(plainHeadline(e, eventCheck('Patient/pt-0012', 'event moravec-weight-reported arrived at step 20 and was never read before finish', ['Communication/comm-00101'], 20), 'retrieval')).toBe('Missed a record it needed: a new message for Patient/pt-0012 (Ira Moravec) arrived at step 20, and the model never opened it before finishing.');
+    expect(plainHeadline(e, eventCheck('Patient/pt-0012', 'event vance-itraconazole arrived at step 9 and was never read before finish', ['DocumentReference/doc-00301'], 9), 'retrieval')).toBe('Missed a record it needed: a new report for Patient/pt-0012 (Ira Moravec) arrived at step 9, and the model never opened it before finishing.');
+  });
+  it('says "never opened" only for an arrival that was never read: an arrival whose trigger never held is told by its own reason, without the event slug (gate F3)', () => {
+    const e = base({ decisive_check: { id: 'event_delivered', traces_to: null, expected: 'every active event arrived', found: 'Patient/pt-0062 (Norman Fairweather)' }, fault: 'env', label: 'environment' });
+    const checks = eventCheck('Patient/pt-0062', 'event fairweather-scr-batch arrived at step 30 though its trigger never held', ['Observation/obs-04004'], 30, 'event_delivered');
+    const line = plainHeadline(e, checks, null)!;
+    expect(line).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): an arrival arrived at step 30 though its trigger never held.');
+    expect(line).not.toContain('never opened');
+    expect(line).not.toContain('fairweather-scr-batch');
+  });
+  it('keeps the check text\'s own sentence on a gate whose found value is a clause, with no event slug (crc-care-gap fit_orders)', () => {
+    const e = base({ decisive_check: { id: 'fit_orders', traces_to: null, expected: 'one FIT order per due patient', found: 'a FIT order for Patient/pt-0022 (Tiny Darline Koss) without a complete screening review ever made' } });
+    const checks = [{ id: 'fit_orders', items: [{ item: 'Patient/pt-0022', met: false, why: "ordered after crc-b2 arrived without the trial ever making a complete review of the patient's Observation from 2024-01-01 records", decisive_ids: ['Patient/pt-0022'] }] }];
+    const line = plainHeadline(e, checks, 'retrieval')!;
+    expect(line).toBe('Missed a record it needed: a FIT order for Patient/pt-0022 (Tiny Darline Koss) without a complete screening review ever made.');
+    expect(line).not.toContain('crc-b2');
   });
   it('names the first failed item\'s reason on a gate with items and no arrival', () => {
     const checks = [{ id: 'doac_dose', items: [{ item: 'Patient/pt-0003', met: false, why: 'rivaroxaban 20 mg once daily; the policy dose is 15 mg' }] }];

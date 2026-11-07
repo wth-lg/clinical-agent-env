@@ -211,8 +211,8 @@ test('3.4: Attribution opens with its verdict, shows M1-M5 met or not met, and k
       await expect(row).toContainText(`${c.id}: ${MET_TEXT[String(c.met)]}`);
     }
     for (const row of await p.locator('[data-testid="criterion-row"]:not([data-fault="confirmation"])').all()) await expect(row).toBeHidden();
-    // Copy rule C5's phrase (P25u J8b).
-    if (e.confirmation) await expect(p.getByTestId('confirmation')).toContainText(`${e.confirmation}: ${confirmationWords(e.criteria)}.`);
+    // Copy rule C5's phrase on a model fault (P25u J8b); the definition for any other fault (gate F4).
+    if (e.confirmation) await expect(p.getByTestId('confirmation')).toContainText(e.fault === 'model' || e.fault === 'refusal' ? `${e.confirmation}: ${confirmationWords(e.criteria)}.` : `${e.confirmation} (M1–M5)`);
   }
 });
 
@@ -458,11 +458,58 @@ test('a CANCELLED trial\'s header and Grading tab agree with its chip: stopped, 
   await expect(h.getByTestId('reason')).toHaveCount(0);
   await expect(h.getByTestId('detail-fault')).toContainText('The trial ended when Stop was pressed, not because of anything the model did.');
   await expect(h.getByTestId('detail-fault')).toContainText('Rule I4: a stop from outside the harness ended the run before the trial ended.');
-  // The page's own words carry none of the record's "rerun" phrasing. The fault chip is
-  // data/ui.tsx (S1's A1a makes it "Stopped: not counted"), so it is left out of this read.
-  const own = await h.evaluate((x) => { const c = x.cloneNode(true) as HTMLElement; c.querySelectorAll('[data-testid="label"]').forEach((el) => el.remove()); return c.textContent ?? ''; });
-  for (const words of ['excluded and rerun', 'run again', 'API or the harness', 'API problem']) expect(own).not.toContain(words);
+  // The chip (data/ui.tsx, S1's A1a) and the page's own words agree: nothing says "rerun" or "API".
+  await expect(h.getByTestId('label')).toHaveText('Stopped: not counted');
+  for (const words of ['excluded and rerun', 'run again', 'API or the harness', 'API problem']) await expect(h).not.toContainText(words);
   await expect(page.getByTestId('panel-grading').getByTestId('grading-empty')).toHaveText('Not graded. You stopped this trial before the model finished, so it is not counted; the grader did not check it.');
+});
+
+// Gate P25U-S3 F4: M1-M5 confirm a model fault, so copy rule C5's phrase is for model and refusal
+// faults; an environment fault keeps its confirmation state and definition, never "confirmed: not
+// confirmed by the record".
+test('F4: a trial whose fault is not the model\'s keeps the confirmation definition, not the M1-M5 phrase', async ({ page }) => {
+  const e = await explain(TRIALS.envError);
+  expect(e.fault).toBe('env');
+  await openTrial(page, TRIALS.envError, '&tab=attribution');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const confirmation = page.getByTestId('panel-attribution').getByTestId('confirmation');
+  await expect(confirmation).toContainText(`${e.confirmation} (M1–M5)`);
+  await expect(confirmation).not.toContainText('by the record');
+  const summary = page.getByTestId('trial-header').getByTestId('header-criteria-summary');
+  await expect(summary).toContainText(/^\d of 5 confirmed/);
+  await expect(summary).not.toContainText('by the record');
+  // A model fault keeps the phrase.
+  await openTrial(page, TRIALS.failAudited, '&tab=attribution');
+  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4)');
+});
+
+// Gate F6 (latent): the header's Exact check row no longer requires a valid trial, so an excluded
+// trial with a decisive check would keep its requires/found. packages/core/explain.ts:619 gives an
+// excluded trial no decisive check ("no check gave a verdict on the model"), so no record, served
+// or routed, reaches that row today; the condition is covered by trial.spec's header test on every
+// trial with a decisive check.
+
+// Gate F8: a value block that can scroll is a Tab stop (axe scrollable-region-focusable).
+test('F8: a nested value in an open tool call is a focusable block', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.envError);
+  const failed = page.getByTestId('trajectory').locator('[data-testid="step"][data-error="INTERNAL"]').first();
+  await failed.getByRole('button').first().click();
+  const pre = failed.getByTestId('step-result').locator('pre');
+  await expect(pre.first()).toHaveAttribute('tabindex', '0');
+});
+
+// P25u A19 (rail part, after S1): a session trial's page marks Live trial on the rail, where its
+// Your runs list and Back to Live trial lead, while the page itself is the runs view's trial page.
+test('A19: on a session trial page the rail marks Live trial, not Runs', async ({ page }) => {
+  await browseDefault(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  const rail = page.getByRole('navigation', { name: 'Views' });
+  await expect(rail.getByRole('link', { name: 'Live trial' })).toHaveAttribute('aria-current', 'page');
+  await expect(rail.getByRole('link', { name: 'Runs', exact: true })).not.toHaveAttribute('aria-current', 'page');
+  // A published trial keeps Runs.
+  await browseDefault(page, './?view=runs&run=final-1&trial=first-nonpass');
+  await expect(rail.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
 });
 
 test.describe('coarse pointer at 390', () => {

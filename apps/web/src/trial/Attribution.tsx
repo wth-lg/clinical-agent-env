@@ -16,7 +16,7 @@ import type { Trial } from '../data/results.ts';
 import { shownFault } from '../data/failures.ts';
 import { GlossaryLink, HashText } from '../data/ui.tsx';
 import { CARD_TABLE, CELL_LABEL, EvidenceId, Section } from './Grading.tsx';
-import { confirmationWords } from './headline.ts';
+import { confirmationWords, isModelFault } from './headline.ts';
 import type { WhereStep } from './where.ts';
 
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
@@ -143,12 +143,15 @@ export function Attribution({ t, e, steps, where = [], headline = null, onStep }
         </dd>
         <dt>Confirmation</dt>
         <dd data-testid="confirmation">
-          {e.confirmation === null ? 'does not apply' : (
+          {e.confirmation === null ? 'does not apply' : isModelFault(e) ? (
             <>
-              {/* Copy rule C5's phrase (J8b), then the state's definition. */}
+              {/* Copy rule C5's phrase (J8b) on a model fault, then the state's definition. */}
               <GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation}</GlossaryLink>: {confirmationWords(e.criteria)}.
               <span className="block text-xs text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span>
             </>
+          ) : (
+            // M1-M5 confirm a model fault; another fault's label is confirmed by its own definition (gate F4).
+            <><GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation} (M1–M5)</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>
           )}
         </dd>
         <dt>Where</dt>

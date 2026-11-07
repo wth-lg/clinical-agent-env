@@ -34,7 +34,10 @@ import { MANIFEST } from '../data/world.ts';
 import { frozenWorlds, worldLine, worldStatus } from './world.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
-import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
+// The page column, the h1 and the tab pill are S1's shared classes (P25u V8, V12c, V13c): the
+// trial page sits on the same left edge as every other view, its title is the same size, and a
+// second row of tabs on a phone reads as the same control as the first.
+import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip, PAGE_TITLE, PAGE_WIDTH, TAB, TAB_ACTIVE, TAB_IDLE, TAB_STRIP } from '../data/ui.tsx';
 import { blocksTheRun, relabelledFrom, runBlock, shownFault, shownKind } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -45,7 +48,7 @@ import { useHosted } from '../surface/hosted.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink, WhereList } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading, tidyCheckText, type CheckRow } from './Grading.tsx';
-import { confirmationWords, faultWhy, plainHeadline } from './headline.ts';
+import { confirmationWords, faultWhy, isModelFault, plainHeadline } from './headline.ts';
 import { useRubricQuestions } from './questions.ts';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
@@ -57,16 +60,6 @@ import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
 import { whereSteps, type WhereStep } from './where.ts';
 
-// The page column and the h1, as data/ui.tsx Page draws every other view (P25u V8, V13c): the
-// trial page sits on the same left edge and its title is the same size.
-const PAGE_WIDTH = 'mx-auto w-full max-w-5xl px-4 sm:px-6';
-const PAGE_TITLE = 'text-xl font-semibold tracking-tight text-ink';
-// The tab pill, as the rail draws its active item (P25u V12c): a filled pill, not a bottom border,
-// so a second row of tabs on a phone reads as the same control.
-const TAB_STRIP = 'flex flex-wrap gap-x-1 gap-y-1 border-b border-line px-2 py-1.5';
-const TAB = 'inline-flex h-8 items-center rounded-md px-3 text-sm pointer-coarse:h-11';
-const TAB_ACTIVE = 'bg-line/80 font-medium text-ink dark:bg-line';
-const TAB_IDLE = 'text-ink-muted hover:bg-canvas hover:text-ink';
 
 export const TABS = [
   { id: 'grading', label: 'Grading' },
@@ -388,6 +381,7 @@ function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanat
   const lead = plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, kind === null ? null : e.taxonomy);
   const why = from === null ? faultWhy(e) : null;
   const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a');
+  const open = e.criteria.filter((c) => !confirmed.includes(c));
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 ${CARD} p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       {lead !== null && <p data-testid="trial-headline" className="mb-2 break-words text-base font-semibold text-ink">{lead}</p>}
@@ -437,12 +431,14 @@ function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanat
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        {e.decisive_check && e.valid && (
+        {/* An excluded trial with a failed check keeps the compact requires/found row (gate F6);
+            its reason sits under its "Not counted" line, so the row holds no second copy. */}
+        {e.decisive_check && (
           <>
             <dt>Exact check</dt>
             <dd data-testid="decisive-check" data-id={e.decisive_check.id}>
-              <Reason reason={e.reason} tone="exact" />
-              <details data-testid="exact-check" className="mt-1">
+              {e.valid && <Reason reason={e.reason} tone="exact" />}
+              <details data-testid="exact-check" className={e.valid ? 'mt-1' : ''}>
                 <summary className="cursor-pointer text-ink-muted pointer-coarse:py-3.5">
                   <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>
                   {e.decisive_check.traces_to && <span> (enforces {e.decisive_check.traces_to})</span>}: show what it requires and what the trial left
@@ -464,7 +460,9 @@ function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanat
           {!nonPass ? <Confirmation e={e} /> : (
             <details>
               <summary data-testid="header-criteria-summary" className="cursor-pointer pointer-coarse:py-3.5">
-                {confirmed.length} of {e.criteria.length} confirmed: <span className="text-ink-muted">{confirmationWords(e.criteria)}</span>
+                {confirmed.length} of {e.criteria.length} confirmed
+                {/* Copy rule C5's phrase confirms a model fault; another fault's codes not met are listed (gate F4). */}
+                {isModelFault(e) ? <>: <span className="text-ink-muted">{confirmationWords(e.criteria)}</span></> : open.length > 0 && <span className="text-ink-muted"> ({open.map((c) => `${c.id} ${MET_TEXT[String(c.met)]}`).join(', ')})</span>}
               </summary>
               <ul data-testid="header-criteria" className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                 {e.criteria.map((c) => (
@@ -581,7 +579,7 @@ function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.Rea
   };
   return (
     <div className={`min-w-0 ${CARD} lg:order-2`}>
-      <div role="tablist" aria-label="Trial" onKeyDown={onKey} className={TAB_STRIP}>
+      <div role="tablist" aria-label="Trial" onKeyDown={onKey} className={`${TAB_STRIP} border-b border-line`}>
         {TABS.map((x) => (
           <button
             key={x.id}
