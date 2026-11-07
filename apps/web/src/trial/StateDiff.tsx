@@ -8,10 +8,10 @@ import { Loader2, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
-import type { FrozenTask, Trial } from '../data/results.ts';
+import type { FrozenTask, RunData, Trial } from '../data/results.ts';
 import { BUTTON, Hash } from '../data/ui.tsx';
 import { MANIFEST } from '../data/world.ts';
-import { shortHash } from './world.ts';
+import { frozenWorlds, shortHash, worldStatus } from './world.ts';
 import { EvidenceId, Section } from './Grading.tsx';
 import { validate, type StateRun } from '../tasks/validate-protocol.ts';
 import type { Loaded } from './Trajectory.tsx';
@@ -26,11 +26,17 @@ type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message:
 // keeps the alert, because the committed results must run on today's world (P17j JU11), unless
 // that world is its task's frozen one (frozen: the task's entry in results/tasks-final.json): then
 // the trial is historical data, reproduced at the commit the freeze names (R37, pre-audit-2 S15),
-// said in a neutral tone with the tag and commit, and with no Replay here.
-export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true, frozen = null }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean; frozen?: FrozenTask | null }) {
+// said in a neutral tone with the tag and commit, and with no Replay here. A trial of a superseded
+// task version (superseded: which version, of which run) says what it is and, through the same
+// frozen-world lookup as the trial header (freezes, trial/world.ts), that its hash is that
+// version's frozen world, with the tag and commit that reproduce it (gate UIP25C-244, #242 m1).
+export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true, superseded = null, frozen = null, freezes = [] }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean; superseded?: RunData['superseded']; frozen?: FrozenTask | null; freezes?: readonly FrozenTask[] }) {
   const [run, setRun] = useState<Run>({ state: 'idle' });
   const h = t.record.state_hash;
   const manifest = MANIFEST.world.state_hash;
+  const world = worldStatus(h.initial, manifest, frozenWorlds(freezes), official);
+  // The freeze the trial's world is, for its replay tag and commit.
+  const matched = world.kind === 'frozen' ? (freezes.find((f) => f.world_hash === world.hash) ?? null) : null;
   const url = t.trajectoryUrl;
   const replay = async () => {
     if (url === null) return;
@@ -57,6 +63,16 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
         </p>
       ) : official ? (
         <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
+      ) : superseded !== null ? (
+        <p data-testid="manifest-line" data-tone={world.kind === 'frozen' ? 'frozen' : 'neutral'} className="break-words text-ink-muted">
+          This trial is of {superseded.task} {superseded.version}, a superseded version of the official run {superseded.of}, not counted in the results.{' '}
+          {world.kind === 'frozen' && matched !== null ? (
+            <>
+              Its initial state hash {shortHash(world.hash!)} matches {matched.role === 'superseded' ? 'that version\'s frozen world' : `the frozen world of ${t.task}${matched.role === 'previous' ? ' before its re-freeze' : ''}`} (results/tasks-final.json), not today's manifest ({shortHash(manifest)}). Its records are historical and are reproduced at {matched.replay_at !== null ? <>tag <code className="text-xs text-ink">{matched.replay_at.tag}</code> ({matched.replay_at.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{matched.frozen_at.tag}</code></>}, not here.
+            </>
+          ) : world.kind === 'none' ? `Its record has no initial state hash, so the world it ran on is not known. Today's world is ${manifest.slice(0, 4)}….`
+            : `It ran on another world version (${world.hash!.slice(0, 4)}…). Today's world is ${manifest.slice(0, 4)}….`}
+        </p>
       ) : (
         <p data-testid="manifest-line" data-tone="neutral" className="break-words text-ink-muted">
           {h.initial === null ? 'This pilot\'s record has no initial state hash, so the world it ran on is not known.' : `This pilot ran on another world version (${h.initial.slice(0, 4)}…).`} Today's world is {manifest.slice(0, 4)}….

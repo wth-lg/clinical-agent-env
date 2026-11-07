@@ -4,6 +4,7 @@
 // a calm secondary line; the top bar shows the effort with no key; a repeated Runs reason is
 // shown once and a click away on later rows; disabled launcher controls look disabled and say
 // why; Findings puts the charts before the prose.
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { browse, browseFrom } from './browse.ts';
 import { explain, records, sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
@@ -170,4 +171,27 @@ test('Findings: the chart and the per-task cards come before the write-up prose'
   await toggle.click();
   await expect(analysis).toHaveAttribute('open', '');
   await expect(page.getByTestId('findings-md')).toBeVisible();
+});
+
+// Gate UIP25C-244 carry-over (#242 m1): a trial of a superseded task version, on that version's
+// frozen world, says what it is and which world that is, with the same frozen-world lookup as the
+// trial header (trial/world.ts), in place of "This pilot ran on another world version".
+test('State diff: a superseded version\'s trial names the version, its frozen world and the replay tag, in a neutral tone', async ({ page }) => {
+  const read = (rel: string): unknown => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
+  const manifest = (read('../../../fixtures/manifest.json') as { world: { state_hash: string } }).world.state_hash;
+  const official = (read('../../../results/official.json') as { run: string }).run.split('/').at(-1)!;
+  const freeze = (read('../../../results/tasks-final.json') as { tasks: Record<string, { superseded: { version: string; world_hash: string; replay_at: { tag: string; commit: string } } }> }).tasks['crc-care-gap']!.superseded;
+  const record = read('../../../results/runs/final-1/superseded/crc-care-gap-v1/trials/crc-care-gap/0.json') as { state_hash: { initial: string } };
+  expect(record.state_hash.initial).toBe(freeze.world_hash);
+  expect(freeze.world_hash).not.toBe(manifest);
+  await browse(page, './?view=runs&run=crc-care-gap-v1&trial=crc-care-gap%2F0&tab=state-diff');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'crc-care-gap/0');
+  const p = page.getByTestId('panel-state-diff');
+  const line = p.getByTestId('manifest-line');
+  await expect(line).toHaveText(`This trial is of crc-care-gap ${freeze.version}, a superseded version of the official run ${official}, not counted in the results. Its initial state hash ${freeze.world_hash.slice(0, 12)}… matches that version's frozen world (results/tasks-final.json), not today's manifest (${manifest.slice(0, 12)}…). Its records are historical and are reproduced at tag ${freeze.replay_at.tag} (${freeze.replay_at.commit.slice(0, 12)}), not here.`);
+  await expect(line).toHaveAttribute('data-tone', 'frozen');
+  await expect(line).not.toHaveAttribute('role', 'alert');
+  await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
+  // The trial header's world line agrees.
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${freeze.world_hash.slice(0, 12)}…: matches the frozen world of crc-care-gap ${freeze.version} (superseded).`);
 });
