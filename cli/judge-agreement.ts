@@ -44,7 +44,8 @@
 //   --json prints the result object on stdout, the lines on stderr. --write puts the result into
 //   <run>/summary.json (judge_agreement, or kappa with --double-label; packages/core/summary.ts
 //   Summary), only when every check holds, and leaves the rest of the file as it is; run after
-//   `pnpm cli summary <run> --write`, which rewrites the file without them.
+//   `pnpm cli summary <run> --write`, which carries them through a later rewrite (cli/summary.ts
+//   CARRIED_FIELDS).
 // Exit 2 on a usage error.
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
