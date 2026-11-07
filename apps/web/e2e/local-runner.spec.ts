@@ -11,10 +11,12 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Route } from '@playwright/test';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
 import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
+import { explainContext } from '../../../packages/core/explain-context.ts';
 import { explainTrial, NOT_AUDITED_MARKER, type ExplainRecord } from '../../../packages/core/explain.ts';
+import { checkText as renalCheckText } from '../../../tasks/renal-dose-review.check-text.ts';
 import { MAX_CONCURRENCY, parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
@@ -318,6 +320,129 @@ test('a non-pass live trial shows in its Runs row the outcome, label, decisive c
   else if (e.label !== null) await expect(row).toContainText(e.label);
   // The marker shows once on the row: FaultLabel's chip, or the row's own when FaultLabel has none (review-P15-1 F4).
   await expect(row.getByText(NOT_AUDITED_MARKER, { exact: true })).toHaveCount(1);
+});
+
+// Trace row N10 (builder-330): a live trial ends in its graded result. The card shows the rubric
+// score under the Score card's own title, and Open the full grade opens the trial page of
+// run=session in the TrialPage layout: the header (outcome, decisive check, reason), the Grading
+// tab (Score card, every gate check, the rubric rows), the Attribution tab with the not-audited
+// marker, and the trajectory, all from the record the runner serves.
+test('a graded live trial shows its rubric score on the card, and Open the full grade opens its session trial page with the Score card, gate checks and rubric rows', async ({ page }) => {
+  await open(page, runner!, '?view=live&task=renal-dose-review', { cap: '950' });
+  await run(page, 1);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  const id = (await trial(page).getAttribute('data-trial'))!;
+  const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { run_id: string; record: ExplainRecord & { score: number; checks: Array<{ id: string; kind: string; met: unknown }> } };
+  const r = view.record;
+  const events = await streamEvents(page, runner!, id);
+  // The page explains the trial with the task's check text, as a published trial's detail does.
+  const e = explainTrial(r, null, explainContext({ record: r, events, text: renalCheckText }));
+  const score = `Rubric score (does not decide pass) ${r.score.toFixed(2)}`;
+  await expect(trial(page).getByTestId('live-score')).toHaveText(score);
+  // The Your runs row shows the same score beside its own link (gate N10-245 S1).
+  const row = page.locator(`[data-testid="live-row"][data-trial="${id}"]`);
+  await expect(row.getByTestId('live-score')).toHaveText(score);
+  await expect(row.getByRole('link', { name: 'Open the full grade' })).toBeVisible();
+  await trial(page).getByRole('link', { name: 'Open the full grade' }).click();
+  await expect(page).toHaveURL(/view=runs/);
+  await expect(page).toHaveURL(/run=session/);
+  await expect(page).toHaveURL(new RegExp(`trial=${encodeURIComponent(id).replace(/[.]/g, '\\.')}`));
+  const detail = page.getByTestId('trial-detail');
+  await expect(detail).toHaveAttribute('data-trial', id);
+  await expect(detail).toHaveAttribute('data-run', view.run_id);
+  // The session notice is a banner above the page, not the page.
+  await expect(page.getByTestId('session-banner')).toBeVisible();
+  await expect(page.getByTestId('session-banner').getByRole('link', { name: 'Open Live trial' })).toBeVisible();
+  // The header says why the trial ended as it did.
+  const header = page.getByTestId('trial-header');
+  await expect(header.getByTestId('outcome')).toHaveText(e.outcome);
+  await expect(header.getByTestId('reason')).toHaveText(e.reason);
+  if (e.decisive_check) await expect(header.getByTestId('decisive-check')).toHaveAttribute('data-id', e.decisive_check.id);
+  if (e.outcome !== 'PASS') await expect(header.getByText(NOT_AUDITED_MARKER, { exact: true })).toHaveCount(1);
+  // Grading: the Score card, every gate check with its met state, the decisive one marked, and the rubric rows.
+  const grading = page.getByTestId('panel-grading');
+  await expect(grading.getByTestId('score-card')).toHaveText(score);
+  const gates = r.checks.filter((c) => c.kind !== 'rubric');
+  const rubric = r.checks.filter((c) => c.kind === 'rubric');
+  expect(gates.length).toBeGreaterThan(0);
+  expect(rubric.length).toBeGreaterThan(0);
+  await expect(grading.getByTestId('gate-check')).toHaveCount(gates.length);
+  for (const c of gates) await expect(grading.locator(`[data-testid="gate-check"][data-id="${c.id}"]`)).toHaveAttribute('data-met', String(c.met));
+  if (e.decisive_check) await expect(grading.locator('[data-testid="gate-check"][data-decisive="true"]')).toHaveAttribute('data-id', e.decisive_check.id);
+  await expect(grading.getByTestId('rubric-row')).toHaveCount(rubric.length);
+  for (const c of rubric) await expect(grading.locator(`[data-testid="rubric-row"][data-id="${c.id}"]`)).toHaveAttribute('data-met', String(c.met));
+  // Attribution: no audit row, so the trial is not human-audited. M3 is checked against the app's
+  // manifest world, the one published trials are checked against (gate N10-245 M3): the mock
+  // runner serves the build's own fixtures, so it is met.
+  await page.getByRole('tab', { name: 'Attribution' }).click();
+  await expect(page.getByTestId('panel-attribution')).toContainText(NOT_AUDITED_MARKER);
+  await expect(page.getByTestId('panel-attribution').locator('[data-testid="criterion-row"][data-id="M3"]')).toHaveAttribute('data-met', 'true');
+  // The trajectory: one step per tool call that ran.
+  const ran = events.filter((x) => x.type === 'tool_result' && x.executed).length;
+  expect(ran).toBeGreaterThan(0);
+  await expect(page.getByTestId('trajectory').getByTestId('step')).toHaveCount(ran);
+  // Back returns to the Live trial view with the task.
+  await page.getByRole('link', { name: 'Back to Live trial' }).click();
+  await expect(page).toHaveURL(/view=live/);
+  await expect(page).toHaveURL(/task=renal-dose-review/);
+  await expect(page).not.toHaveURL(/run=session/);
+});
+
+// Gate N10-245 M2: the page shows the header and the grade from the record at once; the trajectory
+// fills in when the event stream ends, and a stream that never ends hides nothing else.
+test('a session trial page shows the header and the Score card from the record while its event stream has not ended', async ({ page }) => {
+  await open(page, runner!, '?view=live&task=_toy', { cap: '950' });
+  // A graded trial this page's tab never streamed (its IndexedDB holds no events for it), started
+  // through the runner's API.
+  const headers = { [TOKEN_HEADER]: (await token(page))!, 'content-type': 'application/json' };
+  const accepted = (await (await fetch(new URL('api/trials', runner!.url), { method: 'POST', headers, body: JSON.stringify({ tasks: ['_toy'], trials: 1, concurrency: 1, effort: 'high', session_cap_usd: 950 }) })).json()) as { trial_ids: string[] };
+  const id = accepted.trial_ids[0]!;
+  await expect.poll(async () => ((await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { state: string }).state, { timeout: 60_000 }).toBe('graded');
+  const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: { score: number; outcome: string } };
+  // The stream is held: nothing arrives until `release`.
+  let held: Route | null = null;
+  await page.route('**/api/trials/*/events', (route) => void (held = route));
+  await page.goto(new URL(`?view=runs&run=session&trial=${encodeURIComponent(id)}`, runner!.url).href);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  const score = `Rubric score (does not decide pass) ${view.record.score.toFixed(2)}`;
+  await expect(page.getByTestId('panel-grading').getByTestId('score-card')).toHaveText(score);
+  await expect(page.getByTestId('trial-header').getByTestId('outcome')).toHaveText(view.record.outcome);
+  await expect(page.getByTestId('trajectory')).toContainText('Loading the trajectory');
+  await expect(page.getByTestId('trajectory').getByTestId('step')).toHaveCount(0);
+  await expect.poll(() => held !== null).toBe(true);
+  await held!.continue();
+  await expect(page.getByTestId('trajectory').getByTestId('step')).toHaveCount(4, { timeout: 30_000 });
+  await expect(page.getByTestId('panel-grading').getByTestId('score-card')).toHaveText(score);
+});
+
+test('run=session resolves first-nonpass to the first non-pass trial of this session, and says why a trial the runner does not hold is not here', async ({ page }) => {
+  // A non-pass renal-dose-review trial of this test's own, so the session holds one whatever ran before.
+  await open(page, runner!, '?view=live&task=renal-dose-review', { cap: '950' });
+  await run(page, 1);
+  await expect(trial(page)).not.toHaveAttribute('data-state', 'running', { timeout: 60_000 });
+  const { runs } = (await (await api(page, runner!, 'api/runs')).json()) as { runs: Array<{ trial_ids: string[] }> };
+  let first: string | null = null;
+  for (const r of runs) {
+    for (const id of r.trial_ids) {
+      const v = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: ExplainRecord | null };
+      if (v.record === null) continue;
+      const e = explainTrial(v.record, null, { events: [] });
+      if (e.valid && e.outcome !== 'PASS') {
+        first = id;
+        break;
+      }
+    }
+    if (first !== null) break;
+  }
+  expect(first).not.toBeNull();
+  await page.goto(new URL('?view=runs&run=session&trial=first-nonpass', runner!.url).href);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', first!);
+  await expect(page.getByText('first-nonpass')).toHaveCount(0);
+  await page.goto(new URL('?view=runs&run=session&trial=nope.renal-dose-review.9', runner!.url).href);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByTestId('session-missing')).toHaveText('No trial nope.renal-dose-review.9 in this session. The local runner keeps the trials it started only while it runs: after a restart they are gone, and another runner\'s trials are not here. Open Live trial');
+  await expect(page.getByTestId('trial-detail')).toHaveCount(0);
 });
 
 // verifier-phase-P15-1, folded follow-up: no repo test covered the Forget-failure notice.

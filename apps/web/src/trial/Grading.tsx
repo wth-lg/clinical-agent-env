@@ -16,7 +16,7 @@ import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemLabelsOf, itemsMetText, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
-import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, scoreNote, totalText, type RubricMark } from './rubric.ts';
+import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, scoreText, totalText, type RubricMark } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -34,7 +34,6 @@ export interface CheckRow {
 type Usage = { input: number; cache_write: number; cache_read: number; output: number };
 const num = (n: number) => n.toLocaleString('en-US');
 const usd = (n: number) => `$${n.toFixed(2)}`;
-const SCORE_TITLE = 'Rubric score (does not decide pass)';
 
 // A table that becomes one card per row below sm, on the same DOM, so the test ids and the reading
 // order stay (ui-polish 3.1): the column heads are for screen readers only there, and a cell can
@@ -133,7 +132,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   // stored one; verifier-phase-P17i-S0-208-1 S1).
   const itemLabels = itemLabelsOf(r as Parameters<typeof itemLabelsOf>[0]);
   const unfinished = r.error != null && !g.regraded;
-  const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
+  const score = scoreText(g);
   const total = rubricTotal(rubric);
   const questions = useRubricQuestions(t.task, rubric.length > 0);
   return (
