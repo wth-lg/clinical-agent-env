@@ -33,9 +33,14 @@ describe('A1: the infra chip and status words agree with the outcome', () => {
     expect(infraWords('INFRA_HARNESS', 'client_error')).toEqual({ chip: 'Infrastructure problem: not counted, run again', status: 'Infrastructure problem, not counted' });
   });
 
-  it('INFRA_HARNESS from a spend refusal says so and does not advise running again', () => {
-    expect(infraWords('INFRA_HARNESS', 'spend_refused_session')).toEqual({ chip: 'Spend refused: not counted', status: 'Spend refused, not counted' });
-    expect(infraWords('INFRA_HARNESS', 'spend_refused_ceiling')!.chip).not.toMatch(/run again/);
+  it('INFRA_HARNESS from a spend refusal (the ledger\'s codes) says so and does not advise running again', () => {
+    for (const code of ['spend_refused_projected', 'spend_refused_actual', 'spend_refused_ceiling']) {
+      expect(infraWords('INFRA_HARNESS', code), code).toEqual({ chip: 'Spend refused: not counted', status: 'Spend refused, not counted' });
+    }
+  });
+
+  it('INVALID with model_mismatch says another model answered and that the batch stopped, with no "run again"', () => {
+    expect(infraWords('INVALID', 'model_mismatch')).toEqual({ chip: 'Wrong model answered: not counted, the batch stopped', status: 'Wrong model answered, not counted' });
   });
 
   it('CANCELLED is the stopped trial', () => {

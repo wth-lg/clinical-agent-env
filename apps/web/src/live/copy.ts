@@ -25,13 +25,17 @@ export const runsErrorLead = (hosted: boolean): string => (hosted ? 'Your runs d
 export const REPLAY_STOPPED = 'Replay stopped';
 
 // A1 (gate P25U-S4 F1): the chip and the status words of a trial that is not counted, by its
-// outcome and the record's detail. "API problem" only when the API failed (INFRA_API, copy rule
-// C4); a harness defect (INFRA_HARNESS: an unpriced usage, a client error, a bound) is an
-// infrastructure problem; a spend refusal says so and never advises running again, since the
-// same cap refuses it again; CANCELLED is the stopped trial. Null for a counted outcome.
+// outcome and the record's detail. "API problem" only when the API failed (INFRA_API: an API
+// error, or the elapsed and spend bounds the client's retries passed, copy rule C4); a harness
+// defect (INFRA_HARNESS: an unpriced usage, a client error) is an infrastructure problem; a
+// spend refusal (the ledger's spend_refused_* codes) says so and never advises running again,
+// since the same cap refuses it again; INVALID with model_mismatch (another model answered,
+// packages/core/anthropic.ts; the batch stops) says so; CANCELLED is the stopped trial. Null for
+// a counted outcome.
 export function infraWords(outcome: string, detail: string | null | undefined): { chip: string; status: string } | null {
   if (outcome === 'CANCELLED') return { chip: STOPPED_LABEL, status: STOPPED_LABEL };
   if (outcome === 'INFRA_API') return { chip: 'API problem: not counted, run again', status: 'API problem, not counted' };
+  if (outcome === 'INVALID') return { chip: 'Wrong model answered: not counted, the batch stopped', status: 'Wrong model answered, not counted' };
   if (outcome !== 'INFRA_HARNESS') return null;
   if ((detail ?? '').startsWith('spend_refused')) return { chip: 'Spend refused: not counted', status: 'Spend refused, not counted' };
   return { chip: 'Infrastructure problem: not counted, run again', status: 'Infrastructure problem, not counted' };
