@@ -7,7 +7,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { browse } from './browse.ts';
+import { browse, GATE } from './browse.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
@@ -154,8 +154,23 @@ test('a graded hosted trial shows its rubric score on the card, and its session 
   const id = (await trial(page).getAttribute('data-trial'))!;
   const record = (await storedRecord(page, id)) as { score: number; checks: Array<{ kind: string }> };
   const score = `Rubric score (does not decide pass) ${record.score.toFixed(2)}`;
-  await expect(trial(page).getByTestId('live-score')).toHaveText(score);
-  await trial(page).getByRole('link', { name: 'Open the full grade' }).click();
+  // P25u A5: the card says the score is out of 1 and that the gate checks decide pass; the Your runs
+  // row keeps the short form; the grade is a button on the outcome line, named by the outcome.
+  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Extra credit only; the pass or fail comes from the gate checks.`);
+  await expect(page.getByTestId('live-row').getByTestId('live-score')).toHaveText(`${score} of 1`);
+  await expect(page.getByTestId('live-row').getByRole('link', { name: 'See the grade' })).toBeVisible();
+  // P25u A16: a finished card has no Stop; Run again starts the same task once more.
+  await expect(trial(page).getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expect(trial(page).getByRole('button', { name: 'Run again' })).toBeVisible();
+  // P25u A9: the State pane names what the model changed, in words, and keeps the hashes behind a disclosure.
+  const state = trial(page).getByTestId('state-diff');
+  await expect(state.getByRole('heading', { name: 'What the model changed' })).toBeVisible();
+  await expect(state.getByTestId('write-row').first()).toContainText(/^[A-Z][a-z ]+ [A-Za-z]+\/[\w-]+$/);
+  await expect(state.locator('summary')).toHaveText('Integrity check (state hashes)');
+  await expect(state.getByTestId('final-hash')).not.toBeVisible();
+  await state.locator('summary').click();
+  await expect(state.getByTestId('final-hash')).toHaveText(/^[0-9a-f]{64}$/);
+  await trial(page).getByRole('link', { name: 'See the grade' }).click();
   await expect(page).toHaveURL(/run=session/);
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', id);
   await expect(page.getByTestId('session-banner')).toBeVisible();
@@ -240,6 +255,9 @@ test('at phone width the in-progress trial fits: written ids truncate and the tr
   expect(shown).toBe('running');
   // The running line has its spinner (ui-polish 3.5).
   await expect(trial(page).getByTestId('running-line').locator('svg')).toHaveCount(1);
+  // P25u A17: on a phone the surface chip keeps a short visible word beside its icon.
+  await expect(page.getByTestId('surface-short')).toBeVisible();
+  await expect(page.getByTestId('surface-short')).toHaveText('Hosted');
 });
 
 test('the status line says Starting until the first model turn, never "Turn 0" (#185 m2)', async ({ page }) => {
@@ -296,6 +314,59 @@ test('without a key the Task select is shown disabled', async ({ page }) => {
   // contrast; P25c: a dashed border read as a drop target), with the reason as its tooltip.
   expect(await select.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
   await expect(select).toHaveAttribute('title', 'Add a key first');
+  // P25u J14: the empty state's duration is the range of the official run's median durations per
+  // task, and its link names the official run's trials.
+  const empty = page.getByTestId('no-live-runs');
+  await expect(empty).toContainText(/A trial takes about \d+ to \d+ minutes, and you see each step as it runs\./);
+  await expect(empty.getByRole('link', { name: /^See the official run's \d+ trials in Runs$/ })).toHaveAttribute('href', /view=runs/);
+});
+
+// P25u J11, A13, V6c: the first screen leads with Browse the results and the headline result; the
+// key form follows under its own heading, says where a key comes from and what a trial costs
+// (from the official run's records), how to forget it, and what Remember in this tab keeps.
+test('the key gate leads with Browse the results, then the key form with its hints', async ({ page }) => {
+  await page.goto('./');
+  const browseButton = page.getByRole('button', { name: GATE });
+  await expect(browseButton).toBeVisible();
+  await expect(page.getByTestId('gate-pass-line')).toHaveText(/^\d+ of \d+ trials pass; see why each failure happened\.$/);
+  // Browse is the one filled primary; Validate is bordered under it.
+  expect(await browseButton.evaluate((el) => el.className)).toContain('bg-primary');
+  expect(await page.getByRole('button', { name: 'Validate' }).evaluate((el) => el.className)).not.toContain('bg-primary');
+  expect(await browseButton.evaluate((el) => el.compareDocumentPosition(document.querySelector('h2')!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+  await expect(page.getByRole('heading', { level: 2, name: 'Run new trials (needs an API key)' })).toBeVisible();
+  await expect(page.getByLabel('Add an API key', { exact: true })).toBeVisible();
+  const hints = page.getByTestId('key-hints');
+  await expect(hints).toContainText('through a relay that forwards it and keeps no copy');
+  await expect(hints).toContainText(/Get a key at console\.anthropic\.com under API keys\. One trial costs about \$\d+\.\d{2} to \$\d+\.\d{2}\./);
+  await expect(hints.getByRole('link', { name: 'console.anthropic.com' })).toHaveAttribute('href', 'https://console.anthropic.com/settings/keys');
+  await expect(hints).toContainText('Forget key in the top bar drops it at any time.');
+  const remember = page.getByLabel('Remember in this tab');
+  await expect(remember).toHaveAttribute('title', 'Keeps the key if you reload this tab; closing the tab forgets it.');
+  const box = (await remember.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(16);
+  expect(box.height).toBeGreaterThanOrEqual(16);
+  await browseButton.click();
+  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+});
+
+// P25u A14: with no key, Watch a recorded trial replays a published trial's events through the
+// live card at a fixed pace, under a banner that says so; nothing is sent to the relay or the API.
+test('with no key, Watch a recorded trial replays a published trial on the live card with no API call', async ({ page }) => {
+  const sent: string[] = [];
+  page.on('request', (r) => (new URL(r.url()).origin === API_ORIGIN ? sent.push(r.url()) : undefined));
+  await browse(page, './?view=live&task=contrast-ct-prep');
+  await page.getByTestId('launcher-reason').getByRole('button', { name: 'Watch a recorded trial' }).click();
+  await expect(trial(page)).toHaveAttribute('data-replay', 'true');
+  await expect(trial(page).getByTestId('replay-banner')).toHaveText(/^Replay of final-1 trial 1 \(contrast-ct-prep\/0\); no API calls\. The steps play at a fixed pace, not the real one\.$/);
+  await expect(trial(page).getByTestId('tool-row').first()).toBeVisible({ timeout: 30_000 });
+  await expect(trial(page)).toHaveAttribute('data-state', 'running');
+  await expect(trial(page).getByRole('button', { name: 'Stop replay' })).toBeEnabled();
+  await trial(page).getByRole('button', { name: 'Stop replay' }).click();
+  await expect(trial(page)).toHaveAttribute('data-state', 'cancelled');
+  await expect(trial(page).getByRole('status')).toHaveText('Replay stopped');
+  await expect(trial(page).getByText('You stopped this trial')).toHaveCount(0);
+  expect(sent).toEqual([]);
+  await expect(page.getByTestId('live-row')).toHaveCount(0);
 });
 
 test('the trial Worker\'s guard refuses fetch and WebSocket to any origin but its own and the API, and XHR and EventSource to any', async ({ page }) => {
@@ -425,18 +496,28 @@ test('each Run size shows its projected cost, and a size over the session cap is
   await enterKey(page, sentinelKey());
   // A toy trial projects PER_TRIAL_CAP_USD plus its judge allowance (live/checks.ts): $6 + 4 calls x
   // JUDGE_CALL_PRICE_USD ($0.40192) = $7.60768.
-  for (const [n, cost] of [[1, '$7.61'], [3, '$22.82'], [10, '$76.08'], [20, '$152.15']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(`at most ${cost}`);
+  // P25u A7: the toy task has no pilot, so only what each batch holds shows (no typical cost).
+  for (const [n, cost] of [[1, '$7.61'], [3, '$22.82'], [10, '$76.08'], [20, '$152.15']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(`holds up to ${cost}`);
+  await expect(page.getByTestId('no-typical')).toContainText('no typical cost yet');
   await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeEnabled();
   for (const n of [3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
-  // Validate settled $0.011 in the tab ledger: it counts against the cap with each size's projection.
-  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $20.00 (Run ×3: $22.82 + $0.01 already committed = $22.83). Raise the cap below to run them.');
+  // Validate settled $0.011 in the tab ledger: it counts against the cap with each size's
+  // projection, so Run ×3 needs $22.834, the next whole dollar $23; the button raises to $25.
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3 needs a cap of $23 or more; ×10 and ×20 need more still.');
+  // P25u A6: the meter counts money held for running trials, so it says committed, with a title that says so.
+  await expect(page.getByTestId('spend-meter')).toHaveText('Committed $0.01 of $20.00 cap');
+  await expect(page.getByTitle('Includes the most a running trial can still cost')).toContainText('of $20.00');
+  await page.getByRole('button', { name: 'Raise cap to $25' }).click();
+  await expect(page.getByRole('button', { name: 'Run ×3', exact: true })).toBeEnabled();
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×10 needs a cap of $77 or more; ×20 needs more still.');
+  await expect(page.getByTestId('spend-meter')).toHaveText('Committed $0.01 of $25.00 cap');
   // The cap is set here too, not only in the key gate, and holds for this tab across a reload.
   await expect(page.getByTestId('cap-where')).toContainText('this tab only');
   await page.getByLabel('Session cap (USD)').fill('250');
   await page.getByRole('button', { name: 'Set cap' }).click();
   for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeEnabled();
   await expect(page.getByTestId('size-reason')).toHaveCount(0);
-  await expect(page.getByTitle('Session spend against the session cap')).toContainText('of $250.00');
+  await expect(page.getByTitle('Includes the most a running trial can still cost')).toContainText('of $250.00');
   await page.reload();
   // The key was not remembered: the key gate asks again and shows the cap set on this page.
   await expect(page.getByLabel('Session spend cap (USD)')).toHaveValue('250');
@@ -455,7 +536,7 @@ test('a batch whose projection crosses the session cap is refused with no API re
   await enterKey(page, sentinelKey(), '5');
   // Under a $5.00 cap no size fits: every Run button is disabled, so nothing is fetched or started.
   for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toContainText('(Run ×1: $7.61 + $0.01 already committed = $7.62)');
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×1 needs a cap of $8 or more; ×3, ×10 and ×20 need more still.');
   expect(api.trialCalls()).toHaveLength(0);
   expect(workers).toHaveLength(0);
   // A size that fits the cap but not what is left of it once a batch runs: its $7.61 is
@@ -466,7 +547,9 @@ test('a batch whose projection crosses the session cap is refused with no API re
   await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
   const calls = api.trialCalls().length;
   await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toContainText('already committed');
+  await expect(page.getByTestId('size-reason')).toContainText('needs a cap of');
+  // P25u A6: while the trial runs its hold counts as committed, not as spent.
+  await expect(page.getByTestId('spend-meter')).toHaveText(/^Committed \$7\.6\d of \$15\.00 cap$/);
   expect(api.trialCalls()).toHaveLength(calls);
   expect(workers).toHaveLength(1);
   await expect(page.getByTestId('live-run')).toHaveCount(1);
@@ -483,7 +566,7 @@ test('a size whose projection with the spend already committed crosses the cap i
   await page.getByLabel('Session cap (USD)').fill('22.83');
   await page.getByRole('button', { name: 'Set cap' }).click();
   await expect(x3).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $22.830 (Run ×3: $22.823 + $0.011 already committed = $22.834). Raise the cap below to run them.');
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3 needs a cap of $23 or more; ×10 and ×20 need more still.');
   await page.getByLabel('Session cap (USD)').fill('22.84');
   await page.getByRole('button', { name: 'Set cap' }).click();
   await expect(x3).toBeEnabled();

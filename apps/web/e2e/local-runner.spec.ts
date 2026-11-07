@@ -19,6 +19,8 @@ import { explainTrial, NOT_AUDITED_MARKER, type ExplainRecord } from '../../../p
 import { checkText as renalCheckText } from '../../../tasks/renal-dose-review.check-text.ts';
 import { MAX_CONCURRENCY, parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
+import { RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, STOPPED_LABEL, STOPPED_REASON } from '../src/live/copy.ts';
+import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -64,8 +66,10 @@ async function startRunner(extra: Record<string, string> = {}): Promise<Runner> 
   return { url, proc, tmp };
 }
 
+// A runner a test killed by signal has exited too (signalCode set, exitCode null), so there is no
+// exit event to wait for (P25u A2's test SIGKILLs its runner mid-trial).
 const stopRunner = (r: Runner | undefined) => new Promise<void>((resolve) => {
-  if (!r || r.proc.exitCode !== null) return resolve();
+  if (!r || r.proc.exitCode !== null || r.proc.signalCode !== null) return resolve();
   r.proc.once('exit', () => resolve());
   r.proc.kill('SIGTERM');
 });
@@ -171,7 +175,9 @@ test('a failed runs request shows Your runs did not load with Retry, and Retry r
   await open(page, runner!, '?view=live&task=_toy');
   const error = page.getByTestId('runs-error');
   await expect(error).toBeVisible();
-  await expect(error).toContainText('Your runs did not load. The other pages still work.');
+  // P25u A2: on the local runner every page comes from the runner, so the notice does not claim the others work.
+  await expect(error).toContainText('Your runs did not load.');
+  await expect(error).not.toContainText('The other pages still work.');
   await expect(error).toHaveAttribute('role', 'alert');
   fail = false;
   const before = asked;
@@ -244,7 +250,8 @@ test('after a reload the spend meter shows the runner session\'s committed spend
   const committed = ((await dry.json()) as { projection: { session_spent_usd: number } }).projection.session_spent_usd;
   expect(committed).toBeGreaterThan(0);
   expect(spend.session_spent_usd).toBeCloseTo(committed, 9);
-  const text = `Session spend $${committed.toFixed(2)} of $20.00 cap`;
+  // P25u A6: the figure holds money reserved for running trials too, so the meter says committed.
+  const text = `Committed $${committed.toFixed(2)} of $20.00 cap`;
   await expect(page.getByTestId('spend-meter')).toHaveText(text);
   // The same figure on a view that runs nothing: the source is read at load, not by the launcher (gate UIP25C-244 M2).
   await page.goto(new URL('?view=overview', runner!.url).href);
@@ -261,7 +268,7 @@ test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async 
     method: 'POST', headers: { [TOKEN_HEADER]: (await token(page))!, 'content-type': 'application/json' },
     body: JSON.stringify({ tasks: ['_toy'], trials: 3, concurrency: Math.min(3, MAX_CONCURRENCY), effort: 'high', session_cap_usd: 500 }),
   })).json()) as { projection: { total_usd: number } };
-  await expect(page.getByTestId('run-cost-3')).toHaveText(`at most $${dry.projection.total_usd.toFixed(2)}`);
+  await expect(page.getByTestId('run-cost-3')).toHaveText(`holds up to $${dry.projection.total_usd.toFixed(2)}`);
   await run(page, 3);
   await expect(page.locator('[data-testid="live-run"][data-trials="3"]')).toBeVisible();
   await run(page, 20);
@@ -285,7 +292,9 @@ test('a size whose cost with the runner session\'s committed spend crosses the c
   await page.getByLabel('Session cap (USD)').fill('10.01');
   await page.getByRole('button', { name: 'Set cap' }).click();
   await expect(x1).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toHaveText('Run ×1, ×3, ×10 and ×20 need more than your session cap of $10.010 (Run ×1: $10.000 + $0.011 already committed = $10.011). Raise the cap below to run them.');
+  // P25u A7: $10.000 + $0.011 committed needs $10.011, the next whole dollar $11.
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×1 needs a cap of $11 or more; ×3, ×10 and ×20 need more still.');
+  await expect(page.getByRole('button', { name: 'Raise cap to $15' })).toBeVisible();
   await page.getByLabel('Session cap (USD)').fill('10.02');
   await page.getByRole('button', { name: 'Set cap' }).click();
   await expect(x1).toBeEnabled();
@@ -309,12 +318,18 @@ test('a non-pass live trial shows in its Runs row the outcome, label, decisive c
   await expect(trial(page)).not.toHaveAttribute('data-state', 'running', { timeout: 60_000 });
   const id = (await trial(page).getAttribute('data-trial'))!;
   const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: ExplainRecord };
-  const e = explainTrial(view.record, null, { events: await streamEvents(page, runner!, id) });
+  // P25u A4: the card's reason is the full explanation's, the one the session trial page gives
+  // (with the task's check text), not the bare record's.
+  const e = explainTrial(view.record, null, explainContext({ record: view.record, events: await streamEvents(page, runner!, id), text: renalCheckText }));
   expect(e.outcome).not.toBe('PASS');
+  await expect(trial(page).getByTestId('reason')).toHaveText(e.reason);
+  await expect(trial(page).getByRole('link', { name: 'See why it failed' })).toBeVisible();
   const row = page.locator(`[data-testid="live-row"][data-trial="${id}"]`);
   await expect(row).toHaveAttribute('data-outcome', e.outcome);
   await expect(row.getByTestId('outcome')).toHaveText(e.outcome);
-  await expect(row.getByTestId('reason')).toHaveText(e.reason);
+  // P25u A15: one line per trial; the reason is on the card and the trial page, not repeated here.
+  await expect(row.getByTestId('reason')).toHaveCount(0);
+  await expect(row.getByRole('link', { name: 'See why it failed' })).toBeVisible();
   if (e.decisive_check) await expect(row.getByTestId('decisive')).toHaveText(e.decisive_check.id);
   if (e.fault === 'infra') await expect(row.getByTestId('label')).toHaveAttribute('data-label', 'infra');
   else if (e.label !== null) await expect(row).toContainText(e.label);
@@ -323,11 +338,12 @@ test('a non-pass live trial shows in its Runs row the outcome, label, decisive c
 });
 
 // Trace row N10 (builder-330): a live trial ends in its graded result. The card shows the rubric
-// score under the Score card's own title, and Open the full grade opens the trial page of
-// run=session in the TrialPage layout: the header (outcome, decisive check, reason), the Grading
-// tab (Score card, every gate check, the rubric rows), the Attribution tab with the not-audited
-// marker, and the trajectory, all from the record the runner serves.
-test('a graded live trial shows its rubric score on the card, and Open the full grade opens its session trial page with the Score card, gate checks and rubric rows', async ({ page }) => {
+// score under the Score card's own title, and the grade button (P25u A5: "See why it failed" on
+// a non-pass, "See the grade" on a PASS) opens the trial page of run=session in the TrialPage
+// layout: the header (outcome, decisive check, reason), the Grading tab (Score card, every gate
+// check, the rubric rows), the Attribution tab with the not-audited marker, and the trajectory,
+// all from the record the runner serves.
+test('a graded live trial shows its rubric score on the card, and the grade button opens its session trial page with the Score card, gate checks and rubric rows', async ({ page }) => {
   await open(page, runner!, '?view=live&task=renal-dose-review', { cap: '950' });
   await run(page, 1);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
@@ -338,12 +354,14 @@ test('a graded live trial shows its rubric score on the card, and Open the full 
   // The page explains the trial with the task's check text, as a published trial's detail does.
   const e = explainTrial(r, null, explainContext({ record: r, events, text: renalCheckText }));
   const score = `Rubric score (does not decide pass) ${r.score.toFixed(2)}`;
-  await expect(trial(page).getByTestId('live-score')).toHaveText(score);
+  // P25u A5: the card says the score is out of 1 and that the gate checks decide pass.
+  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Extra credit only; the pass or fail comes from the gate checks.`);
   // The Your runs row shows the same score beside its own link (gate N10-245 S1).
   const row = page.locator(`[data-testid="live-row"][data-trial="${id}"]`);
-  await expect(row.getByTestId('live-score')).toHaveText(score);
-  await expect(row.getByRole('link', { name: 'Open the full grade' })).toBeVisible();
-  await trial(page).getByRole('link', { name: 'Open the full grade' }).click();
+  await expect(row.getByTestId('live-score')).toHaveText(`${score} of 1`);
+  const grade = e.outcome === 'PASS' ? 'See the grade' : 'See why it failed';
+  await expect(row.getByRole('link', { name: grade })).toBeVisible();
+  await trial(page).getByRole('link', { name: grade }).click();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/run=session/);
   await expect(page).toHaveURL(new RegExp(`trial=${encodeURIComponent(id).replace(/[.]/g, '\\.')}`));
@@ -472,10 +490,75 @@ test('Stop records CANCELLED', async ({ page }) => {
     await page.getByRole('button', { name: 'Stop' }).click();
     await expect(trial(page)).toHaveAttribute('data-state', 'cancelled', { timeout: 30_000 });
     await expect(trial(page).getByTestId('outcome')).toHaveText('CANCELLED');
-    await expect(page.locator(`[data-testid="live-row"][data-trial="${id}"]`)).toHaveAttribute('data-outcome', 'CANCELLED');
+    // P25u A1b: the card and the row say the user stopped it, with the Stopped chip, never "API problem".
+    await expect(trial(page).getByTestId('reason')).toHaveText(STOPPED_REASON);
+    await expect(trial(page).getByTestId('label')).toHaveText(STOPPED_LABEL);
+    await expect(trial(page)).not.toContainText('API problem');
+    await expect(trial(page).getByRole('status')).toHaveText('Stopped');
+    const row = page.locator(`[data-testid="live-row"][data-trial="${id}"]`);
+    await expect(row).toHaveAttribute('data-outcome', 'CANCELLED');
+    await expect(row.getByTestId('label')).toHaveText(STOPPED_LABEL);
+    await expect(row).not.toContainText('API problem');
     const view = (await (await api(page, stall, `api/trials/${encodeURIComponent(id)}`)).json()) as { state: string; record: { outcome: string } };
     expect([view.state, view.record.outcome]).toEqual(['cancelled', 'CANCELLED']);
   } finally {
     await stopRunner(stall);
   }
+});
+
+// P25u A2: when the runner process dies mid-trial, the card stops spinning, Stop is disabled, and
+// the card and Your runs say what happened and what to do; the page then probes api/health until
+// the runner is back.
+test('a runner killed mid-trial: the card says the runner stopped, Stop is disabled, and the page polls for the runner', async ({ page }) => {
+  const stall = await startRunner({ CLINENV_RUNNER_TEST_TRANSPORT: 'stall' });
+  try {
+    await open(page, stall, '?view=live&task=_toy');
+    await run(page, 1);
+    await expect(trial(page).getByTestId('meter-turn')).toHaveText('1');
+    let probes = 0;
+    await page.route('**/api/health', (route) => (probes++, route.continue()));
+    stall.proc.kill('SIGKILL');
+    await expect(trial(page)).toHaveAttribute('data-state', 'runner-down', { timeout: 30_000 });
+    await expect(trial(page).getByRole('button', { name: 'Stop' })).toBeDisabled();
+    await expect(trial(page).getByTestId('running-line')).toHaveCount(0);
+    await expect(trial(page).getByTestId('runner-stopped')).toContainText(RUNNER_STOPPED_LEAD);
+    await expect(trial(page).getByTestId('runner-stopped')).toContainText(RUNNER_STOPPED_NEXT);
+    await expect(trial(page).getByRole('status')).toHaveText('The local runner stopped');
+    const error = page.getByTestId('runs-error');
+    await expect(error).toContainText(RUNNER_STOPPED);
+    await expect(error).not.toContainText('The other pages still work.');
+    // The page keeps probing for the runner, as the runner-down screen does.
+    const before = probes;
+    await expect.poll(() => probes, { timeout: 15_000 }).toBeGreaterThan(before + 1);
+  } finally {
+    await stopRunner(stall);
+  }
+});
+
+// P25u A12: a user whose runner just stopped already has the clone, so the restart leads with
+// pnpm start alone; the clone command and the prerequisites table wait behind "On another computer".
+test('the runner-down screen and the local key gate lead with pnpm start in the clone, not with git clone', async ({ page }) => {
+  await page.route('**/api/health', (route) => route.abort());
+  await page.goto(new URL('?view=overview', runner!.url).href);
+  const down = page.getByRole('heading', { name: 'Local runner not responding' });
+  await expect(down).toBeVisible();
+  const screen = page.locator('section', { has: down });
+  await expect(screen).toContainText(RUNNER_STOPPED);
+  await expect(screen.getByTestId('restart-command')).toHaveText('pnpm start');
+  await expect(screen.getByRole('button', { name: 'Copy command' })).toBeVisible();
+  await expect(screen.getByTestId('local-command')).not.toBeVisible();
+  await screen.getByText('On another computer').click();
+  await expect(screen.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+  await page.unroute('**/api/health');
+  await page.goto(new URL('?view=overview', runner!.url).href);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  const field = page.getByLabel('Add an API key', { exact: true });
+  await expect(field.or(page.getByTestId('key-chip')).first()).toBeVisible();
+  if (!(await field.isVisible())) await page.getByRole('button', { name: 'Forget key' }).click();
+  const panel = page.getByTestId('local-run-panel');
+  await expect(panel).toContainText('In your clinical-agent-env folder, run');
+  await expect(panel.getByTestId('restart-command')).toHaveText('pnpm start');
+  // The prerequisites sentence stays on the gate (trace U12); the clone command waits behind the disclosure.
+  await expect(panel.getByTestId('local-prerequisites')).toBeVisible();
+  await expect(panel.getByTestId('local-command')).not.toBeVisible();
 });

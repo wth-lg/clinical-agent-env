@@ -26,10 +26,11 @@ async function withKey(page: Page) {
   await expect(page.getByTestId('key-chip')).toBeVisible();
 }
 
-test('the spend meter reads "Session spend $a of $b cap" (I8, contract U15)', async ({ page }) => {
+// P25u A6: the figure holds money reserved for running trials too, so the meter says committed.
+test('the spend meter reads "Committed $a of $b cap" (I8, contract U15)', async ({ page }) => {
   await withKey(page);
   const meter = page.getByRole('banner').getByTestId('spend-meter');
-  await expect(meter).toHaveText(/^Session spend \$[0-9]+\.[0-9]{2} of \$[0-9]+\.[0-9]{2} cap$/);
+  await expect(meter).toHaveText(/^Committed \$[0-9]+\.[0-9]{2} of \$[0-9]+\.[0-9]{2} cap$/);
   await expect(meter).toContainText('of $20.00 cap');
 });
 

@@ -14,6 +14,8 @@ import {
   parseSpend, RUNS_PATH, SPEND_PATH, SSE_END, TOKEN_HEADER, TRIALS_PATH, type TrialView,
 } from '../../../../../packages/core/runner-api.ts';
 import { runnerToken } from '../../keygate/runner.ts';
+import { detectSurface } from '../../surface/detect.ts';
+import { RUNNER_STOPPED } from '../copy.ts';
 import { putEvent, readEvents } from '../store.ts';
 import type { BatchRequest, LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
 import { allCapped } from '../typical.ts';
@@ -128,6 +130,9 @@ export function runnerTransport(token = runnerToken()): TrialTransport {
         } catch (e) {
           if (signal.aborted) continue;
           if (e instanceof SyntaxError || (e as Error).message.startsWith('not a')) return { state: 'error', record: null, message: `The local runner sent an event this page cannot read: ${(e as Error).message}` };
+          // The call itself failed (P25u A2): one health probe tells a dropped stream from a
+          // runner whose process is gone, which would otherwise leave the card running for ever.
+          if ((await detectSurface()).kind !== 'local-runner') return { state: 'error', record: null, message: RUNNER_STOPPED };
         }
         // The stream closed before the trial ended: reconnect from the last event.
         await sleep(RECONNECT_MS, signal);

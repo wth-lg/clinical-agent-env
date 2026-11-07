@@ -19,6 +19,14 @@ export function parseCap(text: string): number | null {
   return cents >= 0.01 && cents <= MAX_SESSION_CAP_USD ? cents : null;
 }
 
+// P25u A7: the cap a batch needs, in whole dollars: its cost plus what the session has committed,
+// rounded up, so "a cap of $22 or more" is always enough (compared in micro-dollars, as above).
+export const neededCap = (cost: number, committed: number): number => Math.ceil((µ(cost) + µ(committed)) / 1e6);
+
+// The cap the "Raise cap to $<n>" button sets: the next multiple of $5 at or above the need,
+// never above the session maximum.
+export const raiseTo = (need: number): number => Math.min(MAX_SESSION_CAP_USD, Math.ceil(need / 5) * 5);
+
 export type Admission = { ok: true } | { ok: false; reason: string };
 
 // spent is the session's exposure so far (settled + reserved + open batches); a trial is

@@ -143,7 +143,10 @@ const TOOLS = [
 
 // The start block LocalCommand renders: LOCAL_PREREQUISITES exactly, one row per tool with its
 // check command and install link, then LOCAL_START_COMMAND with its Copy button, in that order.
+// On the local runner (P25u A12) the rows and the clone command wait behind "On another computer".
 async function expectStartBlock(scope: Locator) {
+  const more = scope.getByText('On another computer');
+  if ((await more.count()) > 0) await more.click();
   await expect(scope.getByTestId('local-prerequisites')).toHaveText(LOCAL_PREREQUISITES);
   const rows = scope.getByTestId('prerequisite');
   await expect(rows).toHaveCount(TOOLS.length);
@@ -492,7 +495,7 @@ test.describe('session cap across a reload (browser-direct)', () => {
     await keyField(page).fill(sentinelKey());
     await capField(page).fill('0.05');
     await validate(page);
-    await expect(page.getByText('Spend $0.02 of $0.05')).toBeAttached();
+    await expect(page.getByText('Committed $0.02 of $0.05')).toBeAttached();
     expect(calls).toHaveLength(1);
 
     await page.getByRole('button', { name: 'Forget key' }).click();
@@ -538,10 +541,10 @@ test.describe('session cap across a reload (browser-direct)', () => {
     await capField(page).fill('1');
     await page.getByLabel('Remember in this tab').check();
     await validate(page);
-    await expect(page.getByText('Spend $0.00 of $1.00')).toBeAttached();
+    await expect(page.getByText('Committed $0.00 of $1.00')).toBeAttached();
     await page.reload();
     await expect(page.getByTestId('key-chip')).not.toHaveText('No key');
-    await expect(page.getByText('Spend $0.00 of $1.00')).toBeAttached();
+    await expect(page.getByText('Committed $0.00 of $1.00')).toBeAttached();
   });
 });
 
@@ -636,7 +639,7 @@ test.describe('gate details', () => {
     await capField(page).fill('20.555');
     await expect(page.getByText('Rounded to $20.56.')).toBeVisible();
     await validate(page);
-    await expect(page.getByText('Spend $0.00 of $20.56')).toBeAttached();
+    await expect(page.getByText('Committed $0.00 of $20.56')).toBeAttached();
     expect(calls).toHaveLength(1);
   });
 
