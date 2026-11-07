@@ -115,10 +115,27 @@ test('an unknown ?task= says so above the list, which stays closed (J23)', async
   await expect(page.getByTestId('missing-task')).toHaveCount(0);
 });
 
-test('at 390 px the wrapped tab rows keep a gap (V12b)', async ({ page }) => {
+test('at 390 px the wrapped tab rows keep a gap, and the active tab is the rail\'s pill, not a bottom border (V12b)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await browse(page, './?view=tasks&task=renal-dose-review&tab=prompt');
-  await expect(page.getByRole('tablist', { name: 'Task' })).toHaveCSS('row-gap', '4px');
+  const strip = page.getByRole('tablist', { name: 'Task' });
+  await expect(strip).toHaveCSS('row-gap', '4px');
+  // S1's TAB_STRIP, TAB, TAB_ACTIVE and TAB_IDLE (data/ui.tsx): the active tab is a filled pill
+  // with no accent bottom border, an idle tab has neither.
+  const active = strip.getByRole('tab', { selected: true });
+  const idle = strip.getByRole('tab', { selected: false }).first();
+  await expect(active).toHaveClass(/\bbg-line\/80\b/);
+  await expect(active).not.toHaveClass(/\bborder-accent\b/);
+  await expect(active).toHaveCSS('border-bottom-width', '0px');
+  await expect(idle).not.toHaveClass(/\bbg-line\/80\b/);
+  await expect(active).toHaveCSS('border-radius', '6px');
+});
+
+test('each card\'s band verdict is the shared chip with its icon (V11 adoption)', async ({ page }) => {
+  await browse(page, './?view=tasks');
+  const cards = page.getByTestId('task-card');
+  await expect(cards).toHaveCount(6);
+  await expect(page.locator('[data-testid="task-card"] [data-testid="band-verdict"] svg')).toHaveCount(6);
 });
 
 test.describe('coarse pointer at 390', () => {

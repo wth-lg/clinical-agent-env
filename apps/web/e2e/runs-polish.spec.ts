@@ -46,14 +46,38 @@ test('a trial row\'s name is a link: a plain click opens the trial in place, a m
   await expect(row.getByRole('link', { name, exact: true })).toBeFocused();
 });
 
-test('a non-pass row has a 2px ink edge on its left, a plain PASS row none (V2b)', async ({ page }) => {
+const backgroundOf = (page: Page, className: string) => page.evaluate((c) => {
+  const x = document.createElement('span');
+  x.className = c;
+  document.body.append(x);
+  const v = getComputedStyle(x).backgroundColor;
+  x.remove();
+  return v;
+}, className);
+
+test('a non-pass row has a 2px edge in the FAIL mark colour on its left, a plain PASS row none (V2b)', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await sample(page, './?view=runs');
+    // The edge is the mark-fail token (S1's V1), the colour of the FAIL swatch, so in dark it is
+    // the mark's mid-tone and not the near-white ink.
+    const markFail = await backgroundOf(page, 'bg-mark-fail');
+    const ink = await colorOf(page, 'text-ink');
+    const fail = page.locator('[data-testid="trial-row"][data-outcome="FAIL"]').first();
+    await expect(fail, scheme).toHaveCSS('border-left-width', '2px');
+    await expect(fail, scheme).toHaveCSS('border-left-color', markFail);
+    if (scheme === 'dark') expect(markFail, 'dark mark-fail differs from ink').not.toBe(ink);
+    const pass = page.locator('[data-testid="pass-group"] [data-testid="trial-row"][data-outcome="PASS"]').first();
+    await expect(pass, scheme).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
+  }
+});
+
+test('each task row of the Runs header carries the shared verdict chip with its icon (V11 adoption)', async ({ page }) => {
   await sample(page, './?view=runs');
-  const ink = await colorOf(page, 'text-ink');
-  const fail = page.locator('[data-testid="trial-row"][data-outcome="FAIL"]').first();
-  await expect(fail).toHaveCSS('border-left-width', '2px');
-  await expect(fail).toHaveCSS('border-left-color', ink);
-  const pass = page.locator('[data-testid="pass-group"] [data-testid="trial-row"][data-outcome="PASS"]').first();
-  await expect(pass).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
+  const rows = page.getByTestId('runs-summary').getByTestId('runs-task-row');
+  await expect(rows).toHaveCount(Object.keys(summary.tasks).length);
+  await expect(page.locator('[data-testid="runs-task-row"] [data-testid="band-verdict"] svg')).toHaveCount(Object.keys(summary.tasks).length);
+  for (const [id, t] of Object.entries(summary.tasks)) await expect(page.locator(`[data-testid="runs-task-row"][data-task="${id}"] [data-testid="band-verdict"]`)).toHaveAttribute('data-verdict', t.band_verdict!);
 });
 
 test('the "What the labels mean" link is underlined (V4)', async ({ page }) => {
