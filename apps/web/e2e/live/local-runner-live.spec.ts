@@ -283,7 +283,7 @@ test('from a clean clone, LOCAL_START_COMMAND starts the runner, the key validat
     say(`local-runner-live: trial ${id} running`);
     // The trajectory streams: the first turn and a tool row appear before the end.
     await expect(trial.getByTestId('meter-turn')).not.toHaveText('0', { timeout: 5 * 60_000 });
-    await expect(trial.getByTestId('tool-row').first()).toBeVisible({ timeout: 5 * 60_000 });
+    await expect(trial.getByTestId('step').first()).toBeVisible({ timeout: 5 * 60_000 });
     await expect(trial).not.toHaveAttribute('data-state', 'running', { timeout: TRIAL_MS });
     await expect(trial).toHaveAttribute('data-state', 'graded');
 

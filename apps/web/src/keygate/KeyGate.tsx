@@ -7,7 +7,7 @@ import type { Surface } from '../surface/detect.ts';
 import { isHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
-import { BUTTON, BUTTON_PRIMARY, CARD, FIELD, LINK } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, CARD, CARD_TITLE, FIELD, LINK, PAGE_TITLE } from '../data/ui.tsx';
 import { validateDirect } from './direct.ts';
 import { describeFailure, keyFormatProblem, type Failure } from './failure.ts';
 import { CONSOLE_HOST, CONSOLE_KEYS_URL, costRangeText, keyHints, passLine, REMEMBER_HINT } from './hints.ts';
@@ -88,7 +88,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <SurfaceChip surface={surface} />
         </div>
         <p data-testid="gate-intro" className="mt-1 text-xs text-ink-muted">A mock health record, six clinical tasks, and a grader that explains each trial.</p>
-        <h1 className="mt-5 text-xl font-semibold tracking-tight text-ink">See an AI model do clinical tasks</h1>
+        <h1 className={`mt-5 ${PAGE_TITLE}`}>See an AI model do clinical tasks</h1>
         <p className="mt-1 text-ink-muted">You can look at everything with no key. Add a key only to run new trials.</p>
 
         <div className="mt-4">
@@ -98,7 +98,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <p data-testid="gate-pass-line" className="mt-2 text-ink-muted">{passLine(summary?.totals ?? null)}</p>
         </div>
 
-        <h2 className="mt-6 border-t border-line pt-5 text-sm font-semibold text-ink">Run new trials (needs an API key)</h2>
+        <h2 className={`mt-6 border-t border-line pt-5 ${CARD_TITLE}`}>Run new trials (needs an API key)</h2>
         {/* The requirements name this label (docs/requirements/ui-contract.md, trace U3 and U23). Its
             text is a <label> for the field, so a click on it focuses the field, and the field's name
             comes from it (UI-FU-1 m2). */}

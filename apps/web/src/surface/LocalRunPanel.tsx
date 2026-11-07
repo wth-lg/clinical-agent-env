@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { CARD } from '../data/ui.tsx';
+import { CARD, CARD_TITLE } from '../data/ui.tsx';
 import type { Surface } from './detect.ts';
 import { LocalCommand } from './LocalCommand.tsx';
 
@@ -26,7 +26,7 @@ export function LocalRunPanel({ surface, id: panelId, className = '' }: { surfac
   const { title, body } = TEXT[surface.kind];
   return (
     <section id={panelId} tabIndex={-1} data-testid="local-run-panel" aria-labelledby={id} className={`${CARD} p-4 sm:p-6 ${className}`}>
-      <h2 id={id} className="font-semibold text-ink">
+      <h2 id={id} className={CARD_TITLE}>
         {title}
       </h2>
       <p className="mt-1 text-ink-muted">{body}</p>

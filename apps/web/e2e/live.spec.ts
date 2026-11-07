@@ -119,7 +119,17 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   await run(page, 1);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
   await expect(trial(page).getByTestId('outcome')).toHaveText('PASS');
-  await expect(trial(page).getByTestId('tool-row')).toHaveCount(4);
+  // P25u A8: the rows are the trial page's (RowItem): each call that ran has its step number, a
+  // Turn divider opens each turn, the task prompt sits behind a disclosure, and an Elapsed meter
+  // counts from the first event.
+  const steps = trial(page).getByTestId('step');
+  await expect(steps).toHaveCount(4);
+  await expect(steps.first()).toContainText('Step 1');
+  await expect(steps.last()).toContainText('Step 4');
+  await expect(trial(page).getByTestId('turn-divider')).toHaveCount(3);
+  await expect(trial(page).getByTestId('turn-divider').first()).toHaveText('Turn 1');
+  await expect(trial(page).locator('details', { hasText: 'Task prompt' })).toHaveCount(1);
+  await expect(trial(page).getByTestId('meter-elapsed')).toHaveText(/^\d+:\d\d$/);
   await expect(trial(page).getByTestId('thinking').first()).toContainText('I should check who I am');
   await expect(trial(page).getByTestId('meter-turn')).toHaveText('3');
   // The heading names the task and the trial in words; the raw id is its title and a small code
@@ -201,7 +211,7 @@ test('a reload mid-trial resumes from IndexedDB to the same final hash, and no s
   await enterKey(page, key);
   await run(page, 1);
   await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
-  await expect(trial(page).getByTestId('tool-row')).toHaveCount(3);
+  await expect(trial(page).getByTestId('step')).toHaveCount(3);
   const before = await trial(page).getAttribute('data-trial');
   await page.reload();
   await api.held[0]!.abort().catch(() => undefined);
@@ -233,10 +243,10 @@ test('at phone width the in-progress trial fits: written ids truncate and the tr
   await enterKey(page, sentinelKey());
   await run(page, 1);
   await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
-  const written = trial(page).locator('[data-testid="tool-row"][data-tool="write_note"] [data-testid="written"]');
+  const written = trial(page).locator('[data-testid="step"][data-tool="write_note"] [data-testid="step-written"]');
   await expect(written).toBeVisible();
   const box = (await written.boundingBox())!;
-  const row = (await trial(page).locator('[data-testid="tool-row"][data-tool="write_note"]').boundingBox())!;
+  const row = (await trial(page).locator('[data-testid="step"][data-tool="write_note"]').boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(row.x + row.width + 0.5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   const id = (await trial(page).getAttribute('data-trial'))!;
@@ -358,7 +368,8 @@ test('with no key, Watch a recorded trial replays a published trial on the live 
   await page.getByTestId('launcher-reason').getByRole('button', { name: 'Watch a recorded trial' }).click();
   await expect(trial(page)).toHaveAttribute('data-replay', 'true');
   await expect(trial(page).getByTestId('replay-banner')).toHaveText(/^Replay of final-1 trial 1 \(contrast-ct-prep\/0\); no API calls\. The steps play at a fixed pace, not the real one\.$/);
-  await expect(trial(page).getByTestId('tool-row').first()).toBeVisible({ timeout: 30_000 });
+  await expect(trial(page).getByTestId('step').first()).toBeVisible({ timeout: 30_000 });
+  await expect(trial(page).getByTestId('step').first()).toContainText('Step 1');
   await expect(trial(page)).toHaveAttribute('data-state', 'running');
   await expect(trial(page).getByRole('button', { name: 'Stop replay' })).toBeEnabled();
   await trial(page).getByRole('button', { name: 'Stop replay' }).click();
