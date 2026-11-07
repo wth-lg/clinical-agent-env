@@ -37,7 +37,8 @@ test('the intro card action "Add a key and run in this tab" opens the key gate',
   await browse(page, './?view=overview');
   await page.getByTestId('intro-card').getByRole('button', { name: 'Add a key and run in this tab' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: 'Add an API key' })).toBeVisible();
+  // P25u J11: "Add an API key" is the key field's label, under the heading "Run new trials (needs an API key)".
+  await expect(page.getByLabel('Add an API key', { exact: true })).toBeVisible();
 });
 
 test('the intro card action "Run on your computer" moves focus to the local-run panel', async ({ page }) => {

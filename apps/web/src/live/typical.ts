@@ -24,3 +24,10 @@ export function typicalCost(pilots: readonly PilotCosts[], task: string): { usd:
 // cost_from run) makes it an estimate (verifier JU6-1 F2).
 export const allCapped = (lines: readonly { basis: string }[]): boolean => lines.every((l) => l.basis === 'cap');
 export const amountText = (usd: number, bound: boolean): string => (bound ? `at most $${usd.toFixed(2)}` : `about $${usd.toFixed(2)} (pilot p90)`);
+
+// P25u A7: the line beside a Run button leads with the typical cost of one trial, when a pilot
+// gives one, then what the batch holds: "holds up to $X" for an upper bound, else the estimate.
+export function costLine(typicalUsd: number | null, batchUsd: number, bound: boolean): string {
+  const hold = bound ? `holds up to $${batchUsd.toFixed(2)}` : amountText(batchUsd, bound);
+  return typicalUsd === null ? hold : `about $${typicalUsd.toFixed(2)} a trial · ${hold}`;
+}
