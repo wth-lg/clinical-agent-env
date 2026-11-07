@@ -50,7 +50,19 @@ function exit(root: string, args: string[]): number | null {
   return spawnSync(process.execPath, [join(repoRoot, 'cli/index.ts'), ...args], { cwd: root, env, encoding: 'utf8' }).status;
 }
 
-const SUMMARY = ['summary', RUN, '--tasks', TASKS.join(','), '--require', `valid=${N},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0`, '--json'];
+// Clause (5)'s form since the user's accept-and-disclose decision (2026-11-06T17:27Z): band-or-disclosed,
+// which passes an out-of-band task only with a disclosure in results/tasks-final.json and the
+// writeup's mark (packages/core/disclosure.ts).
+const SUMMARY = ['summary', RUN, '--tasks', TASKS.join(','), '--require', `valid=${N},band-or-disclosed=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0`, '--json'];
+const DISCLOSURE = { verdict: 'Above band', decision: 'accept and disclose', decided_by: 'user', date: '2026-11-06', source: 'decisions.tsv 2026-11-06T17:27Z' };
+// The writeup's pass-rates block, as docs-gen renders a task's row: the verdict cell with its
+// numbers wrapped (nowrapNumbers).
+const writeup = (cells: Record<string, string>) =>
+  `<!-- docs-gen:begin pass-rates -->\n<table><tbody>\n${Object.entries(cells).map(([id, cell]) => `<tr><th scope="row">${id}</th><td>k/n</td><td>${cell.replace(/(\S*\d\S*)/g, '<span class="nw">$1</span>')}</td></tr>`).join('\n')}\n</tbody></table>\n<!-- docs-gen:end pass-rates -->\n`;
+// t-alpha at 15/N: the first 15 records PASS.
+function fifteen(root: string): void {
+  for (let i = N / 2; i < 15; i++) putRecord(root, 't-alpha', i, { ...record(root, 't-alpha', i), outcome: 'PASS', score: 1, checks: [{ id: 'G1', kind: 'gate', met: true }], attribution: null });
+}
 const GRADER_ERROR = ['summary', RUN, '--require', 'grader_error=0', '--json'];
 const AUDIT = ['audit-check', RUN, '--final', '--json'];
 
@@ -84,7 +96,7 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     expect(exit(root, GRADER_ERROR)).toBe(0);
     const c = clauses(root);
     expect(c.four).toMatch(/^PASS \(4\)/);
-    expect(c.five).toMatch(new RegExp(`^PASS \\(5\\).*frozen 2/2; summary: exit 0; t-alpha ${N / 2}/${N}, t-beta ${N / 2}/${N}; 1 initial state hash\\(es\\), every one a frozen task's world`));
+    expect(c.five).toMatch(new RegExp(`^PASS \\(5\\).*frozen 2/2; summary: exit 0; t-alpha ${N / 2}/${N}, t-beta ${N / 2}/${N}; 0 of 2 outside ${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]}; 1 initial state hash\\(es\\), every one a frozen task's world`));
     expect(c.six).toMatch(new RegExp(`^PASS \\(6\\).*audit-check --final: exit 0; labelled ${N}/${N} failures, environment 0, grader 0; summary grader_error=0: exit 0, GRADER_ERROR 0 at the current grade, history 0`));
   });
 
@@ -97,13 +109,41 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     expect(c.six).toMatch(/^PASS \(6\)/);
   });
 
-  it(`clause (5) FAILs on a task at 15/${N}, outside the band, where summary exits 1`, () => {
+  it(`clause (5) FAILs on a task at 15/${N}, outside the band and not disclosed, where summary exits 1, and names the violation`, () => {
     const root = rootWith('clean');
     const r = record(root, 't-alpha', N - 1);
-    for (let i = N / 2; i < 15; i++) putRecord(root, 't-alpha', i, { ...record(root, 't-alpha', i), outcome: 'PASS', score: 1, checks: [{ id: 'G1', kind: 'gate', met: true }], attribution: null });
+    fifteen(root);
     expect(r.outcome).toBe('FAIL');
     expect(exit(root, SUMMARY)).toBe(1);
-    expect(clauses(root).five).toMatch(new RegExp(`^FAIL \\(5\\).*summary: exit 1; t-alpha 15/${N}`));
+    const five = clauses(root).five;
+    expect(five).toMatch(new RegExp(`^FAIL \\(5\\).*summary: exit 1; t-alpha 15/${N}, t-beta ${N / 2}/${N}; 1 of 2 outside ${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]}, not disclosed: t-alpha`));
+    expect(five).toMatch(/violations: t-alpha: 15\/20 passes, outside the band .* holds no disclosure for it/);
+  });
+
+  // The user's accept-and-disclose decision (decisions.tsv 2026-11-06T17:27Z): an out-of-band task
+  // passes clause (5) only when it is disclosed in results/tasks-final.json and marked in the
+  // writeup's pass-rates block; a hidden one fails.
+  it(`clause (5) PASSes on a task at 15/${N} once it is disclosed and the writeup marks it, naming the count and the decision date; a removed record, a removed mark or a record on an in-band task FAILs it`, () => {
+    const root = rootWith('clean');
+    fifteen(root);
+    const mark = 'Above band (disclosed: user decision 2026-11-06)';
+    write(root, 'results/tasks-final.json', freeze({ 't-alpha': { disclosure: DISCLOSURE } }));
+    write(root, 'docs/writeup.html', writeup({ 't-alpha': mark, 't-beta': 'In band' }));
+    expect(exit(root, SUMMARY)).toBe(0);
+    expect(clauses(root).five).toMatch(new RegExp(`^PASS \\(5\\).*summary: exit 0; t-alpha 15/${N}, t-beta ${N / 2}/${N}; 1 of 2 outside ${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]}, disclosed: user decision 2026-11-06`));
+    // The mark removed from the writeup.
+    write(root, 'docs/writeup.html', writeup({ 't-alpha': 'Above band', 't-beta': 'In band' }));
+    expect(exit(root, SUMMARY)).toBe(1);
+    expect(clauses(root).five).toMatch(/^FAIL \(5\).*violations: t-alpha: disclosed, but the pass-rates block of .*writeup\.html does not mark it/);
+    write(root, 'docs/writeup.html', writeup({ 't-alpha': mark, 't-beta': 'In band' }));
+    // The record removed from the freeze.
+    write(root, 'results/tasks-final.json', freeze());
+    expect(exit(root, SUMMARY)).toBe(1);
+    expect(clauses(root).five).toMatch(/^FAIL \(5\).*not disclosed: t-alpha.*violations: t-alpha: 15\/20 passes, outside the band .* holds no disclosure for it/);
+    // A record on the in-band task is stale.
+    write(root, 'results/tasks-final.json', freeze({ 't-alpha': { disclosure: DISCLOSURE }, 't-beta': { disclosure: { ...DISCLOSURE, verdict: 'In band' } } }));
+    expect(exit(root, SUMMARY)).toBe(1);
+    expect(clauses(root).five).toMatch(/^FAIL \(5\).*violations: t-beta: 10\/20 passes, inside the band .* holds a disclosure for it \(stale: remove it\)/);
   });
 
   it('clause (5) FAILs at 3/20, and holds at 4/20 and 14/20 (the band is inclusive)', () => {

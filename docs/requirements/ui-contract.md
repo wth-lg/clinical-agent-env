@@ -62,7 +62,7 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
 | `/?view=tasks&task=renal-dose-review&tab=prompt` | Task prompt and Run trial, which opens Live trial with the task selected | P14, P15 (Run trial), P17j JU5 |
 | `/?view=tasks&task=renal-dose-review&tab=policy` | Task policy text | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=chart` | Patient chart read from the FHIR store | P14 |
-| `/?view=tasks&task=renal-dose-review&tab=rubric` | Rubric items with traces_to | P14 |
+| `/?view=tasks&task=renal-dose-review&tab=rubric` | Rubric items, each with the policy line it enforces | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=reference-solution` | Reference solution steps and the oracle badge | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=grader-validation` | Matrix verdicts, the matrix count line and keyless oracle Run | P14 |
 | `/?view=live&task=renal-dose-review` | Live trial with the task selected: the launcher Run trial on Tasks opens | P15, P17j JU5 |
@@ -190,26 +190,36 @@ launcher (P15) shows the Run lines.
   sample, so a card never reads against the line; the difficulty history's official column is
   `(final)` only when the run covers every task of the environment and each has the final sample,
   else `(official, in progress)` (a run of two tasks of six at 20 trials each is in progress).
-- The pass rate is the text `<k>/<N> passed, Wilson 95% <lo>-<hi>%`, with k the passes out of N
-  valid trials, N read from the run (never a constant), and lo and hi whole percentages joined
-  by an ASCII hyphen. A 12-trial sample shows `/12`. It shows on each Overview task row, on the
-  Runs header (over the whole run), on each per-task row of the Runs view and on each interval
-  label of the Findings chart. Each task row and interval label holds the task id and its pass
-  rate in one accessible name: `<task id> <k>/<N> passed, Wilson 95% <lo>-<hi>%`. The Runs
-  header holds the run id and the whole run's pass rate in one accessible name:
-  `<run id> <k>/<N> passed, Wilson 95% <lo>-<hi>%`. On final-1 N is 20 per task and 120 over
-  the run, so the per-task patterns under Patterns keep `/20` and the header pattern `/120`.
-  This replaces the P13
+- The pass rate of a task is two elements. The count `<k>/<N>` is in the row's own element
+  (`k-of-n`). The k is the passes out of N valid trials. The N is read from the run, never a
+  constant.
+  The interval row follows at most 40 characters after the task id, and its accessible name is
+  `<task id>: <rate>%, 95% interval <lo>% to <hi>%` (apps/web/src/data/ui.tsx IntervalRow).
+  Rate, lo and hi are percentages with up to one decimal, and the band is drawn under the
+  whisker. A 12-trial sample shows `/12`. It shows on each Overview task row, on each per-task
+  row of the Runs header and on each interval label of the Findings chart. The Runs header holds
+  the whole run's count as `All tasks: <k>/<N> pass` with `Wilson 95% <lo>% to <hi>%` beside it,
+  after `Official run <run id>`. On final-1 N is 20 per task and 120 over the run, so the
+  per-task patterns under Patterns keep `/20` and the header pattern `/120`. The earlier form was
+  `<k>/<N> passed, Wilson 95% <lo>-<hi>%`. The P25c audit found it gone after the UI polish the
+  user asked for (decisions.tsv 2026-10-30T22:50Z). The count and the interval stayed, so the
+  strings here follow the screen (builder-326). This replaces the P13
   placeholder copy in apps/web/src/shell/views.ts ("pass k of 10", "ten trial swatches"), which
   P14 removes.
 - The six task ids, in Overview order: `renal-dose-review`, `results-inbox`, `crc-care-gap`,
   `discharge-medrec`, `contrast-ct-prep`, `message-queue`.
 - The Runs view of a run lists every trial in one list, with no paging and no virtualized rows,
   so the snapshot holds every row.
-- `claude-opus-5-5`: the model on the Runs header of the official run.
+- `claude-opus-5-5`: the model on the Runs header of the official run, in its model line
+  `Model <model>, effort <effort>` (apps/web/src/data/model.ts, the line Overview shows). The
+  P25c audit found the Runs header without it, so builder-326 added it.
 - The Runs attribution summary for a run reads `<m> model, <e> environment, <g> grader` over the
   valid non-pass trials, with a fault from an INTERNAL tool error, or a tool refusal a confirmed
-  audit marks wrong (E6), counted as environment (P14a).
+  audit marks wrong (E6), counted as environment (P14a). It is the Runs header line
+  `Failures by fault: <m> model, <e> environment, <g> grader`, summed over the tasks in scope
+  from summary.json's fault_counts.label. When the audit has not labelled every failure, the
+  line continues `, <u> not yet audited`. The P25c audit found the counts only on Overview, in
+  another form, so builder-326 put the line on Runs.
   Two patterns under Patterns check it on final-1.
 - `Source: FHIR R4 store`: the caption on the task Chart tab, naming where the chart comes from.
 - `fhir_search` and `order_medication`: tool names in the Environment tool catalogue.
@@ -218,9 +228,24 @@ launcher (P15) shows the Run lines.
 - `exposed_ids`: a field of the Try a read tool result.
 - `matches the manifest`: the Check a fresh copy matches result when the state hash equals the manifest, and
   the first line of a trial's State diff tab (P16) when the trial's initial state hash equals
-  the manifest hash.
+  the manifest hash. The trial header's run line names the world on every trial
+  (apps/web/src/trial/world.ts). On today's world it reads `World <hash>…: matches the manifest.`.
+  On an official trial whose initial hash is its task's frozen world in results/tasks-final.json
+  (R37) it reads `World <hash>…: matches the frozen world of <task>.`. The State diff line then
+  reads `Initial state hash <hash>… matches the frozen world of <task> (results/tasks-final.json),
+  not today's manifest (<hash>…).` with the replay tag and commit. On any other world it reads
+  `World <hash>…: matches neither today's manifest nor a frozen world of <task>.`, and with no
+  hash `World not recorded.`. The P25c audit found final-1's first non-pass trial,
+  contrast-ct-prep/0, on that task's frozen world. So the row N13 expects
+  `matches the frozen world of`, which that trial's header and State diff line complete with
+  contrast-ct-prep. The earlier text said only that the trial started from the frozen world
+  (builder-326).
 - `message-queue`: a task id in the Tasks list.
-- `traces_to`: the rubric column that names the policy line each item enforces.
+- `Enforces RBC-PHARM-07 §4: show the text`: on the Rubric tab each check names the policy line
+  it enforces as `Enforces <traces_to>: show the text` (apps/web/src/tasks/Tasks.tsx). `traces_to`
+  is the rubric field, no longer a column header after the UI polish. renal-dose-review's
+  decisive gate enforces RBC-PHARM-07 §4; the pattern under Patterns matches any section of
+  that policy.
 - `oracle PASS 1.0`: the keyless oracle result on Grader validation, and the oracle badge on the
   Reference solution tab.
 - The Grader validation tab shows the line `matrix: <k>/<n> probe verdicts as expected`, over
@@ -281,9 +306,11 @@ launcher (P15) shows the Run lines.
 - `not human-audited`: the marker next to the fault label on a trial with no audit row (every
   live trial run from the UI). Every non-pass trial of final-1 is audited in P23, so the marker
   is checked on the first non-pass trial of `run=session`.
-- The Score card on a trial's Grading tab and on a graded live trial reads `Score <s>`, with s the
-  score from 0.00 to 1.00 in two decimals. The empty states show the title `Score` with no
-  value, which the pattern does not match.
+- The Score card on a trial's Grading tab and on a graded live trial is titled
+  `Rubric score (does not decide pass)`. The UI polish gave it that title
+  (apps/web/src/trial/Grading.tsx SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in
+  the accessibility text. The empty states show the title with no value, which the pattern does
+  not match.
 
 ### P15: live trial
 
@@ -303,13 +330,15 @@ Regular expressions (JavaScript syntax) that `ax_match` expects use. `min_matche
 says how many times each must match in the snapshot (default 1). Each pattern names one item,
 so a repeated item cannot meet the count of another.
 
-- One task's pass rate on final-1, one pattern per task (owner P14):
-  `\brenal-dose-review\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`,
-  `\bresults-inbox\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`,
-  `\bcrc-care-gap\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`,
-  `\bdischarge-medrec\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`,
-  `\bcontrast-ct-prep\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`,
-  `\bmessage-queue\b[^\n]*\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`.
+- One task's pass rate on final-1, one pattern per task (owner P14). Each pattern matches the
+  task id and then its `<k>/20` within 40 characters. That count is the row's own, with no digit
+  on either side. Then the interval row's name follows on the same line:
+  `renal-dose-review[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\brenal-dose-review: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`,
+  `results-inbox[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\bresults-inbox: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`,
+  `crc-care-gap[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\bcrc-care-gap: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`,
+  `discharge-medrec[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\bdischarge-medrec: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`,
+  `contrast-ct-prep[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\bcontrast-ct-prep: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`,
+  `message-queue[^\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\n]*\bmessage-queue: [0-9]{1,3}(?:\.[0-9])?%, 95% interval [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`.
 - `\b[1-9][0-9]* model, 0 environment, 0 grader\b`: the Runs attribution summary with at least
   one model failure and no environment or grader failure (row W6). Owner P14, data from P23.
 - `\b[0-9]+ model, 0 environment, 0 grader\b`: the whole Runs attribution summary with no
@@ -322,12 +351,15 @@ so a repeated item cannot meet the count of another.
   a reason in any of the three forms under "P14a, P16: reasons and attribution". Row U31 needs
   it once on the Runs view and once in the trial header; `U31-reason-count.txt` checks that
   every valid non-pass row shows one. Owner P14a (text), P14 and P16 (rendering).
-- `\bfinal-1 (?:[0-9]|[1-9][0-9]|1[01][0-9]|120)/120 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%`:
+- `\bfinal-1\b[^\n]*\bAll tasks: (?:[0-9]|[1-9][0-9]|1[01][0-9]|120)/120 pass\b[^\n]*\bWilson 95% [0-9]{1,3}(?:\.[0-9])?% to [0-9]{1,3}(?:\.[0-9])?%`:
   the Runs header of final-1 with the whole run's pass rate (row U28). The per-task rows do not
   match it. Owner P14.
 - `\bmatrix: ([0-9]+)/\1 probe verdicts as expected\b`: the Grader validation count line with
   every probe as expected. Owner P14.
-- `\bScore (?:0\.[0-9]{2}|1\.00)\b`: a Score card with a value. Owner P16 (trial), P15 (live).
+- `Enforces RBC-PHARM-07 §[0-9]+: show the text`: a rubric item of renal-dose-review with the
+  policy line it enforces (row N6). Owner P14.
+- `Rubric score \(does not decide pass\)\s?(?:0\.[0-9]{2}|1\.00)(?![0-9])`: a Score card with a
+  value. Owner P16 (trial), P15 (live).
 - `\bSession spend \$[0-9]+\.[0-9]{2} of \$[0-9]+\.[0-9]{2} cap\b`: the spend meter. Owner P15.
 
 ## Result lines in P25c evidence files
@@ -409,15 +441,15 @@ directory, under exactly this name, or `trace-check --final` reports it missing.
 
 ### Command-output files (36)
 
-- A1: `A1-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require valid=20,band=0.2-0.7,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all`
+- A1: `A1-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require valid=20,band-or-disclosed=0.2-0.7,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all`
 - A2: `A2-docs-check.txt` from `pnpm docs:check`
 - N5: `N5-matrix-all.txt` from `pnpm cli matrix --task all`
 - N8: `N8-oracle-all.txt` from `pnpm cli oracle --task all`
 - N11: `N11-run-one-test.txt` from `pnpm vitest run packages/core/test/loop-run-one`
 - N13: `N13-state-hash-test.txt` from `pnpm cli replay results/runs/final-1` then `pnpm vitest run packages/env/test/state-hash packages/env/test/hash`
-- W1: `W1-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band=0.2-0.7`
-- W2: `W2-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,band=0.2-0.7`
-- W3: `W3-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band=0.2-0.7`
+- W1: `W1-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7`
+- W2: `W2-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,band-or-disclosed=0.2-0.7`
+- W3: `W3-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7`
 - W4: `W4-replay-summary.txt` from `pnpm cli replay results/runs/final-1 && pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,replay=all,valid=20`
 - W5: `W5-summary-valid.txt` from `pnpm cli summary results/runs/final-1 --require valid=20`
 - W6: `W6-audit-check.txt` from `pnpm cli audit-check results/runs/final-1`
@@ -429,18 +461,18 @@ directory, under exactly this name, or `trace-check --final` reports it missing.
 - U6: `U6-donewhen.txt` from `pnpm donewhen`
 - U8: `U8-ledger-tests.txt` from `pnpm vitest run packages/core/test/ledger cli/adapters/test/ledger-node`
 - U9: `U9-runner-tests.txt` from `pnpm vitest run apps/runner`
-- U10: `U10-final-run-efforts.txt` from `test "$(ls -d results/runs/final-1/trials/*/claude-opus-5-5/* | xargs -n1 basename | sort -u)" = high`
+- U10: `U10-final-run-efforts.txt` from `node -e 'const fs=require("node:fs");const e=new Set(fs.globSync("results/runs/final-1/trials/*/*.json").map((f)=>JSON.parse(fs.readFileSync(f,"utf8")).effort));console.log([...e].join(","));process.exit([...e].join(",")==="high"?0:1)'`
 - U11: `U11-tokens-test.txt` from `pnpm vitest run apps/web/test/tokens`
 - U13: `U13-same-path.txt` from `pnpm --filter web exec playwright test same-path.spec.ts`
 - U15: `U15-ledger-tests.txt` from `pnpm vitest run packages/core/test/ledger apps/web/test/ledger-browser`
 - U18: `U18-judge-tests.txt` from `pnpm vitest run packages/grader/test/judge`
 - U19: `U19-no-company-names.txt` from `pnpm vitest run scripts/test/no-company-names`
 - U20: `U20-ledger-cost-tests.txt` from `pnpm vitest run packages/core/test/ledger-cost`
-- U21: `U21-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require valid=20,band=0.2-0.7`
+- U21: `U21-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require valid=20,band-or-disclosed=0.2-0.7`
 - U22: `U22-ledger-cap-tests.txt` from `pnpm vitest run packages/core/test/ledger-cost packages/core/test/ledger-admission`
 - U24: `U24-trace-check.txt` from `pnpm cli trace-check`
 - U25: `U25-trace-check-tests.txt` from `pnpm vitest run cli/test/trace-check`
-- U26: `U26-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band=0.2-0.7`
+- U26: `U26-final-run-summary.txt` from `pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7`
 - U29: `U29-summary-valid-20.txt` from `pnpm cli summary results/runs/final-1 --require valid=20`
 - U32: `U32-matrix-after-audit.txt` from `pnpm cli matrix --task all`
 - U32: `U32-writeup-audit.txt` from `grep -qF '>Audit against research and public environments</h2>' docs/writeup.html`
@@ -519,9 +551,9 @@ each (apps/runner does not exist yet):
 | `CLINENV_FORCED_FAIL=1` and the smoke run (`smoke-<n>`, `mock: true`, model `claude-opus-5-5`) | P15 |
 | the spend meter, `Session spend $<a> of $<b> cap` | P15 |
 | the matrix count line, `matrix: <k>/<n> probe verdicts as expected` | P14 |
-| the Runs header, `<run id> <k>/<N> passed, Wilson 95% <lo>-<hi>%` | P14 |
+| the Runs header, `Official run <run id>`, `All tasks: <k>/<N> pass` and `Wilson 95% <lo>% to <hi>%` | P14 |
 | the three reason forms, including `turn limit reached: <n> turns` and `refused: <first words>` | P14a |
-| the Score card value, `Score <s>` | P16 |
+| the Score card, `Rubric score (does not decide pass)` and its value | P16 |
 | `U31-reason-count.txt` | P25c |
 
 - P14: render the matrix count line, the oracle badge on Reference solution, the per-task pass

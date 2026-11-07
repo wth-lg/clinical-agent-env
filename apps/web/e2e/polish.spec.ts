@@ -8,7 +8,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { browseFrom, GATE } from './browse.ts';
 import { readFileSync } from 'node:fs';
 import { firstSentence, formatClock } from '../src/data/text.ts';
-import { sampleBase } from './fixtures/sample-results/sample.ts';
+import { modelLine } from '../src/data/model.ts';
+import { records, sampleBase, summary } from './fixtures/sample-results/sample.ts';
 
 const NOW = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', import.meta.url), 'utf8')) as { now: string }).now;
 
@@ -196,6 +197,33 @@ test('Overview: the intro card has a numbered Start here list of three links (ui
   await expect(page.getByTestId('trial-detail')).toBeVisible();
   await expect(page.getByTestId('trial-detail')).not.toHaveAttribute('data-trial', /^$/);
   await expect(page.getByTestId('trial-header').getByTestId('outcome')).not.toHaveText('PASS');
+});
+
+// P25c fix (builder-326, trace rows W4, W6, W7, U28): the Runs header names the model, sums the
+// failures by fault label as "<m> model, <e> environment, <g> grader" (telling model faults from
+// environment and grader faults is a headline requirement), and lists each task's k/N with its
+// Wilson interval and verdict, as Overview does.
+test('Runs: the header names the model, the failures by fault and each task\'s k/N with its interval and verdict', async ({ page }) => {
+  await browse(page, './?view=runs');
+  const head = page.getByTestId('runs-summary');
+  await expect(head.getByTestId('model-line')).toHaveText(modelLine(summary, records.map((r) => ({ record: r }))));
+  await expect(head.getByTestId('model-line')).toContainText('claude-opus-5-5');
+  const sum = (l: 'model' | 'environment' | 'grader' | 'unlabelled') => Object.values(summary.tasks).reduce((n, t) => n + (t.fault_counts.label?.[l] ?? 0), 0);
+  await expect(head.getByTestId('runs-fault-summary')).toContainText(`${sum('model')} model, ${sum('environment')} environment, ${sum('grader')} grader`);
+  expect(await head.getByTestId('runs-fault-summary').textContent()).toMatch(/\b[0-9]+ model, [0-9]+ environment, [0-9]+ grader\b/);
+  await expect(head.getByTestId('runs-fault-summary')).toContainText(`${sum('unlabelled')} not yet audited`);
+  const rows = head.getByTestId('runs-task-row');
+  await expect(rows).toHaveCount(Object.keys(summary.tasks).length);
+  for (const [id, t] of Object.entries(summary.tasks)) {
+    const row = head.locator(`[data-testid="runs-task-row"][data-task="${id}"]`);
+    await expect(row.getByTestId('k-of-n')).toHaveText(`${t.passes}/${t.trials}`);
+    await expect(row.getByTestId('interval')).toHaveAttribute('aria-label', new RegExp(`^${id}: [0-9.]+%, 95% interval [0-9.]+% to [0-9.]+%$`));
+    await expect(row.getByTestId('band-verdict')).toHaveAttribute('data-verdict', t.band_verdict!);
+  }
+  // A task's row filters the list to it.
+  await head.locator('[data-testid="runs-task-row"][data-task="results-inbox"]').getByRole('link').click();
+  await expect(page.getByTestId('runs-k-of-n')).toHaveText(`results-inbox: ${summary.tasks['results-inbox']!.passes}/${summary.tasks['results-inbox']!.trials} pass`);
+  await expect(page.getByTestId('runs-fault-summary')).toContainText(`${summary.tasks['results-inbox']!.fault_counts.label!.model} model, 0 environment, 0 grader`);
 });
 
 test('Runs: the header shows k/N as a stat with its Wilson interval and the outcome counts; the rules are in a closed details (ui-polish 2.2)', async ({ page }) => {

@@ -9,7 +9,9 @@
 // glossary link (and the not-audited marker when the trial has no audit row), the one-line
 // reason, the fault and the criterion that decided it, the decisive failing check (id, the policy
 // line it enforces, what it requires and what the trial left) with a link to the decisive step
-// (on an ENV_ERROR, to the tool call that failed), and M1-M5. All of it is
+// (on an ENV_ERROR, to the tool call that failed), and M1-M5. Above it, the run line names the
+// world the trial started from: today's manifest, its task's frozen world, or another (trial/world.ts,
+// trace row N13: a trial frozen on an earlier world says so, never that it matches the manifest). All of it is
 // packages/core/explain.ts explainTrial over the record and audit row: the Runs row's explanation
 // first, then fullExplanation (results.ts) when it arrives, the one context cli/audit-check.ts
 // uses. Every tab panel stays mounted (the inactive ones hidden), so a replay or an open row
@@ -19,6 +21,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { MANIFEST } from '../data/world.ts';
+import { worldLine, worldStatus } from './world.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
@@ -174,6 +178,7 @@ function Detail({ t, run, files, frozen, tab, headingRef }: { t: Trial; run: Run
           {/* A blocked run has no pass rate, here too (verifier-phase-P17i-JU7r2-1 F1). */}
           {run.official && runBlock(run.trials) !== null ? <>: <span data-testid="run-blocked-line">the run is blocked, so it has no pass rate</span></>
             : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
+          {' '}<WorldLine t={t} frozen={frozen} official={run.official} />
         </p>
         <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} official={run.official} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
@@ -205,6 +210,12 @@ function Detail({ t, run, files, frozen, tab, headingRef }: { t: Trial; run: Run
       </div>
     </Frame>
   );
+}
+
+// "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep." (trial/world.ts).
+function WorldLine({ t, frozen, official }: { t: Trial; frozen: FrozenTask | null; official: boolean }) {
+  const w = worldStatus(t.record.state_hash.initial, MANIFEST.world.state_hash, frozen, official);
+  return <span data-testid="trial-world" data-world={w.kind} data-hash={w.hash ?? ''} title={w.hash ?? undefined}>{worldLine(w, t.task)}</span>;
 }
 
 // run=session: the runs the local runner started in this process (docs/requirements/ui-contract.md).

@@ -34,9 +34,13 @@
 // (R40: the shared world may be rebuilt after a task's final run, which moves its env_version on
 // main while its records stay valid at the frozen versions). Clause (4): every trial started
 // from a frozen task's world_hash (R14-37). Clause (5) passes only when every task of the
-// checkout is frozen, each has N valid trials in the band, every record is at its frozen
-// task_version and env_version, and every current grade at its frozen grader_task_version (the
-// last regrades entry, else the freeze's); it names the tasks not frozen yet, still summarizes
+// checkout is frozen, each has N valid trials in the band or disclosed (summary's
+// band-or-disclosed form, since the user's accept-and-disclose decision of 2026-11-06T17:27Z: an
+// out-of-band task passes only with a disclosure under its entry in results/tasks-final.json and
+// the writeup's mark, packages/core/disclosure.ts; its line prints how many tasks are outside the
+// band and the decision date, and the violations when summary fails), every record is at its
+// frozen task_version and env_version, and every current grade at its frozen grader_task_version
+// (the last regrades entry, else the freeze's); it names the tasks not frozen yet, still summarizes
 // the frozen ones, and, when a frozen task's env_version has moved on this checkout, says the
 // records are historical and names the reproduce commit: the tag in frozen_at, resolved with git
 // when this checkout has it, else a warning (the coordinator tags the freeze's squash-merge
@@ -246,8 +250,8 @@ function readFrozen(): { frozen: Frozen | null; problem: string } {
   }
 }
 
-// Clause (5)'s summary call: the frozen tasks held to N valid trials in the band (the constants),
-// no raw ENV_ERROR, no current GRADER_ERROR, the model, replay=all (the replay.json P22 writes).
+// Clause (5)'s summary call: the frozen tasks held to N valid trials in the band or disclosed
+// (the constants), no raw ENV_ERROR, no current GRADER_ERROR, the model, replay=all (the replay.json P22 writes).
 // env_limit=0: an ENV_LIMIT is never rerun and a human reviews it first, so the final run passes
 // only with none (verifier-phase-P17i-W0-A-r3-1 M4). Clause (4) reads the same call.
 const summaryArgs = (frozenIds: string[]) => [
@@ -255,13 +259,13 @@ const summaryArgs = (frozenIds: string[]) => [
   FINAL_RUN,
   ...(frozenIds.length > 0 ? ['--tasks', frozenIds.join(',')] : []),
   '--require',
-  `valid=${FINAL_TRIALS_PER_TASK},band=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=${MODEL},replay=all,env_limit=0`,
+  `valid=${FINAL_TRIALS_PER_TASK},band-or-disclosed=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=${MODEL},replay=all,env_limit=0`,
   '--json',
 ];
 const frozenIds = () => Object.keys(readFrozen().frozen?.tasks ?? {}).sort();
 
-type SummaryTaskJson = { passes: number; trials: number; task_versions?: string[]; env_versions?: string[]; grader_task_versions?: string[] };
-type SummaryJson = { tasks?: Record<string, SummaryTaskJson>; initial_state_hashes?: unknown; totals?: { grader_error?: number; grader_error_history?: number } };
+type SummaryTaskJson = { passes: number; trials: number; band_verdict?: string | null; task_versions?: string[]; env_versions?: string[]; grader_task_versions?: string[] };
+type SummaryJson = { tasks?: Record<string, SummaryTaskJson>; initial_state_hashes?: unknown; totals?: { grader_error?: number; grader_error_history?: number }; disclosed?: Record<string, { decided_by: string; date: string }>; violations?: string[] };
 
 // R14-37, per R40: every trial started from a frozen task's world (its world_hash in the freeze),
 // not from whatever world the checkout has now.
@@ -300,6 +304,16 @@ function clause5(): Verdict {
   const tasks = j?.tasks ?? {};
   const rates = Object.entries(tasks).map(([id, t]) => `${id} ${t.passes}/${t.trials}`).join(', ');
   if (rates) parts.push(rates);
+  // The tasks outside the band (summary's verdict, never computed here), and the disclosure that
+  // covers each: "4 of 6 outside 0.2-0.7, disclosed: user decision 2026-11-06".
+  if (j !== undefined && Object.keys(tasks).length > 0) {
+    const outside = Object.entries(tasks).filter(([, t]) => typeof t.band_verdict === 'string' && t.band_verdict !== 'In band').map(([id]) => id);
+    const covered = j.disclosed ?? {};
+    const decisions = [...new Set(outside.filter((id) => id in covered).map((id) => `${covered[id]!.decided_by} decision ${covered[id]!.date}`))].sort();
+    const uncovered = outside.filter((id) => !(id in covered));
+    parts.push(`${outside.length} of ${Object.keys(tasks).length} outside ${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]}${decisions.length ? `, disclosed: ${decisions.join(', ')}` : ''}${uncovered.length ? `, not disclosed: ${uncovered.join(', ')}` : ''}`);
+  }
+  if (r.exit !== 0 && j?.violations?.length) parts.push(`violations: ${j.violations.join(' | ')}`);
   // Every record of a frozen task at its frozen task_version and env_version, and every current
   // grade at the grader_task_version the freeze holds it to (summary lists the versions seen).
   for (const id of frozenList) {
@@ -395,7 +409,7 @@ const CLAUSES: Array<[string, () => Verdict]> = [
   ['CLI, local runner and Worker share run()', clause2],
   ['>= 5 complete tasks, oracle scores 1.0', clause3],
   ["every trial starts from its task's frozen world", clause4],
-  [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]}, at its frozen versions`, clause5],
+  [`every task frozen in ${TASKS_FINAL} has ${FINAL_TRIALS_PER_TASK} valid trials, pass rate ${FINAL_PASS_BAND[0]} to ${FINAL_PASS_BAND[1]} or disclosed, at its frozen versions`, clause5],
   ['every failure attributed, none to environment or grader, no current GRADER_ERROR', clause6],
   [`docs/writeup.html (${WRITEUP_SECTIONS.join(', ')}) and README.md pass pnpm docs:check`, clause7],
 ];

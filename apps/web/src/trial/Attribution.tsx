@@ -5,8 +5,10 @@
 // fault in FAULT_PRECEDENCE order, each met or not with its evidence and a link to its definition,
 // the one that decided the fault marked. This is how a model fault is told apart from an
 // environment or grader fault for this trial. It opens with the verdict (the fault and the
-// criterion that decided it, with its evidence); every criterion checked is one click away, under
-// "Show all criteria checked (N)" (ui-polish 3.4).
+// criterion that decided it, with its evidence); the confirmation criteria M1-M5 are in view,
+// each met or not met (trace rows W8, U30: the UI says why each failure happened under explicit
+// criteria, with no click), and the fault criteria are one click away, under "Show the fault
+// criteria checked (N)" (ui-polish 3.4).
 import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type Fault } from '../../../../packages/core/outcomes.ts';
 import { fittingAttribution, MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type ExplainRecord, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
@@ -163,15 +165,15 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
       <Section title="Criteria" lead={<>Each criterion is checked against this trial. The fault is the first fault, in the order of the <GlossaryLink className={LINK}>definitions</GlossaryLink>, with a criterion that holds.</>} testId="criteria-table">
         <div className="space-y-3">
           <CriteriaSummary e={e} />
+          <div data-testid="confirmation-criteria">
+            <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
+            <ul data-testid="detail-criteria" className="divide-y divide-line">
+              {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
+            </ul>
+          </div>
           <details data-testid="all-criteria">
-            <summary className="cursor-pointer text-ink">{`Show all criteria checked (${e.criteria.length + FAULT_PRECEDENCE.reduce((n, f) => n + e.fault_criteria[f].length, 0)})`}</summary>
+            <summary className="cursor-pointer text-ink">{`Show the fault criteria checked (${FAULT_PRECEDENCE.reduce((n, f) => n + e.fault_criteria[f].length, 0)})`}</summary>
             <div className="mt-3 space-y-4">
-              <div>
-                <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
-                <ul data-testid="detail-criteria" className="divide-y divide-line">
-                  {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
-                </ul>
-              </div>
               {/* The deciding fault's group and any group with a criterion that holds are open; the
                   faults ruled out are closed, one line each. */}
               {FAULT_PRECEDENCE.map((f) => {
