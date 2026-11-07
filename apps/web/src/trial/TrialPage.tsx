@@ -16,11 +16,20 @@
 // first, then fullExplanation (results.ts) when it arrives, the one context cli/audit-check.ts
 // uses. Every tab panel stays mounted (the inactive ones hidden), so a replay or an open row
 // survives a tab change.
+//
+// run=session (trace row N10; ui-contract "Tokens"): the same layout for a trial this surface
+// started, from the record and events the surface's TrialTransport holds (trial/session.ts), with
+// the session notice as a banner above it and Back to Live trial in place of Back to Runs. It
+// reads no published results, so it shows while they load or cannot be read.
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
-import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
+import { explainContext } from '../../../../packages/core/explain-context.ts';
+import { explainTrial, MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
-import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { checkTextOf, fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { theTransport } from '../live/transport/select.ts';
+import type { LiveRun, TrialTransport } from '../live/types.ts';
+import { resolveSessionTrial, SESSION_RUN } from './session.ts';
 import { MANIFEST } from '../data/world.ts';
 import { frozenWorlds, worldLine, worldStatus } from './world.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
@@ -68,13 +77,16 @@ function useWide(): boolean {
   return wide;
 }
 
-// Back to the list: the run's filters stay, the trial and its tab go.
-const BACK = { trial: null, tab: null };
+// Back to the list: the run's filters stay, the trial and its tab go. Back to Runs remembers the
+// row to return to (back.ts); a session trial goes back to the Live trial view instead.
+interface Back { label: string; patch: Record<string, string | null>; remembers: boolean }
+const RUNS_BACK: Back = { label: 'Back to Runs', patch: { trial: null, tab: null }, remembers: true };
+const liveBack = (task: string | null): Back => ({ label: 'Back to Live trial', patch: freshView('live', task === null ? {} : { task }), remembers: false });
 
 // from: the trial on screen. On open, the page starts at its header with focus on the heading,
 // however far down the list the trial was opened from (review-ui-P16-1 F1); Back to Runs returns
 // to its row (F6).
-function Frame({ title, path, headingRef, from, children }: { title: React.ReactNode; path?: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
+function Frame({ title, path, headingRef, from, back = RUNS_BACK, children }: { title: React.ReactNode; path?: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; back?: Back; children: React.ReactNode }) {
   const h1 = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
     if (from === undefined) return;
@@ -82,18 +94,18 @@ function Frame({ title, path, headingRef, from, children }: { title: React.React
     if (main) main.scrollTop = 0;
     h1.current?.focus({ preventScroll: true });
   }, [from?.run, from?.trial]);
-  const back = onNav(BACK);
+  const nav = onNav(back.patch);
   return (
     <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
       <a
-        href={hrefWith(BACK)}
+        href={hrefWith(back.patch)}
         onClick={(ev) => {
-          if (from !== undefined) returnTo(from.run, from.trial);
-          back(ev);
+          if (from !== undefined && back.remembers) returnTo(from.run, from.trial);
+          nav(ev);
         }}
         className={`inline-flex items-center gap-1 text-xs ${LINK}`}
       >
-        <ArrowLeft aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />Back to Runs
+        <ArrowLeft aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{back.label}
       </a>
       <h1
         ref={(el) => {
@@ -119,8 +131,8 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const runId = params.get('run');
   // The first-nonpass token is a URL word, not a name to show (verifier-ui-copy-1 m5).
   const title = trial === FIRST_NONPASS ? 'First non-pass trial' : trial;
-  // The session notice reads no published results, so it shows while they load or fail to load.
-  if (runId === 'session') return <Frame title="Trials from this session" headingRef={headingRef}><SessionNotice /></Frame>;
+  // The session page reads no published results, so it shows while they load or fail to load.
+  if (runId === SESSION_RUN) return <SessionTrialPage trial={trial} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
   if (results === null) return <Frame title={title} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
   if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.superseded, ...results.pilots];
@@ -130,17 +142,23 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} frozen={frozenFor(results.frozen, r.trial.task, r.trial.record.env_version)} freezes={results.frozen[r.trial.task] ?? []} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
 }
 
-// The run's place in words: the official run, a superseded version of one of its tasks (R42), or a pilot.
-const runWords = (run: RunData): string => (run.official ? ', the official run' : run.superseded !== null ? `, the superseded ${run.superseded.version} of ${run.superseded.task} in ${run.superseded.of}, not counted in the results` : ', a pilot run, not counted in the results');
+// The run's place in words: the official run, a superseded version of one of its tasks (R42), a
+// run of this session (trial/session.ts), or a pilot.
+const runWords = (run: RunData): string => (run.official ? ', the official run' : run.superseded !== null ? `, the superseded ${run.superseded.version} of ${run.superseded.task} in ${run.superseded.of}, not counted in the results` : run.kind === 'session' ? ', a run from this session, not in the published results' : ', a pilot run, not counted in the results');
 
-function Detail({ t, run, files, frozen, freezes, tab, headingRef }: { t: Trial; run: RunData; files: ReadonlySet<string>; frozen: FrozenTask | null; freezes: readonly FrozenTask[]; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+// Where a session trial's events and full explanation come from (SessionDetail), in place of the
+// published trajectory file and fullExplanation.
+interface Source { events: Loaded<TrialEvent[]>; explain: () => Promise<Explanation> }
+
+function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back }: { t: Trial; run: RunData; files: ReadonlySet<string>; frozen: FrozenTask | null; freezes: readonly FrozenTask[]; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined; source?: Source; back?: Back }) {
   const [full, setFull] = useState<Explanation | null>(null);
-  const [events, setEvents] = useState<Loaded<TrialEvent[]> | null>(() => (t.trajectoryUrl === null && !t.record.trajectory ? null : { state: 'loading' }));
+  const [events, setEvents] = useState<Loaded<TrialEvent[]> | null>(() => (source !== undefined ? source.events : t.trajectoryUrl === null && !t.record.trajectory ? null : { state: 'loading' }));
   const [current, setCurrent] = useState<{ step: number; seq: number } | null>(null);
   useEffect(() => {
     let live = true;
-    fullExplanation(t, run, files).then((x) => live && setFull(x), () => undefined);
-    if (t.trajectoryUrl === null) {
+    (source === undefined ? fullExplanation(t, run, files) : source.explain()).then((x) => live && setFull(x), () => undefined);
+    if (source !== undefined) setEvents(source.events);
+    else if (t.trajectoryUrl === null) {
       if (t.record.trajectory) setEvents({ state: 'error', message: `${run.dir}/${t.record.trajectory} is not published in this build.` });
     } else {
       fetchEvents(t.trajectoryUrl).then((v) => live && setEvents({ state: 'ready', value: v }), (e: unknown) => live && setEvents({ state: 'error', message: e instanceof Error ? e.message : String(e) }));
@@ -148,7 +166,7 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef }: { t: Trial;
     return () => {
       live = false;
     };
-  }, [t, run, files]);
+  }, [t, run, files, source]);
   const folded = useMemo<Loaded<ReturnType<typeof trajectoryOf>> | null>(() => (events === null || events.state !== 'ready' ? events : { state: 'ready', value: trajectoryOf(events.value) }), [events]);
   const traj = folded?.state === 'ready' ? folded.value : null;
   // A step link opens the folded trajectory first (phone), in the same render, so the row is
@@ -163,7 +181,8 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef }: { t: Trial;
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
   return (
-    <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
+    <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
+      {run.kind === 'session' && <SessionBanner />}
       <div
         data-testid="trial-detail"
         data-trial={t.name}
@@ -220,17 +239,98 @@ function WorldLine({ t, freezes, official }: { t: Trial; freezes: readonly Froze
   return <span data-testid="trial-world" data-world={w.kind} data-hash={w.hash ?? ''} title={w.hash ?? undefined}>{worldLine(w, t.task, worlds)}</span>;
 }
 
-// run=session: the runs the local runner started in this process (docs/requirements/ui-contract.md).
-// The Runs view reads only published runs, so the notice says where those trials are and links
-// there; on the hosted site, with no runner, there are no session runs.
-function SessionNotice() {
+// run=session: the runs this surface started (docs/requirements/ui-contract.md, "Tokens"; the
+// local runner's in this process, or this tab's on the hosted site), read through the surface's
+// TrialTransport as the Live trial view's Your runs reads them, never the published results. A
+// graded trial renders in the Detail layout from its record and the events the transport kept;
+// a trial the surface does not hold says why (session.ts), and with no runs at all the notice
+// says where this session's trials are and links there.
+function SessionTrialPage({ trial, tab, headingRef }: { trial: string; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const hosted = useHosted();
-  const link = <a href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))} className={LINK}>Open Live trial</a>;
+  const transport = theTransport(hosted);
+  const [runs, setRuns] = useState<Loaded<LiveRun[]>>({ state: 'loading' });
+  useEffect(() => {
+    let live = true;
+    setRuns({ state: 'loading' });
+    transport.runs().then((r) => live && setRuns({ state: 'ready', value: r }), (e: unknown) => live && setRuns({ state: 'error', message: e instanceof Error ? e.message : String(e) }));
+    return () => {
+      live = false;
+    };
+  }, [transport, trial]);
+  const title = 'Trials from this session';
+  const back = liveBack(null);
+  if (runs.state === 'loading') return <Frame title={title} headingRef={headingRef} back={back}><Notice>Loading this session’s runs…</Notice></Frame>;
+  if (runs.state === 'error') return <Frame title={title} headingRef={headingRef} back={back}><Notice testId="error-state">This session’s runs cannot be read: {runs.message}</Notice></Frame>;
+  const r = resolveSessionTrial(runs.value, trial, hosted);
+  switch (r.kind) {
+    case 'no-runs':
+      return <Frame title={title} headingRef={headingRef} back={back}><SessionNotice hosted={hosted} /></Frame>;
+    case 'none-nonpass':
+      return <Frame title="First non-pass trial" headingRef={headingRef} back={back}><Notice testId="empty-state">{r.message}</Notice></Frame>;
+    case 'missing':
+      return <Frame title={title} headingRef={headingRef} back={back}><Notice testId="session-missing">{r.message} <LiveLink /></Notice></Frame>;
+    case 'running':
+      return <Frame title={title} headingRef={headingRef} back={back}><Notice testId="session-running">Trial {r.id} is still running. Its grade shows here when it ends. <LiveLink /></Notice></Frame>;
+    case 'ended':
+      return <Frame title={title} headingRef={headingRef} back={back}><Notice testId="session-ended">Trial {r.id} ended with no grade{r.error === null ? '.' : `: ${r.error}`} <LiveLink /></Notice></Frame>;
+    case 'trial':
+      return <SessionDetail key={r.trial.name} t={r.trial} run={r.run} transport={transport} tab={tab} headingRef={headingRef} />;
+  }
+}
+
+// A session trial's events, from the transport (those kept in IndexedDB first, then the runner's
+// stream; resolves once the trial has ended), then the Detail layout over them. Until they arrive
+// the frame says so; a stream the transport cannot read gives the trajectory's error state and an
+// explanation from the record alone.
+function SessionDetail({ t, run, transport, tab, headingRef }: { t: Trial; run: RunData; transport: TrialTransport; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+  const [events, setEvents] = useState<Loaded<TrialEvent[]>>({ state: 'loading' });
+  useEffect(() => {
+    const ac = new AbortController();
+    const kept: TrialEvent[] = [];
+    transport.events(t.name, (e) => {
+      if (kept.length === 0 || e.seq > kept.at(-1)!.seq) kept.push(e);
+    }, ac.signal).then((end) => {
+      if (ac.signal.aborted) return;
+      setEvents(kept.length === 0 && end.record === null && end.message !== null ? { state: 'error', message: end.message } : { state: 'ready', value: kept });
+    });
+    return () => ac.abort();
+  }, [transport, t.name]);
+  const source = useMemo<Source | null>(() => (events.state === 'loading' ? null : { events, explain: () => sessionExplanation(t, events.state === 'ready' ? events.value : []) }), [t, events]);
+  if (source === null) return <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} back={liveBack(t.task)}><SessionBanner /><Notice>Loading the trajectory…</Notice></Frame>;
+  return <Detail t={t} run={run} files={NO_FILES} frozen={null} freezes={[]} tab={tab} headingRef={headingRef} source={source} back={liveBack(t.task)} />;
+}
+
+const NO_FILES: ReadonlySet<string> = new Set();
+
+// A session trial's full explanation: the context the published trial detail builds
+// (fullExplanation), with the events the transport kept and the task's checks and check text,
+// no audit row and no matrix (M4 stays pending). The run's world is the fixtures the trial ran
+// on (its record's fixture_hash, what the runner's manifest records), so M3 can be decided.
+async function sessionExplanation(t: Trial, events: readonly TrialEvent[]): Promise<Explanation> {
+  const { taskChecks } = await import('../tasks/matrix-task.ts');
+  const checks = await taskChecks(t.task).catch(() => []);
+  const fixture = (t.record as { fixture_hash?: unknown }).fixture_hash;
+  return explainTrial(t.record, null, explainContext({ record: t.record, events, manifest: typeof fixture === 'string' ? { world_hash: fixture } : null, matrix: null, checks, text: checkTextOf(t.task) }));
+}
+
+function LiveLink() {
+  return <a href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))} className={LINK}>Open Live trial</a>;
+}
+
+// The short banner above a session trial's page: it is not a published trial, and where the
+// session's trials are listed.
+function SessionBanner() {
+  return <Notice testId="session-banner">This trial ran in this session and is not in the published results. Your runs in the Live trial view lists this session’s trials. <LiveLink /></Notice>;
+}
+
+// With no runs in the session: where this session's trials would be, with a link there; on the
+// hosted site, with no runner, the trials are those run in this tab.
+function SessionNotice({ hosted }: { hosted: boolean }) {
   return (
     <Notice testId="session-notice">
       {hosted
-        ? <>No runs in this session. The trials that you run in this tab are under Your runs in the Live trial view. {link}</>
-        : <>The trials that this local runner started are under Your runs in the Live trial view. {link}</>}
+        ? <>No runs in this session. The trials that you run in this tab are under Your runs in the Live trial view. <LiveLink /></>
+        : <>No trial has run in this session yet. The trials that this local runner starts are under Your runs in the Live trial view. <LiveLink /></>}
     </Notice>
   );
 }

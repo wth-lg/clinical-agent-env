@@ -599,7 +599,10 @@
         "cli/run-one.ts",
         "apps/runner/main.ts",
         "packages/core/runner-api.ts",
-        "apps/web/src/live"
+        "apps/web/src/live",
+        "apps/web/src/trial/session.ts",
+        "apps/web/src/live/grade.ts",
+        "apps/web/src/trial/TrialPage.tsx"
       ],
       "tests": [
         "packages/core/test/loop-run-one.test.ts",
@@ -607,7 +610,9 @@
         "apps/runner/test",
         "packages/core/test/runner-api.test.ts",
         "apps/web/e2e/live.spec.ts",
-        "apps/web/e2e/local-runner.spec.ts"
+        "apps/web/e2e/local-runner.spec.ts",
+        "apps/web/test/session-trial.test.ts",
+        "apps/web/test/live-grade.test.ts"
       ],
       "ui_required": true,
       "ui": {
@@ -629,7 +634,7 @@
       "done_when": [
         1
       ],
-      "note": "P25c fix (builder-326): the graded live trial's Score card is the trial page's (apps/web/src/trial/Grading.tsx SCORE_TITLE), which the UI polish titled 'Rubric score (does not decide pass)'; the pattern follows the screen, as N7's does. The row's snapshot N10-live-trial-graded.ax.txt is still owed by the P25c audit."
+      "note": "P25c fix (builder-326): the graded live trial's Score card is the trial page's (apps/web/src/trial/Grading.tsx SCORE_TITLE), which the UI polish titled 'Rubric score (does not decide pass)'; the pattern follows the screen, as N7's does. P25c re-audit fix (builder-330): on 8e7ff856 no session trial reached the Grading cards. Now the graded live card shows 'Rubric score (does not decide pass) <s>' with 'Open the full grade', and the trial page of run=session renders the session trial in the trial detail layout (Score card, gate checks, rubric table, Attribution with the not-audited marker, trajectory) from the record the runner serves (apps/web/src/trial/session.ts); the row's action and expect are unchanged. The row's snapshot N10-live-trial-graded.ax.txt is still owed by the P25c audit."
     },
     {
       "id": "N11",

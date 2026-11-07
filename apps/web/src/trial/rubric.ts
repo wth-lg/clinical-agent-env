@@ -7,6 +7,10 @@ export interface RubricRow {
   met: unknown;
 }
 
+// The Score card's title, on the Grading tab and on a graded live trial's card: the rubric score
+// never decides a pass (docs/requirements/ui-contract.md, "Strings on screen").
+export const SCORE_TITLE = 'Rubric score (does not decide pass)';
+
 export const metText = (met: unknown): string => (met === true ? 'met' : met === false ? 'not met' : String(met));
 // A rubric row's met column: a penalty (negative points) that did not fire is "not triggered", so
 // "not met" never reads as a loss; an item the judge could not answer is "judge unsure" (ui-polish 3.2).
