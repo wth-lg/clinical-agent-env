@@ -142,6 +142,42 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   await expect(page.getByTestId('resumed')).toHaveCount(0);
 });
 
+// Trace row N10 on the hosted surface (builder-330): the session trial page behaves as on the local
+// runner when this tab holds the record (IndexedDB, so a reload keeps it, with no key); for a trial
+// the tab never ran it says why there is nothing to show.
+test('a graded hosted trial shows its rubric score on the card, and its session trial page renders the Grading cards from the record this tab holds', async ({ page }) => {
+  await mockToy(page);
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  await run(page, 1);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  const id = (await trial(page).getAttribute('data-trial'))!;
+  const record = (await storedRecord(page, id)) as { score: number; checks: Array<{ kind: string }> };
+  const score = `Rubric score (does not decide pass) ${record.score.toFixed(2)}`;
+  await expect(trial(page).getByTestId('live-score')).toHaveText(score);
+  await trial(page).getByRole('link', { name: 'Open the full grade' }).click();
+  await expect(page).toHaveURL(/run=session/);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', id);
+  await expect(page.getByTestId('session-banner')).toBeVisible();
+  const grading = page.getByTestId('panel-grading');
+  await expect(grading.getByTestId('score-card')).toHaveText(score);
+  await expect(grading.getByTestId('gate-check')).toHaveCount(record.checks.filter((c) => c.kind !== 'rubric').length);
+  await expect(grading.getByTestId('rubric-row')).toHaveCount(record.checks.filter((c) => c.kind === 'rubric').length);
+  await expect(page.getByTestId('trial-header').getByTestId('outcome')).toHaveText('PASS');
+  await page.getByRole('tab', { name: 'Attribution' }).click();
+  await expect(page.getByTestId('panel-attribution')).toContainText('not human-audited');
+  // The record is this tab's: a reload, past the gate with no key, shows the same page.
+  const url = page.url();
+  await browse(page, url);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', id);
+  await expect(page.getByTestId('panel-grading').getByTestId('score-card')).toHaveText(score);
+  // A trial this tab never ran.
+  await page.goto('./?view=runs&run=session&trial=nope._toy.9');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByTestId('session-missing')).toContainText('No trial nope._toy.9 in this session. A trial run on the hosted site is kept only in the browser tab that ran it, and this tab has no record of it.');
+  await expect(page.getByTestId('trial-detail')).toHaveCount(0);
+});
+
 test('a reload mid-trial resumes from IndexedDB to the same final hash, and no storage holds the key', async ({ page }) => {
   expect(uninterrupted).not.toBeNull();
   const key = sentinelKey();

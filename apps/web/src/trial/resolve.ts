@@ -4,7 +4,7 @@
 // summary order (the official run's task order, a pilot run's sorted task ids, then the trial
 // index). Pure.
 import { isValid } from '../../../../packages/core/outcomes.ts';
-import type { RunData, Trial } from '../data/results.ts';
+import type { RunData, Trial } from '../data/run-types.ts';
 
 export const FIRST_NONPASS = 'first-nonpass';
 

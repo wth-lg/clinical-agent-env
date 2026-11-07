@@ -708,23 +708,33 @@ test('run=session keeps its heading and notice while the published results load 
   await expect(page.getByTestId('error-state')).toHaveCount(0);
 });
 
-test('run=session on the local runner says the runner started those trials and links to the Live trial view', async ({ page }) => {
-  // The local runner: health answers as clinenv-runner and index.html carries the runner's token.
+test('run=session on a local runner with no runs says the runner starts those trials and links to the Live trial view; a runs list it cannot read says so', async ({ page }) => {
+  // The local runner: health answers as clinenv-runner, index.html carries the runner's token, and
+  // the runs list (GET api/runs, what the page reads; builder-330) is empty.
   await page.route((url) => url.pathname.endsWith(`/${HEALTH_PATH}`), (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SAMPLES.health) }));
   await page.route((url) => url.pathname.endsWith('/clinical-agent-env/') || url.pathname.endsWith('/index.html'), async (route) => {
     const res = await route.fetch();
     const html = (await res.text()).replace('<head>', `<head>\n    <meta name="${TOKEN_META}" content="stub" />`);
     return route.fulfill({ response: res, body: html });
   });
+  let runs: unknown = { runs: [] };
+  await page.route((url) => url.pathname.endsWith('/api/runs'), (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(runs) }));
   await browse(page, './?view=runs&run=session&trial=first-nonpass');
   await expect(page.getByTestId('surface-chip')).toHaveText('Local runner');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
   const notice = page.getByTestId('session-notice');
-  await expect(notice).toContainText('The trials that this local runner started are under Your runs in the Live trial view.');
+  await expect(notice).toContainText('No trial has run in this session yet. The trials that this local runner starts are under Your runs in the Live trial view.');
   await expect(notice).not.toContainText('No runs in this session.');
+  await expect(page.getByTestId('error-state')).toHaveCount(0);
   await notice.getByRole('link', { name: 'Open Live trial' }).click();
   await expect(page).toHaveURL(/view=live/);
   await expect(page).not.toHaveURL(/run=session/);
+  // A runs list the page cannot read is said, not shown as no runs.
+  runs = 'not a list';
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByTestId('error-state')).toContainText('This session’s runs cannot be read:');
+  await expect(page.getByTestId('session-notice')).toHaveCount(0);
 });
 
 test('a task-validity review line in audit.jsonl is read, not flagged as an unreadable line', async ({ page }) => {
