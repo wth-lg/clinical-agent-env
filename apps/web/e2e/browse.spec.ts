@@ -32,7 +32,8 @@ test.describe('grader validation in the tab, no key', () => {
     const cards = page.getByTestId('task-card');
     await expect(cards).toHaveCount(6);
     expect(await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-task')))).toEqual(TASK_IDS);
-    await cards.first().getByRole('button').first().click();
+    // The card opens from its title link (P25u J12); its first button is now Run reference solution.
+    await cards.first().getByRole('link', { name: /Open task$/ }).click();
     await expect(page.getByTestId('task-prompt')).toBeVisible();
     await expect(page.getByTestId('task-tools')).toBeVisible();
     // Run trial is on the prompt tab; with no key it says it needs an API key (JU5, ui-polish 4.1).
@@ -204,7 +205,7 @@ test('every trial detail shows the criteria audit-check gives; M3 is met because
     const row = page.locator(`[data-testid="trial-row"][data-trial="${name}"]`);
     // A plain PASS row is in the run's closed "<n> PASS trials" group (ui-polish 2.2): open it first.
     if (!(await row.isVisible())) await page.locator('[data-testid="pass-group"]', { has: row }).locator('> summary').click();
-    await row.getByRole('button', { name, exact: true }).click();
+    await row.getByRole('link', { name, exact: true }).click();
     const detail = page.getByTestId('trial-detail');
     await expect(detail).toHaveAttribute('data-trial', name);
     await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });

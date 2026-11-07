@@ -105,8 +105,10 @@ test('a superseded task version shows beside the current one on Overview and in 
   await expect(run.getByTestId('run-header')).toHaveText(`contrast-ct-prep v1 (superseded in ${RUN_ID}): ${v1.passes}/${v1.trials} pass · ${v1.trials - v1.passes} failures`);
   // The official run's own count stays its own.
   await expect(page.getByTestId('runs-stat')).toHaveText(`${Object.values(OFFICIAL).reduce((n, t) => n + t.passes, 0)}/${Object.values(OFFICIAL).reduce((n, t) => n + t.trials, 0)}`);
-  // A superseded trial opens like any other, and says what it is.
-  await run.getByTestId('trial-row').first().getByRole('button').click();
+  // A superseded trial opens like any other, and says what it is. The run starts closed under its
+  // header (P25u J9), and the trial's name is a link (J10).
+  await run.getByTestId('run-header').click();
+  await run.getByTestId('trial-row').first().getByTestId('trial-link').click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-run', SUPERSEDED_KEY);
   await expect(page.getByText(`the superseded v1 of contrast-ct-prep in ${RUN_ID}, not counted in the results`)).toBeVisible();
 });
