@@ -133,8 +133,10 @@ test.describe('Overview after the UI/UX audit', () => {
 
   test('V13: the page title is 20px and a card title 15px, from the type steps', async ({ page }) => {
     await browse(page, './?view=overview');
-    expect(await page.getByRole('heading', { level: 1 }).evaluate((el) => getComputedStyle(el).fontSize)).toBe('20px');
-    expect(await page.getByTestId('intro-card').getByRole('heading', { level: 2 }).evaluate((el) => getComputedStyle(el).fontSize)).toBe('15px');
+    // Polled: Overview's loading frame and the loaded page each render an h1, so a one-shot read
+    // can hit a detached node (getComputedStyle gives "" then; one flake in a 265-test run).
+    await expect.poll(() => page.getByRole('heading', { level: 1 }).evaluate((el) => getComputedStyle(el).fontSize)).toBe('20px');
+    await expect.poll(() => page.getByTestId('intro-card').getByRole('heading', { level: 2 }).evaluate((el) => getComputedStyle(el).fontSize)).toBe('15px');
   });
 });
 
