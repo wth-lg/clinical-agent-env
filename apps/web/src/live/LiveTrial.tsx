@@ -37,7 +37,8 @@ import type { Surface } from '../surface/detect.ts';
 import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { fold, type Item } from './fold.ts';
-import { liveGrade, sessionTrialPatch } from './grade.ts';
+import { liveScore, sessionTrialPatch } from './grade.ts';
+import { SCORE_TITLE } from '../trial/rubric.ts';
 import { readEvents } from './store.ts';
 import { theTransport } from './transport/select.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
@@ -293,10 +294,6 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
   const running = end === null;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
   const explanation = record ? explainTrial(record, null, { events }) : null;
-  // The graded result on the card (trace row N10): the rubric score under the Score card's title,
-  // and the full grade (every check, the rubric rows, the attribution, the trajectory) one click
-  // away on the trial page of run=session.
-  const grade = end?.state === 'graded' ? liveGrade(record) : null;
   // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
   // gets the key gate's fallback (ruling 2026-10-28T02:00).
   const hosted = useHosted();
@@ -367,12 +364,7 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
               {explanation.outcome !== 'PASS' && explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="basis-full text-xs text-ink-muted">{explanation.secondary_reason}</span>}
             </div>
           )}
-          {end.state === 'graded' && record !== null && (
-            <p data-testid="live-grade" className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              {grade !== null && <span data-testid="live-score" className="text-ink-muted">{grade.title} <span className="font-medium tabular-nums text-ink">{grade.value}</span></span>}
-              <GradeLink id={id} />
-            </p>
-          )}
+          {end.state === 'graded' && record !== null && <p data-testid="live-grade" className="flex flex-wrap items-baseline gap-x-4 gap-y-1"><GradeLine id={id} record={record} /></p>}
           {relay !== null && f.end?.type === 'error' ? (
             <>
               <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={errorLine}>
@@ -393,11 +385,18 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
   );
 }
 
-// The link to a graded trial's page (run=session): the Score card, every gate check, the rubric
-// rows, the attribution and the trajectory in the trial detail's layout.
-function GradeLink({ id }: { id: string }) {
+// The graded result on the card and on its Your runs row (trace row N10): the rubric score under
+// the Score card's title, and the full grade (every gate check, the rubric rows, the attribution,
+// the trajectory) one click away on the trial page of run=session.
+function GradeLine({ id, record }: { id: string; record: ExplainRecord }) {
+  const score = liveScore(record);
   const patch = sessionTrialPatch(id);
-  return <a data-testid="open-grade" href={hrefWith(patch)} onClick={onNav(patch)} className={`text-xs ${LINK}`}>Open the full grade</a>;
+  return (
+    <>
+      {score !== null && <span data-testid="live-score" className="text-ink-muted">{SCORE_TITLE} <span className="font-medium tabular-nums text-ink">{score}</span></span>}
+      <a data-testid="open-grade" href={hrefWith(patch)} onClick={onNav(patch)} className={`text-xs ${LINK}`}>Open the full grade</a>
+    </>
+  );
 }
 
 // A finished trial's state in the words its chips use: the outcome of a counted trial with the
@@ -530,8 +529,8 @@ function LiveRow({ row, runName, current, onOpen }: { row: LiveRun['rows'][numbe
         {e?.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         {e && !e.audited && !labelled(e) && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
         {wasResumed(row.record) && <Resumed />}
-        {row.state === 'graded' && row.record !== null && <GradeLink id={row.trialId} />}
       </div>
+      {row.state === 'graded' && row.record !== null && <p data-testid="live-grade" className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs"><GradeLine id={row.trialId} record={row.record} /></p>}
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
       {e && e.outcome !== 'PASS' && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words text-xs text-ink-muted">{e.secondary_reason}</p>}
       {!e && row.error !== null && <p className="mt-1 break-words text-ink-muted">{row.error}</p>}

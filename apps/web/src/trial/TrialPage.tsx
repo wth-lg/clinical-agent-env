@@ -278,10 +278,11 @@ function SessionTrialPage({ trial, tab, headingRef }: { trial: string; tab: TabI
   }
 }
 
-// A session trial's events, from the transport (those kept in IndexedDB first, then the runner's
-// stream; resolves once the trial has ended), then the Detail layout over them. Until they arrive
-// the frame says so; a stream the transport cannot read gives the trajectory's error state and an
-// explanation from the record alone.
+// A session trial in the Detail layout: the header and the grade from the record at once, the
+// trajectory in its loading state until the transport's events arrive (those kept in IndexedDB
+// first, then the runner's stream; resolves once the trial has ended), then the full explanation
+// over them. A stream that never ends leaves only the trajectory loading; one the transport
+// cannot read gives the trajectory's error state and an explanation from the record alone.
 function SessionDetail({ t, run, transport, tab, headingRef }: { t: Trial; run: RunData; transport: TrialTransport; tab: TabId; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const [events, setEvents] = useState<Loaded<TrialEvent[]>>({ state: 'loading' });
   useEffect(() => {
@@ -295,8 +296,7 @@ function SessionDetail({ t, run, transport, tab, headingRef }: { t: Trial; run: 
     });
     return () => ac.abort();
   }, [transport, t.name]);
-  const source = useMemo<Source | null>(() => (events.state === 'loading' ? null : { events, explain: () => sessionExplanation(t, events.state === 'ready' ? events.value : []) }), [t, events]);
-  if (source === null) return <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} back={liveBack(t.task)}><SessionBanner /><Notice>Loading the trajectory…</Notice></Frame>;
+  const source = useMemo<Source>(() => ({ events, explain: () => sessionExplanation(t, events.state === 'ready' ? events.value : []) }), [t, events]);
   return <Detail t={t} run={run} files={NO_FILES} frozen={null} freezes={[]} tab={tab} headingRef={headingRef} source={source} back={liveBack(t.task)} />;
 }
 
@@ -304,13 +304,13 @@ const NO_FILES: ReadonlySet<string> = new Set();
 
 // A session trial's full explanation: the context the published trial detail builds
 // (fullExplanation), with the events the transport kept and the task's checks and check text,
-// no audit row and no matrix (M4 stays pending). The run's world is the fixtures the trial ran
-// on (its record's fixture_hash, what the runner's manifest records), so M3 can be decided.
+// no audit row and no matrix (M4 stays pending). M3 is checked against the app's manifest world
+// (data/world.ts MANIFEST, bundled with the code on every surface), the world every published
+// trial is checked against, never against the record's own hashes.
 async function sessionExplanation(t: Trial, events: readonly TrialEvent[]): Promise<Explanation> {
   const { taskChecks } = await import('../tasks/matrix-task.ts');
   const checks = await taskChecks(t.task).catch(() => []);
-  const fixture = (t.record as { fixture_hash?: unknown }).fixture_hash;
-  return explainTrial(t.record, null, explainContext({ record: t.record, events, manifest: typeof fixture === 'string' ? { world_hash: fixture } : null, matrix: null, checks, text: checkTextOf(t.task) }));
+  return explainTrial(t.record, null, explainContext({ record: t.record, events, manifest: { world_hash: MANIFEST.world.state_hash }, matrix: null, checks, text: checkTextOf(t.task) }));
 }
 
 function LiveLink() {

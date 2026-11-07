@@ -16,7 +16,7 @@ import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemLabelsOf, itemsMetText, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
-import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, totalText, type RubricMark } from './rubric.ts';
+import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, scoreText, totalText, type RubricMark } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -132,7 +132,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   // stored one; verifier-phase-P17i-S0-208-1 S1).
   const itemLabels = itemLabelsOf(r as Parameters<typeof itemLabelsOf>[0]);
   const unfinished = r.error != null && !g.regraded;
-  const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
+  const score = scoreText(g);
   const total = rubricTotal(rubric);
   const questions = useRubricQuestions(t.task, rubric.length > 0);
   return (
