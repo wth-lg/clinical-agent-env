@@ -17,7 +17,9 @@ import { formatInterval } from '../src/data/ui.tsx';
 import { notCounted, notCountedText } from '../src/data/marks.ts';
 import { isValid, NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 import { currentGrade, wilson } from '../../../packages/core/summary.ts';
-import { sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { explain, MANIFEST_HASH, records, sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { frozenRows } from '../src/environment/frozen.ts';
+import { PLAIN_TERMS } from '../src/glossary/terms.ts';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -26,7 +28,8 @@ const browse = browseFrom(sampleBase);
 
 test('Findings renders the markdown, one interval per task and a kind-of-failure bar per task', async ({ page }) => {
   await browse(page, './?view=findings');
-  await expect(page.getByTestId('findings-md').getByRole('heading', { level: 1 })).toHaveText('Findings (sample run)');
+  // The write-up sits in a closed disclosure (P25u J18), so its heading is read by element, not by role.
+  await expect(page.getByTestId('findings-md').locator('h1')).toHaveText('Findings (sample run)');
   // One Wilson display (pre-audit U10, P17j JU12): the chart, from summary.json; the write-up
   // points to it and repeats no interval table.
   await expect(page.getByTestId('findings-md').locator('table')).toHaveCount(0);
@@ -53,7 +56,84 @@ test('Findings renders the markdown, one interval per task and a kind-of-failure
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', trial!);
   await page.goBack();
   await page.getByRole('link', { name: 'How failures are attributed' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
+});
+
+// P25u J18, J7b, V3 and J8c on the sample run: the write-up is a closed disclosure under the
+// difficulty history; the Glossary opens with one plain sentence per term, each under its anchor,
+// and keeps the exact rules behind a closed disclosure that a link to an anchor inside it opens;
+// the kind bar is drawn to scale (its track is the failures over the valid trials); the fault box
+// uses the one confirmation phrase with the record's count and the audit's.
+test('Findings: the analysis is closed at first under the difficulty history; the Glossary leads with plain terms and folds the exact rules', async ({ page }) => {
+  await browse(page, './?view=findings');
+  const analysis = page.getByTestId('findings-analysis');
+  await expect(analysis).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('findings-md')).toBeHidden();
+  const history = (await page.getByTestId('difficulty-history').boundingBox())!;
+  const prose = (await analysis.boundingBox())!;
+  expect(history.y).toBeLessThan(prose.y);
+  await page.getByRole('link', { name: 'How failures are attributed' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
+  await expect(page.getByTestId('plain-term')).toHaveCount(PLAIN_TERMS.length);
+  for (const t of PLAIN_TERMS.slice(0, 3)) await expect(page.locator(`#${t.id}`)).toContainText(t.text);
+  const rules = page.getByTestId('exact-rules');
+  await expect(rules).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('audit-label-table')).toBeHidden();
+  // The link from Findings to the Fault labels table opens the disclosure it sits in.
+  await browse(page, './?view=findings');
+  await page.getByRole('link', { name: 'whose fault each failure is' }).click();
+  await expect(page).toHaveURL(/#fault-labels$/);
+  await expect(page.getByTestId('exact-rules')).toHaveAttribute('open', '');
+  await expect(page.locator('#fault-labels').getByTestId('audit-label-table')).toBeVisible();
+});
+
+test('Findings: the kind bar is to scale and the fault box gives the record\'s count and the audit\'s (P25u V3, J8c)', async ({ page }) => {
+  await browse(page, './?view=findings');
+  for (const id of TASK_IDS) {
+    const t = summary.tasks[id]!;
+    const bar = page.locator(`[data-testid="kind-bar"][data-task="${id}"]`);
+    await expect(bar).toHaveAttribute('data-track', String((100 * t.fault_counts.failures) / t.trials));
+    // The filled part is the model mark, never the LIMIT tone (copy rule C8).
+    for (const seg of await bar.locator('[data-kind]').all()) await expect(seg).toHaveAttribute('data-mark', 'model');
+    const box = page.locator(`[data-testid="fault-box"][data-task="${id}"]`);
+    await expect(box).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
+    await expect(box).toContainText(`audit agrees: ${auditAgrees(id)} of ${t.fault_counts.failures}`);
+    await expect(box.getByTestId('m5')).toHaveAttribute('data-agrees', String(auditAgrees(id)));
+  }
+});
+
+// The failures of a task that M5 confirms: the human audit agrees it is the model's fault.
+const auditAgrees = (task: string) => records.filter((r) => r.task_id === task).map(explain).filter((e) => e.valid && e.outcome !== 'PASS' && e.criteria.find((c) => c.id === 'M5')?.met === true).length;
+
+// P25u J3 on the committed results: Environment says each task's official trials start from that
+// task's frozen world, lists those worlds beside today's build, and uses "world hash" throughout.
+test('Environment: the lead names the frozen worlds, the table lists them against today\'s build, and nothing says "state hash"', async ({ page }) => {
+  // Each task's freezes as data/results.ts loadFrozen reads them: its entry, the one kept under
+  // `previous` after a re-freeze (R40), and its superseded sub-entry (R42).
+  type Entry = { world_hash: string; frozen_at: { tag: string }; previous?: Entry; superseded?: Entry & { version: string } };
+  const doc = JSON.parse(readFileSync(join(REPO, 'results/tasks-final.json'), 'utf8')) as { tasks: Record<string, Entry> };
+  const freezes = Object.fromEntries(Object.entries(doc.tasks).map(([id, t]) => [id, [
+    { role: 'current' as const, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag } },
+    ...(t.previous ? [{ role: 'previous' as const, world_hash: t.previous.world_hash, frozen_at: { tag: t.previous.frozen_at.tag } }] : []),
+    ...(t.superseded ? [{ role: 'superseded' as const, version: t.superseded.version, world_hash: t.superseded.world_hash, frozen_at: { tag: t.superseded.frozen_at.tag } }] : []),
+  ]]));
+  const rows = frozenRows(freezes, MANIFEST_HASH);
+  expect(rows.length).toBeGreaterThan(0);
+  await browseAt(page, './?view=environment');
+  await expect(page.getByText("Each task's official trials start from that task's frozen world")).toBeVisible();
+  const table = page.getByTestId('frozen-worlds');
+  await expect(table.getByTestId('frozen-world')).toHaveCount(rows.length);
+  for (const [i, r] of rows.entries()) {
+    const row = table.getByTestId('frozen-world').nth(i);
+    await expect(row).toHaveAttribute('data-task', r.task);
+    await expect(row).toHaveAttribute('data-role', r.role);
+    await expect(row).toHaveAttribute('data-hash', r.hash);
+    await expect(row).toHaveAttribute('data-today', String(r.today));
+    await expect(row).toContainText(r.tag);
+  }
+  await expect(page.getByTestId('manifest-hash')).toHaveAttribute('data-hash', MANIFEST_HASH);
+  await expect(page.getByText("Today's build", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText(/state hash/i)).toHaveCount(0);
 });
 
 // A vite build of RESULTS_ROOT=root into a temp directory, served by its own vite preview.
@@ -158,13 +238,14 @@ test.describe('the real results build: pilot runs, no official run', () => {
     await expect(page.getByTestId('pilot-rate').first()).toContainText(/Wilson 95% \d/);
     await expect(page.getByTestId('pilot-findings').first().getByTestId('legend')).toBeVisible();
     await expect(page.getByTestId('will-show').getByRole('link')).toHaveCount(3);
-    // The two glossary links name the Attribution page, never "Labels" (verifier-phase-P17i-P17j-S9-1
-    // S1: this state, no official run, is the only one that renders them), and "the fault labels"
-    // opens the Fault labels table (N2).
+    // The two glossary links name the Glossary page, never "Labels" or "Attribution"
+    // (verifier-phase-P17i-P17j-S9-1 S1: this state, no official run, is the only one that
+    // renders them; P25u copy rule C3), and "the fault labels" opens the Fault labels table (N2),
+    // which sits in the Exact rules disclosure (J7b) and opens with it.
     await expect(page.getByTestId('will-show').getByText(/\bLabels\b/)).toHaveCount(0);
-    await expect(page.getByTestId('will-show').getByRole('link', { name: /on Attribution$/ })).toHaveCount(2);
-    await page.getByTestId('will-show').getByRole('link', { name: 'see the fault labels on Attribution' }).click();
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+    await expect(page.getByTestId('will-show').getByRole('link', { name: /in the Glossary$/ })).toHaveCount(2);
+    await page.getByTestId('will-show').getByRole('link', { name: 'see the fault labels in the Glossary' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
     await expect(page).toHaveURL(/#fault-labels$/);
     await expect(page.locator('#fault-labels').getByTestId('audit-label-table')).toBeVisible();
     await browseAt(page, `${base}?view=findings`);
