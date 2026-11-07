@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { noPassCount } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
-import { formatInterval, IntervalRow } from '../data/ui.tsx';
+import { formatInterval, GlossaryLink, IntervalRow } from '../data/ui.tsx';
 import { Verdict } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
@@ -20,7 +20,12 @@ const toTask = (run: string, task: string) => ({ view: 'runs', run, task, label:
 const toRun = (run: string) => ({ view: 'runs', run, task: null, label: null, trial: null, check: null, audit: null });
 
 // The chart's key in words, once per card under the axis (ui-polish 2.4).
-export const CHART_KEY = `Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band ${FINAL_PASS_BAND[0] * 100}% to ${FINAL_PASS_BAND[1] * 100}%.`;
+const BAND_WORDS = `${FINAL_PASS_BAND[0] * 100}% to ${FINAL_PASS_BAND[1] * 100}%`;
+export const CHART_KEY = `Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band ${BAND_WORDS}.`;
+// The same key with the interval and the band each a link to its plain term (P25u copy rule C6).
+export const ChartKey = () => (
+  <>Dot: pass rate. Whisker: <GlossaryLink anchor="term-wilson">Wilson 95% interval</GlossaryLink>. Shaded: the <GlossaryLink anchor="term-band">target band</GlossaryLink> {BAND_WORDS}.</>
+);
 
 // The 0/50/100% labels in the chart column of a subgrid row; col: that column's start class.
 export function RateAxis({ col }: { col: string }) {

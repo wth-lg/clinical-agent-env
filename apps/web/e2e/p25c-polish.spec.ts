@@ -159,18 +159,20 @@ test('Findings: the chart and the per-task cards come before the write-up prose'
   const prose = (await page.getByTestId('findings-md').boundingBox())!;
   expect(chart.y).toBeLessThan(prose.y);
   expect(why.y).toBeLessThan(prose.y);
-  await expect(page.getByTestId('findings-md').getByRole('heading', { level: 1 })).toHaveText('Findings (sample run)');
-  // The prose is a disclosure, open at first, that closes and opens again (gate UIP25C-244 S1).
+  // The heading is read by element: the prose starts hidden in its disclosure (P25u J18).
+  await expect(page.getByTestId('findings-md').locator('h1')).toHaveText('Findings (sample run)');
+  // The prose is a disclosure, closed at first (P25u J18; gate UIP25C-244 S1 had it open), that
+  // opens and closes again.
   const analysis = page.getByTestId('findings-analysis');
-  await expect(analysis).toHaveAttribute('open', '');
+  await expect(analysis).not.toHaveAttribute('open', '');
   const toggle = analysis.locator('summary');
   await expect(toggle).toHaveText('Read the analysis');
   await toggle.click();
-  await expect(analysis).not.toHaveAttribute('open', '');
-  await expect(page.getByTestId('findings-md')).toBeHidden();
-  await toggle.click();
   await expect(analysis).toHaveAttribute('open', '');
   await expect(page.getByTestId('findings-md')).toBeVisible();
+  await toggle.click();
+  await expect(analysis).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('findings-md')).toBeHidden();
 });
 
 // Gate UIP25C-244 carry-over (#242 m1): a trial of a superseded task version, on that version's

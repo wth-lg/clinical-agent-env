@@ -1,5 +1,6 @@
-// Findings: the charts first, then docs/findings.md rendered in an open disclosure, "Read the
-// analysis" (P25c: the numbers come before the prose, and the prose folds away), all from the
+// Findings: the charts first, then the difficulty history, then docs/findings.md rendered in a
+// closed disclosure, "Read the analysis" (P25c: the numbers come before the prose; P25u J18: the
+// prose stays folded until asked for, so the history is not 4,000 px down), all from the
 // official run's summary.json: pass rate with its Wilson 95% interval per task and the trials its k/n leaves out
 // (ENV_LIMIT and the other excluded outcomes, with why), why each task fails (P17j JU7:
 // its valid failures by kind as a bar, its top failed checks and its fault box, findings/why.tsx),
@@ -16,8 +17,9 @@ import { noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
-import { CHART_KEY, PilotRateRows, RateAxis } from './pilot.tsx';
-import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
+import { ChartKey, PilotRateRows, RateAxis } from './pilot.tsx';
+import { whyFailParts } from './counts.ts';
+import { FaultBox, KindBar, Reruns, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
 import { DifficultyHistory, NoFailures, Verdict, VerdictLink } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -57,8 +59,8 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       {links}
       <Charts run={results.official} blocked={block !== null} />
       {block === null && <NoFailures run={results.official} />}
-      {results.findings !== null && (block === null ? <Analysis text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
       <DifficultyHistory runs={[...results.pilots, ...results.probes, ...results.superseded, results.official]} />
+      {results.findings !== null && (block === null ? <Analysis text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
     </Page>
   );
 }
@@ -91,7 +93,7 @@ function PilotFindings({ run }: { run: RunData }) {
           : (
             <>
               <PilotRateRows run={run} axis below={(r) => <NotCountedLine task={r.task} text={notCountedText(notCounted({ outcomes: r.outcomes }))} />} />
-              <p className="text-xs text-ink-muted">{CHART_KEY}</p>
+              <p className="text-xs text-ink-muted"><ChartKey /></p>
             </>
           )}
         {graded !== null && <p className="text-xs text-ink-muted">{graded}</p>}
@@ -107,8 +109,8 @@ function WillShow() {
   return (
     <Card title="What you will find here">
       <ul className="list-disc space-y-1 pl-5" data-testid="will-show">
-        <li>The pass rate of each task over {FINAL_TRIALS_PER_TASK} trials, with its Wilson 95% interval. A trial passes only when it meets every gate check: <GlossaryLink anchor="pass">see how a pass is counted on Attribution</GlossaryLink>.</li>
-        <li>The outcome of every trial, and whose fault each failure is (the model, the environment or the grader): <GlossaryLink anchor="fault-labels">see the fault labels on Attribution</GlossaryLink>.</li>
+        <li>The pass rate of each task over {FINAL_TRIALS_PER_TASK} trials, with its Wilson 95% interval. A trial passes only when it meets every gate check: <GlossaryLink anchor="pass">see how a pass is counted in the Glossary</GlossaryLink>.</li>
+        <li>The outcome of every trial, and whose fault each failure is (the model, the environment or the grader): <GlossaryLink anchor="fault-labels">see the fault labels in the Glossary</GlossaryLink>.</li>
         <li>Example trials for each kind of failure, with the reason in words.</li>
         <li>Proof that the graders work: each task's reference solution passes and every validation probe gives the verdict expected. <a {...go('tasks')}>Run them now on Tasks</a>, with no key.</li>
       </ul>
@@ -126,11 +128,12 @@ const md = new Marked({
   },
 });
 
-// The write-up, after the charts, in a disclosure that opens shown and folds away (gate UIP25C-244 S1).
+// The write-up, after the charts and the history, in a disclosure that starts closed (P25u J18;
+// before, it opened shown, gate UIP25C-244 S1) and opens on "Read the analysis".
 function Analysis({ text }: { text: string }) {
   const html = useMemo(() => md.parse(text, { async: false }), [text]);
   return (
-    <details open data-testid="findings-analysis" className="space-y-2">
+    <details data-testid="findings-analysis" className="space-y-2">
       <summary className="cursor-pointer pt-2 font-medium text-ink">Read the analysis</summary>
       <p className="text-xs text-ink-muted">The write-up of the run, in full: what the numbers above show, what surprised us, what changed and what comes next.</p>
       <article data-testid="findings-md" className={`min-w-0 space-y-3 break-words ${CARD} p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted`} dangerouslySetInnerHTML={{ __html: html }} />
@@ -173,21 +176,28 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
           </ul>
           <RateAxis col="col-start-2" />
         </div>
-        <p className="mt-2 text-xs text-ink-muted">{CHART_KEY} <PassKLink /> <VerdictLink /></p>
+        <p className="mt-2 text-xs text-ink-muted"><ChartKey /> <PassKLink /> <VerdictLink /></p>
       </Card>}
       <Card title="Why tasks fail">
-        <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and whose fault each is by the human audit. Each link opens those trials in Runs.</p>
+        <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and <GlossaryLink anchor="fault-labels">whose fault each failure is</GlossaryLink> by the human audit. Each link opens those trials in Runs.</p>
         <ul className="mt-3 divide-y divide-line" data-testid="why-fail">
-          {tasks.map(([id, t]) => (
-            <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
-              <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures} failed trial{t.fault_counts.failures === 1 ? '' : 's'}</span></span>
-              <div className="min-w-0 space-y-2">
-                <KindBar task={id} fc={t.fault_counts} />
-                <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />
-              </div>
-              <TopChecks task={id} top={t.top_failed_checks} textOf={(c) => { const r = checkTextOf(id)?.[c]?.requires; return r ? `requires ${r}` : null; }} />
-            </li>
-          ))}
+          {/* A task with no failures shows its empty bar and "No failures" alone (P25u V3): no fault
+              box of zero counts and no "No failed check" line; its reruns line stays when it had
+              any (counts.ts whyFailParts, F3). */}
+          {tasks.map(([id, t]) => {
+            const parts = whyFailParts(t.fault_counts);
+            return (
+              <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
+                <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures === 0 ? `no failures in ${t.trials} trials` : `${t.fault_counts.failures} of ${t.trials} trials failed`}</span></span>
+                <div className="min-w-0 space-y-2">
+                  <KindBar task={id} fc={t.fault_counts} trials={t.trials} />
+                  {parts.faultBox && <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />}
+                  {parts.reruns && <p className="text-xs text-ink-muted"><Reruns count={t.fault_counts.infra_reruns} /></p>}
+                </div>
+                {parts.faultBox && <TopChecks task={id} top={t.top_failed_checks} textOf={(c) => { const r = checkTextOf(id)?.[c]?.requires; return r ? `requires ${r}` : null; }} />}
+              </li>
+            );
+          })}
         </ul>
         <p className="mt-2 text-xs text-ink-muted"><GlossaryLink anchor="taxonomy">The kinds of model failure</GlossaryLink></p>
       </Card>

@@ -111,6 +111,19 @@ test('a superseded task version shows beside the current one on Overview and in 
   await expect(page.getByText(`the superseded v1 of contrast-ct-prep in ${RUN_ID}, not counted in the results`)).toBeVisible();
 });
 
+// P25u V3: the kind bar is the failure rate (failures over valid trials); a task with no failures
+// shows an empty bar and "No failures" alone, with no fault box of zero counts.
+test('Findings: a task with no failures shows an empty bar and no fault box; a failing task\'s bar is its failure rate', async ({ page }) => {
+  await browse(page, './?view=findings');
+  const clean = page.locator('[data-testid="kind-bar"][data-task="message-queue"]');
+  await expect(clean).toHaveAttribute('data-total', '0');
+  await expect(clean).toHaveAttribute('data-track', '0');
+  await expect(page.locator('[data-testid="fault-box"][data-task="message-queue"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="why-fail"] > li[data-task="message-queue"]')).toContainText('No failures');
+  const o = OFFICIAL['contrast-ct-prep']!;
+  await expect(page.locator('[data-testid="kind-bar"][data-task="contrast-ct-prep"]')).toHaveAttribute('data-track', String((100 * (o.trials - o.passes)) / o.trials));
+});
+
 test('the glossary gives the verdict rule, and Findings links to it', async ({ page }) => {
   await browse(page, './?view=findings');
   await page.getByRole('link', { name: 'What the verdicts mean' }).first().click();
