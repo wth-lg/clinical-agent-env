@@ -306,10 +306,11 @@ export function FaultChip({ e }: { e: Explanation }) {
   const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
   const mark = markOf(e.outcome, shownFault(e));
   const swatch = <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]')} />;
-  // The help icon opens the Glossary at the label's definition (P25u J7a: "How failures are
-  // attributed" was the page's old title, and "Attribution" is a trial tab).
+  // The help icon opens the Glossary at the label's definition. Its title stays "How failures are
+  // attributed": trace row U30 pins that string on the trial Attribution tab (gate P25U-S1 F1,
+  // ruling (a)); the rail item alone was renamed Glossary (P25u J7a).
   const help = (
-    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="Glossary: fault labels" className={ICON_BUTTON}>
+    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className={ICON_BUTTON}>
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );

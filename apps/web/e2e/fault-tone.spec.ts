@@ -111,8 +111,9 @@ test('the plain rules list ENV_LIMIT and GRADER_ERROR under "not run again", eac
 });
 
 // P25u S1: the FAIL mark is its own token, so it is not near-white in dark mode and reads at
-// 3:1 against the LIMIT mark in both themes (V1); the fault label's help icon names the glossary
-// (J7a); a trial the user stopped says so instead of "API problem" (A1a).
+// 3:1 against the LIMIT mark in both themes (V1); the fault label's help icon keeps the title
+// trace row U30 pins (gate P25U-S1 F1); a trial the user stopped says so instead of "API
+// problem" (A1a).
 for (const scheme of ['light', 'dark'] as const) {
   test(`${scheme}: the FAIL mark is at least 3:1 against the LIMIT mark and against its card (V1)`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
@@ -130,10 +131,11 @@ for (const scheme of ['light', 'dark'] as const) {
   });
 }
 
-test('J7a: the fault label\'s help icon names the glossary, not "How failures are attributed"', async ({ page }) => {
+test('the fault label\'s help icon keeps the title "How failures are attributed" (trace U30) and opens the Glossary at the label', async ({ page }) => {
   await openTrial(page, TRIALS.failAudited);
   const help = page.getByTestId('trial-header').getByRole('link', { name: 'How the model label is given' });
-  await expect(help).toHaveAttribute('title', 'Glossary: fault labels');
+  await expect(help).toHaveAttribute('title', 'How failures are attributed');
+  await expect(help).toHaveAccessibleDescription('How failures are attributed');
   await expect(help).toHaveAttribute('href', /view=glossary.*#fault-model$/);
 });
 
