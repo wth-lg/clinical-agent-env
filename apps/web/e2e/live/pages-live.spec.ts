@@ -124,15 +124,17 @@ test('on the hosted site the key validates and one renal-dose-review trial runs 
   try {
     const requests: string[] = [];
     const csp: string[] = [];
-    // Every header set of the relay traffic, recorded through redactHeaders() (verifier-phase-P25-1
-    // N2): the request's (x-api-key always replaced) and the response's.
-    const headerSets: Array<Promise<{ kind: 'request' | 'response'; method: string; status: number | null; headers: Record<string, string> }>> = [];
+    // Every header set of the relay traffic (verifier-phase-P25-1 N2): the request's and the
+    // response's, each kept raw for the key check below (verifier-phase-P25-2: a check on the
+    // redacted set could never fail) and recorded through redactHeaders() for anything printed.
+    type HeaderSet = { kind: 'request' | 'response'; method: string; status: number | null; raw: Record<string, string>; headers: Record<string, string> };
+    const headerSets: Array<Promise<HeaderSet>> = [];
     page.context().on('request', (r) => {
       requests.push(r.url());
-      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'request', method: r.method(), status: null, headers: redactHeaders(h, secrets) })));
+      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'request', method: r.method(), status: null, raw: h, headers: redactHeaders(h, secrets) })));
     });
     page.context().on('response', (r) => {
-      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'response', method: r.request().method(), status: r.status(), headers: redactHeaders(h, secrets) })));
+      if (new URL(r.url()).origin === RELAY_ORIGIN) headerSets.push(r.allHeaders().then((h) => ({ kind: 'response', method: r.request().method(), status: r.status(), raw: h, headers: redactHeaders(h, secrets) })));
     });
     page.on('console', (m) => (/Content Security Policy/i.test(m.text()) ? csp.push(m.text()) : undefined));
     await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => console.error(`Content Security Policy violation: ${e.violatedDirective} ${e.blockedURI}`)));
@@ -188,13 +190,20 @@ test('on the hosted site the key validates and one renal-dose-review trial runs 
     expect(requests.some((u) => new URL(u).origin === RELAY_ORIGIN)).toBe(true);
     expect(csp).toEqual([]);
     expect(await storageDump(page)).not.toContain(KEY);
-    // The recorded relay header sets: every POST carried the key header, which redactHeaders()
-    // replaced; no recorded set holds the key; every relay response allows the Pages origin.
+    // The relay header sets, raw: every POST carried the key in x-api-key and nowhere else, and no
+    // response header holds it. Recorded: x-api-key is the marker on each POST, no recorded set
+    // holds the key, and every relay response allows the Pages origin.
     const sets = await Promise.all(headerSets);
     const posts = sets.filter((s) => s.kind === 'request' && s.method === 'POST');
     say(`pages-live: ${sets.length} relay header sets recorded (${posts.length} POST requests), all through redactHeaders()`);
     expect(posts.length).toBeGreaterThanOrEqual(calls + 1);
-    for (const s of posts) expect(s.headers['x-api-key'], 'x-api-key recorded as redacted').toBe(REDACTED);
+    const holdsKey = (h: Record<string, string>, except?: string) => Object.entries(h).filter(([n, v]) => n.toLowerCase() !== except && v.includes(KEY)).map(([n]) => n);
+    for (const s of posts) {
+      expect(s.raw['x-api-key'] === KEY, 'the POST carried the key in x-api-key').toBe(true);
+      expect(holdsKey(s.raw, 'x-api-key'), 'raw request headers besides x-api-key holding the key').toEqual([]);
+      expect(s.headers['x-api-key'], 'x-api-key recorded as redacted').toBe(REDACTED);
+    }
+    for (const s of sets.filter((s) => s.kind !== 'request' || s.method !== 'POST')) expect(holdsKey(s.raw), `raw ${s.kind} ${s.method} ${s.status ?? ''} headers holding the key`).toEqual([]);
     expect(sets.filter((s) => JSON.stringify(s.headers).includes(KEY))).toEqual([]);
     for (const s of sets.filter((s) => s.kind === 'response')) expect(s.headers['access-control-allow-origin'], `response ${s.method} ${s.status}`).toBe(new URL(PAGES_URL).origin);
   } finally {

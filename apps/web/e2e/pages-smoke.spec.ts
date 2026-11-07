@@ -43,9 +43,21 @@ function recordBodies(page: Page) {
   return () => Promise.all(bodies);
 }
 
+// A cold load of the site fetches the published results after the shell renders; the views that
+// need them show "Loading the published results…" until then (verifier-phase-P25-2 I1), longer
+// than an assertion's default wait on a slow fetch.
+const LOADING = 'Loading the published results…';
+const LOAD_MS = 30_000;
+
 async function browse(page: Page, path: string) {
   await page.goto(at(path));
   await passGate(page);
+}
+
+// browse(), then the published results have loaded on the view.
+async function browseLoaded(page: Page, path: string) {
+  await browse(page, path);
+  await expect(page.getByText(LOADING)).toHaveCount(0, { timeout: LOAD_MS });
 }
 
 test('the key gate renders with the local-run panel before any key, the CSP meta equals APP_CSP, and the chip reads Hosted', async ({ page }) => {
@@ -78,9 +90,9 @@ test('the site publishes final-1 as the official run', async ({ request }) => {
 });
 
 test(`the Overview shows ${SWATCHES} swatches, ${FINAL_TRIALS_PER_TASK} per task`, async ({ page }) => {
-  await browse(page, './?view=overview');
+  await browseLoaded(page, './?view=overview');
   const rows = page.getByTestId('overview-row');
-  await expect(rows).toHaveCount(TASKS);
+  await expect(rows).toHaveCount(TASKS, { timeout: LOAD_MS });
   for (const row of await rows.all()) {
     await expect(row.getByTestId('swatches').locator('[data-outcome]'), `swatches of ${await row.getAttribute('data-task')}`).toHaveCount(FINAL_TRIALS_PER_TASK);
     await expect(row.getByTestId('k-of-n')).toHaveText(new RegExp(`^\\d+/${FINAL_TRIALS_PER_TASK}$`));
@@ -97,15 +109,15 @@ test(`T1 (${T1}): the reference solution grades PASS 1.0 in the tab`, async ({ p
 });
 
 test('a published trial opens on its Grading tab with the rubric breakdown', async ({ page }) => {
-  await browse(page, './?view=runs');
+  await browseLoaded(page, './?view=runs');
   const row = page.getByTestId('trial-row').first();
-  await expect(row).toBeVisible();
+  await expect(row).toBeVisible({ timeout: LOAD_MS });
   const name = (await row.getAttribute('data-trial'))!;
   await row.getByRole('button', { name, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
   await expect(page.getByRole('tab', { name: 'Grading' })).toHaveAttribute('aria-selected', 'true');
   const grading = page.getByTestId('panel-grading');
-  await expect(grading.getByTestId('outcome')).toBeVisible();
+  await expect(grading.getByTestId('outcome')).toBeVisible({ timeout: LOAD_MS });
   // The breakdown: the rubric table (every task has rubric items) and the gate checks, each required.
   await expect(grading.getByTestId('rubric-row').first()).toBeVisible();
   await expect(grading.getByTestId('gate-check').first()).toBeVisible();
@@ -122,14 +134,16 @@ test('no asset the app loads on any view holds a key-shaped string', async ({ pa
   page.on('request', (r) => {
     if (new URL(r.url()).origin === origin() && ['document', 'script', 'stylesheet', 'fetch', 'xhr'].includes(r.resourceType())) urls.add(r.url());
   });
-  await browse(page, './?view=overview');
-  await expect(page.getByTestId('overview-row').first()).toBeVisible();
+  await browseLoaded(page, './?view=overview');
+  await expect(page.getByTestId('overview-row').first()).toBeVisible({ timeout: LOAD_MS });
   for (const path of ['./?view=tasks', `./?view=tasks&task=${T1}`, './?view=runs', './?view=findings', './?view=environment', './?view=glossary']) {
     await page.goto(at(path));
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText(LOADING)).toHaveCount(0, { timeout: LOAD_MS });
   }
   await page.goto(at('./?view=runs'));
   const row = page.getByTestId('trial-row').first();
+  await expect(row).toBeVisible({ timeout: LOAD_MS });
   await row.getByRole('button', { name: (await row.getAttribute('data-trial'))!, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toBeVisible();
   await page.getByRole('tab', { name: 'State diff' }).click();
@@ -146,8 +160,8 @@ test('no asset the app loads on any view holds a key-shaped string', async ({ pa
 });
 
 test(`Findings shows ${TASKS} intervals from final-1`, async ({ page }) => {
-  await browse(page, './?view=findings');
-  await expect(page.getByTestId('findings-md')).toBeVisible();
+  await browseLoaded(page, './?view=findings');
+  await expect(page.getByTestId('findings-md')).toBeVisible({ timeout: LOAD_MS });
   await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASKS);
   await expect(page.getByTestId('kind-bar')).toHaveCount(TASKS);
   // The difficulty history's official column names the final run.
