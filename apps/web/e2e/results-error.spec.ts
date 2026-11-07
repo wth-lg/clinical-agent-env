@@ -5,7 +5,7 @@
 // gate show results-derived figures (verifier-phase-P25u-final-copy-1 claim 4): with the fetch
 // blocked they say the results did not load instead of dropping the figures or saying "no run".
 import { expect, test } from '@playwright/test';
-import { browse } from './browse.ts';
+import { browse, GATE } from './browse.ts';
 
 const VIEWS = [
   { name: 'Overview', path: './', error: 'error-state', loaded: 'takeaway' },
@@ -71,6 +71,6 @@ test('Live trial: with the results blocked, a short line says the typical cost a
 test('key gate: with the results blocked, the pass line says the results did not load instead of a bare welcome', async ({ page }) => {
   await page.route('**/data/index.json', (route) => route.abort());
   await page.goto('./');
-  await expect(page.getByRole('button', { name: 'Browse the results' })).toBeVisible();
+  await expect(page.getByRole('button', { name: GATE })).toBeVisible();
   await expect(page.getByTestId('gate-pass-line')).toContainText('The published results did not load');
 });
