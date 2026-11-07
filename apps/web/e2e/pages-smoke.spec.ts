@@ -161,8 +161,13 @@ test('no asset the app loads on any view holds a key-shaped string', async ({ pa
 
 test(`Findings shows ${TASKS} intervals from final-1`, async ({ page }) => {
   await browseLoaded(page, './?view=findings');
-  await expect(page.getByTestId('findings-md')).toBeVisible({ timeout: LOAD_MS });
-  await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASKS);
+  // The intervals are the chart's rows, above the write-up; the write-up sits in a disclosure
+  // that starts closed (P25u J18), so it is opened before it is read.
+  await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASKS, { timeout: LOAD_MS });
+  const analysis = page.getByTestId('findings-analysis');
+  await analysis.locator('summary').click();
+  await expect(analysis).toHaveAttribute('open', '');
+  await expect(page.getByTestId('findings-md')).toBeVisible();
   await expect(page.getByTestId('kind-bar')).toHaveCount(TASKS);
   // The difficulty history's official column names the final run.
   await expect(page.locator('[data-testid="history-run"][data-kind="official"]')).toContainText('final-1');
