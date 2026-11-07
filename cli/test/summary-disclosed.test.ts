@@ -7,12 +7,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
-import { disclosedVerdictText, type Disclosure } from '../../packages/core/disclosure.ts';
+import { disclosedVerdictText, RECOGNISED_DECISIONS, type Disclosure } from '../../packages/core/disclosure.ts';
 import { main as summary } from '../summary.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { writeFixtureRun, type Fixture } from './run-fixtures.ts';
 
-const DISCLOSURE: Disclosure = { verdict: 'Above band', decision: 'accept and disclose', decided_by: 'user', date: '2026-11-06', source: 'decisions.tsv 2026-11-06T17:27Z' };
+const DECISION = RECOGNISED_DECISIONS[0]!;
+const DISCLOSURE: Disclosure = { decision_id: DECISION.id, verdict: 'Above band', decision: 'accept and disclose', decided_by: 'user', date: '2026-11-06', source: 'decisions.tsv 2026-11-06T17:27Z' };
 
 // A results root: the run, a freeze that holds the given disclosures, and a writeup whose
 // pass-rates block marks each task with the given verdict cell.
@@ -83,6 +84,28 @@ describe('summary --require band-or-disclosed', () => {
       expect(x.code, cell).toBe(1);
       expect(x.out, cell).toMatch(new RegExp(`violation: t-alpha: disclosed, but the pass-rates block of .*writeup\\.html does not mark it "${MARK.replace(/[()]/g, '\\$&')}"`));
     }
+  });
+
+  // Gate P25CFIX-242 F1: a record names a recognised user decision (packages/core/disclosure.ts
+  // RECOGNISED_DECISIONS) by id, and its who and date must be that decision's; a fabricated
+  // record cannot pass.
+  it('refuses a fabricated record: an unknown decision_id, a decided_by that is not the decision\'s, or another date', async () => {
+    const mutants: Array<[string, Partial<Record<keyof Disclosure, string | undefined>>, RegExp]> = [
+      ['unknown decision_id', { decision_id: 'builder-2099-12-31-accept' }, /tasks\.t-alpha\.disclosure\.decision_id must name a recognised decision \(user-2026-11-06T17:27Z-accept-and-disclose\)/],
+      ['decided_by builder', { decided_by: 'builder' }, /tasks\.t-alpha\.disclosure\.decided_by must be "user", who took decision user-2026-11-06T17:27Z-accept-and-disclose/],
+      ['date 2099-12-31', { date: '2099-12-31' }, /tasks\.t-alpha\.disclosure\.date must be 2026-11-06, the date of decision user-2026-11-06T17:27Z-accept-and-disclose/],
+      ['no decision_id', { decision_id: undefined }, /tasks\.t-alpha\.disclosure\.decision_id must name a recognised decision/],
+    ];
+    for (const [why, over, re] of mutants) {
+      const d = Object.fromEntries(Object.entries({ ...DISCLOSURE, ...over }).filter(([, v]) => v !== undefined)) as unknown as Disclosure;
+      const r = root('eight-of-ten', { 't-alpha': d }, { 't-alpha': `Above band (disclosed: ${d.decided_by} decision ${d.date})`, 't-beta': 'In band' });
+      const x = await cli([r.run, '--require', 'band-or-disclosed=0.2-0.7', '--freeze', r.freeze, '--writeup', r.writeup]);
+      expect(x.code, why).toBe(1);
+      expect(x.out, why).toMatch(re);
+    }
+    expect(RECOGNISED_DECISIONS.map((d) => d.id)).toEqual(['user-2026-11-06T17:27Z-accept-and-disclose']);
+    expect(DECISION).toMatchObject({ decided_by: 'user', date: '2026-11-06' });
+    expect(DECISION.summary.length).toBeGreaterThan(20);
   });
 
   it('fails on a malformed disclosure, and on a missing freeze or writeup file', async () => {

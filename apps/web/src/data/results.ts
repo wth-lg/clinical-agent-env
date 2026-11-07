@@ -94,6 +94,10 @@ export interface Grading {
 // (R42, `status: "v2-pending"`), its superseded sub-entry; a trial's freeze is the one at the
 // trial's env_version (frozenFor), as cli/replay.ts replayAtOf matches it.
 export interface FrozenTask {
+  // The entry's own freeze (current), the one it kept under `previous` after a re-freeze on a
+  // new world (R40), or a superseded version's (R42); version is the superseded one's (v1).
+  role: 'current' | 'previous' | 'superseded';
+  version?: string;
   // null when the entry records none: such a freeze stands for the task's trials at any version.
   env_version: string | null;
   world_hash: string;
@@ -305,17 +309,21 @@ const SUPERSEDED_DIR = /^superseded\/((.+)-(v\d+))\/trials\//;
 async function loadFrozen(has: ReadonlySet<string>): Promise<Freezes> {
   if (!has.has('results/tasks-final.json')) return {};
   try {
-    type Entry = { env_version?: unknown; world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown }; superseded?: Entry };
+    type Entry = { env_version?: unknown; world_hash?: unknown; frozen_at?: { tag?: unknown }; replay_at?: { tag?: unknown; commit?: unknown }; superseded?: Entry & { version?: unknown }; previous?: Entry };
     const doc = await fetchJson<{ tasks?: Record<string, Entry> }>('results/tasks-final.json');
-    // Each task's freezes: its entry and, for a task with a version pending (R42), its superseded
-    // sub-entry; a freeze needs its env_version, world and tag to be a hint.
-    const freeze = (t: Entry): FrozenTask | null => {
+    // Each task's freezes: its entry, the freeze it kept under `previous` after a re-freeze (R40),
+    // and its superseded sub-entry (R42); a freeze needs its world and tag to be a hint.
+    const freeze = (t: Entry, role: FrozenTask['role'], version?: string): FrozenTask | null => {
       if (typeof t.world_hash !== 'string' || typeof t.frozen_at?.tag !== 'string') return null;
       const replay_at = typeof t.replay_at?.tag === 'string' && typeof t.replay_at.commit === 'string' ? { tag: t.replay_at.tag, commit: t.replay_at.commit } : null;
-      return { env_version: typeof t.env_version === 'string' ? t.env_version : null, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at };
+      return { role, ...(version !== undefined ? { version } : {}), env_version: typeof t.env_version === 'string' ? t.env_version : null, world_hash: t.world_hash, frozen_at: { tag: t.frozen_at.tag }, replay_at };
     };
     return Object.fromEntries(Object.entries(doc.tasks ?? {}).flatMap(([id, e]) => {
-      const fs = [e, ...(e.superseded ? [e.superseded] : [])].map(freeze).filter((f): f is FrozenTask => f !== null);
+      const fs = [
+        freeze(e, 'current'),
+        ...(e.previous ? [freeze(e.previous, 'previous')] : []),
+        ...(e.superseded ? [freeze(e.superseded, 'superseded', typeof e.superseded.version === 'string' ? e.superseded.version : undefined)] : []),
+      ].filter((f): f is FrozenTask => f !== null);
       return fs.length === 0 ? [] : [[id, fs]];
     }));
   } catch {

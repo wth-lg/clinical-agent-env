@@ -54,7 +54,7 @@ function exit(root: string, args: string[]): number | null {
 // which passes an out-of-band task only with a disclosure in results/tasks-final.json and the
 // writeup's mark (packages/core/disclosure.ts).
 const SUMMARY = ['summary', RUN, '--tasks', TASKS.join(','), '--require', `valid=${N},band-or-disclosed=${FINAL_PASS_BAND[0]}-${FINAL_PASS_BAND[1]},env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all,env_limit=0`, '--json'];
-const DISCLOSURE = { verdict: 'Above band', decision: 'accept and disclose', decided_by: 'user', date: '2026-11-06', source: 'decisions.tsv 2026-11-06T17:27Z' };
+const DISCLOSURE = { decision_id: 'user-2026-11-06T17:27Z-accept-and-disclose', verdict: 'Above band', decision: 'accept and disclose', decided_by: 'user', date: '2026-11-06', source: 'decisions.tsv 2026-11-06T17:27Z' };
 // The writeup's pass-rates block, as docs-gen renders a task's row: the verdict cell with its
 // numbers wrapped (nowrapNumbers).
 const writeup = (cells: Record<string, string>) =>

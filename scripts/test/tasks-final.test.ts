@@ -25,7 +25,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import type { TaskSource } from '../../packages/core/tasks.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
-import { parseDisclosures } from '../../packages/core/disclosure.ts';
+import { parseDisclosures, RECOGNISED_DECISIONS } from '../../packages/core/disclosure.ts';
 import type { Summary } from '../../packages/core/summary.ts';
 import { taskVersions } from '../../packages/core/tasks.ts';
 import { repoRoot } from './helpers.ts';
@@ -238,6 +238,8 @@ describe('results/tasks-final.json', () => {
       else {
         expect(x, `${id} is ${t.band_verdict} and has no disclosure`).toBeDefined();
         expect(x!.verdict, `${id}.disclosure.verdict`).toBe(t.band_verdict);
+        expect(x!.decision_id).toBe('user-2026-11-06T17:27Z-accept-and-disclose');
+        expect(RECOGNISED_DECISIONS.map((d) => d.id)).toContain(x!.decision_id);
         expect(x!.decided_by).toBe('user');
         expect(x!.date).toBe('2026-11-06');
       }

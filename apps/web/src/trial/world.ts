@@ -1,13 +1,22 @@
 // Which world a trial started from, for the trial header's World line and the State diff tab's
-// first line (P25c fix, builder-326, trace row N13): today's manifest, its task's frozen world
-// (results/tasks-final.json, R37: an official trial frozen on an earlier world is historical and
-// is reproduced at its replay tag, never here), another world, or none recorded. Apart from the
-// components, and from data/results.ts (whose import.meta.glob the root typecheck cannot read),
-// so the unit tests and the root typecheck reach it without Vite.
+// first line (P25c fix, builder-326, trace row N13): today's manifest, one of its task's frozen
+// worlds (results/tasks-final.json: the current freeze, the freeze before a re-freeze, or a
+// superseded version's; R37: an official trial frozen on an earlier world is historical and is
+// reproduced at its replay tag, never here), another world, or none recorded. The trial's hash is
+// compared with every frozen world of the task whatever the run kind, and the line says which one
+// it matches (gate P25CFIX-242 F2); an official trial on today's manifest whose task is frozen on
+// another world says it misses that world (F3). Apart from the components, and from
+// data/results.ts (whose import.meta.glob the root typecheck cannot read), so the unit tests and
+// the root typecheck reach it without Vite.
 
-// The part of a task's freeze (data/results.ts FrozenTask) this reads.
+// A frozen world of the task (data/results.ts FrozenTask): the entry's own (current), the one it
+// kept under `previous` after a re-freeze, or a superseded version's.
 export interface FrozenWorld {
+  role: 'current' | 'previous' | 'superseded';
   world_hash: string;
+  // The freeze tag; the version (v1) of a superseded freeze.
+  tag?: string;
+  version?: string;
 }
 
 export type WorldKind = 'manifest' | 'frozen' | 'other' | 'none';
@@ -16,23 +25,35 @@ export interface WorldStatus {
   kind: WorldKind;
   // The trial's initial state hash; null when the record has none.
   hash: string | null;
+  // The frozen world the hash equals, for kind frozen.
+  match: FrozenWorld | null;
+  // F3: an official trial on today's manifest while its task's current freeze is another world.
+  missesFrozen: boolean;
 }
 
-// official: the trial is of the official run; only its trials are held to a frozen world.
-export function worldStatus(initial: string | null | undefined, manifest: string, frozen: FrozenWorld | null, official: boolean): WorldStatus {
+// official: the trial is of the official run; only its trials are held to the current freeze.
+export function worldStatus(initial: string | null | undefined, manifest: string, freezes: readonly FrozenWorld[], official: boolean): WorldStatus {
   const hash = initial ?? null;
-  if (hash === null) return { kind: 'none', hash };
-  if (hash === manifest) return { kind: 'manifest', hash };
-  if (official && frozen !== null && frozen.world_hash !== manifest && hash === frozen.world_hash) return { kind: 'frozen', hash };
-  return { kind: 'other', hash };
+  if (hash === null) return { kind: 'none', hash, match: null, missesFrozen: false };
+  const current = freezes.find((f) => f.role === 'current') ?? null;
+  if (hash === manifest) return { kind: 'manifest', hash, match: null, missesFrozen: official && current !== null && current.world_hash !== manifest };
+  const match = freezes.find((f) => f.world_hash === hash) ?? null;
+  if (match !== null) return { kind: 'frozen', hash, match, missesFrozen: false };
+  return { kind: 'other', hash, match: null, missesFrozen: false };
 }
 
 export const shortHash = (hash: string): string => `${hash.slice(0, 12)}…`;
 
 // "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep." The strings are in
 // docs/requirements/ui-contract.md (`matches the manifest`, `matches the frozen world of`).
-export function worldLine(w: WorldStatus, task: string): string {
+export function worldLine(w: WorldStatus, task: string, freezes: readonly FrozenWorld[] = []): string {
   if (w.kind === 'none') return 'World not recorded.';
-  const what = w.kind === 'manifest' ? 'matches the manifest' : w.kind === 'frozen' ? `matches the frozen world of ${task}` : `matches neither today's manifest nor a frozen world of ${task}`;
-  return `World ${shortHash(w.hash!)}: ${what}.`;
+  const current = freezes.find((f) => f.role === 'current');
+  if (w.kind === 'manifest') return `World ${shortHash(w.hash!)}: matches the manifest${w.missesFrozen && current ? `, not the frozen world of ${task} (${shortHash(current.world_hash)})` : ''}.`;
+  if (w.kind === 'frozen') {
+    const m = w.match!;
+    const which = m.role === 'superseded' ? ` ${m.version ?? 'superseded'} (superseded)` : m.role === 'previous' ? ` before its re-freeze${m.tag ? ` (tag ${m.tag})` : ''}` : '';
+    return `World ${shortHash(w.hash!)}: matches the frozen world of ${task}${which}.`;
+  }
+  return `World ${shortHash(w.hash!)}: matches neither today's manifest nor a frozen world of ${task}.`;
 }

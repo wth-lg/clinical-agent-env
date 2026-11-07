@@ -73,6 +73,7 @@
         ]
       },
       "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
         "verdict": "Above band",
         "decision": "accept and disclose",
         "decided_by": "user",
@@ -98,6 +99,7 @@
       "reason": "R45 (2026-11-06, S5-4/S5-5 after pilot-5b): results-inbox and message-queue, nearer 0.45, take the one retune round of at most 2 tasks, so discharge-medrec, the third, freezes on its latest gated version {B} under S5-5/S5-8 (expected above the band; it goes to the user with its card after W5-F); frozen on the W5-H5 world, where its own files are unchanged since pilot-5b",
       "regrades": [],
       "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
         "verdict": "Saturated",
         "decision": "accept and disclose",
         "decided_by": "user",
@@ -131,6 +133,7 @@
         }
       ],
       "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
         "verdict": "Saturated",
         "decision": "accept and disclose",
         "decided_by": "user",
@@ -167,6 +170,7 @@
         "note": "the W5-S freeze (R44/S5-8) on the W5-S world bae157e6, tag freeze-t1; superseded by the re-freeze on the W5-H5 world above before any final-1 record of the task existed"
       },
       "disclosure": {
+        "decision_id": "user-2026-11-06T17:27Z-accept-and-disclose",
         "verdict": "Above band",
         "decision": "accept and disclose",
         "decided_by": "user",
