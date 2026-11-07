@@ -110,6 +110,54 @@ test('the plain rules list ENV_LIMIT and GRADER_ERROR under "not run again", eac
   await expect(line).toContainText('ENV_ERROR (run again)');
 });
 
+// P25u S1: the FAIL mark is its own token, so it is not near-white in dark mode and reads at
+// 3:1 against the LIMIT mark in both themes (V1); the fault label's help icon names the glossary
+// (J7a); a trial the user stopped says so instead of "API problem" (A1a).
+for (const scheme of ['light', 'dark'] as const) {
+  test(`${scheme}: the FAIL mark is at least 3:1 against the LIMIT mark and against its card (V1)`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await browse(page, new URL('./?view=overview', await trialBase(test.info().project.use.baseURL!)).href);
+    const legend = page.getByTestId('legend').first();
+    const swatch = (mark: string) => legend.locator(`li[data-mark="${mark}"] > span`).first();
+    const fail = await rgb(page, await style(swatch('model'), 'backgroundColor'));
+    const limit = await rgb(page, await style(swatch('limit'), 'backgroundColor'));
+    const card = await rgb(page, await style(page.getByTestId('overview-table'), 'backgroundColor'));
+    expect(contrast(fail, limit), `FAIL ${fail} against LIMIT ${limit}`).toBeGreaterThanOrEqual(3);
+    expect(contrast(fail, card), `FAIL ${fail} against the card ${card}`).toBeGreaterThanOrEqual(3);
+    expect(contrast(limit, card), `LIMIT ${limit} against the card ${card}`).toBeGreaterThanOrEqual(3);
+    // The FAIL mark is never the ink colour in dark (a near-white square that reads as empty).
+    if (scheme === 'dark') expect(fail).not.toEqual(await rgb(page, await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim())));
+  });
+}
+
+test('J7a: the fault label\'s help icon names the glossary, not "How failures are attributed"', async ({ page }) => {
+  await openTrial(page, TRIALS.failAudited);
+  const help = page.getByTestId('trial-header').getByRole('link', { name: 'How the model label is given' });
+  await expect(help).toHaveAttribute('title', 'Glossary: fault labels');
+  await expect(help).toHaveAttribute('href', /view=glossary.*#fault-model$/);
+});
+
+test('A1a: a trial the user stopped (CANCELLED) is labelled "Stopped: not counted", not an API problem', async ({ page }) => {
+  // The fixture's INFRA_API record becomes the record a Stop leaves: outcome and status CANCELLED.
+  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.infra}.json`, async (route) => {
+    const res = await route.fetch();
+    const record = JSON.parse(await res.text()) as { outcome: string; status: string; detail: string | null };
+    record.outcome = 'CANCELLED';
+    record.status = 'CANCELLED';
+    record.detail = null;
+    await route.fulfill({ response: res, body: JSON.stringify(record) });
+  });
+  await openTrial(page, TRIALS.infra);
+  const header = page.getByTestId('trial-header');
+  await expect(header.getByTestId('outcome')).toContainText('CANCELLED');
+  await expect(header.getByTestId('label')).toHaveText('Stopped: not counted');
+  await expect(header).not.toContainText('API problem');
+  // The same chip on its Runs row.
+  await browse(page, new URL(`./?view=runs&run=${RUN_ID}`, await trialBase(test.info().project.use.baseURL!)).href);
+  const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.infra}"]`);
+  await expect(row.getByTestId('label')).toHaveText('Stopped: not counted');
+});
+
 test('dark: the FAIL mark is at least 3:1 against its card', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await openTrial(page, TRIALS.failAudited);

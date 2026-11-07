@@ -1,16 +1,28 @@
 // Parts the browse views share: the page frame, cards, the outcome chip and swatch, the Wilson
-// interval row, and a fault label with its one-click link to the glossary. A trial's mark says
-// its outcome and whose fault it is, in the stone neutrals and the one accent (tokens.css allows
-// no other colour), so the marks differ by fill and pattern: PASS filled accent, a model FAIL
-// filled ink, a LIMIT filled muted, a REFUSAL an ink outline, an environment fault hatched, a
-// grader fault dotted, infrastructure a dashed outline. Every mark carries its name as text, and
-// the legend is drawn from the same marks, so it reads right in light and dark.
-import { Check, CircleHelp, Copy, type LucideIcon } from 'lucide-react';
+// interval row, the band verdict chip, and a fault label with its one-click link to the glossary.
+// A trial's mark says its outcome and whose fault it is, in the stone neutrals and the one accent
+// (tokens.css allows no other colour), so the marks differ by fill and pattern: PASS filled
+// accent, a model FAIL filled (the mark-fail token: ink in light, a mid-tone in dark), a LIMIT
+// filled stone-500 with a diagonal hatch, a REFUSAL an ink outline, an environment fault hatched
+// in red, a grader fault dotted in red, infrastructure a dashed outline. Every mark carries its
+// name as text, and the legend is drawn from the same marks, so it reads right in light and dark.
+//
+// The colour contract (P25u, copy rule C8), the same as tokens.css states it.
+// Red means the environment, the grader, an error or harm, never the model: the danger token is
+// for an error, an invalid field, the environment and grader marks and chips (a trial the run
+// cannot count) and the "PASS with harm" chip (ruling P17j JU3). A model failure is ink: a filled
+// mark, a heavy X, bold "not met". Nothing rests on colour alone.
+//
+// P25u S1 exports the parts every view builds on: PAGE_WIDTH (the page column), PAGE_TITLE and
+// CARD_TITLE (the type steps, tokens.css), TAB_STRIP, TAB, TAB_ACTIVE and TAB_IDLE (the tab pill
+// the rail uses too), LINK, and VerdictChip (the band verdict as one chip on every chart).
+import { ArrowDown, ArrowUp, Check, CircleHelp, Copy, type LucideIcon } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
 import { blocksTheRun, shownFault, shownLabel } from './failures.ts';
 import { DENOMINATOR_RULE, isValid, PASS_DEFINITION, VALID_OUTCOMES, type Fault } from '../../../../packages/core/outcomes.ts';
-import type { Interval } from '../../../../packages/core/summary.ts';
+import { bandVerdict, type BandVerdict, type Interval } from '../../../../packages/core/summary.ts';
+import { verdictLabel } from '../overview/band.ts';
 import { hrefWith, onNav } from './url.ts';
 import type { HarmItem } from './harm.ts';
 import { BLOCKING_MARKS, faultNote, MARKS, markOf, NOT_COUNTED_LINE, type Mark } from './marks.ts';
@@ -35,10 +47,26 @@ export const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-wide text
 // An icon button that grows to a 44px target on a touch screen; the desktop look is unchanged.
 const ICON_BUTTON = 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink pointer-coarse:h-11 pointer-coarse:w-11';
 
+// The page column (P25u S1): one width and one pair of gutters for every view, the local-run
+// panel under a view and the error boundary, so their edges line up. A view adds its own vertical
+// padding (Page: py-6).
+export const PAGE_WIDTH = 'mx-auto w-full max-w-5xl px-4 sm:px-6';
+// The type steps (tokens.css): the one h1 of a view, and a card's title.
+export const PAGE_TITLE = 'text-page font-semibold tracking-tight text-ink';
+export const CARD_TITLE = 'text-title font-semibold text-ink';
+// A tab strip (role=tablist) and its tabs: the active tab is the same pill as the active rail
+// item, so a strip that wraps onto a second row on a phone still reads as one control (P25u
+// V12). TAB is every tab; TAB_ACTIVE or TAB_IDLE goes with it. A tab is 32px tall, 44px under a
+// coarse pointer (WCAG 2.5.8), at the body step, medium weight when active.
+export const TAB_STRIP = 'flex flex-wrap gap-x-1 gap-y-1 px-2 py-1.5';
+export const TAB = 'inline-flex min-h-8 shrink-0 items-center whitespace-nowrap rounded-md px-2.5 text-body focus-visible:-outline-offset-2 pointer-coarse:min-h-11';
+export const TAB_ACTIVE = 'bg-line/80 font-medium text-ink dark:bg-line';
+export const TAB_IDLE = 'text-ink-muted hover:bg-canvas hover:text-ink';
+
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
-    <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-      <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-ink focus-visible:outline-none">{title}</h1>
+    <section className={`${PAGE_WIDTH} py-6`}>
+      <h1 ref={headingRef} tabIndex={-1} className={`${PAGE_TITLE} focus-visible:outline-none`}>{title}</h1>
       {lead !== undefined && <div className="mt-1.5 max-w-prose text-ink-muted">{lead}</div>}
       <div className="mt-5 space-y-5">{children}</div>
     </section>
@@ -55,7 +83,7 @@ export function Card({ title, children, actions, id, testId }: { title?: ReactNo
     <div id={id} data-testid={testId} className={CARD}>
       {(title !== undefined || actions !== undefined) && (
         <div className={CARD_HEADER}>
-          <h2 className="min-w-0 break-words text-sm font-semibold text-ink">{title}</h2>
+          <h2 className={`${CARD_TITLE} min-w-0 break-words`}>{title}</h2>
           {actions}
         </div>
       )}
@@ -120,8 +148,10 @@ export { BLOCKING_MARKS, MARKS, markLabel, markOf, type Mark } from './marks.ts'
 
 const MARK_CLASS: Record<Mark, string> = {
   pass: 'bg-accent',
-  model: 'bg-ink',
-  limit: 'bg-ink-muted',
+  // A model FAIL and a LIMIT are the named mark tokens (tokens.css, P25u V1), so FAIL is a
+  // mid-tone in dark, under a 1px inset ring of the page colour, and reads at 3:1 against LIMIT.
+  model: 'bg-mark-fail dark:inset-ring dark:inset-ring-canvas',
+  limit: 'bg-mark-limit',
   refusal: 'border-2 border-ink bg-surface',
   // Environment and grader faults take the danger tone (pre-audit S5, P17j JU2): a trial the run
   // cannot count; the pattern stays, so the mark does not rest on colour alone.
@@ -130,6 +160,8 @@ const MARK_CLASS: Record<Mark, string> = {
   infra: 'border border-dashed border-line-strong bg-surface',
 };
 const MARK_STYLE: Partial<Record<Mark, CSSProperties>> = {
+  // The LIMIT hatch is the card colour over the mark, so it differs from FAIL by pattern too.
+  limit: { backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 2px, var(--color-surface) 2px 3px)' },
   environment: { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-danger) 0 1.5px, transparent 1.5px 4px)' },
   grader: { backgroundImage: 'radial-gradient(var(--color-danger) 0.9px, transparent 1.2px)', backgroundSize: '4px 4px' },
 };
@@ -139,16 +171,42 @@ export function Swatch({ mark, title, outcome }: { mark: Mark; title: string; ou
   return <span role="img" aria-label={title} title={title} data-outcome={outcome} data-mark={mark} {...markProps(mark, 'inline-block h-3 w-3 shrink-0 rounded-[2px]')} />;
 }
 
+// The legend: one item per mark, then the one line that says what the red outline means (P25u
+// V2a), so a reader does not take red for a model failure.
+export const LEGEND_NOTE = 'Red outline: the environment or the grader, not the model. A model failure is a filled ink square.';
 export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: readonly Mark[] }) {
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted" aria-label="Legend" data-testid="legend">
-      {MARKS.filter((x) => marks.includes(x.mark)).map((x) => (
-        <li key={x.mark} className="inline-flex items-center gap-1.5" data-mark={x.mark}>
-          <span aria-hidden {...markProps(x.mark, 'inline-block h-3 w-3 rounded-[2px]')} />
-          {x.label}
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-1 text-xs text-ink-muted">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1" aria-label="Legend" data-testid="legend">
+        {MARKS.filter((x) => marks.includes(x.mark)).map((x) => (
+          <li key={x.mark} className="inline-flex items-center gap-1.5" data-mark={x.mark}>
+            <span aria-hidden {...markProps(x.mark, 'inline-block h-3 w-3 rounded-[2px]')} />
+            {x.label}
+          </li>
+        ))}
+      </ul>
+      <p data-testid="legend-note">{LEGEND_NOTE}</p>
+    </div>
+  );
+}
+
+// The band verdict as one chip on every chart (P25u V11): "In band" with a check, "Above band"
+// and "Saturated" with an up arrow, "Below band" with a down arrow, each an icon beside the word
+// so the verdict never rests on the icon alone. Over fewer valid trials than the final sample it
+// is labelled provisional, with the count (overview/band.ts verdictLabel), and the chip wraps.
+// Nothing with no valid trials. The verdict is packages/core/summary.ts bandVerdict, the one
+// definition the CLI's result card and summary.json's band_verdict use too.
+const VERDICT_ICON: Record<BandVerdict, LucideIcon> = { 'In band': Check, 'Above band': ArrowUp, Saturated: ArrowUp, 'Below band': ArrowDown };
+export function VerdictChip({ task, passes, trials, className = '' }: { task: string; passes: number; trials: number; className?: string }) {
+  const v = bandVerdict(passes, trials);
+  if (v === null) return null;
+  const { label, count } = verdictLabel(v, trials);
+  const Icon = VERDICT_ICON[v];
+  return (
+    <span data-testid="band-verdict" data-task={task} data-verdict={v} data-provisional={count !== null} title={`${passes}/${trials} against the target band`} className={`${CHIP_SHAPE} ${count === null ? 'whitespace-nowrap rounded-full' : 'rounded-md break-words'} border-line text-ink ${className}`}>
+      <Icon aria-hidden className="h-3 w-3 shrink-0 text-ink-muted" strokeWidth={2} />
+      {label}{count !== null && <span className="font-normal text-ink-muted"> ({count})</span>}
+    </span>
   );
 }
 
@@ -248,13 +306,18 @@ export function FaultChip({ e }: { e: Explanation }) {
   const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
   const mark = markOf(e.outcome, shownFault(e));
   const swatch = <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]')} />;
+  // The help icon opens the Glossary at the label's definition (P25u J7a: "How failures are
+  // attributed" was the page's old title, and "Attribution" is a trial tab).
   const help = (
-    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className={ICON_BUTTON}>
+    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="Glossary: fault labels" className={ICON_BUTTON}>
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );
   if (e.fault === 'infra') {
-    return <span className="inline-flex items-center gap-x-1"><span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>{swatch}<span data-testid="label" data-label="infra">API problem: not counted, run again</span></span>{help}</span>;
+    // A trial the user stopped is not an API problem, and nothing runs it again (P25u A1a, copy
+    // rule C4); the chip says so. Every other infra fault is the API's, excluded and rerun.
+    const stopped = e.outcome === 'CANCELLED';
+    return <span className="inline-flex items-center gap-x-1"><span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>{swatch}<span data-testid="label" data-label="infra" data-outcome={e.outcome}>{stopped ? 'Stopped: not counted' : 'API problem: not counted, run again'}</span></span>{help}</span>;
   }
   // An environment or grader label takes the danger tone (JU2); a model label stays neutral.
   const danger = label === 'environment' || label === 'grader';
@@ -303,14 +366,16 @@ export const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 export const formatInterval = (w: Interval | null) => (w === null ? 'no valid trials' : `${pct(w.lo)} to ${pct(w.hi)}`);
 
 // One task's pass rate on a 0-100% axis: the band (shaded), the Wilson 95% interval (whisker)
-// and the rate (dot). 16px tall at any width (x in percent, so the dot stays round); the axis
-// runs from 2% to 98% of the width, as the 0/50/100% labels under a chart do.
+// and the rate (dot), with faint ticks at 0, 50 and 100% so the strip has a scale (P25u V11).
+// 16px tall at any width (x in percent, so the dot stays round); the axis runs from 2% to 98% of
+// the width, as the 0/50/100% labels under a chart do.
 export function IntervalRow({ rate, interval, band, label }: { rate: number | null; interval: Interval | null; band: readonly [number, number]; label: string }) {
   const x = (v: number) => `${2 + v * 96}%`;
   return (
     <svg data-testid="interval" className="block h-4 w-full min-w-24" role="img" aria-label={`${label}: ${rate === null ? 'no rate' : pct(rate)}, 95% interval ${formatInterval(interval)}`}>
       <rect data-testid="band" x={x(band[0])} y={1} width={`${(band[1] - band[0]) * 96}%`} height={14} className="fill-line-strong dark:[fill-opacity:0.35]" fillOpacity={0.22} />
       <line x1={x(0)} x2={x(1)} y1={8} y2={8} className="stroke-line-strong" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
+      {[0, 0.5, 1].map((v) => <line key={v} data-testid="tick" data-at={v} x1={x(v)} x2={x(v)} y1={11} y2={15} className="stroke-line-strong" strokeOpacity={0.6} strokeWidth={1} vectorEffect="non-scaling-stroke" />)}
       {interval !== null && (
         <>
           <line data-testid="whisker" data-lo={interval.lo} data-hi={interval.hi} x1={x(interval.lo)} x2={x(interval.hi)} y1={8} y2={8} className="stroke-ink" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />

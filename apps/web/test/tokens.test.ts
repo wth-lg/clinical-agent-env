@@ -200,7 +200,59 @@ describe('contrast', () => {
       }
       expect(contrast(s['on-primary']!, s.primary!), 'on-primary on primary').toBeGreaterThanOrEqual(4.5);
     });
+
+    // P25u V1: the FAIL and LIMIT marks are named tokens, so a model FAIL in dark mode is not a
+    // near-white square (stone-100 ink) and FAIL against LIMIT reads at 3:1 (WCAG 1.4.11) in both
+    // themes; each mark also reaches 3:1 on the page and on cards.
+    it(`${name}: the FAIL mark and the LIMIT mark are 3:1 against each other, the page and the cards`, () => {
+      expect(s['mark-fail'], 'mark-fail').toBeDefined();
+      expect(s['mark-limit'], 'mark-limit').toBeDefined();
+      expect(contrast(s['mark-fail']!, s['mark-limit']!), 'mark-fail against mark-limit').toBeGreaterThanOrEqual(3);
+      for (const bg of ['canvas', 'surface']) for (const fg of ['mark-fail', 'mark-limit']) expect(contrast(s[fg]!, s[bg]!), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
+    });
   }
+
+  it('the dark FAIL mark is its own mid-tone value, not the dark ink', () => {
+    expect(DARK['mark-fail']).not.toBe(DARK.ink);
+    expect(DARK['mark-fail']).not.toBe(LIGHT['mark-fail']);
+  });
+});
+
+// --- the shared primitives every slice builds on (P25u S1) -------------------------------------
+
+const uiSource = readFileSync(join(webRoot, 'src/data/ui.tsx'), 'utf8');
+const COLOUR_CONTRACT = /Red means the environment, the grader, an error or harm, never the model/;
+
+describe('shared primitives', () => {
+  it('tokens.css declares the four type steps: meta 12px, body 13px, title 15px, page 20px', () => {
+    expect(themeBlock).toMatch(/--text-meta:\s*0\.75rem;/);
+    expect(themeBlock).toMatch(/--text-body:\s*0\.8125rem;/);
+    expect(themeBlock).toMatch(/--text-title:\s*0\.9375rem;/);
+    expect(themeBlock).toMatch(/--text-page:\s*1\.25rem;/);
+  });
+
+  it('ui.tsx exports the page width, the title steps, the tab pill, the link and the verdict chip', () => {
+    for (const name of ['PAGE_WIDTH', 'PAGE_TITLE', 'CARD_TITLE', 'TAB_STRIP', 'TAB', 'TAB_ACTIVE', 'TAB_IDLE', 'LINK']) {
+      expect(uiSource, name).toMatch(new RegExp(`^export const ${name} = `, 'm'));
+    }
+    expect(uiSource).toMatch(/^export function VerdictChip\(/m);
+  });
+
+  it('tokens.css and ui.tsx both state the colour contract', () => {
+    expect(tokensCss, 'tokens.css').toMatch(COLOUR_CONTRACT);
+    expect(uiSource, 'ui.tsx').toMatch(COLOUR_CONTRACT);
+  });
+
+  it('the Page frame, the card title and the shell use the exported steps, not their own sizes', () => {
+    expect(uiSource).toMatch(/className=\{`\$\{PAGE_WIDTH\} py-6`\}/);
+    expect(uiSource).toMatch(/className=\{`\$\{CARD_TITLE\}[^`]*`\}/);
+    const app = readFileSync(join(webRoot, 'src/shell/App.tsx'), 'utf8');
+    const boundary = readFileSync(join(webRoot, 'src/shell/ErrorBoundary.tsx'), 'utf8');
+    for (const [f, text] of [['App.tsx', app], ['ErrorBoundary.tsx', boundary]] as const) {
+      expect(text, `${f} names its own page width`).not.toMatch(/max-w-5xl/);
+      expect(text, `${f} uses PAGE_WIDTH`).toMatch(/PAGE_WIDTH/);
+    }
+  });
 });
 
 // --- no colour outside the tokens --------------------------------------------------------------
