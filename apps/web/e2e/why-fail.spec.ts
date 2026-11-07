@@ -305,12 +305,13 @@ test('Runs keeps its trial count for every label when no run in the list is bloc
   });
   for (const q of queries) {
     await browse(page, q);
-    await expect(page.getByTestId('shown-count'), q).toHaveText(/^\d+ of \d+ trials$/);
+    // The count leads with the official trials (P25u J9, runs/count.ts).
+    await expect(page.getByTestId('shown-count'), q).toHaveText(/^Showing \d+( of \d+)? official trials/);
     await expect(page.getByTestId('run-blocked'), q).toHaveCount(0);
     await expect(page.getByTestId('shown-count-held'), q).toHaveCount(0);
   }
   await browse(page, './?view=runs&label=pass');
-  await expect(page.getByTestId('shown-count')).toHaveText(/^[1-9]\d* of \d+ trials$/);
+  await expect(page.getByTestId('shown-count')).toHaveText(/^Showing [1-9]\d* of \d+ official trials/);
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {
