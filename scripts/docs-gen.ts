@@ -24,6 +24,7 @@ import { ACTUAL_CAP_USD, PROJECTED_CAP_USD } from '../packages/core/ledger.ts';
 import {
   AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, isValid, PASS_DEFINITION, RUN_BLOCKS,
 } from '../packages/core/outcomes.ts';
+import { disclosedVerdictText, parseDisclosures, type Disclosure } from '../packages/core/disclosure.ts';
 import { BAND_VERDICT_RULE, currentGrade, isHarmItem, PASS_K, trialName, wilson, type Summary, type SummaryCheck, type TaskSummary } from '../packages/core/summary.ts';
 import { escapeHtml, nowrapNumbers, parseMarkdown, renderBlocks, WRITEUP_SECTIONS, type Block } from './docs-lib.ts';
 
@@ -93,8 +94,10 @@ export interface Data {
   pilots: Record<string, Run | null>;
   s5: S5 | null;
   // results/tasks-final.json: the regrade tags per task (and per superseded version), for the
-  // pass-rate table's recorded count (gate FINAL-238 F1).
+  // pass-rate table's recorded count (gate FINAL-238 F1), and each task's disclosure (the
+  // accept-and-disclose decision, packages/core/disclosure.ts), which marks its verdict cell.
   freeze: Record<string, { regrades?: Array<{ at: string }>; superseded?: { regrades?: Array<{ at: string }> } }>;
+  disclosures: Record<string, Disclosure>;
   tasks: string[];
   trace: { pdf_block_sha256: string; done_when_clauses: number; done_phases: string[]; rows: TraceRow[] } | null;
 }
@@ -152,8 +155,10 @@ export function readData(root: string): Data {
   const pilots: Record<string, Run | null> = {};
   for (const id of s5?.pilots ?? []) pilots[id] = readRunDir(join(root, 'results', id));
   const freezeFile = join(root, 'results/tasks-final.json');
-  const freeze = existsSync(freezeFile) ? ((JSON.parse(readFileSync(freezeFile, 'utf8')) as { tasks?: Data['freeze'] }).tasks ?? {}) : {};
-  return { root, run: readRun(root), pilots, s5, freeze, tasks, trace };
+  const freezeDoc = existsSync(freezeFile) ? (JSON.parse(readFileSync(freezeFile, 'utf8')) as { tasks?: Data['freeze'] }) : { tasks: {} };
+  const freeze = freezeDoc.tasks ?? {};
+  const disclosures = parseDisclosures(freezeDoc);
+  return { root, run: readRun(root), pilots, s5, freeze, disclosures, tasks, trace };
 }
 
 // --- the generated blocks ------------------------------------------------------------------
@@ -176,8 +181,14 @@ const passRates = (d: Data) => {
     if (recorded === t.passes) return `${t.passes}/${t.trials}`;
     return `${t.passes}/${t.trials} (${recorded}/${t.trials} as recorded; ${escapeHtml(regrades?.at(-1)?.at ?? 'regraded')})`;
   };
+  // The verdict, with the disclosure that accepted an out-of-band one: "Above band (disclosed:
+  // user decision 2026-11-06)", the mark `summary --require band-or-disclosed` requires.
+  const verdict = (id: string, t: TaskSummary) => {
+    const x = d.disclosures[id];
+    return t.band_verdict === null ? 'no verdict' : x === undefined ? t.band_verdict : disclosedVerdictText(t.band_verdict, x);
+  };
   const rows = Object.entries(s.tasks).map(([id, t]) => [
-    escapeHtml(id), counted(t, d.freeze[id]?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(t.band_verdict ?? 'no verdict'),
+    escapeHtml(id), counted(t, d.freeze[id]?.regrades), t.pass_rate === null ? 'n/a' : pct(t.pass_rate), interval(t.passes, t.trials), escapeHtml(verdict(id, t)),
     `${t.pass_no_harm}/${t.trials}`, String(t.refusals), t.refusal_excluded_rate === null ? 'n/a' : pct(t.refusal_excluded_rate), String(t.env_error_raw), String(t.env_limit), `${t.grader_error} (${t.grader_error_history})`,
   ]);
   // A task's superseded version (R42: an earlier version's trials, moved out of the count when the

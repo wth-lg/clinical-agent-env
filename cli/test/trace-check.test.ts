@@ -418,10 +418,20 @@ describe('trace-check: the repo U31 and U23 rules (builder-50)', () => {
     expect(text).toMatch(/^U1: expect\[\d+\] ax_text not met: expected "non-pass rows without a reason: 0" in verifier-phase-P25c-1\/U31-reason-count\.txt/m);
   });
 
+  // The strings as the polished UI draws them (P25c fix, builder-326): the header's count and
+  // interval, and a per-task row's count beside its interval row's accessible name.
   it('U28 checks the whole-run header k/N apart from the per-task rows', () => {
-    const header = matchElements(repoRow('U28')).filter((m) => new RegExp(m.pattern).test('final-1 70/120 passed, Wilson 95% 49-67%'));
+    const headerText = 'Official run final-1, 120 trial records. All tasks: 70/120 pass· Wilson 95% 49.0% to 67.3% (safe PASS 68/120)';
+    const rowText = 'renal-dose-review12/20safe PASS 12/20 renal-dose-review: 60%, 95% interval 38.7% to 78.1%';
+    const header = matchElements(repoRow('U28')).filter((m) => new RegExp(m.pattern).test(headerText));
     expect(header).toHaveLength(1);
-    expect(new RegExp(header[0]!.pattern).test('renal-dose-review 12/20 passed, Wilson 95% 39-78%')).toBe(false);
+    expect(new RegExp(header[0]!.pattern).test(rowText)).toBe(false);
+    const rows = matchElements(repoRow('U28')).filter((m) => new RegExp(m.pattern).test(rowText));
+    expect(rows).toHaveLength(1);
+    expect(new RegExp(rows[0]!.pattern).test(headerText)).toBe(false);
+    // The count must be the row's own: a count 41 characters away, or another task's, does not do.
+    expect(new RegExp(rows[0]!.pattern).test(`renal-dose-review${' '.repeat(41)}12/20 renal-dose-review: 60%, 95% interval 38.7% to 78.1%`)).toBe(false);
+    expect(new RegExp(rows[0]!.pattern).test('renal-dose-review 112/20 renal-dose-review: 60%, 95% interval 38.7% to 78.1%')).toBe(false);
   });
 
   it('the forced-fail smoke trial is a valid FAIL on claude-opus-5-5, marked smoke and kept out of results/', () => {

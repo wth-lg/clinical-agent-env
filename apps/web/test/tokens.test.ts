@@ -6,8 +6,9 @@
 // make colour utilities, and no source file names a raw palette class or an arbitrary colour.
 // Text tokens, danger too, reach 4.5:1 and control borders and the focus ring 3:1 on both
 // backgrounds, light and dark.
-// public/ holds only the self-hosted OFL fonts and their licence, and every font file's family
-// (read from its name table) is named in OFL.txt.
+// public/ holds only the self-hosted OFL fonts and their licence, api/health and the page icon
+// (favicon.svg, P25c fix builder-326: drawn in the stone neutrals and the one accent, nothing
+// else), and every font file's family (read from its name table) is named in OFL.txt.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -235,7 +236,9 @@ describe('colour utilities', () => {
 const publicDir = join(webRoot, 'public');
 // api/health is the static build's answer to surface detection: a 200 that is not
 // clinenv-runner, so the hosted page is browser-direct without a 404 in the console.
-const ALLOWED = [/^fonts\/[\w.-]+\.woff2$/, /^fonts\/OFL\.txt$/, /^api\/health$/];
+// favicon.svg is the page icon index.html names under the base path, so the hosted site never
+// answers /favicon.ico with a 404 (P25c fix, builder-326; e2e/favicon.spec.ts).
+const ALLOWED = [/^fonts\/[\w.-]+\.woff2$/, /^fonts\/OFL\.txt$/, /^api\/health$/, /^favicon\.svg$/];
 
 // WOFF2 (W3C, 2018): the 48-byte header, then the table directory, then one Brotli stream of
 // every table in directory order, a transformed table taking its transformLength.
@@ -296,9 +299,25 @@ function nameTableFamily(name: Buffer): string {
 describe('public/', () => {
   const entries = files(publicDir).map((f) => relative(publicDir, f).split('\\').join('/'));
 
-  it('holds only allowlisted files: fonts/*.woff2, fonts/OFL.txt and api/health', () => {
+  it('holds only allowlisted files: fonts/*.woff2, fonts/OFL.txt, api/health and favicon.svg', () => {
     expect(entries).toContain('fonts/OFL.txt');
+    expect(entries).toContain('favicon.svg');
     for (const e of entries) expect(ALLOWED.some((re) => re.test(e)), e).toBe(true);
+  });
+
+  it('favicon.svg is a small SVG drawn in the stone neutrals and the accent only', () => {
+    const svg = readFileSync(join(publicDir, 'favicon.svg'), 'utf8');
+    expect(svg.length).toBeLessThan(2000);
+    expect(svg).toMatch(/^<svg\s[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    expect(svg).not.toMatch(/<(script|image|foreignObject|use)\b|href=|url\(/);
+    const fills = [...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1]!).filter((v) => v !== 'none');
+    expect(fills.length).toBeGreaterThan(0);
+    const accent = parseColor(ACCENT).lab;
+    for (const v of fills) {
+      const c = parseColor(v);
+      const dE = Math.hypot(c.lab[0] - accent[0], c.lab[1] - accent[1], c.lab[2] - accent[2]);
+      expect(c.chroma < CHROMATIC || dE <= MAX_DELTA_E, `${v}: neither a stone neutral nor the accent`).toBe(true);
+    }
   });
 
   it('api/health is the STATIC_HEALTH body, which no runner check accepts', () => {

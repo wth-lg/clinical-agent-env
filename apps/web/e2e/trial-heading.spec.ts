@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { browse } from './browse.ts';
+import { browse, browse as browseDefault } from './browse.ts';
 import { RUN_ID, trialBase, TRIALS, records } from './fixtures/trial/trial.ts';
 
 const MANIFEST = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', import.meta.url), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
@@ -80,6 +80,53 @@ test('a pilot on another world says so in a neutral tone and offers no Replay', 
   }
 });
 
+// The header states the trial's world on every trial (P25c fix, builder-326, trace row N13).
+test('the header names the world the trial started from: today\'s manifest, or not recorded', async ({ page }) => {
+  await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}`);
+  const world = page.getByTestId('trial-world');
+  await expect(world).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest.`);
+  await expect(world).toHaveAttribute('data-hash', MANIFEST);
+  await expect(world).toHaveAttribute('data-world', 'manifest');
+  await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json', null);
+  await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}`);
+  await expect(page.getByTestId('trial-world')).toHaveText('World not recorded.');
+  await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'none');
+});
+
+// Gate P25CFIX-242 F2: the committed results in the default build. pilot-4a contrast-ct-prep/0 and
+// the superseded crc-care-gap v1 trials start from ba0b0206…, contrast-ct-prep's frozen world and
+// crc-care-gap's superseded one; the line names the match, never "nor a frozen world".
+test('a pilot trial and a superseded version\'s trial on a frozen world of their task say which one they match', async ({ page }) => {
+  const frozen = (JSON.parse(readFileSync(new URL('../../../results/tasks-final.json', import.meta.url), 'utf8')) as { tasks: Record<string, { world_hash: string; superseded?: { world_hash: string; version: string } }> }).tasks;
+  const pilot = JSON.parse(readFileSync(new URL('../../../results/pilot-4a/trials/contrast-ct-prep/0.json', import.meta.url), 'utf8')) as { state_hash: { initial: string } };
+  expect(pilot.state_hash.initial).toBe(frozen['contrast-ct-prep']!.world_hash);
+  await browseDefault(page, './?view=runs&run=pilot-4a&trial=contrast-ct-prep%2F0');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'contrast-ct-prep/0');
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${pilot.state_hash.initial.slice(0, 12)}…: matches the frozen world of contrast-ct-prep.`);
+  await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'frozen');
+  const sup = JSON.parse(readFileSync(new URL('../../../results/runs/final-1/superseded/crc-care-gap-v1/trials/crc-care-gap/0.json', import.meta.url), 'utf8')) as { state_hash: { initial: string } };
+  expect(sup.state_hash.initial).toBe(frozen['crc-care-gap']!.superseded!.world_hash);
+  await browseDefault(page, './?view=runs&run=crc-care-gap-v1&trial=crc-care-gap%2F0');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'crc-care-gap/0');
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${sup.state_hash.initial.slice(0, 12)}…: matches the frozen world of crc-care-gap v1 (superseded).`);
+  await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'frozen');
+});
+
+// Gate P25CFIX-242 F3: an official trial on today's manifest whose task is frozen on another world.
+test('an official trial on the manifest whose task is frozen on another world says it misses the frozen world', async ({ page }) => {
+  const task = TRIALS.failAudited.split('/')[0]!;
+  const env = (records.find((r) => `${r.task_id}/${r.index}` === TRIALS.failAudited) as { env_version?: string } | undefined)?.env_version ?? null;
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files, ...rest } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { ...rest, files: [...files.filter((f) => f !== 'results/tasks-final.json'), 'results/tasks-final.json'] } });
+  });
+  await page.route('**/data/results/tasks-final.json', (route) => route.fulfill({ json: { schema_version: 1, tasks: { [task]: { ...(env === null ? {} : { env_version: env }), world_hash: EARLIER, frozen_at: { tag: 'freeze-test' } } } } }));
+  await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest, not the frozen world of ${task} (${EARLIER.slice(0, 12)}…).`);
+  await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'manifest');
+});
+
 test('a pilot with no initial hash says the world it ran on is not recorded', async ({ page }) => {
   await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json', null);
   await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}&tab=state-diff`);
@@ -104,8 +151,14 @@ test('an official trial on its task\'s frozen world says so, names the replay ta
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}&tab=state-diff`);
   const p = page.getByTestId('panel-state-diff');
   const line = p.getByTestId('manifest-line');
-  await expect(line).toHaveText(`This trial started from the frozen world of ${task} (${EARLIER.slice(0, 4)}…), not today's (${MANIFEST.slice(0, 4)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
+  // P25c fix (builder-326, trace row N13): the line states the trial's world hash and that it
+  // matches the task's frozen world, as the trial header does.
+  await expect(line).toHaveText(`Initial state hash ${EARLIER.slice(0, 12)}… matches the frozen world of ${task} (results/tasks-final.json), not today's manifest (${MANIFEST.slice(0, 12)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
   await expect(line).toHaveAttribute('data-tone', 'frozen');
+  const world = page.getByTestId('trial-world');
+  await expect(world).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches the frozen world of ${task}.`);
+  await expect(world).toHaveAttribute('data-hash', EARLIER);
+  await expect(world).toHaveAttribute('data-world', 'frozen');
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('replay-block')).toHaveCount(0);
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
@@ -118,6 +171,8 @@ test('an official trial on another world keeps the alert and its Replay', async 
   await otherWorld(page, `runs/${RUN_ID}/trials/${TRIALS.failAudited}.json`);
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}&tab=state-diff`);
   const p = page.getByTestId('panel-state-diff');
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches neither today's manifest nor a frozen world of ${TRIALS.failAudited.split('/')[0]}.`);
+  await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'other');
   await expect(p.getByTestId('manifest-line')).toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial state hash does not match the manifest/);
   await expect(p.getByRole('button', { name: 'Replay' })).toBeVisible();

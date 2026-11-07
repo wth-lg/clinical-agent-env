@@ -107,8 +107,11 @@ describe('ledger modes', () => {
     // SPEND_LEDGER naming the same file is consistent.
     expect(resolveLedgerPath(envFor(home, { CLINENV_CANONICAL_LEDGER: marker, SPEND_LEDGER: marker })).problems).toEqual([]);
 
+    // The other path is the test's own, under its temp root: a fixed /tmp/x once broke the test when
+    // another process had made it a directory (P25c fix, builder-326).
+    const other = join(root, 'other', 'spend.jsonl');
     const bad: Array<[string, Record<string, string>]> = [
-      ['SPEND_LEDGER names another path', { CLINENV_CANONICAL_LEDGER: marker, SPEND_LEDGER: '/tmp/x' }],
+      ['SPEND_LEDGER names another path', { CLINENV_CANONICAL_LEDGER: marker, SPEND_LEDGER: other }],
       ['marker directory is missing', { CLINENV_CANONICAL_LEDGER: join(root, 'gone', 'spend.jsonl') }],
       ['marker is not absolute', { CLINENV_CANONICAL_LEDGER: 'canon/spend.jsonl' }],
     ];
@@ -122,7 +125,7 @@ describe('ledger modes', () => {
       expect(spendCli(['--where'], envFor(home, extra), root).status, why).toBe(1);
     }
     expect(existsSync(join(root, 'gone'))).toBe(false);
-    expect(existsSync('/tmp/x') && readFileSync('/tmp/x', 'utf8').includes('"kind"')).toBe(false);
+    expect(existsSync(join(root, 'other'))).toBe(false);
     expect(existsSync(join(home, '.clinenv'))).toBe(false);
   });
 });

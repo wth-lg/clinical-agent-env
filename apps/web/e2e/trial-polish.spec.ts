@@ -6,6 +6,7 @@
 // verdict and keeps every criterion behind "Show all criteria checked (N)"; thinking reads as a
 // captioned quote, not italics, and tool names sit in a pill.
 import { expect, test, type Page } from '@playwright/test';
+import { MET_TEXT } from '../../../packages/core/explain.ts';
 import { browse as browseDefault, browseFrom } from './browse.ts';
 import { explain, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 import { records as sampleRecords, sampleBase, summary as sample } from './fixtures/sample-results/sample.ts';
@@ -185,7 +186,9 @@ test('3.3: the header leads with a headline, then Why it failed, Whose fault wit
   await expect(h.locator('[data-testid="header-criteria"] li').first()).toBeVisible();
 });
 
-test('3.4: Attribution opens with its verdict, and every criterion is behind "Show all criteria checked (N)"', async ({ page }) => {
+// P25c fix (builder-326, trace rows W8, U30): the confirmation criteria M1-M5, each met or not met,
+// are visible with no click; only the fault criteria stay behind the details.
+test('3.4: Attribution opens with its verdict, shows M1-M5 met or not met, and keeps the fault criteria behind "Show the fault criteria checked (N)"', async ({ page }) => {
   for (const name of [TRIALS.envLimit, TRIALS.failAudited]) {
     const e = await explain(name);
     await openTrial(page, name, '&tab=attribution');
@@ -196,8 +199,14 @@ test('3.4: Attribution opens with its verdict, and every criterion is behind "Sh
     expect(await verdict.evaluate((v) => v.parentElement!.firstElementChild === v)).toBe(true);
     const all = p.getByTestId('all-criteria');
     const n = await p.getByTestId('criterion-row').count();
-    await expect(all.locator('> summary')).toHaveText(`Show all criteria checked (${n})`);
+    await expect(all.locator('> summary')).toHaveText(`Show the fault criteria checked (${n - e.criteria.length})`);
     await expect(all).not.toHaveAttribute('open');
+    for (const c of e.criteria) {
+      const row = p.locator(`[data-testid="criterion-row"][data-id="${c.id}"]`);
+      await expect(row).toBeVisible();
+      await expect(row).toContainText(`${c.id}: ${MET_TEXT[String(c.met)]}`);
+    }
+    for (const row of await p.locator('[data-testid="criterion-row"]:not([data-fault="confirmation"])').all()) await expect(row).toBeHidden();
     if (e.confirmation) await expect(p.getByTestId('confirmation')).toContainText(`${e.confirmation} (M1–M5)`);
   }
 });

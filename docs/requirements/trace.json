@@ -42,7 +42,7 @@
       ],
       "expect": {
         "command": {
-          "cmd": "pnpm cli summary results/runs/final-1 --require valid=20,band=0.2-0.7,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all",
+          "cmd": "pnpm cli summary results/runs/final-1 --require valid=20,band-or-disclosed=0.2-0.7,env_error_raw=0,grader_error=0,model=claude-opus-5-5,replay=all",
           "exit": 0
         }
       },
@@ -50,7 +50,7 @@
       "done_when": [
         5
       ],
-      "note": "The environment, six tasks in it, and the final run of claude-opus-5-5 against them (U1)."
+      "note": "The environment, six tasks in it, and the final run of claude-opus-5-5 against them (U1). P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run."
     },
     {
       "id": "A2",
@@ -445,7 +445,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=tasks&task=renal-dose-review&tab=rubric",
-        "action": "Open Tasks, open renal-dose-review and its Rubric tab: each gate check and rubric item with its key, kind, method, points and traces_to.",
+        "action": "Open Tasks, open renal-dose-review and its Rubric tab: each gate check and rubric item with its key, kind, method, points and the policy line it enforces (Enforces <traces_to>: show the text).",
         "surface": "any"
       },
       "evidence": [
@@ -453,13 +453,13 @@
         "verifier-phase-P25c-1/N6-task-rubric.ax.txt"
       ],
       "expect": {
-        "ax_text": {
+        "ax_match": {
           "file": "verifier-phase-P25c-1/N6-task-rubric.ax.txt",
-          "text": "traces_to"
+          "pattern": "Enforces RBC-PHARM-07 §[0-9]+: show the text"
         }
       },
       "phase": "P14",
-      "note": "Since PW4 each task's grader also grades its mid-trial events (packages/grader/events.ts gates; tasks/<id>/events.ts specs), and docs/tasks.md describes each task's events and what each event class does not measure; since W5 the four lever tasks' expected.ts LEVER_ITEMS declare the lever items the matrix bounds with the focus-only and read-all-newest agents, and docs/tasks.md states each item and what it does not measure; since R42 crc-care-gap (v2) declares one too."
+      "note": "Since PW4 each task's grader also grades its mid-trial events (packages/grader/events.ts gates; tasks/<id>/events.ts specs), and docs/tasks.md describes each task's events and what each event class does not measure; since W5 the four lever tasks' expected.ts LEVER_ITEMS declare the lever items the matrix bounds with the focus-only and read-all-newest agents, and docs/tasks.md states each item and what it does not measure; since R42 crc-care-gap (v2) declares one too. P25c fix (builder-326): the UI polish replaced the traces_to column with 'Enforces <traces_to>: show the text' on each item (apps/web/src/tasks/Tasks.tsx); the meaning survives, so the expect follows the screen: renal-dose-review's decisive gate enforces RBC-PHARM-07 §4."
     },
     {
       "id": "N7",
@@ -490,10 +490,11 @@
       "expect": {
         "ax_match": {
           "file": "verifier-phase-P25c-1/N7-trial-grading.ax.txt",
-          "pattern": "\\bScore (?:0\\.[0-9]{2}|1\\.00)\\b"
+          "pattern": "Rubric score \\(does not decide pass\\)\\s?(?:0\\.[0-9]{2}|1\\.00)(?![0-9])"
         }
       },
-      "phase": "P16"
+      "phase": "P16",
+      "note": "P25c fix (builder-326): the UI polish titled the Score card 'Rubric score (does not decide pass)' (apps/web/src/trial/Grading.tsx SCORE_TITLE), its value right after it in the accessibility text; the meaning survives, so the pattern follows the screen."
     },
     {
       "id": "N8",
@@ -611,7 +612,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=live&task=renal-dose-review",
-        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run ×1 on Live trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
+        "action": "On the local runner with a key, open a task on Tasks and press Run trial, then Run ×1 on Live trial: the trajectory streams live and ends in the graded result; its detail (the trial page of run=session) shows the Score card, 'Rubric score (does not decide pass)' with its value, and the rubric breakdown.",
         "surface": "local"
       },
       "evidence": [
@@ -621,13 +622,14 @@
       "expect": {
         "ax_match": {
           "file": "verifier-phase-P25c-1/N10-live-trial-graded.ax.txt",
-          "pattern": "\\bScore (?:0\\.[0-9]{2}|1\\.00)\\b"
+          "pattern": "Rubric score \\(does not decide pass\\)\\s?(?:0\\.[0-9]{2}|1\\.00)(?![0-9])"
         }
       },
       "phase": "P15",
       "done_when": [
         1
-      ]
+      ],
+      "note": "P25c fix (builder-326): the graded live trial's Score card is the trial page's (apps/web/src/trial/Grading.tsx SCORE_TITLE), which the UI polish titled 'Rubric score (does not decide pass)'; the pattern follows the screen, as N7's does. The row's snapshot N10-live-trial-graded.ax.txt is still owed by the P25c audit."
     },
     {
       "id": "N11",
@@ -743,7 +745,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=runs&run=final-1&trial=first-nonpass&tab=state-diff",
-        "action": "Open the first non-pass trial of final-1 and its State diff tab: the initial state hash matches the manifest, and the diff shows what the trial changed.",
+        "action": "Open the first non-pass trial of final-1 and its State diff tab: the header's World line and the tab's first line state the trial's initial state hash and that it matches the frozen world of its task (contrast-ct-prep ran its final sample on the earlier frozen world, R37), and the diff shows what the trial changed.",
         "surface": "any"
       },
       "evidence": [
@@ -767,7 +769,7 @@
         {
           "ax_text": {
             "file": "verifier-phase-P25c-1/N13-trial-state-diff.ax.txt",
-            "text": "matches the manifest"
+            "text": "matches the frozen world of"
           }
         }
       ],
@@ -775,7 +777,7 @@
       "done_when": [
         4
       ],
-      "note": "Mid-trial arrivals are a pure function of the tool log, so a replay on a fresh session re-fires them identically (packages/core/test/events-replay.test.ts)."
+      "note": "Mid-trial arrivals are a pure function of the tool log, so a replay on a fresh session re-fires them identically (packages/core/test/events-replay.test.ts). P25c fix (builder-326): final-1's first non-pass trial, contrast-ct-prep/0, started from that task's frozen world (ba0b0206..., results/tasks-final.json), not today's manifest, so 'matches the manifest' is absent and would be false. The trial header's run line now states the world hash and that it matches the task's frozen world (apps/web/src/trial/world.ts, TrialPage.tsx WorldLine), and the State diff line reads 'Initial state hash <hash>... matches the frozen world of contrast-ct-prep (results/tasks-final.json), not today's manifest (...)'; the row needs a new N13-trial-state-diff snapshot."
     },
     {
       "id": "N14",
@@ -884,7 +886,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli summary results/runs/final-1 --require band=0.2-0.7",
+            "cmd": "pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7",
             "exit": 0
           }
         },
@@ -902,7 +904,7 @@
         }
       ],
       "phase": "P22",
-      "note": "The difficulty lever since PW4 is the mid-trial event (plan-amendment-w4): each task's ACTIVE list in tasks/<id>/events.ts sets how many arrivals a trial meets. Since W5 (plan-amendment-w5) it is the record-integrity lever item: tasks/<id>/lever.ts LEVER names the active items of renal-dose-review, results-inbox, discharge-medrec, message-queue and, since R42, crc-care-gap v2 (an A item is a silently filed sibling in an arriving batch, a B item a static chart record), hashed into env_version; docs/tasks.md states each event class, each lever item and what each does not measure."
+      "note": "The difficulty lever since PW4 is the mid-trial event (plan-amendment-w4): each task's ACTIVE list in tasks/<id>/events.ts sets how many arrivals a trial meets. Since W5 (plan-amendment-w5) it is the record-integrity lever item: tasks/<id>/lever.ts LEVER names the active items of renal-dose-review, results-inbox, discharge-medrec, message-queue and, since R42, crc-care-gap v2 (an A item is a silently filed sibling in an arriving batch, a B item a static chart record), hashed into env_version; docs/tasks.md states each event class, each lever item and what each does not measure. P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run. The Overview's band line counts the tasks In band honestly (2 of 6), so the row's ax checks keep the line and pattern."
     },
     {
       "id": "W2",
@@ -938,7 +940,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,band=0.2-0.7",
+            "cmd": "pnpm cli summary results/runs/final-1 --require model=claude-opus-5-5,band-or-disclosed=0.2-0.7",
             "exit": 0
           }
         },
@@ -959,7 +961,7 @@
       "done_when": [
         5
       ],
-      "note": "The user amended the band to 0.20-0.70 of 20 trials (U21); FINAL_PASS_BAND in packages/core/cost.ts."
+      "note": "The user amended the band to 0.20-0.70 of 20 trials (U21); FINAL_PASS_BAND in packages/core/cost.ts. P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run."
     },
     {
       "id": "W3",
@@ -989,7 +991,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli summary results/runs/final-1 --require band=0.2-0.7",
+            "cmd": "pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7",
             "exit": 0
           }
         },
@@ -1007,7 +1009,7 @@
         }
       ],
       "phase": "P22",
-      "note": "Band 0.2-0.7 excludes 0/20 and 20/20, so the band check is the check that no task always or never passes."
+      "note": "Band 0.2-0.7 excludes 0/20 and 20/20, so the band check is the check that no task always or never passes. P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run. Two tasks are Saturated at 20/20: disclosed, not hidden; the Overview still shows each task's passes and failures among its swatches."
     },
     {
       "id": "W4",
@@ -1047,7 +1049,8 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "note": "P25c fix (builder-326): the Runs header did not name the model after the UI polish; it now carries the model line 'Model claude-opus-5-5, effort high' (apps/web/src/runs/Runs.tsx, apps/web/e2e/polish.spec.ts); the row needs a new W4-runs-official snapshot."
     },
     {
       "id": "W5",
@@ -1090,42 +1093,42 @@
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\brenal-dose-review\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "renal-dose-review[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\brenal-dose-review: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\bresults-inbox\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "results-inbox[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bresults-inbox: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\bcrc-care-gap\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "crc-care-gap[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcrc-care-gap: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\bdischarge-medrec\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "discharge-medrec[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bdischarge-medrec: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\bcontrast-ct-prep\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "contrast-ct-prep[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcontrast-ct-prep: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W5-overview-pass-rates.ax.txt",
-            "pattern": "\\bmessage-queue\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "message-queue[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bmessage-queue: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         }
       ],
       "phase": "P22",
-      "note": "The user amended ten trials to 20 per task (U21); FINAL_TRIALS_PER_TASK in packages/core/cost.ts."
+      "note": "The user amended ten trials to 20 per task (U21); FINAL_TRIALS_PER_TASK in packages/core/cost.ts. P25c fix (builder-326): the UI polish the user asked for (decisions.tsv 2026-10-30T22:50Z) replaced '<k>/<N> passed, Wilson 95% <lo>-<hi>%' with the row's own k/N count and the interval row's name '<task>: <rate>%, 95% interval <lo>% to <hi>%'; the meaning survives (the count and the interval are both on the screen), so the pattern follows the screen: the task id, its k/20 within 40 characters, then its interval name."
     },
     {
       "id": "W6",
@@ -1173,7 +1176,8 @@
       "phase": "P23",
       "done_when": [
         6
-      ]
+      ],
+      "note": "P25c fix (builder-326): the Runs header showed only 'Trials by outcome' after the UI polish, with the fault counts on Overview alone in another form; it now reads 'Failures by fault: <m> model, <e> environment, <g> grader' over the tasks in scope (apps/web/src/runs/Runs.tsx FaultSummary); the row needs a new W6-runs-labels snapshot."
     },
     {
       "id": "W7",
@@ -1232,7 +1236,7 @@
       "done_when": [
         6
       ],
-      "note": "An event that should have arrived and did not is the environment's (E9, event_delivered), as is a trial with no model turn after an arrival (E10, had_turn); a disagreement between the env_event record and replay is a grader error (packages/grader/events.ts)."
+      "note": "An event that should have arrived and did not is the environment's (E9, event_delivered), as is a trial with no model turn after an arrival (E10, had_turn); a disagreement between the env_event record and replay is a grader error (packages/grader/events.ts). P25c fix (builder-326): the Runs header now reads 'Failures by fault: <m> model, <e> environment, <g> grader' (apps/web/src/runs/Runs.tsx FaultSummary; the P25c audit found the counts only on Overview); the row needs a new W7-runs-no-env-grader-fault snapshot."
     },
     {
       "id": "W8",
@@ -1292,7 +1296,7 @@
         }
       ],
       "phase": "P16",
-      "note": "The expect names criterion ids, not criterion text: scripts/test/one-definition.test.ts forbids the FAULT_DEFINITIONS text verbatim outside packages/core/outcomes.ts."
+      "note": "The expect names criterion ids, not criterion text: scripts/test/one-definition.test.ts forbids the FAULT_DEFINITIONS text verbatim outside packages/core/outcomes.ts. P25c fix (builder-326): after the UI polish the per-criterion results sat behind 'Show all criteria checked (N)', so the snapshot held only 'confirmed (M1–M5)'; the Attribution tab now shows M1-M5, each met or not met, with no click, and keeps the fault criteria behind 'Show the fault criteria checked (N)' (apps/web/src/trial/Attribution.tsx, apps/web/e2e/trial-polish.spec.ts 3.4); the row needs a new W8-trial-attribution-criteria snapshot."
     },
     {
       "id": "W9",
@@ -1326,41 +1330,42 @@
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\brenal-dose-review\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "renal-dose-review[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\brenal-dose-review: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\bresults-inbox\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "results-inbox[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bresults-inbox: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\bcrc-care-gap\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "crc-care-gap[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcrc-care-gap: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\bdischarge-medrec\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "discharge-medrec[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bdischarge-medrec: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\bcontrast-ct-prep\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "contrast-ct-prep[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcontrast-ct-prep: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/W9-findings.ax.txt",
-            "pattern": "\\bmessage-queue\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "message-queue[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bmessage-queue: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         }
       ],
-      "phase": "P24"
+      "phase": "P24",
+      "note": "P25c fix (builder-326): the UI polish the user asked for (decisions.tsv 2026-10-30T22:50Z) replaced '<k>/<N> passed, Wilson 95% <lo>-<hi>%' with the row's own k/N count and the interval row's name '<task>: <rate>%, 95% interval <lo>% to <hi>%'; the meaning survives (the count and the interval are both on the screen), so the pattern follows the screen: the task id, its k/20 within 40 characters, then its interval name."
     },
     {
       "id": "W10",
@@ -1706,7 +1711,7 @@
         }
       ],
       "phase": "P26",
-      "note": "Each phase lands only after a verifier VERIFIED verdict on the PR head; donewhen checks the whole done-when predicate on the result."
+      "note": "Each phase lands only after a verifier VERIFIED verdict on the PR head; donewhen checks the whole done-when predicate on the result. P25c fix (builder-326): clause (5) uses summary's band-or-disclosed form after the user's accept-and-disclose decision of 2026-11-06, so donewhen prints 7/7 with the four out-of-band tasks disclosed (scripts/donewhen.ts, packages/core/disclosure.ts)."
     },
     {
       "id": "U7",
@@ -1811,12 +1816,12 @@
       ],
       "expect": {
         "command": {
-          "cmd": "test \"$(ls -d results/runs/final-1/trials/*/claude-opus-5-5/* | xargs -n1 basename | sort -u)\" = high",
+          "cmd": "node -e 'const fs=require(\"node:fs\");const e=new Set(fs.globSync(\"results/runs/final-1/trials/*/*.json\").map((f)=>JSON.parse(fs.readFileSync(f,\"utf8\")).effort));console.log([...e].join(\",\"));process.exit([...e].join(\",\")===\"high\"?0:1)'",
           "exit": 0
         }
       },
       "phase": "P22",
-      "note": "Trial keys are <task>/<model>/<effort>/<mode>/<index>; the only effort directory under final-1 is high. If P12 lays records out another way, update the command in that PR."
+      "note": "Each final-1 record is results/runs/final-1/trials/<task>/<index>.json (cli/adapters/result-sink-node.ts) and carries the trial's effort as its top-level effort field; the only effort in the run is high (a record's nested judge calls carry their own effort, so the check reads the top-level field, never a grep). P25c fix (builder-326): the earlier command read a <task>/<model>/<effort>/<mode>/<index> layout that P12 never built, as the note anticipated."
     },
     {
       "id": "U11",
@@ -2215,7 +2220,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli summary results/runs/final-1 --require valid=20,band=0.2-0.7",
+            "cmd": "pnpm cli summary results/runs/final-1 --require valid=20,band-or-disclosed=0.2-0.7",
             "exit": 0
           }
         },
@@ -2234,44 +2239,45 @@
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\brenal-dose-review\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "renal-dose-review[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\brenal-dose-review: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\bresults-inbox\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "results-inbox[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bresults-inbox: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\bcrc-care-gap\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "crc-care-gap[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcrc-care-gap: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\bdischarge-medrec\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "discharge-medrec[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bdischarge-medrec: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\bcontrast-ct-prep\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "contrast-ct-prep[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcontrast-ct-prep: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U21-overview-k-of-20.ax.txt",
-            "pattern": "\\bmessage-queue\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "message-queue[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bmessage-queue: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         }
       ],
       "phase": "P22",
       "done_when": [
         5
-      ]
+      ],
+      "note": "P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run. P25c fix (builder-326): the UI polish the user asked for (decisions.tsv 2026-10-30T22:50Z) replaced '<k>/<N> passed, Wilson 95% <lo>-<hi>%' with the row's own k/N count and the interval row's name '<task>: <rate>%, 95% interval <lo>% to <hi>%'; the meaning survives (the count and the interval are both on the screen), so the pattern follows the screen: the task id, its k/20 within 40 characters, then its interval name."
     },
     {
       "id": "U22",
@@ -2424,7 +2430,7 @@
       "expect": [
         {
           "command": {
-            "cmd": "pnpm cli summary results/runs/final-1 --require band=0.2-0.7",
+            "cmd": "pnpm cli summary results/runs/final-1 --require band-or-disclosed=0.2-0.7",
             "exit": 0
           }
         },
@@ -2441,7 +2447,8 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "note": "P25c fix (builder-326): the command uses band-or-disclosed, not band, after the user's accept-and-disclose decision of 2026-11-06 (decisions.tsv 2026-11-06T17:27Z): final-1 stands as measured, and an out-of-band task passes only when results/tasks-final.json discloses it and the writeup's pass-rates table marks it; band= alone still exits 1 on this run."
     },
     {
       "id": "U27",
@@ -2518,47 +2525,48 @@
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bfinal-1 (?:[0-9]|[1-9][0-9]|1[01][0-9]|120)/120 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "\\bfinal-1\\b[^\\n]*\\bAll tasks: (?:[0-9]|[1-9][0-9]|1[01][0-9]|120)/120 pass\\b[^\\n]*\\bWilson 95% [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\brenal-dose-review\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "renal-dose-review[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\brenal-dose-review: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bresults-inbox\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "results-inbox[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bresults-inbox: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bcrc-care-gap\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "crc-care-gap[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcrc-care-gap: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bdischarge-medrec\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "discharge-medrec[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bdischarge-medrec: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bcontrast-ct-prep\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "contrast-ct-prep[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bcontrast-ct-prep: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         },
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U28-runs-header.ax.txt",
-            "pattern": "\\bmessage-queue\\b[^\\n]*\\b(?:[0-9]|1[0-9]|20)/20 passed, Wilson 95% [0-9]{1,3}-[0-9]{1,3}%"
+            "pattern": "message-queue[^\\n]{0,40}?(?<![0-9])(?:[0-9]|1[0-9]|20)/20(?![0-9])[^\\n]*\\bmessage-queue: [0-9]{1,3}(?:\\.[0-9])?%, 95% interval [0-9]{1,3}(?:\\.[0-9])?% to [0-9]{1,3}(?:\\.[0-9])?%"
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "note": "P25c fix (builder-326): the UI polish the user asked for (decisions.tsv 2026-10-30T22:50Z) replaced '<k>/<N> passed, Wilson 95% <lo>-<hi>%' with the row's own k/N count and the interval row's name '<task>: <rate>%, 95% interval <lo>% to <hi>%'; the meaning survives (the count and the interval are both on the screen), so the pattern follows the screen: the task id, its k/20 within 40 characters, then its interval name. The header reads 'Official run final-1 ... All tasks: <k>/120 pass · Wilson 95% <lo>% to <hi>%'. The per-task rows were missing from Runs after the polish (content missing, not a reword), so builder-326 added one row per task to the Runs header (k/N, interval, verdict; apps/web/src/runs/Runs.tsx TaskRows, apps/web/e2e/polish.spec.ts); the row needs a new U28-runs-header snapshot."
     },
     {
       "id": "U29",
@@ -2649,7 +2657,8 @@
           }
         }
       ],
-      "phase": "P16"
+      "phase": "P16",
+      "note": "P25c fix (builder-326): the Attribution tab shows the M1-M5 criteria table with no click again (see W8); the row needs a new U30-trial-attribution-criteria snapshot."
     },
     {
       "id": "U31",
