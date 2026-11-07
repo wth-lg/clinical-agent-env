@@ -206,7 +206,8 @@ export function Attribution({ t, e, steps, where = [], headline = null, onStep }
         <div className="space-y-3">
           <CriteriaSummary e={e} />
           <div data-testid="confirmation-criteria">
-            <h4 className="text-xs font-medium text-ink">Confirmed by the record (M1–M4) and the human audit (M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
+            {/* M1-M5 confirm a model fault; for another fault they are the criteria checked (gate N3). */}
+            <h4 className="text-xs font-medium text-ink">{isModelFault(e) ? 'Confirmed by the record (M1–M4) and the human audit (M5)' : 'Attribution criteria (M1–M5)'} <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
             <ul data-testid="detail-criteria" className="divide-y divide-line">
               {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
             </ul>

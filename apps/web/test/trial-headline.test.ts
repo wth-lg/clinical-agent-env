@@ -67,7 +67,7 @@ describe('plainHeadline', () => {
     const e = base({ decisive_check: { id: 'event_delivered', traces_to: null, expected: 'every active event arrived', found: 'Patient/pt-0062 (Norman Fairweather)' }, fault: 'env', label: 'environment' });
     const checks = eventCheck('Patient/pt-0062', 'event fairweather-scr-batch arrived at step 30 though its trigger never held', ['Observation/obs-04004'], 30, 'event_delivered');
     const line = plainHeadline(e, checks, null)!;
-    expect(line).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): an arrival arrived at step 30 though its trigger never held.');
+    expect(line).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): an arrival came at step 30 though its trigger never held.');
     expect(line).not.toContain('never opened');
     expect(line).not.toContain('fairweather-scr-batch');
   });
@@ -82,6 +82,28 @@ describe('plainHeadline', () => {
     const checks = [{ id: 'doac_dose', items: [{ item: 'Patient/pt-0003', met: false, why: 'rivaroxaban 20 mg once daily; the policy dose is 15 mg' }] }];
     const e = base({ decisive_check: { id: 'doac_dose', traces_to: null, expected: 'the policy dose', found: 'Patient/pt-0003 (Ada Delgado)' }, taxonomy: 'reasoning' });
     expect(plainHeadline(e, checks, 'reasoning')).toBe('Read the records it needed, but decided wrongly: Patient/pt-0003 (Ada Delgado): rivaroxaban 20 mg once daily; the policy dose is 15 mg.');
+  });
+  // Gate P25U-S3-2 N2: the fallbacks read as plainly as the main path.
+  it('N2: an item\'s reason never reads "an arrival arrived", and a one-word event id is an arrival too', () => {
+    const e = base({ decisive_check: { id: 'event_delivered', traces_to: null, expected: 'every active event arrived', found: 'Patient/pt-0062 (Norman Fairweather)' }, fault: 'env', label: 'environment' });
+    const trigger = (why: string) => eventCheck('Patient/pt-0062', why, ['Observation/obs-04004'], 30, 'event_delivered');
+    expect(plainHeadline(e, trigger('event fairweather-scr-batch arrived at step 30 though its trigger never held'), null)).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): an arrival came at step 30 though its trigger never held.');
+    expect(plainHeadline(e, trigger('event e1 arrived at step 30 though its trigger never held'), null)).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): an arrival came at step 30 though its trigger never held.');
+    expect(plainHeadline(e, trigger('the trigger of event e1 held at step 30 and nothing arrived'), null)).toBe('Failed a gate check: Patient/pt-0062 (Norman Fairweather): the trigger of an arrival held at step 30 and nothing arrived.');
+  });
+  it('N2: a single record is "it", not "records ... them", and no record at all is "a new record"', () => {
+    const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0012 (Ira Moravec)' } });
+    expect(plainHeadline(e, eventCheck('Patient/pt-0012', 'event x arrived at step 20 and was never read before finish', ['Communication/comm-00101'], 20), 'retrieval')).toBe('Missed a record it needed: a new message for Patient/pt-0012 (Ira Moravec) arrived at step 20, and the model never opened it before finishing.');
+    expect(plainHeadline(e, eventCheck('Patient/pt-0012', 'event x arrived at step 20 and was never read before finish', [], 20), 'retrieval')).toBe('Missed a record it needed: a new record for Patient/pt-0012 (Ira Moravec) arrived at step 20, and the model never opened it before finishing.');
+    expect(plainHeadline(e, eventCheck('Patient/pt-0012', 'event x arrived at step 20 and was never read before finish', ['Observation/obs-1', 'Communication/comm-2'], 20), 'retrieval')).toBe('Missed a record it needed: new records for Patient/pt-0012 (Ira Moravec) arrived at step 20, and the model did not review them before finishing.');
+  });
+  it('N2: when the found text names no patient, the arrival is named by its records, never by a slug', () => {
+    const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'marchetti_cr_ed' } });
+    const line = plainHeadline(e, eventCheck('marchetti_cr_ed', 'event marchetti-cr-batch arrived at step 41 and was never read before finish', ['Observation/obs-06209', 'Observation/obs-06210'], 41), 'retrieval')!;
+    expect(line).toBe('Missed a record it needed: new results (Observation/obs-06209 and Observation/obs-06210) arrived at step 41, and the model did not review them before finishing.');
+    expect(line).not.toContain('marchetti');
+    const bare = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: '' } });
+    expect(plainHeadline(bare, eventCheck('marchetti_cr_ed', 'event marchetti-cr-batch arrived at step 41 and was never read before finish', [], 41), 'retrieval')).toBe('Missed a record it needed: a new record arrived at step 41, and the model never opened it before finishing.');
   });
   it('falls back to what the check found, then to the check\'s name, and never repeats a full stop', () => {
     const e = base({ decisive_check: { id: 'note_on_patient', traces_to: null, expected: 'a note', found: 'no note on Patient/pt-0001.' }, taxonomy: 'output_gap' });

@@ -35,17 +35,20 @@ const PATIENT = /Patient\/pt-\d+(?: \([^)]*\))?/;
 const patientIn = (s: string): string | null => PATIENT.exec(s)?.[0] ?? null;
 // A text that is one subject (an id or a name, with an optional parenthesis), not a clause.
 const isSubject = (s: string): boolean => /^\S+(?: \([^)]*\))?\.?$/.test(s);
-// An event's id ("event t5-mohr-scr") is a grader name, not a reader's: it reads "an arrival".
-const noSlugs = (s: string): string => s.replace(/\bevent [a-z0-9]+(?:-[a-z0-9]+)+\b/g, 'an arrival');
+// An event's id ("event t5-mohr-scr", "event e1") is a grader name, not a reader's: it reads "an
+// arrival", and "event <id> arrived" reads "an arrival came" (gate N2).
+const noSlugs = (s: string): string => s.replace(/\bevent [A-Za-z0-9][\w-]*\b( arrived\b)?/g, (_m, arrived: string | undefined) => (arrived ? 'an arrival came' : 'an arrival'));
+// An item id that is a grader's slug (an event name such as marchetti_cr_ed), not a record.
+const isSlug = (s: string): boolean => !s.includes('/') && /[_-]/.test(s);
 
 // What arrived, from the records the failed item turns on: "a new result", "new results", "a new
-// message", "a new report"; "new records" for a mix.
+// message", "a new report"; "new records" for a mix; "a new record" when the item names none.
 const KIND_WORD: Readonly<Record<string, string>> = { Observation: 'result', DiagnosticReport: 'report', DocumentReference: 'report', Communication: 'message', Task: 'task', Encounter: 'visit', MedicationRequest: 'order', ServiceRequest: 'order' };
 function arrivalWords(ids: readonly string[]): { words: string; plural: boolean } {
   const kinds = [...new Set(ids.map((id) => KIND_WORD[id.split('/')[0]!] ?? 'record'))];
-  const plural = ids.length !== 1;
-  if (kinds.length !== 1) return { words: 'new records', plural: true };
-  return { words: plural ? `new ${kinds[0]}s` : `a new ${kinds[0]}`, plural };
+  const plural = ids.length > 1;
+  if (kinds.length > 1) return { words: 'new records', plural };
+  return { words: plural ? `new ${kinds[0]}s` : `a new ${kinds[0] ?? 'record'}`, plural };
 }
 
 // What the decisive check found, in the reader's words. On the gate that checks each arrival was
@@ -60,9 +63,14 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
   const arrived = failed?.evidence?.arrived_at;
   const unread = d.id === 'event_seen' || /never read/.test(failed?.why ?? '');
   if (typeof arrived === 'number' && unread) {
-    const who = patientIn(found) ?? patientIn(failed?.item ?? '') ?? (found !== '' && isSubject(found) ? found : failed?.item ?? '');
-    const { words, plural } = arrivalWords(failed?.decisive_ids ?? []);
-    return `${words}${who === '' ? '' : ` for ${who}`} arrived at step ${arrived}, and the model ${plural ? 'did not review them' : 'never opened it'} before finishing`;
+    // For whom: the patient the check text or the item names; else a subject that is not a
+    // grader's slug; else the records themselves (gate N2: never a slug).
+    const ids = failed?.decisive_ids ?? [];
+    const subject = [found, failed?.item ?? ''].find((s) => s !== '' && isSubject(s) && !isSlug(s.replace(/ \([^)]*\)$/, ''))) ?? null;
+    const who = patientIn(found) ?? patientIn(failed?.item ?? '') ?? subject;
+    const { words, plural } = arrivalWords(ids);
+    const what = who !== null ? `${words} for ${who}` : ids.length > 0 ? `${words} (${andList(ids)})` : words;
+    return `${what} arrived at step ${arrived}, and the model ${plural ? 'did not review them' : 'never opened it'} before finishing`;
   }
   if (failed?.why !== undefined && failed.why !== '') {
     const why = noSlugs(failed.why);
