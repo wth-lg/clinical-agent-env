@@ -6,14 +6,14 @@
 // its kind of failure (items.ts). An excluded trial was not graded; a check that threw is the
 // grader's error, in the danger style.
 import { Check, CircleAlert, CircleHelp, Minus, X, type LucideIcon } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
 import { durationSeconds, formatDuration } from '../data/duration.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
-import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
+import { LINK, markOf, markProps, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemLabelsOf, itemsMetText, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
 import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, scoreText, totalText, type RubricMark } from './rubric.ts';
@@ -58,8 +58,9 @@ function QuestionName({ text, id }: { text: string; id: string }) {
 }
 
 // The met column's mark: a check, a cross, a dash for a penalty that did not fire, an alert for one
-// that fired, a question mark when the judge was unsure; in the danger colour when the row costs the
-// trial points.
+// that fired, a question mark when the judge was unsure; a heavy ink mark when the row costs the
+// trial points. Never red: red means the environment, the grader, an error or harm, not the model
+// (P25u V2c, copy rule C8).
 const MARK_ICON: Readonly<Record<RubricMark, LucideIcon>> = { met: Check, 'not-met': X, 'not-triggered': Minus, fired: CircleAlert, unsure: CircleHelp };
 function MetCell({ c }: { c: CheckRow }) {
   const good = rubricGood(c);
@@ -67,23 +68,32 @@ function MetCell({ c }: { c: CheckRow }) {
   const Icon = MARK_ICON[mark];
   return (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <Icon aria-hidden data-mark={mark} className={`h-3.5 w-3.5 shrink-0 ${good === false ? 'text-danger' : 'text-ink-muted'}`} strokeWidth={good === false ? 2.25 : 1.75} />
-      {rubricMetText(c)}
+      <Icon aria-hidden data-mark={mark} className={`h-3.5 w-3.5 shrink-0 ${good === false ? 'text-ink' : 'text-ink-muted'}`} strokeWidth={good === false ? 2.5 : 1.75} />
+      <span className={good === false ? 'font-semibold text-ink' : ''}>{rubricMetText(c)}</span>
     </span>
   );
 }
 
-function Metric({ title, value, testId, note }: { title: string; value: string | null; testId: string; note?: string | undefined }) {
+// A stat tile. mark: the outcome's mark before the value (the Gate checks tile, V9), so the tile
+// that decides pass reads in the verdict's own style. gloss: a second small line under the note
+// ("extra credit; does not decide pass" on the rubric tile, copy rule C2).
+function Metric({ title, value, testId, note, mark, gloss, className = '' }: { title: string; value: string | null; testId: string; note?: string | undefined; mark?: { className: string; style?: CSSProperties } | undefined; gloss?: string | undefined; className?: string }) {
   return (
-    <div className="min-w-0 rounded-sm border border-line bg-surface px-3 py-2">
+    <div className={`min-w-0 rounded-sm border border-line bg-surface px-3 py-2 ${className}`}>
       <p data-testid={testId} className="flex flex-wrap items-baseline gap-x-1.5">
         <span className="text-xs text-ink-muted">{title}</span>
-        {value !== null && <>{' '}<span className="font-medium tabular-nums text-ink">{value}</span></>}
+        {value !== null && <>{' '}<span className="inline-flex items-center gap-1.5 font-medium tabular-nums text-ink">{mark !== undefined && <span aria-hidden className={`inline-block h-2.5 w-2.5 shrink-0 rounded-[2px] ${mark.className}`} style={mark.style} />}{value}</span></>}
       </p>
       {(value === null || note !== undefined) && <p data-testid={`${testId}-note`} className="mt-0.5 text-xs text-ink-muted">{value === null ? '—' : note}</p>}
+      {gloss !== undefined && <p data-testid={`${testId}-gloss`} className="mt-0.5 text-xs text-ink-muted">{gloss}</p>}
     </div>
   );
 }
+
+// A check text with an empty "()" dropped (P25u J24): a task's requires text names the studies a
+// rule applies to in parentheses, and a rule that applies to none leaves "()"; the task file stays
+// as it is, because an edit there moves grader_task_version.
+export const tidyCheckText = (s: string): string => s.replace(/\s*\(\s*\)/g, '');
 
 // What happens to a trial the grader did not check: run again only when RERUN_OUTCOMES says so,
 // else not run again, with NOT_RERUN_REASON's reason (plan-amendment-worklist W0-A).
@@ -98,7 +108,7 @@ export function EvidenceId({ id, steps, onStep, testId = 'evidence-id' }: { id: 
   const n = steps === null ? null : stepOfId(steps, id);
   if (n === null) return <code data-testid={testId} data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;
   return (
-    <button type="button" data-testid={testId} data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-w-0 items-baseline gap-1 rounded-md text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink pointer-coarse:px-1 pointer-coarse:py-2">
+    <button type="button" data-testid={testId} data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-h-6 min-w-0 items-baseline gap-1 rounded-md text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink pointer-coarse:px-1 pointer-coarse:py-2">
       <code className="break-all">{id}</code>
       <span className="shrink-0 text-ink-muted">step {n}</span>
     </button>
@@ -135,17 +145,30 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   const score = scoreText(g);
   const total = rubricTotal(rubric);
   const questions = useRubricQuestions(t.task, rubric.length > 0);
+  const gatesMet = gates.filter((c) => c.met === true).length;
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <OutcomeChip outcome={g.outcome} fault={shownFault(t.explanation)} />
         {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
+      {/* The gate result first, in the verdict's mark, because it decides pass; the rubric score
+          last, as extra credit (P25u V9, copy rule C2). */}
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} />
+        {gates.length > 0 && (
+          <Metric
+            title="Gate checks"
+            value={unfinished ? 'not decided' : `${gatesMet} of ${gates.length} met`}
+            testId="metric-gates"
+            mark={unfinished ? undefined : markProps(markOf(g.outcome, shownFault(t.explanation)))}
+            note={unfinished ? 'A grader check failed with an error, so the checks recorded before it decide nothing.' : gatesMet === gates.length ? 'Every gate check is met, so the trial passes.' : 'A trial passes only when every gate check is met.'}
+            className="col-span-2 lg:col-span-4"
+          />
+        )}
         <Metric title="Cost" value={usd(r.cost_usd + (r.judge_cost_usd ?? 0))} testId="metric-cost" note={`agent ${usd(r.cost_usd)}, judge ${usd(r.judge_cost_usd ?? 0)}`} />
         <Metric title="Tokens" value={r.usage ? `${num(r.usage.input + r.usage.cache_read + r.usage.cache_write)} in, ${num(r.usage.output)} out` : null} testId="metric-tokens" note={r.usage ? `${num(r.usage.cache_read)} read from the cache` : undefined} />
         <Metric title="Duration" value={seconds === null ? null : formatDuration(seconds)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
+        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} gloss={score === null ? undefined : 'extra credit; does not decide pass'} />
       </div>
       {r.error && (
         <div data-testid="grading-error" role="alert" className="rounded-sm border border-danger bg-surface p-3">
@@ -155,7 +178,8 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
       )}
       {!graded && (
         <p data-testid="grading-empty" className="rounded-sm border border-dashed border-line-strong p-4 text-ink-muted">
-          Not graded. The trial ended {g.outcome}, so it is excluded from the results{notGradedThen(g.outcome)}; the grader did not check it.
+          {/* A stopped trial (CANCELLED) in the chip's words, not the record's "run again". */}
+          {g.outcome === 'CANCELLED' ? 'Not graded. You stopped this trial before the model finished, so it is not counted; the grader did not check it.' : <>Not graded. The trial ended {g.outcome}, so it is excluded from the results{notGradedThen(g.outcome)}; the grader did not check it.</>}
         </p>
       )}
       {gates.length > 0 && (
@@ -171,14 +195,16 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
               const f = threw ? null : found(t.task, c);
               return (
                 <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} data-error={String(threw)} data-decisive={String(c.id === decisive)} className="space-y-1 py-2">
+                  {/* A check not met is heavy ink (an X, bold "not met", the found value on a
+                      highlight), never red: red is the grader's own error here (V2c, C8). */}
                   <p className="flex flex-wrap items-center gap-x-2">
-                    {c.met === true ? <Check aria-hidden className="h-3.5 w-3.5 text-ink-muted" strokeWidth={1.75} /> : <X data-testid="check-failed-icon" aria-hidden className="h-3.5 w-3.5 text-danger" strokeWidth={2.25} />}
-                    <span data-testid="check-state" className={`text-xs ${threw || c.met !== true ? 'font-semibold text-danger' : 'text-ink-muted'}`}>{threw ? 'error' : metText(c.met)}</span>
+                    {c.met === true ? <Check aria-hidden className="h-3.5 w-3.5 text-ink-muted" strokeWidth={1.75} /> : <X data-testid="check-failed-icon" aria-hidden className={`h-3.5 w-3.5 ${threw ? 'text-danger' : 'text-ink'}`} strokeWidth={2.5} />}
+                    <span data-testid="check-state" className={`text-xs ${threw ? 'font-semibold text-danger' : c.met !== true ? 'font-semibold text-ink' : 'text-ink-muted'}`}>{threw ? 'error' : metText(c.met)}</span>
                     <code className="break-all font-medium text-ink">{c.id}</code>
                     {c.id === decisive && <span className="rounded-sm border border-line-strong px-1 text-xs text-ink">decisive check</span>}
                   </p>
-                  {requires !== undefined && <p className="break-words pl-5 text-ink-muted">Requires {requires}.</p>}
-                  {f !== null && <p data-testid="check-found" className="break-words pl-5 text-danger">Found {f}.</p>}
+                  {requires !== undefined && <p className="break-words pl-5 text-ink-muted">Requires {tidyCheckText(requires)}.</p>}
+                  {f !== null && <p data-testid="check-found" className="break-words pl-5 text-ink"><span className="rounded-sm bg-canvas px-1 dark:bg-line">Found {f}.</span></p>}
                   {(c.ids ?? []).length > 0 && (
                     <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pl-5">
                       <span className="text-xs text-ink-muted">Evidence:</span>
@@ -192,7 +218,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
                         {failedItems(c.id, c.items, itemLabels).map((i) => (
                           <li key={i.item} data-testid="gate-item" data-item={i.item} data-label={i.label ?? ''} className="break-words">
                             <code className="text-xs text-ink">{i.name}</code>
-                            <span className="text-danger">: {i.why}</span>
+                            <span className="text-ink">: {i.why}</span>
                             {i.label !== null && <span className="ml-2 rounded-sm border border-line-strong px-1 text-xs text-ink">{i.label.replace(/_/g, ' ')}</span>}
                             {i.ids.length > 0 && (
                               <span className="ml-2 inline-flex flex-wrap items-baseline gap-x-2">
@@ -215,9 +241,11 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
           <table className={`${CARD_TABLE} sm:table-fixed sm:break-words`}>
             <thead className="text-xs text-ink-muted">
               <tr>
-                <th scope="col" className="pb-1 pr-3 font-normal sm:w-[40%]">Item</th>
+                {/* The widths keep the Item and quote columns at 160px or more on the shared page
+                    column (P25u V8; verifier-phase-P17i-UI-3-1 F1). */}
+                <th scope="col" className="pb-1 pr-3 font-normal sm:w-[33%]">Item</th>
                 <th scope="col" className="whitespace-nowrap pb-1 pr-3 font-normal sm:w-[4.5rem]">Points</th>
-                <th scope="col" className="whitespace-nowrap pb-1 pr-3 font-normal sm:w-[8.5rem]">Met</th>
+                <th scope="col" className="whitespace-nowrap pb-1 pr-3 font-normal sm:w-[7rem]">Met</th>
                 <th scope="col" className="pb-1 font-normal">Judge quote</th>
               </tr>
             </thead>

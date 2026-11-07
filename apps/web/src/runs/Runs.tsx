@@ -33,9 +33,8 @@ import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { ModelLine } from '../findings/passk.tsx';
-import { Verdict } from '../findings/verdict.tsx';
 import { RunBlocked } from '../findings/why.tsx';
-import { BLOCKING_MARKS, Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, IntervalRow, LINK, markOf, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
+import { BLOCKING_MARKS, Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, IntervalRow, LINK, markOf, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
@@ -212,7 +211,7 @@ function TaskRows({ tasks }: { tasks: Readonly<Record<string, TaskSummary>> }) {
             <a href={hrefWith(patch)} onClick={onNav(patch)} className="min-w-0 break-words font-medium text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink">{id}</a>
             <span data-testid="k-of-n" className="whitespace-nowrap text-right md:text-left">{t.passes}/{t.trials}</span>
             <span className="col-span-2 md:col-span-1"><IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} /></span>
-            <span className="col-span-2 text-xs text-ink-muted md:col-span-1"><span data-testid="wilson">{formatInterval(t.wilson95)}</span> <Verdict task={id} passes={t.passes} trials={t.trials} /></span>
+            <span className="col-span-2 text-xs text-ink-muted md:col-span-1"><span data-testid="wilson">{formatInterval(t.wilson95)}</span> <VerdictChip task={id} passes={t.passes} trials={t.trials} /></span>
           </li>
         );
       })}
@@ -335,12 +334,13 @@ const isFaulted = (t: Trial) => t.explanation.outcome !== 'PASS' || t.explanatio
 // click anywhere on the row that is not on a link, a button or a disclosure (or ends a text
 // selection) opens the trial too, after the wait above. sameAs: the earlier row of this task that
 // shows the same reason, when there is one; then the reason sits in a closed disclosure that names it.
-// The row's left edge is 2 px in its mark's tone (V2b, colour rule C8): ink for a model failure,
+// The row's left edge is 2 px in its mark's tone (V2b, colour rule C8): the FAIL mark token for
+// a model failure (tokens.css mark-fail, the colour of the FAIL swatch in both themes, S1's V1),
 // danger for an environment or grader fault, muted for a trial that is not counted, none on a PASS.
 const edgeOf = (e: Trial['explanation']): string => {
   if (e.outcome === 'PASS') return 'border-l-transparent';
   const mark = markOf(e.outcome, shownFault(e));
-  return BLOCKING_MARKS.includes(mark) ? 'border-l-danger' : mark === 'infra' ? 'border-l-line-strong' : 'border-l-ink';
+  return BLOCKING_MARKS.includes(mark) ? 'border-l-danger' : mark === 'infra' ? 'border-l-line-strong' : 'border-l-mark-fail';
 };
 function TrialRow({ t, run, later, sameAs = null }: { t: Trial; run: RunData; later: Later; sameAs?: string | null }) {
   const e = t.explanation;

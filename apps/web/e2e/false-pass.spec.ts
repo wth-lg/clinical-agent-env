@@ -48,7 +48,8 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(header).toHaveCSS('border-left-color', want);
     await expect(chip).toHaveCSS('border-top-color', want);
     await expect(header.getByTestId('reason')).toHaveText(/^PASS: an audit found a false PASS/);
-    await expect(header.getByTestId('detail-fault')).toContainText('(GR5)');
+    // P25u J20: the rule that decided it, as a sentence with its code.
+    await expect(header.getByTestId('detail-fault')).toContainText('Rule GR5:');
     await expect(header.locator('[data-testid="header-criteria"] li')).toHaveCount(5);
     await expect(header.getByTestId('header-confirmation')).toHaveCount(0);
   });

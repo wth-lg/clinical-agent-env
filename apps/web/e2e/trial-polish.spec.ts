@@ -8,7 +8,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { MET_TEXT } from '../../../packages/core/explain.ts';
 import { browse as browseDefault, browseFrom } from './browse.ts';
-import { explain, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { auditOf, explain, record, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { confirmationWords, faultWhy, plainHeadline } from '../src/trial/headline.ts';
+import { writtenWords } from '../src/trial/steps.ts';
 import { records as sampleRecords, sampleBase, summary as sample } from './fixtures/sample-results/sample.ts';
 import { eventBase, RUN_ID as EVENT_RUN, TRIAL as EVENT_TRIAL } from './fixtures/event/event.ts';
 
@@ -163,23 +165,25 @@ test('F3: a met penalty item shows an alert icon, not a check', async ({ page })
   await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="message_driver"] [data-testid="rubric-met"] svg')).toHaveAttribute('data-mark', 'met');
 });
 
-test('3.3: the header leads with a headline, then Why it failed, Whose fault with the kind pill, and the codes behind "n of 5 confirmed"', async ({ page }) => {
+test('3.3: the header leads with a plain headline, then the chips with the kind pill, Whose fault, Where, the Exact check, and the codes behind "n of 5 confirmed"', async ({ page }) => {
   const e = await explain(TRIALS.failAudited);
   await openTrial(page, TRIALS.failAudited);
   const h = page.getByTestId('trial-header');
   const headline = h.getByTestId('trial-headline');
-  await expect(headline).toContainText(e.decisive_check!.id);
+  // P25u J2: the headline is plain words, with no check id; the exact check is behind a disclosure.
+  await expect(headline).toHaveText(plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy)!);
+  await expect(headline).not.toContainText(e.decisive_check!.id);
   // The headline comes before the verdict chip.
   expect(await headline.evaluate((x) => Boolean(x.compareDocumentPosition(document.querySelector('[data-testid="trial-header"] [data-testid="outcome"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
-  const dts = (await h.locator('dt').allTextContents()).filter((t) => ['Why it failed', 'Whose fault', 'Also failed'].includes(t));
-  expect(dts).toEqual(['Why it failed', 'Whose fault']);
-  await expect(h.locator('dt', { hasText: 'Why it failed' }).locator('xpath=following-sibling::dd[1]')).toHaveAttribute('data-testid', 'decisive-check');
+  const dts = (await h.locator('dt').allTextContents()).filter((t) => ['Why it failed', 'Whose fault', 'Where', 'Exact check', 'Also failed'].includes(t));
+  expect(dts).toEqual(['Whose fault', 'Where', 'Exact check']);
+  await expect(h.locator('dt', { hasText: 'Exact check' }).locator('xpath=following-sibling::dd[1]')).toHaveAttribute('data-testid', 'decisive-check');
   const fault = h.getByTestId('detail-fault');
   await expect(fault.getByRole('link').first()).toHaveText(WORD[e.fault!]!);
-  await expect(fault.getByTestId('kind-pill')).toHaveText(`Kind: ${e.taxonomy!.replace(/_/g, ' ')}`);
+  await expect(h.getByTestId('header-chips').getByTestId('kind-pill')).toHaveText(`Kind: ${e.taxonomy!.replace(/_/g, ' ')}`);
   const criteria = h.getByTestId('header-criteria-summary');
   const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a').length;
-  await expect(criteria).toContainText(`${confirmed} of ${e.criteria.length} confirmed`);
+  await expect(criteria).toContainText(`${confirmed} of ${e.criteria.length} confirmed: ${confirmationWords(e.criteria)}`);
   await expect(h.locator('[data-testid="header-criteria"] li')).toHaveCount(5);
   await expect(h.locator('[data-testid="header-criteria"] li').first()).toBeHidden();
   await criteria.click();
@@ -207,7 +211,8 @@ test('3.4: Attribution opens with its verdict, shows M1-M5 met or not met, and k
       await expect(row).toContainText(`${c.id}: ${MET_TEXT[String(c.met)]}`);
     }
     for (const row of await p.locator('[data-testid="criterion-row"]:not([data-fault="confirmation"])').all()) await expect(row).toBeHidden();
-    if (e.confirmation) await expect(p.getByTestId('confirmation')).toContainText(`${e.confirmation} (M1–M5)`);
+    // Copy rule C5's phrase on a model fault (P25u J8b); the definition for any other fault (gate F4).
+    if (e.confirmation) await expect(p.getByTestId('confirmation')).toContainText(e.fault === 'model' || e.fault === 'refusal' ? `${e.confirmation}: ${confirmationWords(e.criteria)}.` : `${e.confirmation} (M1–M5)`);
   }
 });
 
@@ -261,4 +266,260 @@ test('3.1: at 390 px a step link opens the folded trajectory at that step; at 14
   await expect(page.getByTestId('trajectory-fold')).toHaveAttribute('open', '');
   await expect(page.getByTestId('trajectory-fold').locator('> summary')).toBeHidden();
   await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+});
+
+// P25u S3 (reports/p25u-synthesis.md, slice S3): the trial page for an interviewer opening it cold.
+
+test('J2: the header says why in plain words, keeps the one grader sentence, and puts the exact check behind a closed disclosure', async ({ page }) => {
+  const e = await explain(TRIALS.failAudited);
+  await openTrial(page, TRIALS.failAudited);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const h = page.getByTestId('trial-header');
+  await expect(h.getByTestId('fault-why')).toHaveText(faultWhy(e)!);
+  await expect(h.getByTestId('fault-why')).toContainText("Why it is the model's fault: the records it needed were shown to it or within reach (M1)");
+  // The reason the Runs row shows (trace row U31) stays visible, once.
+  await expect(h.getByTestId('reason')).toBeVisible();
+  await expect(h.getByTestId('reason')).toHaveText(e.reason);
+  await expect(h.getByTestId('reason')).toHaveCount(1);
+  // The requires and found text is closed until asked for, and the check id shows on its summary.
+  const exact = h.getByTestId('exact-check');
+  await expect(exact).not.toHaveAttribute('open');
+  await expect(exact.locator('> summary')).toContainText(e.decisive_check!.id);
+  await expect(h.getByTestId('decisive-found')).toBeHidden();
+  await exact.locator('> summary').click();
+  await expect(h.getByTestId('decisive-found')).toHaveText(e.decisive_check!.found);
+  await expect(h.getByTestId('decisive-check')).toContainText(`requires ${e.decisive_check!.expected}`);
+});
+
+test('J4: Where lists the steps the slip ran through, in order, each a link, with the decisive step among them', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const e = await explain(TRIALS.failAudited);
+  await openTrial(page, TRIALS.failAudited);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const r = record(TRIALS.failAudited);
+  const exposure = r.attribution!.exposure;
+  expect(exposure.length).toBeGreaterThan(0);
+  const list = page.getByTestId('trial-header').getByTestId('where-steps');
+  const items = list.locator('li');
+  const kinds = await items.evaluateAll((els) => els.map((x) => x.getAttribute('data-kind')));
+  expect(kinds.filter((k) => k === 'shown').length).toBe(exposure.filter((x) => x.first_exposed_step !== null).length);
+  expect(kinds.filter((k) => k === 'decisive')).toEqual(['decisive']);
+  const steps = (await items.evaluateAll((els) => els.map((x) => x.getAttribute('data-step')))).filter((s) => s !== '').map(Number);
+  expect(steps).toEqual([...steps].sort((a, b) => a - b));
+  for (const x of exposure) if (x.first_exposed_step !== null) await expect(list.locator(`li[data-kind="shown"][data-step="${x.first_exposed_step}"]`)).toContainText(`${x.id} was first shown to the model`);
+  await expect(list.getByTestId('decisive-step-link')).toHaveText(`Decisive step ${e.decisive_step}`);
+  // Each step is a link that scrolls the trajectory to it.
+  const first = list.getByTestId('where-step-link').first();
+  const n = await first.getAttribute('data-step');
+  await first.click();
+  await expect(page.locator(`#step-${n}`)).toBeInViewport();
+  // The Attribution tab shows the same list in place of the bare decisive step.
+  await page.getByRole('tab', { name: 'Attribution' }).click();
+  await expect(page.getByTestId('panel-attribution').getByTestId('where-steps').locator('li')).toHaveCount(kinds.length);
+});
+
+test('J17, J8b: Attribution leads the human audit with a plain sentence, keeps the note behind a disclosure, and uses the shared confirmation phrase', async ({ page }) => {
+  const e = await explain(TRIALS.failAudited);
+  const audit = auditOf(TRIALS.failAudited)!;
+  await openTrial(page, TRIALS.failAudited, '&tab=attribution');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const p = page.getByTestId('panel-attribution');
+  const headline = plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy)!;
+  await expect(p.getByTestId('audit-plain')).toHaveText(`A person reviewed this trial and agrees it is the model's fault: ${headline.charAt(0).toLowerCase()}${headline.slice(1)}`);
+  if (audit.note) {
+    const note = p.getByTestId('audit-note');
+    await expect(note).not.toHaveAttribute('open');
+    await expect(note.locator('> summary')).toHaveText("Read the auditor's note");
+    await note.locator('> summary').click();
+    await expect(note).toContainText(audit.note);
+  }
+  await expect(p.getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4) and the human audit (M5)');
+  await expect(p.getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
+});
+
+test('V9: Grading opens with the gate result in the verdict\'s mark, and the rubric score comes last with its gloss', async ({ page }) => {
+  const r = record(TRIALS.failAudited);
+  await openTrial(page, TRIALS.failAudited);
+  const p = page.getByTestId('panel-grading');
+  const gates = r.checks!.filter((c) => c.kind !== 'rubric');
+  const met = gates.filter((c) => c.met === true).length;
+  await expect(p.getByTestId('metric-gates')).toHaveText(`Gate checks ${met} of ${gates.length} met`);
+  await expect(p.getByTestId('metric-gates-note')).toHaveText('A trial passes only when every gate check is met.');
+  // The gate tile comes before the score tile, which comes after cost, tokens and duration.
+  const order = await p.locator('[data-testid="metric-gates"], [data-testid="metric-cost"], [data-testid="metric-tokens"], [data-testid="metric-duration"], [data-testid="score-card"]').evaluateAll((els) => els.map((x) => x.getAttribute('data-testid')));
+  expect(order).toEqual(['metric-gates', 'metric-cost', 'metric-tokens', 'metric-duration', 'score-card']);
+  await expect(p.getByTestId('score-card-gloss')).toHaveText('extra credit; does not decide pass');
+  // The tile carries the FAIL mark.
+  await expect(p.getByTestId('metric-gates').locator('span[aria-hidden]')).toHaveCount(1);
+  // A pass says every check is met.
+  await openTrial(page, TRIALS.pass);
+  await expect(page.getByTestId('panel-grading').getByTestId('metric-gates-note')).toHaveText('Every gate check is met, so the trial passes.');
+});
+
+test('J24: a requires text with an empty "()" shows without it', async ({ page }) => {
+  // contrast-ct-prep's radiologist_consulted names the studies a severe reaction stops, and the
+  // fixture's list has none, so the task text ends "stops ()".
+  await openTrial(page, TRIALS.noTrajectory);
+  const row = page.getByTestId('panel-grading').locator('[data-testid="gate-check"][data-id="radiologist_consulted"]');
+  await expect(row).toBeVisible();
+  await expect(row).toContainText('Requires a message or task to the radiologist');
+  await expect(row).not.toContainText('()');
+});
+
+test('V8, V13c: the trial page sits on the page column every other view uses, with the same title size', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.failAudited);
+  const section = page.getByTestId('trial-detail').locator('xpath=ancestor::section[1]');
+  expect(await section.evaluate((x) => getComputedStyle(x).maxWidth)).toBe('1024px');
+  expect(await page.getByRole('heading', { level: 1 }).evaluate((x) => getComputedStyle(x).fontSize)).toBe('20px');
+  await page.getByRole('link', { name: 'Back to Runs' }).click();
+  const runs = page.getByRole('heading', { level: 1 }).locator('xpath=ancestor::section[1]');
+  expect(await runs.evaluate((x) => getComputedStyle(x).maxWidth)).toBe('1024px');
+});
+
+test('V12c: the active trial tab is a filled pill, as the rail\'s active item is', async ({ page }) => {
+  await openTrial(page, TRIALS.failAudited, '&tab=attribution');
+  const active = page.getByRole('tab', { name: 'Attribution' });
+  await expect(active).toHaveAttribute('aria-selected', 'true');
+  expect(await active.evaluate((x) => getComputedStyle(x).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+  expect(await active.evaluate((x) => getComputedStyle(x).borderRadius)).not.toBe('0px');
+  expect(await page.getByRole('tab', { name: 'Grading' }).evaluate((x) => getComputedStyle(x).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+});
+
+test('V14: every evidence id link is at least 24px tall on the desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.failAudited, '&tab=state-diff');
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  const links = page.getByTestId('panel-state-diff').locator('[data-testid="evidence-id"][data-step]');
+  expect(await links.count()).toBeGreaterThan(0);
+  const heights = await links.evaluateAll((els) => els.map((x) => x.getBoundingClientRect().height));
+  for (const h of heights) expect(h).toBeGreaterThanOrEqual(24);
+});
+
+test('V16: a "Skip the trajectory" link before the rows takes the keyboard past them', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.failAudited);
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  const skip = page.getByTestId('skip-trajectory');
+  await skip.focus();
+  await expect(skip).toBeVisible();
+  await skip.press('Enter');
+  await expect(page.locator('#trajectory-end')).toBeFocused();
+});
+
+test('A10: an open tool call shows captioned Arguments and Result lists, and a call the environment refused says so under its closed row', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.envError);
+  const traj = page.getByTestId('trajectory');
+  const failed = traj.locator('[data-testid="step"][data-error="INTERNAL"]').first();
+  await expect(failed).toBeVisible();
+  await expect(failed.getByTestId('step-error')).toHaveText('Failed inside the environment: INTERNAL: the FHIR store failed');
+  await expect(failed.getByTestId('step-detail')).toHaveCount(0);
+  await failed.getByRole('button').first().click();
+  await expect(failed.getByTestId('step-arguments')).toContainText('Arguments');
+  await expect(failed.getByTestId('step-result')).toContainText('Result');
+  await expect(failed.getByTestId('step-detail').locator('pre')).toHaveCount(await failed.getByTestId('step-detail').locator('pre').count());
+  // A key/value list, not a JSON dump of the whole call.
+  await expect(failed.getByTestId('step-detail')).not.toContainText('"input"');
+  await expect(failed.getByTestId('step-arguments').locator('dt').first()).toBeVisible();
+});
+
+test('A11: a written-ids line puts the provenance last and keeps the target whole', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.failAudited);
+  const traj = page.getByTestId('trajectory');
+  const row = traj.locator('[data-testid="step"][data-tool="write_note"]').first();
+  await expect(row).toBeVisible();
+  const written = row.getByTestId('step-written');
+  await expect(written).toHaveText(/^wrote DocumentReference\/doc-t\d+ \+ provenance$/);
+  await expect(written).not.toHaveText(/Provenance\//);
+  // The target of a patient read ("Patient/pt-0061") is whole, not "pt-…".
+  const read = traj.locator('[data-testid="step"][data-tool="fhir_read"]').first();
+  const target = read.getByTestId('step-target');
+  await expect(target).toHaveText(/\S/);
+  expect(await target.evaluate((x) => ({ text: x.textContent, fits: x.scrollWidth <= x.clientWidth + 1 }))).toMatchObject({ fits: true });
+  expect(writtenWords(['Provenance/prov-t0001', 'DocumentReference/doc-t0001'])).toBe('DocumentReference/doc-t0001 + provenance');
+});
+
+// S1 gate F2: a trial the person running it stopped (CANCELLED) reads "Stopped: not counted" on its
+// chip, and the header and the Grading tab say the same, never the record's "excluded and rerun" or
+// "the API or the harness ended the trial" (packages/core wording, which no UI slice edits).
+test('a CANCELLED trial\'s header and Grading tab agree with its chip: stopped, not counted, nothing about the model', async ({ page }) => {
+  // The fixture's INFRA_API record served as a CANCELLED one (its status decides I4).
+  await page.route(`**/data/results/runs/${runOf(TRIALS.infra)}/trials/${TRIALS.infra}.json`, async (route) => {
+    const res = await route.fetch();
+    const r = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({ response: res, json: { ...r, outcome: 'CANCELLED', status: 'CANCELLED', detail: null } });
+  });
+  await openTrial(page, TRIALS.infra);
+  const h = page.getByTestId('trial-header');
+  await expect(h.getByTestId('outcome')).toHaveText('CANCELLED');
+  await expect(h.getByTestId('plain-reason')).toHaveText('Stopped: not counted. You stopped this trial before the model finished, so it says nothing about the model.');
+  await expect(h.getByTestId('reason')).toHaveCount(0);
+  await expect(h.getByTestId('detail-fault')).toContainText('The trial ended when Stop was pressed, not because of anything the model did.');
+  await expect(h.getByTestId('detail-fault')).toContainText('Rule I4: a stop from outside the harness ended the run before the trial ended.');
+  // The chip (data/ui.tsx, S1's A1a) and the page's own words agree: nothing says "rerun" or "API".
+  await expect(h.getByTestId('label')).toHaveText('Stopped: not counted');
+  for (const words of ['excluded and rerun', 'run again', 'API or the harness', 'API problem']) await expect(h).not.toContainText(words);
+  await expect(page.getByTestId('panel-grading').getByTestId('grading-empty')).toHaveText('Not graded. You stopped this trial before the model finished, so it is not counted; the grader did not check it.');
+});
+
+// Gate P25U-S3 F4: M1-M5 confirm a model fault, so copy rule C5's phrase is for model and refusal
+// faults; an environment fault keeps its confirmation state and definition, never "confirmed: not
+// confirmed by the record".
+test('F4: a trial whose fault is not the model\'s keeps the confirmation definition, not the M1-M5 phrase', async ({ page }) => {
+  const e = await explain(TRIALS.envError);
+  expect(e.fault).toBe('env');
+  await openTrial(page, TRIALS.envError, '&tab=attribution');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const confirmation = page.getByTestId('panel-attribution').getByTestId('confirmation');
+  await expect(confirmation).toContainText(`${e.confirmation} (M1–M5)`);
+  await expect(confirmation).not.toContainText('by the record');
+  const summary = page.getByTestId('trial-header').getByTestId('header-criteria-summary');
+  await expect(summary).toContainText(/^\d of 5 confirmed/);
+  await expect(summary).not.toContainText('by the record');
+  // A model fault keeps the phrase.
+  await openTrial(page, TRIALS.failAudited, '&tab=attribution');
+  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4)');
+});
+
+// Gate F6 (latent): the header's Exact check row no longer requires a valid trial, so an excluded
+// trial with a decisive check would keep its requires/found. packages/core/explain.ts:619 gives an
+// excluded trial no decisive check ("no check gave a verdict on the model"), so no record, served
+// or routed, reaches that row today; the condition is covered by trial.spec's header test on every
+// trial with a decisive check.
+
+// Gate F8: a value block that can scroll is a Tab stop (axe scrollable-region-focusable).
+test('F8: a nested value in an open tool call is a focusable block', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openTrial(page, TRIALS.envError);
+  const failed = page.getByTestId('trajectory').locator('[data-testid="step"][data-error="INTERNAL"]').first();
+  await failed.getByRole('button').first().click();
+  const pre = failed.getByTestId('step-result').locator('pre');
+  await expect(pre.first()).toHaveAttribute('tabindex', '0');
+});
+
+// P25u A19 (rail part, after S1): a session trial's page marks Live trial on the rail, where its
+// Your runs list and Back to Live trial lead, while the page itself is the runs view's trial page.
+test('A19: on a session trial page the rail marks Live trial, not Runs', async ({ page }) => {
+  await browseDefault(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  const rail = page.getByRole('navigation', { name: 'Views' });
+  await expect(rail.getByRole('link', { name: 'Live trial' })).toHaveAttribute('aria-current', 'page');
+  await expect(rail.getByRole('link', { name: 'Runs', exact: true })).not.toHaveAttribute('aria-current', 'page');
+  // A published trial keeps Runs.
+  await browseDefault(page, './?view=runs&run=final-1&trial=first-nonpass');
+  await expect(rail.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
+});
+
+test.describe('coarse pointer at 390', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('V6b: the "n of 5 confirmed" summary, the Exact check summary and Back to Runs are 44px targets', async ({ page }) => {
+    await openTrial(page, TRIALS.failAudited);
+    const h = page.getByTestId('trial-header');
+    for (const el of [h.getByTestId('header-criteria-summary'), h.getByTestId('exact-check').locator('> summary'), page.getByRole('link', { name: 'Back to Runs' })]) {
+      const box = (await el.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+  });
 });

@@ -23,18 +23,21 @@
 // reads no published results, so it shows while they load or cannot be read.
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
-import { explainContext } from '../../../../packages/core/explain-context.ts';
-import { explainTrial, MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
+import { fittingAttribution, MET_TEXT, type Explanation, type ExplainRecord } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
-import { checkTextOf, fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
+import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
 import { theTransport } from '../live/transport/select.ts';
 import type { LiveRun, TrialTransport } from '../live/types.ts';
 import { resolveSessionTrial, SESSION_RUN } from './session.ts';
+import { sessionExplanation } from './session-explanation.ts';
 import { MANIFEST } from '../data/world.ts';
 import { frozenWorlds, worldLine, worldStatus } from './world.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
-import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
+// The page column, the h1 and the tab pill are S1's shared classes (P25u V8, V12c, V13c): the
+// trial page sits on the same left edge as every other view, its title is the same size, and a
+// second row of tabs on a phone reads as the same control as the first.
+import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip, PAGE_TITLE, PAGE_WIDTH, TAB, TAB_ACTIVE, TAB_IDLE, TAB_STRIP } from '../data/ui.tsx';
 import { blocksTheRun, relabelledFrom, runBlock, shownFault, shownKind } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -42,17 +45,21 @@ import { MODEL } from '../adapters/ledger-browser.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { useHosted } from '../surface/hosted.ts';
-import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
+import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink, WhereList } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
-import { Grading } from './Grading.tsx';
+import { Grading, tidyCheckText, type CheckRow } from './Grading.tsx';
+import { confirmationWords, faultWhy, isModelFault, plainHeadline } from './headline.ts';
 import { useRubricQuestions } from './questions.ts';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { runWords } from './run-words.ts';
 import { taskTitle } from '../tasks/title.ts';
 import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
+import { whereSteps, type WhereStep } from './where.ts';
+
 
 export const TABS = [
   { id: 'grading', label: 'Grading' },
@@ -86,7 +93,7 @@ const liveBack = (task: string | null): Back => ({ label: 'Back to Live trial', 
 // from: the trial on screen. On open, the page starts at its header with focus on the heading,
 // however far down the list the trial was opened from (review-ui-P16-1 F1); Back to Runs returns
 // to its row (F6).
-function Frame({ title, path, headingRef, from, back = RUNS_BACK, children }: { title: React.ReactNode; path?: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; back?: Back; children: React.ReactNode }) {
+function Frame({ title, headingRef, from, back = RUNS_BACK, children }: { title: ReactNode; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; back?: Back; children: ReactNode }) {
   const h1 = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
     if (from === undefined) return;
@@ -96,14 +103,15 @@ function Frame({ title, path, headingRef, from, back = RUNS_BACK, children }: { 
   }, [from?.run, from?.trial]);
   const nav = onNav(back.patch);
   return (
-    <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+    <section className={`${PAGE_WIDTH} py-4 sm:py-6`}>
+      {/* A 44px target on a touch screen (P25u V6b); the desktop look is unchanged. */}
       <a
         href={hrefWith(back.patch)}
         onClick={(ev) => {
           if (from !== undefined && back.remembers) returnTo(from.run, from.trial);
           nav(ev);
         }}
-        className={`inline-flex items-center gap-1 text-xs ${LINK}`}
+        className={`inline-flex items-center gap-1 text-xs pointer-coarse:min-h-11 ${LINK}`}
       >
         <ArrowLeft aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{back.label}
       </a>
@@ -114,11 +122,10 @@ function Frame({ title, path, headingRef, from, back = RUNS_BACK, children }: { 
           else if (headingRef) (headingRef as React.MutableRefObject<HTMLHeadingElement | null>).current = el;
         }}
         tabIndex={-1}
-        className="mt-2 break-words text-base font-semibold text-ink focus-visible:outline-none"
+        className={`mt-2 break-words ${PAGE_TITLE} focus-visible:outline-none`}
       >
         {title}
       </h1>
-      {path !== undefined && <p data-testid="trial-path" className="mt-0.5 break-all font-mono text-xs text-ink-muted">{path}</p>}
       <div className="mt-2 space-y-4 sm:mt-3">{children}</div>
     </section>
   );
@@ -141,10 +148,6 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   if (r.kind !== 'trial') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">{r.message}</Notice></Frame>;
   return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} frozen={frozenFor(results.frozen, r.trial.task, r.trial.record.env_version)} freezes={results.frozen[r.trial.task] ?? []} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
 }
-
-// The run's place in words: the official run, a superseded version of one of its tasks (R42), a
-// run of this session (trial/session.ts), or a pilot.
-const runWords = (run: RunData): string => (run.official ? ', the official run' : run.superseded !== null ? `, the superseded ${run.superseded.version} of ${run.superseded.task} in ${run.superseded.of}, not counted in the results` : run.kind === 'session' ? ', a run from this session, not in the published results' : ', a pilot run, not counted in the results');
 
 // Where a session trial's events and full explanation come from (SessionDetail), in place of the
 // published trajectory file and fullExplanation.
@@ -180,8 +183,17 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   const e = full ?? t.explanation;
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
+  // The steps that explain the failure (where.ts, J4): the exposure of the decisive ids from the
+  // current grade's attribution, the arrivals from the trajectory, and the decisive step; shown
+  // under Where in the header and on the Attribution tab.
+  const where = useMemo<WhereStep[]>(() => {
+    const auto = fittingAttribution(t.record as ExplainRecord) as { exposure?: Array<{ id: string; first_exposed_step: number | null }> } | null;
+    const modelFault = e.fault === 'model' || e.fault === 'refusal';
+    const arrivals = (traj?.rows ?? []).flatMap((r) => (r.kind === 'arrival' ? [{ step: r.step, keys: r.keys }] : []));
+    return whereSteps({ decisiveStep: e.decisive_step, exposure: modelFault ? (auto?.exposure ?? []) : [], arrivals });
+  }, [t.record, e, traj]);
   return (
-    <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
+    <Frame title={<TrialHeading t={t} run={run} />} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
       {run.kind === 'session' && <SessionBanner />}
       <div
         data-testid="trial-detail"
@@ -199,12 +211,12 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
             : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
           {' '}<WorldLine t={t} freezes={freezes} official={run.official} />
         </p>
-        <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} official={run.official} />
+        <Header t={t} e={e} rows={traj?.rows ?? null} where={where} onStep={onStep} official={run.official} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
-              attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
+              attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} where={where} headline={plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, shownKind(e) === null ? null : e.taxonomy)} onStep={onStep} />,
               'state-diff': <StateDiff official={run.official} superseded={run.superseded} frozen={frozen} freezes={freezes} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
@@ -302,17 +314,6 @@ function SessionDetail({ t, run, transport, tab, headingRef }: { t: Trial; run: 
 
 const NO_FILES: ReadonlySet<string> = new Set();
 
-// A session trial's full explanation: the context the published trial detail builds
-// (fullExplanation), with the events the transport kept and the task's checks and check text,
-// no audit row and no matrix (M4 stays pending). M3 is checked against the app's manifest world
-// (data/world.ts MANIFEST, bundled with the code on every surface), the world every published
-// trial is checked against, never against the record's own hashes.
-async function sessionExplanation(t: Trial, events: readonly TrialEvent[]): Promise<Explanation> {
-  const { taskChecks } = await import('../tasks/matrix-task.ts');
-  const checks = await taskChecks(t.task).catch(() => []);
-  return explainTrial(t.record, null, explainContext({ record: t.record, events, manifest: { world_hash: MANIFEST.world.state_hash }, matrix: null, checks, text: checkTextOf(t.task) }));
-}
-
 function LiveLink() {
   return <a href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))} className={LINK}>Open Live trial</a>;
 }
@@ -335,7 +336,12 @@ function SessionNotice({ hosted }: { hosted: boolean }) {
   );
 }
 
-// One sentence under "Whose fault" for each fault (ui-polish 3.3); the glossary has the definition.
+// One sentence under "Whose fault" for a fault that is not the model's (ui-polish 3.3); for the
+// model's, headline.ts faultWhy says why from the criteria that are met (P25u J2). The glossary
+// has the definition.
+// A trial the person running it stopped (outcome CANCELLED; the live view's A1b says the same).
+export const STOPPED_LINE = 'Stopped: not counted. You stopped this trial before the model finished, so it says nothing about the model.';
+export const STOPPED_GLOSS = 'The trial ended when Stop was pressed, not because of anything the model did.';
 const FAULT_GLOSS: Readonly<Record<Fault, string>> = {
   model: 'The model made the mistake, so the trial counts against it.',
   refusal: 'The model declined the task, which counts as a model failure.',
@@ -344,22 +350,15 @@ const FAULT_GLOSS: Readonly<Record<Fault, string>> = {
   infra: 'The API or the harness ended the trial, so it says nothing about the model.',
 };
 
-// The plain headline above the verdict (ui-polish 3.3), from the decisive check and the kind of
-// failure. An excluded trial has none: its plain "Not counted" line leads instead.
-function headline(e: Explanation): ReactNode {
-  if (!e.valid) return null;
-  if (e.outcome === 'PASS') return e.fault === 'grader' ? 'Passed, but the grader was wrong: an audit found a false PASS.' : 'Passed every gate check.';
-  const kind = shownKind(e);
-  if (e.decisive_check) return <>Failed the check <code className="break-all font-mono text-[0.95em]">{e.decisive_check.id}</code>{kind !== null && <span className="font-normal text-ink-muted"> ({kind})</span>}</>;
-  if (e.outcome === 'REFUSAL') return 'The model refused the task.';
-  if (e.outcome === 'LIMIT') return 'The model did not finish: the trial stopped at a limit.';
-  return `The trial ended ${e.outcome}.`;
-}
-
-// Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
-// once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
-// official: the trial is of the official run; only it can be blocked, so only it takes the danger rule.
-function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void; official: boolean }) {
+// Why the trial ended as it did, before any click (see the header comment), in the order copy rule
+// C1 asks for (P25u J2): the plain headline (headline.ts), the chips (outcome, harm, fault, kind),
+// then Whose fault with the one sentence that says why it is the model's and the rule that decided
+// it (J20), Where with each step the slip ran through (J4), the exact check behind a closed
+// disclosure under the one reason sentence the Runs row shows (trace row U31 reads it here), and
+// the confirmation count with copy rule C5's phrase (J8b). rows: the trajectory, once it loads; an
+// ENV_ERROR's Where is the tool call that failed with an internal error. official: the trial is of
+// the official run; only it can be blocked, so only it takes the danger rule.
+function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanation; rows: readonly Row[] | null; where: readonly WhereStep[]; onStep: (n: number) => void; official: boolean }) {
   // A fault to show: every non-pass, and a false PASS (GR5, P17j JG5), which the grader decided.
   const nonPass = e.outcome !== 'PASS' || e.fault !== null;
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
@@ -368,68 +367,62 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
   const fault = shownFault(e);
   const from = relabelledFrom(e);
   const decided = e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>;
-  // The rule that decided the fault, small and after the gloss, its code a link to its definition.
+  // The rule that decided the fault, as a sentence (J20: "Rule MF1: the trial failed a gate check in
+  // its current grade."), its code a link to its definition, and its evidence under it.
   const rule = e.deciding && (
-    <span className="mt-1 block text-xs text-ink-muted">
-      Rule: decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)
+    <span data-testid="fault-rule" className="mt-1 block text-xs text-ink-muted">
+      Rule <GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>: {criterionPhrase(e.deciding.id)}.
       <span className="block"><HashText text={e.deciding.evidence} /></span>
     </span>
   );
   const kind = shownKind(e);
   const blocking = fault === 'env' || fault === 'grader';
-  const lead = headline(e);
+  const stopped = e.outcome === 'CANCELLED';
+  const lead = plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, kind === null ? null : e.taxonomy);
+  const why = from === null ? faultWhy(e) : null;
   const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a');
   const open = e.criteria.filter((c) => !confirmed.includes(c));
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 ${CARD} p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       {lead !== null && <p data-testid="trial-headline" className="mb-2 break-words text-base font-semibold text-ink">{lead}</p>}
+      {/* A trial the person running it stopped (CANCELLED) says so in the chip's words (S1 A1a,
+          copy rule C4): the record's own reason, from packages/core, says "excluded and rerun",
+          which is not what happened, so the page does not show it (S1 gate F2). */}
       {!e.valid && e.deciding && (
         <p data-testid="plain-reason" className="mb-2 break-words text-base font-semibold text-ink">
-          Not counted: {criterionPhrase(e.deciding.id)}. The {e.fault === 'infra' ? 'infrastructure' : FAULT_WORD[e.deciding.fault]} is at fault, not the model.
+          {stopped ? STOPPED_LINE : <>Not counted: {criterionPhrase(e.deciding.id)}. The {e.fault === 'infra' ? 'infrastructure' : FAULT_WORD[e.deciding.fault]} is at fault, not the model.</>}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div data-testid="header-chips" className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} detail={t.record.detail ?? null} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
+        {kind !== null && <span data-testid="kind-pill" className={`${CHIP} border-line bg-canvas font-normal text-ink dark:bg-line`}>Kind: {kind}</span>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
-      <Reason reason={e.reason} muted={!e.valid} />
+      {/* An excluded trial's record reason stays under its "Not counted" line; a valid trial's is
+          the one grader sentence under Exact check below. */}
+      {!e.valid && !stopped && <Reason reason={e.reason} tone="excluded" />}
+      {/* A valid non-pass with no failed gate check (a limit, a refusal, a false PASS) has no Exact
+          check row, so its one reason sentence sits here. */}
+      {e.valid && nonPass && !e.decisive_check && <div className="mt-2"><Reason reason={e.reason} tone="exact" /></div>}
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 border-t border-line pt-3 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted max-sm:[&_dd+dt]:mt-1.5">
-        {e.decisive_check && (
-          <>
-            <dt>Why it failed</dt>
-            <dd data-testid="decisive-check" data-id={e.decisive_check.id}>
-              <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>
-              {e.decisive_check.traces_to && <span className="text-ink-muted"> (enforces {e.decisive_check.traces_to})</span>}
-              <span className="mt-1 block"><span className="text-ink-muted">requires</span> {e.decisive_check.expected}</span>
-              <span className="block"><span className="text-ink-muted">found</span> <span className="text-danger">{e.decisive_check.found}</span></span>
-            </dd>
-          </>
-        )}
         <dt>Whose fault</dt>
         <dd data-testid="detail-fault">
           {fault === null ? 'none: the trial passed' : (
             <>
               <span className="flex flex-wrap items-center gap-1.5">
                 <GlossaryLink anchor={`fault-${fault}`} className={`${CHIP} ${blocking ? 'border-danger text-danger' : 'border-line-strong text-ink'} hover:bg-canvas`}><span aria-hidden {...markProps(markOf(e.outcome, fault), 'inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]')} />{FAULT_WORD[fault]}</GlossaryLink>
-                {kind !== null && <span data-testid="kind-pill" className={`${CHIP} border-line bg-canvas font-normal text-ink dark:bg-line`}>Kind: {kind}</span>}
               </span>
-              <span className="mt-1 block text-ink">{FAULT_GLOSS[fault]}</span>
+              {why !== null ? <span data-testid="fault-why" className="mt-1 block text-ink">{why}</span> : <span className="mt-1 block text-ink">{stopped ? STOPPED_GLOSS : FAULT_GLOSS[fault]}</span>}
               {from === null ? rule : <span data-testid="fault-relabelled" className="mt-1 block text-sm text-ink-muted">The audit relabelled it; the trial's criteria found {FAULT_NOUN[from]} at fault{e.deciding ? decided : '.'}</span>}
             </>
           )}
         </dd>
-        {e.secondary_reason !== null && (
-          <>
-            <dt>Also failed</dt>
-            <dd data-testid="secondary-reason" className="text-ink-muted">{e.secondary_reason}</dd>
-          </>
-        )}
-        {e.decisive_step !== null && (
+        {where.length > 0 && (
           <>
             <dt>Where</dt>
-            <dd><StepLink n={e.decisive_step} onStep={onStep} testId="decisive-step-link">Decisive step {e.decisive_step}</StepLink></dd>
+            <dd><WhereList where={where} onStep={onStep} /></dd>
           </>
         )}
         {failedCall !== null && (
@@ -438,13 +431,38 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
+        {/* An excluded trial with a failed check keeps the compact requires/found row (gate F6);
+            its reason sits under its "Not counted" line, so the row holds no second copy. */}
+        {e.decisive_check && (
+          <>
+            <dt>Exact check</dt>
+            <dd data-testid="decisive-check" data-id={e.decisive_check.id}>
+              {e.valid && <Reason reason={e.reason} tone="exact" />}
+              <details data-testid="exact-check" className={e.valid ? 'mt-1' : ''}>
+                <summary className="cursor-pointer text-ink-muted pointer-coarse:py-3.5">
+                  <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>
+                  {e.decisive_check.traces_to && <span> (enforces {e.decisive_check.traces_to})</span>}: show what it requires and what the trial left
+                </summary>
+                <span className="mt-1 block"><span className="text-ink-muted">requires</span> {tidyCheckText(e.decisive_check.expected)}</span>
+                <span className="block"><span className="text-ink-muted">found</span> <span data-testid="decisive-found" className="rounded-sm bg-canvas px-1 text-ink dark:bg-line">{e.decisive_check.found}</span></span>
+              </details>
+            </dd>
+          </>
+        )}
+        {e.secondary_reason !== null && (
+          <>
+            <dt>Also failed</dt>
+            <dd data-testid="secondary-reason" className="text-ink-muted">{e.secondary_reason}</dd>
+          </>
+        )}
         <dt>{nonPass ? 'Criteria' : 'Checks'}</dt>
         <dd>
           {!nonPass ? <Confirmation e={e} /> : (
             <details>
-              <summary data-testid="header-criteria-summary" className="cursor-pointer">
+              <summary data-testid="header-criteria-summary" className="cursor-pointer pointer-coarse:py-3.5">
                 {confirmed.length} of {e.criteria.length} confirmed
-                {open.length > 0 && <span className="text-ink-muted"> ({open.map((c) => `${c.id} ${MET_TEXT[String(c.met)]}`).join(', ')})</span>}
+                {/* Copy rule C5's phrase confirms a model fault; another fault's codes not met are listed (gate F4). */}
+                {isModelFault(e) ? <>: <span className="text-ink-muted">{confirmationWords(e.criteria)}</span></> : open.length > 0 && <span className="text-ink-muted"> ({open.map((c) => `${c.id} ${MET_TEXT[String(c.met)]}`).join(', ')})</span>}
               </summary>
               <ul data-testid="header-criteria" className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                 {e.criteria.map((c) => (
@@ -469,21 +487,24 @@ function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
   return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
 }
 
-// The trial page heading (pre-audit M8, P17j JU11): the task's title, then "Trial i of n · <model> ·
-// effort <effort>" (place.ts: i the trial's place among the run's trials of the task, model and
-// effort, n how many there are; the record's own index is in the path); the path sits below in
-// small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
+// The trial page heading (pre-audit M8, P17j JU11): the task's title, then "Trial i of n (id
+// <path>) · <model> · effort <effort>" (place.ts: i the trial's place among the run's trials of the
+// task, model and effort, n how many there are; the id, whose own index counts from 0, sits in
+// the same line in mono so the two numbers cannot be read as one, P25u J21). Words wrap whole, so
+// no token breaks mid-word at 390 px.
 function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
   const { tasks } = useTaskList();
   const task = tasks?.find((x) => x.id === t.task);
   const title = task ? taskTitle(task) : t.task;
   const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
   const place = trialPlace(t, run.trials);
+  const id = <span data-testid="trial-path" className="font-mono text-xs">{t.name}</span>;
   return (
     <>
       <span data-testid="trial-title">{title}</span>
       <span data-testid="trial-sub" className="block text-sm font-normal text-ink-muted">
-        {[place !== null ? `Trial ${place.i} of ${place.n}` : null, r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).join(' · ')}
+        {place !== null ? <>Trial {place.i} of {place.n} (id {id})</> : <>Trial (id {id})</>}
+        {[r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).map((x) => <span key={x}> · {x}</span>)}
       </span>
     </>
   );
@@ -529,10 +550,12 @@ function Confirmation({ e }: { e: Explanation }) {
 
 // The reason as explainTrial gives it; a model failure's '; Kind: ...' on a line of its own
 // (review-ui-P16-1 F5). The text is unchanged: the separator stays for screen readers.
-function Reason({ reason, muted }: { reason: string; muted: boolean }) {
+// tone: an excluded trial's record reason in small mono under its "Not counted" line; a valid
+// trial's grader sentence in muted text under Exact check, so the plain lines above it lead (J2).
+function Reason({ reason, tone }: { reason: string; tone: 'excluded' | 'exact' }) {
   const at = reason.indexOf('; Kind: ');
   return (
-    <p data-testid="reason" className={`mt-2 break-words ${muted ? 'font-mono text-xs text-ink-muted' : 'font-medium text-ink'}`}>
+    <p data-testid="reason" className={`break-words ${tone === 'excluded' ? 'mt-2 font-mono text-xs text-ink-muted' : 'text-sm text-ink-muted'}`}>
       {at < 0 ? reason : <>{reason.slice(0, at)}<span className="sr-only">; </span><span data-testid="reason-kind" className="block font-normal text-ink-muted">{reason.slice(at + 2)}</span></>}
     </p>
   );
@@ -556,7 +579,7 @@ function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.Rea
   };
   return (
     <div className={`min-w-0 ${CARD} lg:order-2`}>
-      <div role="tablist" aria-label="Trial" onKeyDown={onKey} className="flex flex-wrap gap-x-1 border-b border-line px-2">
+      <div role="tablist" aria-label="Trial" onKeyDown={onKey} className={`${TAB_STRIP} border-b border-line`}>
         {TABS.map((x) => (
           <button
             key={x.id}
@@ -570,7 +593,7 @@ function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.Rea
             aria-controls={`panel-${x.id}`}
             tabIndex={x.id === tab ? 0 : -1}
             onClick={() => go(x.id)}
-            className={`-mb-px border-b-2 px-2 py-2 text-sm ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+            className={`${TAB} ${x.id === tab ? TAB_ACTIVE : TAB_IDLE}`}
           >
             {x.label}
           </button>
