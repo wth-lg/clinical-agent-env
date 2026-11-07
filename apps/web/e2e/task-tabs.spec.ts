@@ -78,10 +78,11 @@ test('a click selects a tab; closing the task and opening another starts on the 
   await tablist(page).getByRole('tab', { name: 'Reference solution' }).click();
   await expectSelected(page, 'reference-solution');
   await expect(page).toHaveURL(/[?&]tab=reference-solution(&|$)/);
-  await card(page).getByRole('button', { expanded: true }).click();
+  // The card opens and closes from its title link (P25u J12).
+  await card(page).getByRole('link', { expanded: true }).click();
   await expect(page).not.toHaveURL(/[?&]tab=/);
   await expect(card(page).getByRole('tablist')).toHaveCount(0);
-  await card(page).getByRole('button', { expanded: false }).click();
+  await card(page).getByRole('link', { expanded: false }).click();
   await expectSelected(page, 'prompt');
 });
 
@@ -139,7 +140,7 @@ test('an oracle result started on a closed card is still shown after the card op
   await browse(page, new URL('./?view=tasks', await sampleBase(test.info().project.use.baseURL!)).href);
   await card(page).getByTestId('validation').getByRole('button', { name: 'Run reference solution' }).click();
   await expect(card(page).getByTestId('oracle-result')).toHaveAttribute('data-outcome', 'PASS', { timeout: 120_000 });
-  await card(page).getByRole('button', { expanded: false }).click();
+  await card(page).getByRole('link', { expanded: false }).click();
   await tablist(page).getByRole('tab', { name: 'Grader validation' }).click();
   await expect(card(page).getByTestId('task-panel-grader-validation').getByTestId('oracle-result')).toHaveAttribute('data-outcome', 'PASS');
 });

@@ -11,8 +11,7 @@ import type { ReactNode } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { noPassCount } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
-import { formatInterval, GlossaryLink, IntervalRow } from '../data/ui.tsx';
-import { Verdict } from './verdict.tsx';
+import { formatInterval, GlossaryLink, IntervalRow, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
@@ -47,7 +46,7 @@ function RateCells({ run, r }: { run: RunData; r: Rate }) {
         ? <a href={hrefWith(toTask(run.runId, r.task))} onClick={onNav(toTask(run.runId, r.task))} className={`whitespace-nowrap text-right ${link}`}>{r.passes}/{r.valid}</a>
         : <span className="whitespace-nowrap text-right text-ink-muted">{r.passes}/{r.valid}</span>}
       <span className="hidden sm:block"><IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (${run.runId})`} /></span>
-      <span className="text-right sm:text-left"><span data-testid="wilson" className="block whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span><Verdict task={r.task} passes={r.passes} trials={r.valid} className="block" /></span>
+      <span className="text-right sm:text-left"><span data-testid="wilson" className="block whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span><span className="my-0.5 block"><VerdictChip task={r.task} passes={r.passes} trials={r.valid} /></span></span>
     </>
   );
 }
