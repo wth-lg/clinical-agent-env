@@ -90,9 +90,11 @@ accessible name or text node, so they share one line of the snapshot.
 
 ### P13: shell, surface chip and key gate
 
-- `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Attribution`: the rail
+- `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Glossary`: the rail
   labels, in this order (apps/web/src/shell/views.ts). All seven show on every screen of the
-  shell.
+  shell. The last was `Attribution` until the P25u UI/UX pass (builder-331, J7a): that word is
+  also a trial's tab, so one word pointed at two places; the view id, `?view=glossary`, is
+  unchanged, and the trial tab keeps `Attribution`.
 - `Add an API key`: the key gate's heading over the key field (an h2 under the welcome h1 "See an AI
   model do clinical tasks"), shown when no key is set and again after Forget key.
 - `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted

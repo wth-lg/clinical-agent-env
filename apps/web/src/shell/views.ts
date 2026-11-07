@@ -1,4 +1,7 @@
-// The rail's views (apps/web/src/data/ViewBody.tsx renders each).
+// The rail's views (apps/web/src/data/ViewBody.tsx renders each). The labels are the seven rail
+// labels docs/requirements/ui-contract.md P13 lists, in this order. The reference page is
+// "Glossary" (P25u J7a): it was "Attribution", which is also a trial's tab, so one word pointed
+// at two places; the trial tab keeps "Attribution" (copy rule C3).
 import { BookOpen, Database, FileText, History, LayoutDashboard, ListChecks, Play, type LucideIcon } from 'lucide-react';
 
 export interface View {
@@ -14,7 +17,7 @@ export const VIEWS: readonly View[] = [
   { id: 'live', label: 'Live trial', icon: Play },
   { id: 'findings', label: 'Findings', icon: FileText },
   { id: 'environment', label: 'Environment', icon: Database },
-  { id: 'glossary', label: 'Attribution', icon: BookOpen },
+  { id: 'glossary', label: 'Glossary', icon: BookOpen },
 ];
 
 export const DEFAULT_VIEW = VIEWS[0]!;

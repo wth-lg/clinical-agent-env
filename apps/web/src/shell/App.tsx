@@ -5,9 +5,11 @@ import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
 import { HostedContext, isHosted } from '../surface/hosted.ts';
 import { LOCAL_RUN_PANEL_ID, LocalRunPanel } from '../surface/LocalRunPanel.tsx';
+import { PAGE_WIDTH } from '../data/ui.tsx';
 import { ViewBody } from '../data/ViewBody.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { Rail } from './Rail.tsx';
+import { BASE_TITLE, documentTitle } from './title.ts';
 import { TopBar } from './TopBar.tsx';
 import { viewFromUrl, viewHref } from './views.ts';
 
@@ -30,8 +32,12 @@ const rememberBrowsing = () => {
   }
 };
 
-// The views that show the "Run it on your computer" card on the hosted site.
-const RUN_PANEL_VIEWS = ['overview', 'tasks'];
+// The views that show the "Run it on your computer" card on the hosted site: Live trial too, where
+// running locally matters most and a visitor with no key had only Add key (P25u J15). On Live
+// trial it shows only with no key: with a key, a trial the relay stops shows the same card under
+// its error (live/LiveTrial.tsx), and one page never holds the card twice.
+const RUN_PANEL_VIEWS = ['overview', 'tasks', 'live'];
+const showsRunPanel = (view: string, keyKind: string) => RUN_PANEL_VIEWS.includes(view) && (view !== 'live' || keyKind === 'none');
 
 // The app shell: the key gate first when there is no key and the tab has not chosen to browse,
 // then the rail, the top bar and the view named in ?view=.
@@ -62,11 +68,20 @@ export function App({ surface }: { surface: Surface }) {
     return () => removeEventListener(ADD_KEY_EVENT, onAdd);
   }, []);
 
+  // The URL as last navigated, so the tab's title follows a trial or task change inside one view.
+  const [href, setHref] = useState(() => location.href);
   useEffect(() => {
-    const onPop = () => setView(viewFromUrl(location.href));
+    const onPop = () => {
+      setView(viewFromUrl(location.href));
+      setHref(location.href);
+    };
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
   }, []);
+  // The tab's title names the view and what it shows (P25u J13); the gate keeps the full name.
+  useEffect(() => {
+    document.title = gate ? BASE_TITLE : documentTitle(href);
+  }, [gate, href]);
 
   async function onForget() {
     setNotice(undefined);
@@ -140,9 +155,9 @@ export function App({ surface }: { surface: Surface }) {
             <ErrorBoundary key={view.id}>
               <ViewBody id={view.id} headingRef={heading} />
             </ErrorBoundary>
-            {hosted && RUN_PANEL_VIEWS.includes(view.id) && (
+            {hosted && showsRunPanel(view.id, status.kind) && (
               // The page column's width and gutters (data/ui.tsx Page), so its edges line up with the cards above.
-              <div className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
+              <div className={`${PAGE_WIDTH} pb-6`}>
                 <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} />
               </div>
             )}
