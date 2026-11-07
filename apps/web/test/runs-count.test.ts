@@ -23,4 +23,10 @@ describe('shownCountLine', () => {
     expect(shownCountLine({ official: null, pilots: 75, superseded: 0, filtered: false })).toBe('Showing 75 trials in pilots, not counted in the results');
     expect(shownCountLine({ official: null, pilots: 0, superseded: 0, filtered: true })).toBe('Showing 0 trials');
   });
+  it('uses the singular for one trial, and with a filter the noun of the total (gate P25U-S2 F2)', () => {
+    expect(shownCountLine({ official: { shown: 1, total: 1 }, pilots: 0, superseded: 0, filtered: false })).toBe('Showing 1 official trial');
+    expect(shownCountLine({ official: { shown: 1, total: 120 }, pilots: 1, superseded: 0, filtered: true })).toBe('Showing 1 of 120 official trials (1 more in pilots, not counted)');
+    expect(shownCountLine({ official: { shown: 1, total: 1 }, pilots: 0, superseded: 0, filtered: true })).toBe('Showing 1 of 1 official trial');
+    expect(shownCountLine({ official: null, pilots: 1, superseded: 0, filtered: false })).toBe('Showing 1 trial in pilots, not counted in the results');
+  });
 });

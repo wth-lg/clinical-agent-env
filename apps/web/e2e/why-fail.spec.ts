@@ -272,7 +272,9 @@ test('a blocked pilot gives no pass count: its Runs header, its Overview line an
 // run, or a pilot shown under it): under pass it is a pass count, and under the other labels the
 // pass count is the total less their sum. A list with no blocked run keeps its counts
 // (verifier-phase-P17i-UI-FU-1 B1; coordinator, builder-227 handshake).
-const anyCount = /\d+ of \d+ trials/;
+// Any form of the Runs count line (runs/count.ts, P25u J9): "Showing <n> ...", or the older
+// "<k> of <n> trials". Not a bare "\d+ trials": the grading line "(20 trials, ...)" holds one.
+const anyCount = /\bShowing \d+|\d+ of \d+ (official )?trials/;
 const LABELS = ['', 'model', 'grader', 'environment', 'infra', 'pass'];
 const queries = LABELS.flatMap((l) => ['', '&task=renal-dose-review'].map((t) => `./?view=runs${l === '' ? '' : `&label=${l}`}${t}`));
 async function noCount(page: Page, trials: number) {
@@ -306,12 +308,12 @@ test('Runs keeps its trial count for every label when no run in the list is bloc
   for (const q of queries) {
     await browse(page, q);
     // The count leads with the official trials (P25u J9, runs/count.ts).
-    await expect(page.getByTestId('shown-count'), q).toHaveText(/^Showing \d+( of \d+)? official trials/);
+    await expect(page.getByTestId('shown-count'), q).toHaveText(/^Showing \d+( of \d+)? official trials?( \(\d+ more in [a-z ]+, not counted\))?$/);
     await expect(page.getByTestId('run-blocked'), q).toHaveCount(0);
     await expect(page.getByTestId('shown-count-held'), q).toHaveCount(0);
   }
   await browse(page, './?view=runs&label=pass');
-  await expect(page.getByTestId('shown-count')).toHaveText(/^Showing [1-9]\d* of \d+ official trials/);
+  await expect(page.getByTestId('shown-count')).toHaveText(/^Showing [1-9]\d* of \d+ official trials?( \(\d+ more in [a-z ]+, not counted\))?$/);
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {
