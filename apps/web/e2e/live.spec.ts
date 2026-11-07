@@ -506,7 +506,8 @@ test('each Run size shows its projected cost, and a size over the session cap is
   await expect(page.getByTestId('size-reason')).toHaveText('Run ×3 needs a cap of $23 or more; ×10 and ×20 need more still.');
   // P25u A6: the meter counts money held for running trials, so it says committed, with a title that says so.
   await expect(page.getByTestId('spend-meter')).toHaveText('Committed $0.01 of $20.00 cap');
-  await expect(page.getByTitle('Includes the most a running trial can still cost')).toContainText('of $20.00');
+  await expect(page.getByTitle('Session spend against the session cap, including the most a running trial can still cost')).toContainText('of $20.00');
+  await expect(page.getByRole('progressbar', { name: 'Session spend committed against the cap' })).toBeVisible();
   await page.getByRole('button', { name: 'Raise cap to $25' }).click();
   await expect(page.getByRole('button', { name: 'Run ×3', exact: true })).toBeEnabled();
   await expect(page.getByTestId('size-reason')).toHaveText('Run ×10 needs a cap of $77 or more; ×20 needs more still.');
@@ -517,7 +518,7 @@ test('each Run size shows its projected cost, and a size over the session cap is
   await page.getByRole('button', { name: 'Set cap' }).click();
   for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeEnabled();
   await expect(page.getByTestId('size-reason')).toHaveCount(0);
-  await expect(page.getByTitle('Includes the most a running trial can still cost')).toContainText('of $250.00');
+  await expect(page.getByTitle('Session spend against the session cap, including the most a running trial can still cost')).toContainText('of $250.00');
   await page.reload();
   // The key was not remembered: the key gate asks again and shows the cap set on this page.
   await expect(page.getByLabel('Session spend cap (USD)')).toHaveValue('250');

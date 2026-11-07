@@ -2050,7 +2050,7 @@
           }
         }
       ],
-      "note": "P25u fix (builder-335, A6): the meter reads 'Committed $<a> of $<b> cap' (apps/web/src/spend/SpendMeter.tsx), with the title 'Includes the most a running trial can still cost'. It read 'Session spend $<a> of $<b> cap' before, and during a trial that had cost $0.00 the reserved amount read as money already spent. The figure, its source (GET /api/spend on the local runner, the tab ledger's exposure on the hosted site) and the ledger tests are unchanged; the pattern follows the screen. The row's snapshot is still owed by the next audit.",
+      "note": "P25u fix (builder-335, A6): the meter reads 'Committed $<a> of $<b> cap' (apps/web/src/spend/SpendMeter.tsx), with the title 'Session spend against the session cap, including the most a running trial can still cost' and the bar's accessible name 'Session spend committed against the cap', so the requirement (the session's spend against the session cap) keeps its meaning. It read 'Session spend $<a> of $<b> cap' before, and during a trial that had cost $0.00 the reserved amount read as money already spent. The figure, its source (GET /api/spend on the local runner, the tab ledger's exposure on the hosted site) and the ledger tests are unchanged; the pattern follows the screen. The row's snapshot is still owed by the next audit.",
       "phase": "P15"
     },
     {

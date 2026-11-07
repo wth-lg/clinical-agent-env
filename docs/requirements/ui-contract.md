@@ -341,7 +341,9 @@ launcher (P15) shows the Run lines.
 
 - `claude-opus-5-5`: the model shown in the Run launcher.
 - The spend meter in the top bar reads `Committed $<a> of $<b> cap`, both in dollars with two
-  decimals, b the session cap, with the title `Includes the most a running trial can still cost`.
+  decimals, b the session cap, with the title `Session spend against the session cap, including the
+  most a running trial can still cost` and the bar's accessible name `Session spend committed
+  against the cap`, so the meter still says it is the session's spend against the session cap.
   P25u A6 renamed it from `Session spend $<a> of $<b> cap`: a holds the money reserved for
   running trials too, so during a trial that had cost $0.00 the old label read as money already
   spent. On the local runner a is the runner session's committed spend,
