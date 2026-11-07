@@ -163,7 +163,8 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
   await browse(page, './?view=runs');
   await page.locator('[data-testid="trial-row"][data-outcome="FAIL"]').first().getByRole('link', { name: /How the model label is given/ }).click();
   await expect(page).toHaveURL(/view=glossary/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+  // The page is the Glossary (P25u J7b); "How failures are attributed" is the link that opens it.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
   for (const f of FAULT_PRECEDENCE) {
     await expect(page.locator(`[data-testid="fault-sentence"][data-fault="${f}"]`)).toHaveText(FAULT_DEFINITIONS[f].sentence);
     for (const c of FAULT_DEFINITIONS[f].criteria) await expect(page.locator(`[data-testid="criterion"][data-id="${c.id}"]`).getByTestId('criterion-text')).toHaveText(c.text);
@@ -189,7 +190,7 @@ test('the trial detail says each criterion and the fault in words, linked to the
   const text = FAULT_DEFINITIONS.model.criteria[0]!.text.replace(/\.$/, '');
   await expect(detail.getByTestId('detail-fault')).toContainText(`decided by ${text.charAt(0).toLowerCase()}${text.slice(1)}`);
   await detail.getByRole('link', { name: 'model', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
   await expect(page).toHaveURL(/#fault-model$/);
 });
 
