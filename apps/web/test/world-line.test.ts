@@ -41,12 +41,14 @@ describe('worldStatus and worldLine', () => {
 
   it('writes the line with the short hash and the words the UI contract lists', () => {
     const task = 'contrast-ct-prep';
-    expect(worldLine(worldStatus(MANIFEST, MANIFEST, [], true), task)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest.`);
-    expect(worldLine(worldStatus(MANIFEST, MANIFEST, all, true), task, all)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest, not the frozen world of ${task} (${shortHash(EARLIER)}).`);
+    // P25u J3: today's manifest world is "today's build" on every screen, with the contract's
+    // `matches the manifest` kept (S5, builder-333, chose the words).
+    expect(worldLine(worldStatus(MANIFEST, MANIFEST, [], true), task)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest, today's build.`);
+    expect(worldLine(worldStatus(MANIFEST, MANIFEST, all, true), task, all)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest, today's build, not the frozen world of ${task} (${shortHash(EARLIER)}).`);
     expect(worldLine(worldStatus(EARLIER, MANIFEST, all, false), task)).toBe(`World ${shortHash(EARLIER)}: matches the frozen world of ${task}.`);
     expect(worldLine(worldStatus(SUP, MANIFEST, all, false), task)).toBe(`World ${shortHash(SUP)}: matches the frozen world of ${task} v1 (superseded).`);
     expect(worldLine(worldStatus(OLDER, MANIFEST, all, true), task)).toBe(`World ${shortHash(OLDER)}: matches the frozen world of ${task} before its re-freeze (tag freeze-t1).`);
-    expect(worldLine(worldStatus('e'.repeat(64), MANIFEST, all, true), task)).toBe(`World ${shortHash('e'.repeat(64))}: matches neither today's manifest nor a frozen world of ${task}.`);
+    expect(worldLine(worldStatus('e'.repeat(64), MANIFEST, all, true), task)).toBe(`World ${shortHash('e'.repeat(64))}: matches neither today's build nor a frozen world of ${task}.`);
     expect(worldLine(worldStatus(null, MANIFEST, all, true), task)).toBe('World not recorded.');
     expect(shortHash(EARLIER)).toBe(`${'b'.repeat(12)}…`);
     for (const s of ['matches the manifest', 'matches the frozen world of']) expect(contract, s).toContain(`\`${s}\``);

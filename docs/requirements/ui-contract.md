@@ -231,20 +231,23 @@ launcher (P15) shows the Run lines.
 - `18 tools`: the tool count on Environment (it equals the registry length; update both here and
   in trace.json if the registry changes).
 - `exposed_ids`: a field of the Try a read tool result.
-- `matches the manifest`: the Check a fresh copy matches result when the state hash equals the manifest, and
-  the first line of a trial's State diff tab (P16) when the trial's initial state hash equals
-  the manifest hash. The trial header's run line names the world on every trial
-  (apps/web/src/trial/world.ts). On today's world it reads `World <hash>…: matches the manifest.`.
+- `matches the manifest`: the Check a fresh copy matches result when the world hash equals the manifest, and
+  the first line of a trial's State diff tab (P16) when the trial's initial world hash equals
+  the manifest hash. On screen the manifest world is "today's build" and a hash is a "world hash"
+  (P25u J3, copy rule C3; the Environment view and the trial page use the same words), so the
+  contract string reads `matches the manifest, today's build`. The trial header's run line names
+  the world on every trial (apps/web/src/trial/world.ts). On today's world it reads
+  `World <hash>…: matches the manifest, today's build.`.
   On an official trial whose initial hash is its task's frozen world in results/tasks-final.json
   (R37) it reads `World <hash>…: matches the frozen world of <task>.`. The State diff line then
-  reads `Initial state hash <hash>… matches the frozen world of <task> (results/tasks-final.json),
-  not today's manifest (<hash>…).` with the replay tag and commit. The hash is compared with every
+  reads `Initial world hash <hash>… matches the frozen world of <task> (results/tasks-final.json),
+  not today's build (<hash>…).` with the replay tag and commit. The hash is compared with every
   frozen world of the task, whatever the run: a superseded version's world reads
   `matches the frozen world of <task> v1 (superseded).`, and the world a re-frozen task kept under
   `previous` reads `matches the frozen world of <task> before its re-freeze (tag <tag>).`. An
   official trial on today's manifest whose task is frozen on another world reads
-  `matches the manifest, not the frozen world of <task> (<hash>…).`. On any other world it reads
-  `World <hash>…: matches neither today's manifest nor a frozen world of <task>.`, and with no
+  `matches the manifest, today's build, not the frozen world of <task> (<hash>…).`. On any other world it reads
+  `World <hash>…: matches neither today's build nor a frozen world of <task>.`, and with no
   hash `World not recorded.`. The P25c audit found final-1's first non-pass trial,
   contrast-ct-prep/0, on that task's frozen world. So the row N13 expects
   `matches the frozen world of`, which that trial's header and State diff line complete with

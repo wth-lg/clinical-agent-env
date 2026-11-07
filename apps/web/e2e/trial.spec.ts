@@ -140,7 +140,9 @@ test('the header shows outcome, label, decisive check and reason of each non-pas
     if (e.fault === 'infra') await expect(h.getByTestId('label')).toHaveText('API problem: not counted, run again');
     else await expect(h.getByTestId('label')).toHaveText(`${e.label}${e.label_subtype ? ` (${e.label_subtype})` : ''}`);
     await expect(h.getByTestId('not-audited')).toHaveCount(e.audited || e.fault === 'infra' ? 0 : 1);
-    if (e.decisive_check) {
+    // The exact check sits behind a closed disclosure on a valid trial (P25u J2); its text is in
+    // the DOM either way. An excluded trial has no Exact check row: its record reason leads.
+    if (e.decisive_check && e.valid) {
       const d = h.getByTestId('decisive-check');
       await expect(d).toHaveAttribute('data-id', e.decisive_check.id);
       await expect(d.getByTestId('decisive')).toHaveText(e.decisive_check.id);
@@ -148,7 +150,8 @@ test('the header shows outcome, label, decisive check and reason of each non-pas
       await expect(d).toContainText(`requires ${e.decisive_check.expected}`);
       await expect(d).toContainText(`found ${e.decisive_check.found}`);
     } else await expect(h.getByTestId('decisive-check')).toHaveCount(0);
-    if (e.deciding) await expect(h.getByTestId('detail-fault')).toContainText(`(${e.deciding.id})`);
+    // The rule that decided the fault, as a sentence with its code (J20).
+    if (e.deciding) await expect(h.getByTestId('detail-fault')).toContainText(`Rule ${e.deciding.id}:`);
     await expect(h.getByTestId('decisive-step-link')).toHaveCount(e.decisive_step === null ? 0 : 1);
     // The full explanation (trajectory, checks, world) agrees once it arrives.
     if (hasTrajectory(name)) await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
@@ -208,7 +211,7 @@ test('Replay in State diff runs in the tab with no key and reproduces the final 
   const r = record(TRIALS.failAudited);
   await openTrial(page, TRIALS.failAudited, '&tab=state-diff');
   const p = panel(page, 'state-diff');
-  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial state hash matches the manifest/);
+  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial world hash matches the manifest, today's build/);
   await expect(p.getByTestId('hash-initial')).toHaveAttribute('data-hash', r.state_hash.initial!);
   await expect(p.getByTestId('hash-final')).toHaveAttribute('data-hash', r.state_hash.final!);
   await p.getByRole('button', { name: 'Replay' }).click();
@@ -494,7 +497,8 @@ test('the header and Grading say it in plain words: one word per fault, a plain 
     const h = page.getByTestId('trial-header');
     const fault = h.getByTestId('detail-fault');
     await expect(fault.getByRole('link').first()).toHaveText(WORD[e.fault!]!);
-    await expect(fault).toContainText(/decided by [a-z]/);
+    // "Rule MF1: the trial failed a gate check in its current grade." (P25u J20)
+    await expect(fault.getByTestId('fault-rule')).toHaveText(/^Rule [A-Z]+\d+: [a-z][^.]*\./);
     if (!e.valid) {
       // An excluded trial: a plain line first, then the record's reason.
       const plain = h.getByTestId('plain-reason');
@@ -509,7 +513,7 @@ test('the header and Grading say it in plain words: one word per fault, a plain 
   await expect(g).not.toContainText(/\bA ENV_ERROR\b/);
 });
 
-test('a failed gate check stands out: a cross, the found value in the danger colour, failed checks first, the decisive one marked (F7)', async ({ page }) => {
+test('a failed gate check stands out in ink, not red: a heavy cross, bold "not met", the found value highlighted, failed checks first, the decisive one marked (F7, P25u V2c)', async ({ page }) => {
   const e = await explain(TRIALS.failAudited);
   await openTrial(page, TRIALS.failAudited);
   const rows = panel(page, 'grading').getByTestId('gate-check');
@@ -518,21 +522,40 @@ test('a failed gate check stands out: a cross, the found value in the danger col
   expect(met).toEqual([...met].sort((a, b) => Number(a === 'true') - Number(b === 'true')));
   const failed = panel(page, 'grading').locator('[data-testid="gate-check"][data-met="false"]');
   expect(await failed.count()).toBeGreaterThan(0);
-  const danger = await page.evaluate(() => {
+  const colour = (cls: string) => page.evaluate((c) => {
     const probe = document.createElement('span');
-    probe.className = 'text-danger';
+    probe.className = c;
     document.body.append(probe);
-    const c = getComputedStyle(probe).color;
+    const v = getComputedStyle(probe).color;
     probe.remove();
-    return c;
-  });
+    return v;
+  }, cls);
+  const danger = await colour('text-danger');
+  const ink = await colour('text-ink');
+  // Red means the environment, the grader, an error or harm, never the model (copy rule C8): on a
+  // model-fault trial the not-met checks and the found text are ink.
   for (let i = 0; i < (await failed.count()); i++) {
     const row = failed.nth(i);
     await expect(row.getByTestId('check-failed-icon')).toHaveCount(1);
+    expect(await row.getByTestId('check-failed-icon').evaluate((x) => getComputedStyle(x).color)).toBe(ink);
+    await expect(row.getByTestId('check-state')).toHaveText('not met');
+    expect(await row.getByTestId('check-state').evaluate((x) => getComputedStyle(x).fontWeight)).toBe('600');
     const found = row.getByTestId('check-found');
-    if (await found.count()) expect(await found.evaluate((x) => getComputedStyle(x).color)).toBe(danger);
+    if (await found.count()) {
+      expect(await found.evaluate((x) => getComputedStyle(x).color)).toBe(ink);
+      expect(await found.evaluate((x) => getComputedStyle(x).color)).not.toBe(danger);
+    }
   }
+  // The header's found value is ink too, inside the Exact check disclosure.
+  expect(await page.getByTestId('trial-header').getByTestId('decisive-found').evaluate((x) => getComputedStyle(x).color)).toBe(ink);
   await expect(panel(page, 'grading').locator(`[data-testid="gate-check"][data-id="${e.decisive_check!.id}"]`)).toHaveAttribute('data-decisive', 'true');
+  // A check that threw is the grader's own error, and keeps the danger colour.
+  await openTrial(page, TRIALS.graderError);
+  const threw = panel(page, 'grading').locator('[data-testid="gate-check"][data-error="true"]');
+  await expect(threw).toHaveCount(1);
+  await expect(threw.getByTestId('check-state')).toHaveText('error');
+  expect(await threw.getByTestId('check-state').evaluate((x) => getComputedStyle(x).color)).toBe(danger);
+  await openTrial(page, TRIALS.failAudited);
   // The header of a model-fault trial has a neutral rule (verifier JU2-1 F3: only a trial that blocks
   // the run, an environment or grader fault, gets the danger rule; fault-tone.spec checks that one).
   const neutral = await page.evaluate(() => {
@@ -580,7 +603,7 @@ test('a trial from another world: Replay says its differing hash is expected, no
   });
   await openTrial(page, TRIALS.failAudited, '&tab=state-diff');
   const p = panel(page, 'state-diff');
-  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial state hash does not match the manifest/);
+  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial world hash does not match the manifest, today's build/);
   await expect(p.getByTestId('replay-note')).toContainText('expected to differ');
   await p.getByRole('button', { name: 'Replay' }).click();
   const result = p.getByTestId('replay-result');

@@ -16,6 +16,8 @@ import type { Trial } from '../data/results.ts';
 import { shownFault } from '../data/failures.ts';
 import { GlossaryLink, HashText } from '../data/ui.tsx';
 import { CARD_TABLE, CELL_LABEL, EvidenceId, Section } from './Grading.tsx';
+import { confirmationWords } from './headline.ts';
+import type { WhereStep } from './where.ts';
 
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
 // A criterion's sentence from outcomes.ts.
@@ -37,6 +39,22 @@ type Exposure = { id: string; first_exposed_step: number | null; first_shown_ste
 
 export function StepLink({ n, onStep, testId, children }: { n: number; onStep: (n: number) => void; testId?: string; children?: React.ReactNode }) {
   return <button type="button" data-testid={testId} data-step={n} onClick={() => onStep(n)} className={`${LINK} rounded-sm`}>{children ?? `step ${n}`}</button>;
+}
+
+// The steps that explain the failure (where.ts, P25u J4), each a link that scrolls the trajectory
+// to it: the arrival, the first showing, the decisive step; a record never shown has no step. The
+// header's Where and the Attribution tab show the same list.
+export function WhereList({ where, onStep }: { where: readonly WhereStep[]; onStep: (n: number) => void }) {
+  return (
+    <ul data-testid="where-steps" className="space-y-0.5">
+      {where.map((w, i) => (
+        <li key={i} data-kind={w.kind} data-step={w.step ?? ''} className="break-words">
+          {w.step === null ? <span className="text-ink-muted">Never</span> : <StepLink n={w.step} onStep={onStep} testId={w.kind === 'decisive' ? 'decisive-step-link' : 'where-step-link'}>{w.kind === 'decisive' ? `Decisive step ${w.step}` : `Step ${w.step}`}</StepLink>}
+          <span className={w.step === null ? 'text-ink-muted' : ''}>: {w.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 // Only the code links to its definition; the sentence is plain text (review-ui-P16-1 F4).
@@ -97,7 +115,10 @@ function Verdict({ e }: { e: Explanation }) {
   );
 }
 
-export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation; steps: readonly Step[] | null; onStep: (n: number) => void }) {
+// where: the steps that explain the failure (where.ts); headline: the header's plain line, the
+// plain first sentence above the audit's note (P25u J17: the audit row has no summary field, so the
+// page's own plain account leads and the auditor's shorthand sits behind a disclosure).
+export function Attribution({ t, e, steps, where = [], headline = null, onStep }: { t: Trial; e: Explanation; steps: readonly Step[] | null; where?: readonly WhereStep[]; headline?: string | null; onStep: (n: number) => void }) {
   // The current grade's automatic kind and exposure (a regrade's own when it stored one; S0-208 S1),
   // only when it names the current decisive check, as explainTrial reads it: an older regrade entry
   // falls back to the recorded attribution, which may speak for an earlier grade.
@@ -121,16 +142,32 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
           )}
         </dd>
         <dt>Confirmation</dt>
-        <dd data-testid="confirmation">{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation} (M1–M5)</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
-        <dt>Decisive step</dt>
-        <dd>{e.decisive_step === null ? 'none' : <StepLink n={e.decisive_step} onStep={onStep}>Step {e.decisive_step}</StepLink>}</dd>
+        <dd data-testid="confirmation">
+          {e.confirmation === null ? 'does not apply' : (
+            <>
+              {/* Copy rule C5's phrase (J8b), then the state's definition. */}
+              <GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation}</GlossaryLink>: {confirmationWords(e.criteria)}.
+              <span className="block text-xs text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span>
+            </>
+          )}
+        </dd>
+        <dt>Where</dt>
+        <dd>{where.length === 0 ? 'no step recorded' : <WhereList where={where} onStep={onStep} />}</dd>
         <dt>Human audit</dt>
         <dd data-testid="audit-notes">
           {audit === null ? 'not human-audited' : (
             <>
-              <span>label {e.audit_label ?? 'none'}{audit.taxonomy ? `, kind ${audit.taxonomy.replace(/_/g, ' ')}` : ''}; model fault: {audit.model_fault ?? 'not said'}; LLM auditor agrees: {yesNo(audit.llm_auditor_agrees)}</span>
+              {/* The plain account first (J17); the auditor's own note, in the audit's shorthand,
+                  behind a disclosure. */}
+              {headline !== null && <span data-testid="audit-plain" className="block text-ink">A person reviewed this trial and {audit.model_fault === 'yes' ? 'agrees it is the model\'s fault' : audit.model_fault === 'no' ? 'says it is not the model\'s fault' : 'did not decide whose fault it is'}: {headline.charAt(0).toLowerCase()}{headline.slice(1)}</span>}
+              <span className="mt-1 block text-xs text-ink-muted">label {e.audit_label ?? 'none'}{audit.taxonomy ? `, kind ${audit.taxonomy.replace(/_/g, ' ')}` : ''}; model fault: {audit.model_fault ?? 'not said'}; LLM auditor agrees: {yesNo(audit.llm_auditor_agrees)}</span>
               {audit.evidence_ids.length > 0 && <span className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1"><span className="text-xs text-ink-muted">Evidence:</span>{audit.evidence_ids.map((id) => <EvidenceId key={id} id={id} steps={steps} onStep={onStep} />)}</span>}
-              {audit.note && <span className="mt-1 block text-ink-muted">{audit.note}</span>}
+              {audit.note && (
+                <details data-testid="audit-note" className="mt-1">
+                  <summary className="cursor-pointer text-ink-muted pointer-coarse:py-3.5">Read the auditor's note</summary>
+                  <span className="mt-1 block text-ink-muted">{audit.note}</span>
+                </details>
+              )}
             </>
           )}
         </dd>
@@ -166,7 +203,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
         <div className="space-y-3">
           <CriteriaSummary e={e} />
           <div data-testid="confirmation-criteria">
-            <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
+            <h4 className="text-xs font-medium text-ink">Confirmed by the record (M1–M4) and the human audit (M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
             <ul data-testid="detail-criteria" className="divide-y divide-line">
               {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
             </ul>
