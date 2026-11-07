@@ -188,7 +188,7 @@ test('State diff: a superseded version\'s trial names the version, its frozen wo
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'crc-care-gap/0');
   const p = page.getByTestId('panel-state-diff');
   const line = p.getByTestId('manifest-line');
-  await expect(line).toHaveText(`This trial is of crc-care-gap ${freeze.version}, a superseded version of the official run ${official}, not counted in the results. Its initial state hash ${freeze.world_hash.slice(0, 12)}… matches that version's frozen world (results/tasks-final.json), not today's manifest (${manifest.slice(0, 12)}…). Its records are historical and are reproduced at tag ${freeze.replay_at.tag} (${freeze.replay_at.commit.slice(0, 12)}), not here.`);
+  await expect(line).toHaveText(`This trial is of crc-care-gap ${freeze.version}, a superseded version of the official run ${official}, not counted in the results. Its initial world hash ${freeze.world_hash.slice(0, 12)}… matches that version's frozen world (results/tasks-final.json), not today's build (${manifest.slice(0, 12)}…). Its records are historical and are reproduced at tag ${freeze.replay_at.tag} (${freeze.replay_at.commit.slice(0, 12)}), not here.`);
   await expect(line).toHaveAttribute('data-tone', 'frozen');
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);

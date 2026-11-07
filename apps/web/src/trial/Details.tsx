@@ -27,7 +27,7 @@ export function EnvironmentTab({ t }: { t: Trial }) {
     ['grader_version', 'Grader version', text(r.grader_version)],
     ['grader_task_version', 'Grader task version', hash(r.grader_task_version, 'env-grader-task-version')],
     ['fixture_hash', 'Fixture hash', hash(r.fixture_hash, 'env-fixture-hash')],
-    ['manifest', 'World in today\'s manifest', <Hash key="m" value={MANIFEST.world.state_hash} />],
+    ['manifest', 'World hash, today\'s build', <Hash key="m" value={MANIFEST.world.state_hash} />],
     ['model', 'Model', r.models_returned && r.models_returned.length > 0 && r.models_returned.some((m) => m !== r.model_requested) ? `${text(r.model_requested)} requested; ${r.models_returned.join(', ')} returned` : text(r.model_requested)],
     ['effort', 'Effort', text(r.effort)],
     ['api_version', 'API version', text(r.api_version)],

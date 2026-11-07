@@ -35,7 +35,9 @@ test('the heading is the task title, "Trial i of n · model · effort high", and
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(name)}`);
   const h1 = page.getByRole('heading', { level: 1 });
   await expect(h1.getByTestId('trial-title')).toHaveText('DOAC renal and interaction dose review of the pharmacy list');
-  await expect(h1.getByTestId('trial-sub')).toHaveText(`Trial ${i} of ${n} · claude-opus-5-5 · effort high`);
+  // P25u J21: the id, whose index counts from 0, sits beside "Trial i of n" so the two cannot be
+  // read as one number.
+  await expect(h1.getByTestId('trial-sub')).toHaveText(`Trial ${i} of ${n} (id ${name}) · claude-opus-5-5 · effort high`);
   await expect(page.getByTestId('trial-path')).toHaveText(name);
   await expect(page.getByTestId('trial-path')).toHaveCSS('font-family', /mono/i);
 });
@@ -66,7 +68,7 @@ test('a pilot on another world says so in a neutral tone and offers no Replay', 
   await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}&tab=state-diff`);
   const p = page.getByTestId('panel-state-diff');
   const line = p.getByTestId('manifest-line');
-  await expect(line).toHaveText(`This pilot ran on another world version (${EARLIER.slice(0, 4)}…). Today's world is ${MANIFEST.slice(0, 4)}….`);
+  await expect(line).toHaveText(`This pilot ran on another world version (${EARLIER.slice(0, 4)}…). Today's build is ${MANIFEST.slice(0, 4)}….`);
   await expect(line).toHaveAttribute('data-tone', 'neutral');
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('replay-block')).toHaveCount(0);
@@ -84,7 +86,8 @@ test('a pilot on another world says so in a neutral tone and offers no Replay', 
 test('the header names the world the trial started from: today\'s manifest, or not recorded', async ({ page }) => {
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}`);
   const world = page.getByTestId('trial-world');
-  await expect(world).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest.`);
+  // P25u J3: the manifest world is "today's build" on every screen, as the Environment view says it.
+  await expect(world).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest, today's build.`);
   await expect(world).toHaveAttribute('data-hash', MANIFEST);
   await expect(world).toHaveAttribute('data-world', 'manifest');
   await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json', null);
@@ -123,7 +126,7 @@ test('an official trial on the manifest whose task is frozen on another world sa
   });
   await page.route('**/data/results/tasks-final.json', (route) => route.fulfill({ json: { schema_version: 1, tasks: { [task]: { ...(env === null ? {} : { env_version: env }), world_hash: EARLIER, frozen_at: { tag: 'freeze-test' } } } } }));
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}`);
-  await expect(page.getByTestId('trial-world')).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest, not the frozen world of ${task} (${EARLIER.slice(0, 12)}…).`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${MANIFEST.slice(0, 12)}…: matches the manifest, today's build, not the frozen world of ${task} (${EARLIER.slice(0, 12)}…).`);
   await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'manifest');
 });
 
@@ -131,7 +134,7 @@ test('a pilot with no initial hash says the world it ran on is not recorded', as
   await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json', null);
   await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}&tab=state-diff`);
   const line = page.getByTestId('panel-state-diff').getByTestId('manifest-line');
-  await expect(line).toHaveText(`This pilot's record has no initial state hash, so the world it ran on is not known. Today's world is ${MANIFEST.slice(0, 4)}….`);
+  await expect(line).toHaveText(`This pilot's record has no initial world hash, so the world it ran on is not known. Today's build is ${MANIFEST.slice(0, 4)}….`);
   await expect(line).toHaveAttribute('data-tone', 'neutral');
 });
 
@@ -153,7 +156,7 @@ test('an official trial on its task\'s frozen world says so, names the replay ta
   const line = p.getByTestId('manifest-line');
   // P25c fix (builder-326, trace row N13): the line states the trial's world hash and that it
   // matches the task's frozen world, as the trial header does.
-  await expect(line).toHaveText(`Initial state hash ${EARLIER.slice(0, 12)}… matches the frozen world of ${task} (results/tasks-final.json), not today's manifest (${MANIFEST.slice(0, 12)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
+  await expect(line).toHaveText(`Initial world hash ${EARLIER.slice(0, 12)}… matches the frozen world of ${task} (results/tasks-final.json), not today's build (${MANIFEST.slice(0, 12)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
   await expect(line).toHaveAttribute('data-tone', 'frozen');
   const world = page.getByTestId('trial-world');
   await expect(world).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches the frozen world of ${task}.`);
@@ -171,9 +174,9 @@ test('an official trial on another world keeps the alert and its Replay', async 
   await otherWorld(page, `runs/${RUN_ID}/trials/${TRIALS.failAudited}.json`);
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.failAudited)}&tab=state-diff`);
   const p = page.getByTestId('panel-state-diff');
-  await expect(page.getByTestId('trial-world')).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches neither today's manifest nor a frozen world of ${TRIALS.failAudited.split('/')[0]}.`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches neither today's build nor a frozen world of ${TRIALS.failAudited.split('/')[0]}.`);
   await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'other');
   await expect(p.getByTestId('manifest-line')).toHaveAttribute('role', 'alert');
-  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial state hash does not match the manifest/);
+  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial world hash does not match the manifest, today's build/);
   await expect(p.getByRole('button', { name: 'Replay' })).toBeVisible();
 });

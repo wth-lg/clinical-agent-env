@@ -50,6 +50,14 @@ export const stepOfId = (steps: readonly Step[], id: string): number | null => l
 
 export const stepAnchor = (n: number): string => `step-${n}`;
 
+// The ids a call wrote, in words (P25u S3 A11): the records first, then "+ provenance" for the
+// Provenance entry every write adds, so a narrow row cuts the provenance and never the order or note.
+export function writtenWords(ids: readonly string[]): string {
+  const records = ids.filter((id) => !id.startsWith('Provenance/'));
+  if (records.length === 0) return ids.join(', ');
+  return `${records.join(', ')}${ids.length > records.length ? ' + provenance' : ''}`;
+}
+
 // The first tool call that failed with an internal error, the call an ENV_ERROR (INTERNAL) points
 // at; null when the trajectory has none. The loop records it as executed, so it has a step.
 export const internalErrorRow = (rows: readonly Row[]): (Row & { kind: 'tool'; step: number }) | null =>

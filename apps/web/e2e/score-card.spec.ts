@@ -37,8 +37,9 @@ test('the score tile title, "not triggered" penalties and the rubric total', asy
   await expect(total).toHaveText(`Total${totalText(rubricTotal(rubric))}`);
   await expect(total).toHaveAttribute('data-earned', String(earned));
   await expect(total).toHaveAttribute('data-possible', String(possible));
-  // No unknown judge item: no note.
+  // No unknown judge item: no note. The gloss under the tile says what the score is (P25u V9, C2).
   await expect(p.getByTestId('score-card-note')).toHaveCount(0);
+  await expect(p.getByTestId('score-card-gloss')).toHaveText('extra credit; does not decide pass');
 });
 
 test('with judge items unknown, the tile says they are not counted and the total leaves them out', async ({ page }) => {
