@@ -297,7 +297,7 @@ describe('docs-gen', () => {
     expect(after).not.toContain('not in summary.json yet');
     expect(after).toContain(tr('judged items', '37/40', '0.93'));
     // An absolute labels path renders as its repository path.
-    expect(after).toContain('hand labels (results/judge-calibration/hand-labels.jsonl)');
+    expect(after).toContain('labels (results/judge-calibration/hand-labels.jsonl)');
     expect(after).not.toContain('/Users/');
     expect(after).toContain(tr('extractions', '20/20', '1.00'));
     expect(after).toContain(tr('double label', '19/20', '0.95', '0.83', 'model, grader', ''));

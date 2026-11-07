@@ -933,7 +933,7 @@ Harbor is a task format and runner for agent benchmarks. Its task layout is in t
 | `tests/grader.ts` (gates), `tests/rubric.ts` | `tests/test.sh` | Harbor's verifier writes a reward to `/logs/verifier/reward.txt` or `reward.json`. This repo writes an outcome (PASS or FAIL), the gate checks and a rubric score into the trial record. |
 | `tests/judge-cache.json` | no equivalent | Cached judge answers for offline grading. |
 | `tests/mutants.ts`, `tests/alternatives.ts`, `tests/agents.ts` | no equivalent | Scripted wrong and alternative solutions. `pnpm cli matrix` checks that each mutant fails and each alternative passes. |
-| `expected.ts`, `policy.ts`, `*.test.ts` | no equivalent | The end state written by hand, and a second derivation from the world. The matrix fails when the two differ. |
+| `expected.ts`, `policy.ts`, `*.test.ts` | no equivalent | The end state written out literally, and a second derivation from the world. The matrix fails when the two differ. |
 | `tasks/<id>.check-text.ts` | no equivalent | Plain words for each gate check, for the UI and the audit. It sits outside the task directory, so a change to it moves no task version. |
 
 Repo ids and design labels:
