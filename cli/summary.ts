@@ -33,6 +33,16 @@
 //                    the run offline (cli/regrade.ts), disclose the history; a final run passes
 //                    grader_error=0 and replay=all (replay compares env_version only)
 //   mode=M           the manifest's mode is M (mode=live)
+//   band-or-disclosed=a-b
+//                    band's values; a task outside the band passes only when results/tasks-final.json
+//                    (--freeze <file>) holds a disclosure under the task's entry that names its
+//                    current verdict, the decision, who took it and the date, and the pass-rates
+//                    block of docs/writeup.html (--writeup <file>) marks the task
+//                    "<verdict> (disclosed: <who> decision <date>)" (packages/core/disclosure.ts;
+//                    the user's accept-and-disclose decision of 2026-11-06). An in-band task needs
+//                    no record, and a record on one is stale and fails. band= is not weakened: it
+//                    still fails every out-of-band task. The JSON lists the disclosures that
+//                    covered a task under disclosed.
 // With any requirement, every task the run must hold has records: those of --task (all, or a
 // comma list), else the manifest's task_versions; and a run that is not live is a violation
 // unless --allow-mock is given. --tasks <id,...> (P21) holds the per-task requirements, valid
@@ -64,7 +74,8 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
 import { readLabels, rowLabel } from './audit-check.ts';
 import { replayStateOf, whyStale, type ReplayEntry, type ReplayRecord } from '../packages/core/replay.ts';
-import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type RegradeGrade, type ReplayState, type Requirements, type Summary, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
+import { disclosedVerdictText, parseDisclosures, passRatesRows } from '../packages/core/disclosure.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type DisclosureContext, type RegradeGrade, type ReplayState, type Requirements, type Summary, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -77,7 +88,10 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...> | --tasks <id,...>] [--allow-mock] [--json] [--write]';
+const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b|band-or-disclosed=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...> | --tasks <id,...>] [--freeze <tasks-final.json>] [--writeup <writeup.html>] [--allow-mock] [--json] [--write]';
+// What band-or-disclosed reads, relative to the working directory (the repo root for donewhen).
+const FREEZE = 'results/tasks-final.json';
+const WRITEUP = 'docs/writeup.html';
 
 // A record as cli regrade leaves it: its regrades[] entries appended.
 // A run-one record has no index: summary names it by its trajectory, as replay does (trialName).
@@ -170,6 +184,23 @@ export function readCarried(file: string): Partial<Pick<Summary, keyof typeof CA
   return carried as Partial<Pick<Summary, keyof typeof CARRIED_FIELDS>>;
 }
 
+// band-or-disclosed's context: the freeze's disclosures and the writeup's pass-rates rows, each
+// with why it could not be read.
+export function disclosureContext(freeze: string, writeup: string): DisclosureContext {
+  const read = <T,>(file: string, parse: (text: string) => T | null, none: string): { file: string; value: T | null; problem?: string } => {
+    if (!existsSync(file)) return { file, value: null, problem: 'missing' };
+    try {
+      const v = parse(readFileSync(file, 'utf8'));
+      return v === null ? { file, value: null, problem: none } : { file, value: v };
+    } catch (e) {
+      return { file, value: null, problem: (e as Error).message };
+    }
+  };
+  const f = read(freeze, (text) => parseDisclosures(JSON.parse(text)), 'unreadable');
+  const w = read(writeup, passRatesRows, 'no pass-rates block');
+  return { freeze: { file: f.file, disclosures: f.value, ...(f.problem !== undefined ? { problem: f.problem } : {}) }, writeup: { file: w.file, rows: w.value, ...(w.problem !== undefined ? { problem: w.problem } : {}) } };
+}
+
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 const fixed = (x: number | null) => (x === null ? 'n/a' : x.toFixed(6));
 const counts = (h: Record<string, number>) => Object.entries(h).map(([k, n]) => `${k} ${n}`).join(', ');
@@ -182,6 +213,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   let write = false;
   let taskArg: string | undefined;
   let tasksArg: string | undefined;
+  let freeze = FREEZE;
+  let writeup = WRITEUP;
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--json') json = true;
@@ -190,6 +223,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     else if (a === '--require' && args[i + 1] !== undefined) spec = args[++i] as string;
     else if (a === '--task' && args[i + 1] !== undefined) taskArg = args[++i] as string;
     else if (a === '--tasks' && args[i + 1] !== undefined) tasksArg = args[++i] as string;
+    else if (a === '--freeze' && args[i + 1] !== undefined) freeze = args[++i] as string;
+    else if (a === '--writeup' && args[i + 1] !== undefined) writeup = args[++i] as string;
     else if (!a.startsWith('--') && dir === undefined) dir = a;
     else {
       deps.err(`summary: unexpected argument ${a}\n${USAGE}`);
@@ -254,7 +289,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     audit: readAuditLabels(dir),
   });
   s.requirements = req;
-  s.violations = checkRequirements(s, req);
+  const withDisclosure = req.band_or_disclosed !== undefined || req.band_or_disclosed_rate !== undefined;
+  s.violations = checkRequirements(s, req, withDisclosure ? disclosureContext(freeze, writeup) : undefined);
   assertSummary(s);
   // Written only when every requirement holds, with the fields other commands own carried from
   // the file as it is (header); writeJson writes a temp file beside it and renames it into place.
@@ -291,6 +327,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const w = t.wilson95 === null ? 'n/a' : `${pct(t.wilson95.lo)}-${pct(t.wilson95.hi)}`;
     say(`superseded ${key}: ${v.task} ${v.version}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ${t.band_verdict ?? 'no valid trials'}  world ${v.initial_state_hashes.map((h) => h.slice(0, 12)).join(',') || '(none)'}  env ${t.env_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}  grader ${t.grader_task_versions.map((x) => x.slice(0, 12)).join(',') || '(none)'}; not counted in the tasks above`);
   }
+  for (const [id, d] of Object.entries(s.disclosed ?? {})) say(`disclosed ${id}: ${disclosedVerdictText(s.tasks[id]!.band_verdict!, d)} (${d.decision}${d.source ? `, ${d.source}` : ''})`);
   if (s.replay.ran && s.replay.other_world.length > 0) say(`replay: ${s.replay.other_world.length} trial(s) ran on another world than the replaying checkout's (replay.json world_mismatch): ${s.replay.other_world.join(', ')}`);
   const staleNames = Object.keys(replay?.stale ?? {}).sort();
   if (staleNames.length > 0) say(`replay: ${staleNames.length} ${staleNames.length === 1 ? 'entry of replay.json is not a verdict of its record' : 'entries of replay.json are not verdicts of their records'} as it is now (stale; replay the task again): ${staleNames.map((n) => `${n} (${replay!.stale[n]})`).join(', ')}`);

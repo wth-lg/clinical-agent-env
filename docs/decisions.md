@@ -19,7 +19,7 @@ The design and run decisions behind the environment, in the order they were made
 - **2026-10-30. Unblock and polish.** The coordinator takes the remaining route checkpoints on the recommended option and records each with its reason. The UI design stands and gets polished.
 - **2026-11-03. Run two now, redesign four.** The colorectal and contrast CT tasks, both in the band in their pilots, ran their final samples at once. The other four got a new lever, pilots, then their own final runs. The band requirement stands for all six.
 - **2026-11-05. A second version of the colorectal task.** The colorectal task gets a second version with one record-integrity item, an eight-trial pilot and twenty new final trials, reported beside its first version.
-- **2026-11-06. Accept and disclose.** After the final run, four tasks sat outside the band. The final run stands as measured. There is no second final run. The writeup discloses each result with its Wilson interval, the tuning procedure, the priors and why four tasks landed above the band.
+- **2026-11-06. Accept and disclose.** After the final run, four tasks sat outside the band. The final run stands as measured. There is no second final run. The writeup discloses each result with its Wilson interval, the tuning procedure, the priors and why four tasks landed above the band. The code recognises this decision as `user-2026-11-06T17:27Z-accept-and-disclose` (packages/core/disclosure.ts, RECOGNISED_DECISIONS). It is the only decision a disclosure record in results/tasks-final.json may name.
 
 ## The route
 

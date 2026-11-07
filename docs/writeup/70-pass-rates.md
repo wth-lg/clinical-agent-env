@@ -10,7 +10,7 @@ The definitions come first, then the numbers. Every number in this section is re
 
 A task's verdict is the band verdict above, read on its k of n. Where a grader fix regraded a task after its run, the table shows the count as recorded beside the current one, with the regrade's tag. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. The colorectal task ran its final sample twice. Its first version ran before the record-integrity lever and landed above the band. The user chose a second version with one lever item, and that version's sample is the one counted. The first is shown for the record.
 
-Four tasks are outside the band. The user's decision after the final run was to accept the result as measured and to disclose it. The Findings section says why each task landed where it did. The tables below say how much of each rate rests on the lever and on the review gates.
+Four tasks are outside the band. The user's decision after the final run was to accept the result as measured and to disclose it. The verdict column names that decision and its date for each of them. `pnpm cli summary` with `--require band-or-disclosed` passes an out-of-band task only when the table marks it so. The Findings section says why each task landed where it did. The tables below say how much of each rate rests on the lever and on the review gates.
 
 ## The lever items
 

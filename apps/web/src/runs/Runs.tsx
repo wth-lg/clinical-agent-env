@@ -4,9 +4,13 @@
 // decides), the decisive failing check, the one-line reason and, with no audit row, the
 // not-audited marker; all of it is packages/core/explain.ts explainTrial, never re-derived here.
 // A record the loader cannot read is a row that says why. The header shows k/N as a stat with its
-// Wilson interval and the outcome counts, then the trials each task's k/N leaves out and why
-// (ENV_LIMIT and the other excluded outcomes), always in view; the pass and denominator rules are in
-// "How a trial is counted" (ui-polish 2.2, verifier-phase-P17i-UI-2-1 S1). In each run the rows to
+// Wilson interval and the outcome counts, the model and effort the records share, the failures
+// in scope by fault label ("<m> model, <e> environment, <g> grader": telling model faults from
+// environment and grader faults is a headline requirement, trace rows W6 and W7), each task's
+// k/N with its Wilson interval and verdict (rows U28, W4; a row filters the list to the task),
+// then the trials each task's k/N leaves out and why (ENV_LIMIT and the other excluded outcomes),
+// always in view; the pass and denominator rules are in "How a trial is counted" (ui-polish 2.2,
+// verifier-phase-P17i-UI-2-1 S1). In each run the rows to
 // look at (not PASS, a fault or a harm) come first; the PASS rows are behind "<n> PASS trials"
 // ("Other trials", with no number, while the run is blocked), open while a filter is set. Filters (task,
 // label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
@@ -15,15 +19,18 @@
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type Ref } from 'react';
+import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { AUDIT_LABELS, OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { wilson } from '../../../../packages/core/summary.ts';
+import { FAILURE_LABELS, wilson, type TaskSummary } from '../../../../packages/core/summary.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
+import { ModelLine } from '../findings/passk.tsx';
+import { Verdict } from '../findings/verdict.tsx';
 import { RunBlocked } from '../findings/why.tsx';
-import { Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
-import { navigate, useParams } from '../data/url.ts';
+import { Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, IntervalRow, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
+import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
 
@@ -88,6 +95,13 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
             {byOutcome.map((x) => <OutcomeChip key={x.o} outcome={x.o} count={x.n} />)}
           </div>
         )}
+        {official && block === null && (
+          <div className="mb-3 space-y-1">
+            <ModelLine run={official} />
+            <FaultSummary rows={taskRows} />
+          </div>
+        )}
+        {official && block === null && <TaskRows tasks={official.summary!.tasks} />}
         {left.length > 0 && (
           <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
             {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
@@ -147,6 +161,43 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
       )}
       {runs.length === 0 && officialError === null && <Notice testId="empty-state">No runs are committed in this build. Tasks and Environment work with no key.</Notice>}
     </Page>
+  );
+}
+
+// The valid failures in scope by audit label, "32 model, 0 environment, 0 grader", plus the ones
+// the audit has not labelled yet; with no audit published, it says so. The words are the labels'
+// (packages/core/summary.ts FAILURE_LABELS), the counts summary.json's fault_counts.label.
+function FaultSummary({ rows }: { rows: readonly TaskSummary[] }) {
+  const labelled = rows.length > 0 && rows.every((t) => t.fault_counts.label !== null);
+  const sum = (l: (typeof FAILURE_LABELS)[number]) => rows.reduce((n, t) => n + (t.fault_counts.label?.[l] ?? 0), 0);
+  return (
+    <p data-testid="runs-fault-summary" className="text-sm text-ink">
+      Failures by fault:{' '}
+      {labelled
+        ? <><span data-testid="runs-fault-counts">{sum('model')} model, {sum('environment')} environment, {sum('grader')} grader</span>{sum('unlabelled') > 0 && <span className="text-ink-muted">, {sum('unlabelled')} not yet audited</span>}</>
+        : <span className="text-ink-muted">no human audit is published, so the failures have no fault labels yet</span>}
+      {' '}<GlossaryLink anchor="fault-labels" className="text-xs">What the labels mean</GlossaryLink>
+    </p>
+  );
+}
+
+// One row per task of the official run: its k/N, Wilson interval and verdict against the band,
+// as Overview shows them; the task name filters the list to it.
+function TaskRows({ tasks }: { tasks: Readonly<Record<string, TaskSummary>> }) {
+  return (
+    <ul data-testid="runs-task-rows" className="mb-3 divide-y divide-line border-y border-line">
+      {Object.entries(tasks).map(([id, t]) => {
+        const patch = { task: id, trial: null };
+        return (
+          <li key={id} data-testid="runs-task-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 py-1.5 md:grid-cols-[minmax(9rem,1fr)_4rem_minmax(10rem,16rem)_minmax(8rem,1fr)]">
+            <a href={hrefWith(patch)} onClick={onNav(patch)} className="min-w-0 break-words font-medium text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink">{id}</a>
+            <span data-testid="k-of-n" className="whitespace-nowrap text-right md:text-left">{t.passes}/{t.trials}</span>
+            <span className="col-span-2 md:col-span-1"><IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} /></span>
+            <span className="col-span-2 text-xs text-ink-muted md:col-span-1"><span data-testid="wilson">{formatInterval(t.wilson95)}</span> <Verdict task={id} passes={t.passes} trials={t.trials} /></span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

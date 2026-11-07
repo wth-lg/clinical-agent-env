@@ -11,6 +11,7 @@ import type { Step } from '../../../../packages/grader/check.ts';
 import type { FrozenTask, Trial } from '../data/results.ts';
 import { BUTTON, Hash } from '../data/ui.tsx';
 import { MANIFEST } from '../data/world.ts';
+import { shortHash } from './world.ts';
 import { EvidenceId, Section } from './Grading.tsx';
 import { validate, type StateRun } from '../tasks/validate-protocol.ts';
 import type { Loaded } from './Trajectory.tsx';
@@ -52,7 +53,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
         <p data-testid="manifest-line" className="break-words text-ink">Initial state hash matches the manifest: the trial started from the world every trial starts from.</p>
       ) : onFrozen ? (
         <p data-testid="manifest-line" data-tone="frozen" className="break-words text-ink-muted">
-          This trial started from the frozen world of {t.task} ({h.initial!.slice(0, 4)}…), not today's ({manifest.slice(0, 4)}…). Its records are historical and are reproduced at {reproduce !== null ? <>tag <code className="text-xs text-ink">{reproduce.tag}</code> ({reproduce.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{frozen.frozen_at.tag}</code></>}, not here.
+          Initial state hash {shortHash(h.initial!)} matches the frozen world of {t.task} (results/tasks-final.json), not today's manifest ({shortHash(manifest)}). Its records are historical and are reproduced at {reproduce !== null ? <>tag <code className="text-xs text-ink">{reproduce.tag}</code> ({reproduce.commit.slice(0, 12)})</> : <>the freeze tag <code className="text-xs text-ink">{frozen.frozen_at.tag}</code></>}, not here.
         </p>
       ) : official ? (
         <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>

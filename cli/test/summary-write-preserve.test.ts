@@ -5,11 +5,11 @@
 // whose --require does not hold is not written at all: the file stays as it was, exit 1, and no
 // temp file is left beside it. So the documented P23 and P26 gate commands can run again on a
 // clean tree without deleting the P23 audit numbers the writeup quotes.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { assertSummary } from '../../packages/core/summary.ts';
-import { tempDir } from '../../scripts/test/helpers.ts';
+import { repoRoot, tempDir } from '../../scripts/test/helpers.ts';
 import { CARRIED_FIELDS, main as summary } from '../summary.ts';
 import { fixtureChecks, writeFixtureRun } from './run-fixtures.ts';
 
@@ -104,5 +104,33 @@ describe('summary --write on a failed --require', () => {
     const { dir, file } = writtenRun();
     expect((await cli([dir, '--require', 'valid=10,band=6-7', '--write'])).code).toBe(1);
     expect(existsSync(file)).toBe(false);
+  });
+});
+
+// The P26 gate form on the committed final run (#242 band-or-disclosed with the repository's
+// freeze and writeup; #243 the carry): what summary reads of results/runs/final-1, copied without
+// the trajectories (81 MB that summary never opens), and the committed summary.json beside it.
+describe('summary --write with band-or-disclosed on a scratch copy of final-1', () => {
+  it('exits 0 and keeps judge_agreement and kappa byte-equal to the committed ones', async () => {
+    const src = join(repoRoot, 'results', 'runs', 'final-1');
+    const dir = tempDir('final-1-scratch');
+    for (const entry of ['manifest.json', 'summary.json', 'replay.json', 'audit.jsonl', 'trials']) cpSync(join(src, entry), join(dir, entry), { recursive: true });
+    cpSync(join(src, 'superseded'), join(dir, 'superseded'), { recursive: true, filter: (p) => !p.includes(`${join('superseded', 'crc-care-gap-v1', 'trajectories')}`) });
+    const committed = JSON.parse(readFileSync(join(src, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    expect(committed).toHaveProperty('judge_agreement');
+    expect(committed).toHaveProperty('kappa');
+    const r = await cli([dir, '--write', '--require', 'valid=20,band-or-disclosed=0.2-0.7,env_error_raw=0,grader_error=0', '--freeze', join(repoRoot, 'results', 'tasks-final.json'), '--writeup', join(repoRoot, 'docs', 'writeup.html')]);
+    expect(r.code, r.out).toBe(0);
+    expect(r.out).toMatch(/wrote .*summary\.json/);
+    const written = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    expect(() => assertSummary(written)).not.toThrow();
+    expect(JSON.stringify(written.judge_agreement)).toBe(JSON.stringify(committed.judge_agreement));
+    expect(JSON.stringify(written.kappa)).toBe(JSON.stringify(committed.kappa));
+    // The rest differs only in what this write records: its requirements and the disclosures it accepted.
+    const differing = Object.keys({ ...committed, ...written }).filter((k) => JSON.stringify(committed[k]) !== JSON.stringify(written[k]));
+    expect(differing.sort()).toEqual(['disclosed', 'requirements']);
+    expect(written.requirements).toEqual({ valid: 20, band_or_disclosed_rate: [0.2, 0.7], env_error_raw: 0, grader_error: 0 });
+    expect(Object.keys(written.disclosed as object).sort()).toEqual(['crc-care-gap', 'discharge-medrec', 'message-queue', 'renal-dose-review']);
+    expect(readdirSync(dir).filter((n) => n.startsWith('summary.json'))).toEqual(['summary.json']);
   });
 });

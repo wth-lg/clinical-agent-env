@@ -106,6 +106,7 @@
 //   no_passes          when it has 0 passes in >= NO_PASS_MIN valid trials
 // summary.json carries the flags without final; cli/audit-check.ts recomputes them with its
 // --final and exits 1 on a flagged task until audit.jsonl holds that task's task-validity review.
+import { disclosedVerdictText, type Disclosure } from './disclosure.ts';
 import { FINAL_PASS_BAND } from './cost.ts';
 import { LIMITS } from './events.ts';
 import { FAULT, isValid, NOT_RERUN_REASON, OUTCOMES, type Outcome } from './outcomes.ts';
@@ -398,6 +399,11 @@ export interface Requirements {
   // ... or as a proportion of each task's valid trials, k/N inclusive (P21: band=0.2-0.7, the
   // final run's cost.ts FINAL_PASS_BAND). A decimal point in the value names this form.
   band_rate?: [number, number];
+  // band-or-disclosed=a-b, the same two forms: a task outside the band passes only when
+  // results/tasks-final.json discloses it and the writeup marks it (packages/core/disclosure.ts,
+  // the user's accept-and-disclose decision); never together with band.
+  band_or_disclosed?: [number, number];
+  band_or_disclosed_rate?: [number, number];
   // The tasks the per-task requirements (valid, band) hold for, each of which must have records
   // (P21: --tasks). Without it, every task in the run. The run-wide requirements stay run-wide.
   tasks?: string[];
@@ -430,6 +436,9 @@ export interface Summary {
   superseded: Record<string, SupersededSummary>;
   requirements: Requirements;
   violations: string[];
+  // With band-or-disclosed: the disclosure of each out-of-band task the requirement accepted, by
+  // task ({} when every task is in the band); scripts/donewhen.ts prints them.
+  disclosed?: Record<string, Disclosure>;
   // Written by cli/judge-agreement.ts --write after `summary --write`, which carries them
   // through a later rewrite (cli/summary.ts CARRIED_FIELDS): the hand labels' agreement with the judge and extractor answers the records
   // cached, and, from --double-label, Cohen's kappa of the blinded double label and of the
@@ -692,11 +701,32 @@ function taskSummary(mine: readonly SummaryTrial[], requeued: readonly SummaryTr
 
 const ALIASES: Record<string, string> = { trials: 'valid' };
 
+// A band value, band=a-b or band-or-disclosed=a-b: counts (2-7) or, with a decimal point, a
+// proportion (0.2-0.7); see parseRequire.
+function parseBand(k: string, v: string): { band: [number, number] } | { band_rate: [number, number] } {
+  const counts = /^(\d+)-(\d+)$/.exec(v);
+  const rates = /^(\d*\.\d+|\d+)-(\d*\.\d+|\d+)$/.exec(v);
+  if (counts) {
+    if (Number(counts[1]) > Number(counts[2])) throw new Error(`--require ${k}=${v}: expected a-b with a <= b`);
+    // Both bounds 0 or 1 read as counts or as proportions (P21-213 m4): refused, with the
+    // plain form of each.
+    if (Number(counts[2]) <= 1) throw new Error(`--require ${k}=${v}: ambiguous, counts or proportions; write a proportion with a decimal point (${Number(counts[1]).toFixed(1)}-${Number(counts[2]).toFixed(1)}) or counts as pass-min=${counts[1]},pass-max=${counts[2]}`);
+    return { band: [Number(counts[1]), Number(counts[2])] };
+  }
+  if (rates && (rates[1]!.includes('.') || rates[2]!.includes('.'))) {
+    const [lo, hi] = [Number(rates[1]), Number(rates[2])];
+    if (lo > hi || hi > 1) throw new Error(`--require ${k}=${v}: a proportion band is a-b with 0 <= a <= b <= 1 (counts have no decimal point)`);
+    return { band_rate: [lo, hi] };
+  }
+  throw new Error(`--require ${k}=${v}: expected a-b as counts (2-7) or proportions (0.2-0.7)`);
+}
+
 // --require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=M. donewhen's
 // form is accepted too: trials=N for valid=N, pass-min=a and pass-max=b for band=a-b. band=a-b
 // takes counts (2-7) or, with a decimal point in both, a proportion of each task's valid trials
 // (0.2-0.7, k/N inclusive, in [0, 1]); counts with both bounds 0 or 1 (0-1) could be either and
-// are refused (P21-213 m4): pass-min=0,pass-max=1 names those counts. Throws on anything else.
+// are refused (P21-213 m4): pass-min=0,pass-max=1 names those counts. band-or-disclosed=a-b takes
+// the same values and is never given with band or pass-min/pass-max. Throws on anything else.
 export function parseRequire(spec: string): Requirements {
   const req: Requirements = {};
   let min: number | undefined;
@@ -721,34 +751,39 @@ export function parseRequire(spec: string): Requirements {
     }
     else if (k === 'pass-min') min = count(raw, v);
     else if (k === 'pass-max') max = count(raw, v);
-    else if (k === 'band') {
-      const counts = /^(\d+)-(\d+)$/.exec(v);
-      const rates = /^(\d*\.\d+|\d+)-(\d*\.\d+|\d+)$/.exec(v);
-      if (counts) {
-        if (Number(counts[1]) > Number(counts[2])) throw new Error(`--require band=${v}: expected a-b with a <= b`);
-        // Both bounds 0 or 1 read as counts or as proportions (P21-213 m4): refused, with the
-        // plain form of each.
-        if (Number(counts[2]) <= 1) throw new Error(`--require band=${v}: ambiguous, counts or proportions; write a proportion with a decimal point (${Number(counts[1]).toFixed(1)}-${Number(counts[2]).toFixed(1)}) or counts as pass-min=${counts[1]},pass-max=${counts[2]}`);
-        req.band = [Number(counts[1]), Number(counts[2])];
-      } else if (rates && (rates[1]!.includes('.') || rates[2]!.includes('.'))) {
-        const [lo, hi] = [Number(rates[1]), Number(rates[2])];
-        if (lo > hi || hi > 1) throw new Error(`--require band=${v}: a proportion band is a-b with 0 <= a <= b <= 1 (counts have no decimal point)`);
-        req.band_rate = [lo, hi];
-      } else throw new Error(`--require band=${v}: expected a-b as counts (2-7) or proportions (0.2-0.7)`);
+    else if (k === 'band') Object.assign(req, parseBand(k, v));
+    else if (k === 'band-or-disclosed') {
+      const b = parseBand(k, v);
+      if ('band' in b) req.band_or_disclosed = b.band;
+      else req.band_or_disclosed_rate = b.band_rate;
     } else if (k === 'model') {
       if (v === '') throw new Error('--require model= needs a model id');
       req.model = v;
     } else if (k === 'replay') {
       if (v !== 'all') throw new Error(`--require replay=${v}: only replay=all is defined`);
       req.replay = 'all';
-    } else throw new Error(`--require ${raw}: unknown requirement; known: valid (trials), band (pass-min, pass-max), env_error_raw, env_limit, grader_error, model, replay, mode`);
+    } else throw new Error(`--require ${raw}: unknown requirement; known: valid (trials), band (pass-min, pass-max), band-or-disclosed, env_error_raw, env_limit, grader_error, model, replay, mode`);
   }
   if (min !== undefined || max !== undefined) {
     if (req.band || req.band_rate) throw new Error('--require: give band or pass-min/pass-max, not both');
     req.band = [min ?? 0, max ?? Number.MAX_SAFE_INTEGER];
   }
+  if ((req.band || req.band_rate) && (req.band_or_disclosed || req.band_or_disclosed_rate)) throw new Error('--require: give band or band-or-disclosed, not both');
   return req;
 }
+
+// What band-or-disclosed reads beside the run (cli/summary.ts loads it): the disclosures of
+// results/tasks-final.json, or why they could not be read, and the writeup's pass-rates rows, or
+// why not (packages/core/disclosure.ts parseDisclosures, passRatesRows).
+export interface DisclosureContext {
+  freeze: { file: string; disclosures: Record<string, Disclosure> | null; problem?: string };
+  writeup: { file: string; rows: Record<string, string> | null; problem?: string };
+}
+
+// Whether k of n is inside the band in either form.
+const inBand = (k: number, n: number, band: [number, number] | undefined, rate: [number, number] | undefined): boolean =>
+  (band === undefined || (k >= band[0] && k <= band[1])) && (rate === undefined || withinRateBand(k, n, rate));
+const bandWords = (band: [number, number] | undefined, rate: [number, number] | undefined): string => (rate !== undefined ? `${rate[0]}-${rate[1]} of its valid trials` : `${band![0]}-${band![1]}`);
 
 // Whether k of n is within the proportion band, k/n inclusive. The bounds are compared as k
 // against lo x n and hi x n with a small tolerance, so 14 of 20 holds at 0.7 and 3 of 15 at 0.2
@@ -759,8 +794,10 @@ export function withinRateBand(k: number, n: number, [lo, hi]: readonly [number,
   return k >= lo * n - eps && k <= hi * n + eps;
 }
 
-// One line per violated requirement; empty when the run meets them all.
-export function checkRequirements(s: Summary, req: Requirements): string[] {
+// One line per violated requirement; empty when the run meets them all. ctx is what
+// band-or-disclosed reads; without it that requirement is a violation. With it, s.disclosed is
+// set to the disclosures that covered an out-of-band task.
+export function checkRequirements(s: Summary, req: Requirements, ctx?: DisclosureContext): string[] {
   const out: string[] = [];
   const tasks = Object.entries(s.tasks);
   if (tasks.length === 0) out.push('no trials in the run');
@@ -781,6 +818,39 @@ export function checkRequirements(s: Summary, req: Requirements): string[] {
     if (t === undefined) continue;
     if (req.band && (t.passes < req.band[0] || t.passes > req.band[1])) out.push(`${id}: ${t.passes}/${t.trials} passes, outside the band ${req.band[0]}-${req.band[1]}`);
     if (req.band_rate && !withinRateBand(t.passes, t.trials, req.band_rate)) out.push(`${id}: ${t.passes}/${t.trials} passes, outside the band ${req.band_rate[0]}-${req.band_rate[1]} of its valid trials`);
+  }
+  if (req.band_or_disclosed !== undefined || req.band_or_disclosed_rate !== undefined) {
+    const words = bandWords(req.band_or_disclosed, req.band_or_disclosed_rate);
+    const disclosed: Record<string, Disclosure> = {};
+    if (ctx === undefined) out.push('band-or-disclosed: the disclosures (results/tasks-final.json) and the writeup were not read');
+    else {
+      // The freeze is read only for a task outside the band: an in-band run needs no record and no file.
+      const outside = held.filter(([, t]) => t !== undefined && !inBand(t.passes, t.trials, req.band_or_disclosed, req.band_or_disclosed_rate));
+      if (outside.length > 0 && ctx.freeze.disclosures === null) out.push(`${ctx.freeze.file}: ${ctx.freeze.problem ?? 'unreadable'}`);
+      const records = ctx.freeze.disclosures ?? {};
+      for (const [id, t] of held) {
+        if (t === undefined) continue;
+        const d = records[id];
+        if (inBand(t.passes, t.trials, req.band_or_disclosed, req.band_or_disclosed_rate)) {
+          if (d !== undefined) out.push(`${id}: ${t.passes}/${t.trials} passes, inside the band ${words}, but ${ctx.freeze.file} holds a disclosure for it (stale: remove it)`);
+          continue;
+        }
+        if (ctx.freeze.disclosures === null) continue;
+        if (d === undefined) {
+          out.push(`${id}: ${t.passes}/${t.trials} passes, outside the band ${words}, and ${ctx.freeze.file} holds no disclosure for it`);
+          continue;
+        }
+        if (d.verdict !== t.band_verdict) {
+          out.push(`${id}: the disclosure in ${ctx.freeze.file} names the verdict ${d.verdict}, but the task's verdict is ${t.band_verdict ?? 'none'} (stale)`);
+          continue;
+        }
+        const mark = disclosedVerdictText(t.band_verdict, d);
+        if (ctx.writeup.rows === null) out.push(`${id}: disclosed, but ${ctx.writeup.file}: ${ctx.writeup.problem ?? 'no pass-rates block'}`);
+        else if (!(ctx.writeup.rows[id] ?? '').includes(mark)) out.push(`${id}: disclosed, but the pass-rates block of ${ctx.writeup.file} does not mark it "${mark}"`);
+        else disclosed[id] = d;
+      }
+    }
+    s.disclosed = disclosed;
   }
   if (req.env_error_raw !== undefined && s.totals.env_error_raw > req.env_error_raw) {
     out.push(`ENV_ERROR raw count ${s.totals.env_error_raw} (re-queued attempts included), required at most ${req.env_error_raw}`);
