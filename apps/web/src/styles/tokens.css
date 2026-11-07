@@ -5,11 +5,38 @@
    other value is copied from Tailwind's stone scale or white, the contrast of each text and
    control pair, and that no source names a raw palette class. The one exception is danger, a
    red from Tailwind's red scale for errors (the user: "the error message needs to be red"); the
-   test pins it to that scale and to 4.5:1 on the page and on cards. State colours for results
-   (pass, fail, refusal) belong to the views that show them, as named tokens. */
+   test pins it to that scale and to 4.5:1 on the page and on cards.
+
+   The colour contract (P25u, copy rule C8).
+   Red means the environment, the grader, an error or harm, never the model: the danger token
+   colours an error's border and first line, an invalid field, the environment and grader marks
+   (an outline, hatched or dotted, on a trial the run cannot count) and the "PASS with harm" chip
+   (ruling P17j JU3). A model failure is ink: the filled FAIL mark, a heavy X, bold "not met".
+   Nothing rests on colour alone; every mark also differs by fill or pattern and carries its name
+   as text.
+
+   The outcome marks are named tokens, so they read in both themes (P25u V1): mark-fail is the
+   ink in light and a mid-tone (stone-300, under a 1px inset ring of the page colour) in dark,
+   where the ink itself is near-white and a filled ink square read as empty; mark-limit is
+   stone-500 in both, under a diagonal hatch. tokens.test.ts pins FAIL against LIMIT, and each
+   against the page and the cards, at 3:1 (WCAG 1.4.11) in both themes.
+
+   The type scale has four steps (P25u V13), each a text utility: meta 12px (text-meta, the
+   quiet second line, a tooltip, a legend), body 13px (text-body, prose from sm up; a phone
+   reads 14px, app.css), title 15px semibold (text-title, a card title), page 20px semibold
+   (text-page, the one h1). data/ui.tsx exports the class sets each view uses. */
 @theme {
   --color-*: initial;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
+  --text-body: 0.8125rem;
+  --text-body--line-height: 1.25rem;
+  --text-title: 0.9375rem;
+  --text-title--line-height: 1.25rem;
+  --text-page: 1.25rem;
+  --text-page--line-height: 1.75rem;
 
   --color-accent: #5c85fb;
 
@@ -24,6 +51,9 @@
   --color-on-primary: oklch(98.5% 0.001 106.423); /* stone-50 */
   /* Errors: the border and first line of an error, and an invalid key field. */
   --color-danger: oklch(50.5% 0.213 27.518); /* red-700 */
+  /* The outcome marks: a model FAIL (filled) and a LIMIT (filled, hatched). */
+  --color-mark-fail: oklch(21.6% 0.006 56.043); /* stone-900 */
+  --color-mark-limit: oklch(55.3% 0.013 58.071); /* stone-500 */
 }
 
 /* The dark variant swaps the neutrals and lightens danger; the accent stays the one blue. */
@@ -38,5 +68,7 @@
     --color-primary: oklch(92.3% 0.003 48.717); /* stone-200 */
     --color-on-primary: oklch(21.6% 0.006 56.043); /* stone-900 */
     --color-danger: oklch(70.4% 0.191 22.216); /* red-400 */
+    --color-mark-fail: oklch(86.9% 0.005 56.366); /* stone-300 */
+    --color-mark-limit: oklch(55.3% 0.013 58.071); /* stone-500 */
   }
 }

@@ -827,6 +827,87 @@ test('Forget key stays on screen at 390 with a key held', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
+// P25u S1 (shell): on a phone the rail is a 4+3 grid with every view on screen (V5), the effort
+// chip is not an icon with no words (V15), the local-run panel shows on Live trial too (J15), and
+// the tab's title names the view and what it shows (J13).
+test.describe('shell after the UI/UX audit', () => {
+  test('V5: at 375 all seven views are on screen in two rows, with no sideways scroll and no fade', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await mockBrowserDirect(page);
+    await browse(page, './');
+    await page.evaluate(() => document.fonts.ready);
+    const nav = page.getByRole('navigation', { name: 'Views' });
+    const links = nav.getByRole('link');
+    await expect(links).toHaveCount(7);
+    const boxes: Array<{ x: number; y: number; width: number; height: number }> = [];
+    for (const l of await links.all()) {
+      const b = (await l.boundingBox())!;
+      expect(b.x, await l.innerText()).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, await l.innerText()).toBeLessThanOrEqual(375);
+      expect(b.height, await l.innerText()).toBeGreaterThanOrEqual(44);
+      boxes.push(b);
+    }
+    // Four on the first row, three on the second.
+    const rows = new Set(boxes.map((b) => Math.round(b.y)));
+    expect(rows.size).toBe(2);
+    expect(boxes.filter((b) => Math.round(b.y) === Math.round(boxes[0]!.y))).toHaveLength(4);
+    const strip = await nav.locator(':scope > div').first().evaluate((el) => ({ scroll: el.scrollWidth - el.clientWidth, mask: getComputedStyle(el).maskImage }));
+    expect(strip.scroll).toBe(0);
+    expect(strip.mask).toBe('none');
+    // The label is visible text, so no link is an icon alone.
+    for (const name of ['Overview', 'Tasks', 'Runs', 'Live trial', 'Findings', 'Environment', 'Glossary']) await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
+  });
+
+  test('V15: with no key, the effort chip shows on the desktop and not on a phone', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await browse(page, './?view=overview');
+    await expect(page.getByRole('banner').getByTestId('effort')).toBeVisible();
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect(page.getByRole('banner').getByTestId('effort')).toBeHidden();
+    // The surface chip stays on a phone (polish.spec.ts pins it; S4's A17 gives it a short label).
+    await expect(page.getByRole('banner').getByTestId('surface-chip')).toBeAttached();
+  });
+
+  test('J15: with no key on the hosted site, Live trial shows the local-run panel, once', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await browse(page, './?view=live');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Live trial');
+    await expect(page.getByTestId('local-run-panel')).toHaveCount(1);
+    await expect(panel(page)).toBeVisible();
+    await expectStartBlock(panel(page));
+  });
+
+  test('J15: with a key, Live trial leaves the panel to the trial card, so an error never shows it twice', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200 });
+    await page.goto('./?view=live');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Live trial');
+    await expect(page.getByTestId('local-run-panel')).toHaveCount(0);
+  });
+
+  test('J13: the tab title names the view and the task or trial it shows; the key gate keeps the full name', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    await expect(keyField(page)).toBeVisible();
+    await expect(page).toHaveTitle('Riverbend clinical agent environment');
+    expect(await passGate(page)).toBe(true);
+    await expect(page).toHaveTitle('Overview · Riverbend');
+    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Tasks' }).click();
+    await expect(page).toHaveTitle('Tasks · Riverbend');
+    await page.goto('./?view=tasks&task=renal-dose-review&tab=prompt');
+    await expect(page).toHaveTitle('renal-dose-review · Tasks · Riverbend');
+    await page.goto('./?view=runs&run=final-1&trial=contrast-ct-prep%2F0');
+    await expect(page).toHaveTitle(/^contrast-ct-prep\/0\b.* · Runs · Riverbend$/);
+    await page.goBack();
+    await expect(page).toHaveTitle('renal-dose-review · Tasks · Riverbend');
+    // Back at the gate (Add key), the product's full name returns.
+    await page.getByRole('button', { name: 'Add key' }).click();
+    await expect(page).toHaveTitle('Riverbend clinical agent environment');
+  });
+});
+
 test('the rail link\'s visible text is its accessible name', async ({ page }) => {
   await mockBrowserDirect(page);
   await browse(page, './');

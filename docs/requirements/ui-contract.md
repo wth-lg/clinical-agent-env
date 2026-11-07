@@ -91,14 +91,16 @@ accessible name or text node, so they share one line of the snapshot.
 
 ### P13: shell, surface chip and key gate
 
-- `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Attribution`: the rail
+- `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Glossary`: the rail
   labels, in this order (apps/web/src/shell/views.ts). All seven show on every screen of the
-  shell.
+  shell. The last was `Attribution` until the P25u UI/UX pass (builder-331, J7a): that word is
+  also a trial's tab, so one word pointed at two places; the view id, `?view=glossary`, is
+  unchanged, and the trial tab keeps `Attribution`.
 - `Add an API key`: the key gate's label over the key field, shown when no key is set and again
-  after Forget key. P25u J11 put `Browse the results` first on the card (the filled primary, with
-  the official run's passes over its trials under it), then the key form under the h2
-  `Run new trials (needs an API key)`; the label was that h2 before, under the welcome h1 "See an
-  AI model do clinical tasks". Under the field, the hints say where a key comes from
+  after Forget key. P25u J11 (builder-335) put `Browse the results` first on the card (the filled
+  primary, with the official run's passes over its trials under it), then the key form under the
+  h2 `Run new trials (needs an API key)`; the label was that h2 before, under the welcome h1 "See
+  an AI model do clinical tasks". Under the field, the hints say where a key comes from
   (`Get a key at console.anthropic.com under API keys.`, with the cost of one trial from the
   official run's records) and that `Forget key in the top bar drops it at any time.` (P25u A13).
 - `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted

@@ -1,9 +1,10 @@
 // Plain labels (pre-audit S9, P17j JU1): no route shows "Run oracle", "Run matrix",
 // "Browser-direct", "Worker" or the rail label "Labels"; the buttons read "Run reference
-// solution" and "Check the grader", the surface chip "Hosted", the rail "Attribution". On a PASS
-// the trial header's M1-M5 row reads "Confirmed" or "Checks pending" with what is missing, and
+// solution" and "Check the grader", the surface chip "Hosted", the rail "Glossary" (P25u J7a: the
+// rail item was "Attribution", which is also a trial tab, so one word pointed at two places). On a
+// PASS the trial header's M1-M5 row reads "Confirmed" or "Checks pending" with what is missing, and
 // the codes are in the Attribution tab only. No card title, heading or link on any route calls the
-// Attribution page "Labels" (verifier-phase-P17j-close-1 S9); "fault labels" stays.
+// glossary page "Labels" (verifier-phase-P17j-close-1 S9); "fault labels" stays.
 import { expect, test, type Page } from '@playwright/test';
 import { browse } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
@@ -17,7 +18,7 @@ async function expectNoOldLabels(page: Page, where: string) {
   await expect(page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Labels', exact: true }), where).toHaveCount(0);
 }
 
-test('no browse route shows the old labels; the rail says Attribution and the chip says Hosted', async ({ page }) => {
+test('no browse route shows the old labels; the rail says Glossary, not Attribution, and the chip says Hosted', async ({ page }) => {
   test.setTimeout(120_000);
   const base = await sampleBase(test.info().project.use.baseURL!);
   for (const q of ['?view=overview', '?view=tasks', '?view=runs', '?view=live', '?view=findings', '?view=environment', '?view=glossary']) {
@@ -25,7 +26,10 @@ test('no browse route shows the old labels; the rail says Attribution and the ch
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
     await expectNoOldLabels(page, q);
   }
-  await expect(page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Attribution', exact: true })).toBeVisible();
+  const rail = page.getByRole('navigation', { name: 'Views' });
+  await expect(rail.getByRole('link', { name: 'Glossary', exact: true })).toBeVisible();
+  await expect(rail.getByRole('link', { name: 'Attribution', exact: true })).toHaveCount(0);
+  await expect(rail.getByRole('link', { name: 'Glossary', exact: true })).toHaveAttribute('href', /[?&]view=glossary(&|$)/);
   await expect(page.getByTestId('surface-chip')).toHaveText('Hosted');
 });
 
