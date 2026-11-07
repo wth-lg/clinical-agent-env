@@ -22,10 +22,9 @@ import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults, useResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, CARD, LINK, Notice, Page, SECTION_LABEL, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, CARD, LINK, Notice, Page, SECTION_LABEL, SELECT, TAB, TAB_ACTIVE, TAB_IDLE, TAB_STRIP, VerdictChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
-import { Verdict } from '../findings/verdict.tsx';
 import { freshView } from '../shell/views.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
 
@@ -265,7 +264,7 @@ function TaskCard({ t, tab, rate }: { t: Loaded; tab: TaskTab | null; rate: Task
           (ui-polish 4.1). The link's hit area covers the whole header (after:inset-0), so the
           row answers a hover anywhere on it; the rate link sits above that area. */}
       <div className="group relative rounded-t-lg px-4 py-3 hover:bg-canvas/60 dark:hover:bg-canvas/40">
-        <a href={hrefWith(toggle)} onClick={onNav(toggle)} aria-expanded={open} data-testid="task-open" className="inline-flex items-start gap-1.5 text-left text-[15px] font-medium leading-5 text-ink after:absolute after:inset-0 after:rounded-t-lg">
+        <a href={hrefWith(toggle)} onClick={onNav(toggle)} aria-expanded={open} data-testid="task-open" className="inline-flex items-start gap-1.5 text-left text-title font-medium text-ink after:absolute after:inset-0 after:rounded-t-lg">
           <Chevron aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
           <span data-testid="task-title" className="underline decoration-line-strong underline-offset-2 group-hover:decoration-ink">{shown.title}</span>
           <span className="ml-1 shrink-0 self-center whitespace-nowrap text-xs font-normal text-ink-muted">{open ? 'Close task' : 'Open task'}</span>
@@ -279,7 +278,7 @@ function TaskCard({ t, tab, rate }: { t: Loaded; tab: TaskTab | null; rate: Task
           <p className="relative z-10 mt-0.5 flex flex-wrap items-baseline gap-x-1 pl-5.5 text-xs text-ink-muted" data-testid="task-rate-line">
             <a href={hrefWith(toRuns)} onClick={onNav(toRuns)} data-testid="task-rate" title="Its trials in Runs" className={LINK}>{rate.passes}/{rate.trials} pass</a>
             <span aria-hidden>·</span>
-            <Verdict task={task.id} passes={rate.passes} trials={rate.trials} />
+            <VerdictChip task={task.id} passes={rate.passes} trials={rate.trials} />
           </p>
         )}
       </div>
@@ -356,10 +355,12 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
   return (
     <div className="border-t border-line">
       {/* The tabs wrap onto a second row on a narrow screen, so none hides past the edge
-          (ui-polish 4.3), with a gap between the rows (V12b); the line under them is on the
-          wrapper, and a tab's focus ring sits inside the tab. */}
+          (ui-polish 4.3). The strip and its tabs are S1's shared pill (data/ui.tsx TAB_STRIP,
+          TAB, TAB_ACTIVE, TAB_IDLE), the same as the rail's, so the second row reads as one
+          control (V12b); the line under them is on the wrapper, and a tab's focus ring sits
+          inside the tab. */}
       <div className="border-b border-line">
-        <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex flex-wrap gap-x-1 gap-y-1 px-2">
+        <div role="tablist" aria-label="Task" onKeyDown={onKey} className={TAB_STRIP}>
           {TASK_TABS.map((x) => (
             <button
               key={x.id}
@@ -374,7 +375,7 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
               aria-controls={`task-panel-${task}-${x.id}`}
               tabIndex={x.id === tab ? 0 : -1}
               onClick={() => go(x.id)}
-              className={`shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-sm focus-visible:-outline-offset-2 ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+              className={`${TAB} ${x.id === tab ? TAB_ACTIVE : TAB_IDLE}`}
             >
               {x.label}
             </button>
