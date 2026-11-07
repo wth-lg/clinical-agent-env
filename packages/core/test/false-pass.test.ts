@@ -136,8 +136,8 @@ describe('the rules say so', () => {
   it('PASS_DEFINITION and DENOMINATOR_RULE name the false PASS and how it is resolved', () => {
     expect(PASS_DEFINITION).toMatch(/false PASS \(GR5\)/);
     // A false PASS is defined by the audit of that PASS, as GR5 is (verifier-phase-P17j-retro-JG5-unread-1 m2).
-    expect(PASS_DEFINITION).toMatch(/human audit of that PASS labels it grader/);
-    expect(gr5!.text).toMatch(/human audit of that PASS labels it grader/);
+    expect(PASS_DEFINITION).toMatch(/the audit of that PASS labels it grader/);
+    expect(gr5!.text).toMatch(/the audit of that PASS labels it grader/);
     // What an audit outcome GRADER_BUG on a PASS means (verifier-phase-P17j-retro-JG5-unread-1 m1).
     expect(PASS_DEFINITION).toMatch(/neither is an audit outcome GRADER_BUG on a PASS/);
     expect(DENOMINATOR_RULE).toMatch(/false PASS \(GR5\) is not counted as a pass/);

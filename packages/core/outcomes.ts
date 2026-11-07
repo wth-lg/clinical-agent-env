@@ -297,7 +297,7 @@ export const CONFIRMATION_CRITERIA: readonly Criterion[] = [
   M4,
   {
     id: 'M5',
-    text: 'A human audit labels the trial model (its adjudicated label, else its label), and either the audit has an adjudicated label or it says the model is at fault and no LLM auditor disagrees.',
+    text: 'The audit labels the trial model (its adjudicated label, else its label), and either the audit has an adjudicated label or it says the model is at fault and no LLM auditor disagrees.',
     reads: ['audit.adjudicated_label', 'audit.label (else implied by audit.taxonomy)', 'audit.model_fault', 'audit.llm_auditor_agrees'],
     check: ({ audit, outcome }) => {
       if (audit === null) return result('pending', 'not human-audited');
@@ -385,7 +385,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E6',
-        text: 'A human audit says, after adjudication, that a tool refusal was wrong: at the step the audit names as decisive, a tool refused a call, the trajectory shows a tool error there, and the tool\'s input schema, run on the recorded call, does not give the same refusal (a refusal the schema gives, or a refusal of a tool the environment does not have, was right); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an LLM auditor that agrees.',
+        text: 'The audit says, after adjudication, that a tool refusal was wrong: at the step the audit names as decisive, a tool refused a call, the trajectory shows a tool error there, and the tool\'s input schema, run on the recorded call, does not give the same refusal (a refusal the schema gives, or a refusal of a tool the environment does not have, was right); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an LLM auditor that agrees.',
         reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.adjudicated_label', 'audit.llm_auditor_agrees'],
         check: ({ audit }) => {
           if (audit === null) return result(false, 'not human-audited');
@@ -452,7 +452,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   grader: {
-    sentence: "The grader is at fault when a check failed with an error, a regrade could not grade the record, a human audit found a grader bug or a false PASS, or the task's reference solution or an accepted alternative fails the same check as the trial.",
+    sentence: "The grader is at fault when a check failed with an error, a regrade could not grade the record, the audit found a grader bug or a false PASS, or the task's reference solution or an accepted alternative fails the same check as the trial.",
     criteria: [
       {
         id: 'GR1',
@@ -473,7 +473,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'GR3',
-        text: 'A human audit marks the trial as a grader bug (GRADER_BUG) and gives at least one evidence id.',
+        text: 'The audit marks the trial as a grader bug (GRADER_BUG) and gives at least one evidence id.',
         reads: ['audit.outcome', 'audit.evidence_ids'],
         check: ({ audit }) => result(audit !== null && audit.outcome === 'GRADER_BUG' && audit.evidence_ids.length > 0, audit === null ? 'not human-audited' : `audited ${audit.outcome}, ${plural(audit.evidence_ids.length, 'evidence id')}`),
       },
@@ -487,7 +487,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         // A false PASS (P17j JG5): the only fault criterion that decides a PASS. explain.ts lets it
         // decide, and a GR5 trial is not counted as a pass and blocks the run (DENOMINATOR_RULE).
         id: 'GR5',
-        text: 'The trial is a PASS, and a human audit of that PASS labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
+        text: 'The trial is a PASS, and the audit of that PASS labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
         reads: ['record.outcome', 'audit.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids'],
         // The row must be about the PASS: a grader label from the audit of a FAIL that a grader fix
         // and regrade turned into a PASS is the resolved failure, not a false PASS (JG5-1 S2). An
@@ -548,12 +548,12 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, E7-E10, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, E7-E10, GR1 or GR2 decided it, and the audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
-  contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
+  contradicted: 'A confirming criterion is not met or the audit gives another label, so the label must be reviewed before it is used.',
 };
 
-export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS is a false PASS (GR5) when the human audit of that PASS labels it grader with evidence: the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass. A grader label from the audit of a failure that a grader fix and regrade turned into a PASS is not a false PASS, and neither is an audit outcome GRADER_BUG on a PASS: the audit row of a PASS has the outcome PASS, and a false PASS is its label grader.';
+export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS is a false PASS (GR5) when the audit of that PASS labels it grader with evidence: the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass. A grader label from the audit of a failure that a grader fix and regrade turned into a PASS is not a false PASS, and neither is an audit outcome GRADER_BUG on a PASS: the audit row of a PASS has the outcome PASS, and a false PASS is its label grader.';
 
 export const DENOMINATOR_RULE = [
   `Only ${list(VALID_OUTCOMES)} count in the denominator, and every other outcome is excluded: ${list(RERUN_OUTCOMES)} are excluded and rerun, and ${list(NEVER_RERUN)} ${NEVER_RERUN.length === 1 ? 'is' : 'are'} excluded and never rerun as a model trial (${NEVER_RERUN.map((o) => `${o}: ${NOT_RERUN_REASON[o]}`).join('; ')}).`,
