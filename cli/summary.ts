@@ -4,7 +4,12 @@
 // its recorded outcome; a task with regraded records also prints its recorded k/n, as disclosure), ENV_ERROR counted raw over settled and re-queued attempts, ENV_LIMIT over the same, the models seen,
 // the initial state hashes and replay.json's verdicts. With --write it writes <run>/summary.json,
 // validated against the schema first; without it, it only prints, so a summary of a committed run
-// leaves its file alone (verifier-phase-P17i-JG8a-1 P-1). --require checks the run:
+// leaves its file alone (verifier-phase-P17i-JG8a-1 P-1). The write happens only when every
+// --require holds (a violation leaves the file as it was, exit 1), atomically (a temp file in the
+// run directory, then a rename), and carries the fields other commands own through a rewrite
+// (CARRIED_FIELDS: judge_agreement and kappa, from cli/judge-agreement.ts --write), so the P23
+// and P26 gate commands can run again without deleting them (verifier-phase-P23-close-1).
+// --require checks the run:
 //   valid=N          every task has exactly N valid trials (donewhen: trials=N)
 //   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b), or,
 //                    with a decimal point (band=0.2-0.7, the final run's FINAL_PASS_BAND), a
@@ -70,7 +75,7 @@ import { isValid } from '../packages/core/outcomes.ts';
 import { readLabels, rowLabel } from './audit-check.ts';
 import { replayStateOf, whyStale, type ReplayEntry, type ReplayRecord } from '../packages/core/replay.ts';
 import { disclosedVerdictText, parseDisclosures, passRatesRows } from '../packages/core/disclosure.ts';
-import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type DisclosureContext, type RegradeGrade, type ReplayState, type Requirements, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, trialName, type DisclosureContext, type RegradeGrade, type ReplayState, type Requirements, type Summary, type SummaryTrial, type SupersededInput } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -153,6 +158,30 @@ export function readSuperseded(dir: string): SupersededInput[] {
 export function readAuditLabels(dir: string): Record<string, string | null> | null {
   if (!existsSync(join(dir, 'audit.jsonl'))) return null;
   return Object.fromEntries((readLabels(dir, []) ?? []).flatMap(({ label }) => (label === null ? [] : [[label.trial, rowLabel(label)]])));
+}
+
+// The top-level fields of summary.json that other commands own: each is written into the file
+// by the command named, after `summary --write`, and a rewrite carries it through as it is, in
+// the order the file holds them (readCarried). validateSummary does not read them.
+export const CARRIED_FIELDS = {
+  judge_agreement: 'pnpm cli judge-agreement <run> --write',
+  kappa: 'pnpm cli judge-agreement <run> --double-label --write',
+} as const satisfies Record<'judge_agreement' | 'kappa', string>;
+
+// The carried fields of an existing <run>/summary.json, as it holds them; {} when there is no
+// file, or it is not a JSON object (nothing to carry: the write starts afresh).
+export function readCarried(file: string): Partial<Pick<Summary, keyof typeof CARRIED_FIELDS>> {
+  if (!existsSync(file)) return {};
+  let existing: unknown;
+  try {
+    existing = JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return {};
+  }
+  if (typeof existing !== 'object' || existing === null || Array.isArray(existing)) return {};
+  const carried: Record<string, unknown> = {};
+  for (const key of Object.keys(existing)) if (Object.hasOwn(CARRIED_FIELDS, key)) carried[key] = (existing as Record<string, unknown>)[key];
+  return carried as Partial<Pick<Summary, keyof typeof CARRIED_FIELDS>>;
 }
 
 // band-or-disclosed's context: the freeze's disclosures and the writeup's pass-rates rows, each
@@ -263,7 +292,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const withDisclosure = req.band_or_disclosed !== undefined || req.band_or_disclosed_rate !== undefined;
   s.violations = checkRequirements(s, req, withDisclosure ? disclosureContext(freeze, writeup) : undefined);
   assertSummary(s);
-  if (write) writeJson(join(dir, 'summary.json'), s);
+  // Written only when every requirement holds, with the fields other commands own carried from
+  // the file as it is (header); writeJson writes a temp file beside it and renames it into place.
+  const file = join(dir, 'summary.json');
+  const written = write && s.violations.length === 0;
+  if (written) {
+    Object.assign(s, readCarried(file));
+    writeJson(file, s);
+  }
 
   const say = json ? deps.err : deps.out;
   say(`model ${s.model ?? '(the records differ or none is recorded)'}, effort ${s.effort ?? '(the records differ or none is recorded)'}`);
@@ -301,7 +337,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       'a final run requires grader_error=0 and replay=all, and replay compares env_version only, so a grader fix does not break it',
   );
   for (const v of s.violations) say(`violation: ${v}`);
-  say(`summary: ${s.violations.length === 0 ? 'every requirement holds' : `${s.violations.length} violation(s)`}; ${write ? `wrote ${join(dir, 'summary.json')}` : 'summary.json not written (pass --write to write it)'}`);
+  say(`summary: ${s.violations.length === 0 ? 'every requirement holds' : `${s.violations.length} violation(s)`}; ${written ? `wrote ${file}` : write ? 'summary.json not written: a requirement does not hold' : 'summary.json not written (pass --write to write it)'}`);
   if (json) deps.out(JSON.stringify(s));
   return s.violations.length === 0 ? 0 : 1;
 }
