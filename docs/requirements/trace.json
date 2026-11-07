@@ -806,7 +806,7 @@
       "ui_required": true,
       "ui": {
         "route": "/",
-        "action": "Open the app: the UI is the main surface, with the rail (Overview, Tasks, Runs, Findings, Environment) and the surface chip.",
+        "action": "Open the app: the UI is the main surface, with the rail (Overview, Tasks, Runs, Live trial, Findings, Environment, Glossary) and the surface chip.",
         "surface": "any"
       },
       "evidence": [
