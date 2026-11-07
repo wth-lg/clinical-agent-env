@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { describeFailure, relayLine, RELAY_ANSWERED, RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, relayReason, trialRelayReason, type Failure } from '../src/keygate/failure.ts';
+import { describeFailure, KEY_NEXT, relayLine, RELAY_ANSWERED, RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, relayReason, trialRelayReason, type Failure } from '../src/keygate/failure.ts';
 
 const API_LINE = 'HTTP 401 authentication_error: invalid x-api-key';
 
@@ -13,7 +13,7 @@ describe('describeFailure', () => {
   // relay, so a line from an answer says so; a compromised relay's words cannot pass for the page's.
   it('a browser-direct 401: the API did not accept the key, then the API line as the relay answered it', () => {
     expect(RELAY_ANSWERED).toBe('The relay answered: ');
-    expect(describeFailure({ kind: 'api', status: 401, message: API_LINE })).toEqual({ lead: 'The API did not accept this key.', detail: `The relay answered: ${API_LINE}`, local: false });
+    expect(describeFailure({ kind: 'api', status: 401, message: API_LINE })).toEqual({ lead: 'The API did not accept this key.', next: KEY_NEXT, detail: `The relay answered: ${API_LINE}`, local: false });
   });
 
   it('a line the page wrote itself, with no answer behind it, has no attribution', () => {
@@ -24,7 +24,14 @@ describe('describeFailure', () => {
 
   it('a local-runner 401 says the same first sentence, with the runner line as detail', () => {
     const message = 'The API refused this key (unauthorized). Check the key and press Validate again.';
-    expect(describeFailure({ kind: 'runner', cause: 'error', status: 401, message })).toEqual({ lead: 'The API did not accept this key.', detail: message, local: false });
+    expect(describeFailure({ kind: 'runner', cause: 'error', status: 401, message })).toEqual({ lead: 'The API did not accept this key.', next: KEY_NEXT, detail: message, local: false });
+  });
+
+  // P25u A13: a rejected key had no next step.
+  it('a 401 on either surface names the next step: check the key or make a new one, then Validate again', () => {
+    expect(KEY_NEXT).toBe('Check that you copied the whole key, or make a new one in the Console, then press Validate again.');
+    expect(describeFailure({ kind: 'api', status: 401, message: API_LINE }).next).toBe(KEY_NEXT);
+    expect(describeFailure({ kind: 'api', status: 403, message: API_LINE }).next).toBeUndefined();
   });
 
   // P16h PR-web-2: hosted calls go through the relay. When it cannot be reached, limits the page

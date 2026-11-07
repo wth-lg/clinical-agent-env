@@ -5,26 +5,19 @@
 // not clinenv-runner; any other answer, an error or no answer within the timeout also means
 // browser-direct, except on the runner's own page (below). Only the local runner is ever sent
 // the key (keygate/runner.ts). The body is parsed from its text: a static host may serve the
-// extensionless file under any content type.
-import { HEALTH_PATH, parseHealth, type Health } from '../../../../packages/core/runner-api.ts';
+// extensionless file under any content type. The probe itself is surface/probe.ts, which has no
+// DOM reference, so the Node tests can load it.
+import { HEALTH_TIMEOUT_MS, probeHealth, runnerGone as probeRunnerGone, type Surface } from './probe.ts';
 
-export const HEALTH_TIMEOUT_MS = 1500;
-
-export type Surface = { kind: 'local-runner'; health: Health } | { kind: 'browser-direct' };
+export { HEALTH_TIMEOUT_MS, RUNNER_GONE_GAP_MS, RUNNER_GONE_PROBES, RUNNER_GONE_TIMEOUT_MS, type Surface } from './probe.ts';
 
 export async function detectSurface(base = document.baseURI, fetchFn: typeof fetch = fetch, timeoutMs = HEALTH_TIMEOUT_MS): Promise<Surface> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetchFn(new URL(HEALTH_PATH, base), { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: controller.signal });
-    if (res.status !== 200) return { kind: 'browser-direct' };
-    return { kind: 'local-runner', health: parseHealth(JSON.parse(await res.text())) };
-  } catch {
-    return { kind: 'browser-direct' };
-  } finally {
-    clearTimeout(timer);
-  }
+  return probeHealth(base, fetchFn, timeoutMs);
 }
+
+// Whether the runner's process is gone, for a page the runner serves (P25u A2; gate P25U-S4
+// F2): two probes with a longer timeout than the first load's, true only when both fail.
+export const runnerGone = (base = document.baseURI, fetchFn: typeof fetch = fetch): Promise<boolean> => probeRunnerGone(base, fetchFn);
 
 // The runner's own page carries the token meta that only the runner injects. There a failed,
 // slow or unparseable health means the runner is not responding, never browser-direct: the

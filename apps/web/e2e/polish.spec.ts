@@ -157,13 +157,16 @@ test.describe('phone shell at 390', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });
 
-  test('the Hosted chip shows its icon only, and keeps its name and title', async ({ page }) => {
+  // P25u A17: the chip keeps a short visible word beside its icon on a phone; the full name
+  // stays for assistive technology and in the title.
+  test('the Hosted chip shows its icon and a short word, and keeps its name and title', async ({ page }) => {
     await browse(page, './?view=overview');
     const chip = page.getByRole('banner').getByTestId('surface-chip');
     await expect(chip).toHaveText('Hosted');
     const outer = chip.locator('..');
     await expect(outer).toHaveAttribute('title', /^Hosted\./);
-    expect((await outer.boundingBox())!.width).toBeLessThanOrEqual(32);
+    await expect(outer.getByTestId('surface-short')).toBeVisible();
+    expect((await outer.boundingBox())!.width).toBeLessThanOrEqual(90);
   });
 });
 
@@ -378,50 +381,52 @@ test('with no key, the Add key prompt comes before the Run buttons, and the empt
   await expect(add).toBeVisible();
   // DOCUMENT_POSITION_FOLLOWING (4): run-x1 comes after Add key in the DOM.
   expect(await add.evaluate((a, r) => a.compareDocumentPosition(r!) & 4, await run.elementHandle())).toBe(4);
-  await expect(page.getByTestId('no-live-runs')).toContainText('No runs yet. Press Run ×1 to start one trial. A trial takes about 1 to 4 minutes, and you see each step as it runs.');
+  // P25u J14: the duration comes from the official run's median durations (none in this fixture).
+  await expect(page.getByTestId('no-live-runs')).toContainText(/No runs yet\. Press Run ×1 to start one trial\. A trial takes (about \d+( to \d+)? minutes?|a few minutes|under a minute), and you see each step as it runs\./);
   await expect(page.locator('main').getByText('Pick a task and run it. You see each step the model takes, then the grade.')).toBeVisible();
 });
 
-test('the key gate welcomes first, keeps Validate as its one filled primary and asks for a key while the field is empty', async ({ page }) => {
+// P25u J11: Browse the results is the gate's one filled primary; Validate is a bordered button
+// under its own heading.
+test('the key gate welcomes first, keeps Browse the results as its one filled primary and asks for a key while the field is empty', async ({ page }) => {
   await openApp(page, './');
   await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
   await expect(page.getByText('You can look at everything with no key. Add a key only to run new trials.')).toBeVisible();
-  const validate = page.getByRole('button', { name: 'Validate' });
-  await expect(validate).toHaveClass(/\bbg-primary\b/);
-  await expect(validate).toBeEnabled();
+  const gate = page.getByRole('button', { name: GATE });
+  await expect(gate).toHaveClass(/\bbg-primary\b/);
   await expect(page.locator('main button.bg-primary')).toHaveCount(1);
+  const validate = page.getByRole('button', { name: 'Validate' });
+  await expect(validate).toBeEnabled();
   const hint = page.getByText('Paste a key to continue');
   await expect(hint).toBeVisible();
   expect((await validate.getAttribute('aria-describedby')) ?? '').toContain((await hint.getAttribute('id'))!);
-  // Browse without a key is a full button beside Validate: a solid outline, not the quiet style.
-  const gate = page.getByRole('button', { name: GATE });
-  expect(await gate.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
-  expect(await gate.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe('rgba(0, 0, 0, 0)');
+  // Validate is a full button: a solid outline, not the quiet style.
+  expect(await validate.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
+  expect(await validate.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe('rgba(0, 0, 0, 0)');
   await page.getByLabel('Add an API key', { exact: true }).fill('sk-ant-x');
   await expect(hint).toHaveCount(0);
 });
 
-test('the key gate\'s "Add an API key" heading is the key field\'s visible label, with no second label under it (verifier-phase-P17i-UI-5-1 m4)', async ({ page }) => {
+test('the key gate\'s "Add an API key" label is the key field\'s one visible label, with no second label under it (verifier-phase-P17i-UI-5-1 m4)', async ({ page }) => {
   await openApp(page, './');
-  const heading = page.getByRole('heading', { level: 2, name: 'Add an API key' });
-  await expect(heading).toBeVisible();
+  const label = page.locator('main label', { hasText: /^\s*Add an API key\s*$/ });
+  await expect(label).toBeVisible();
   const field = page.locator('main input[type="password"]');
   await expect(field).toHaveAccessibleName('Add an API key');
-  expect(await field.getAttribute('aria-labelledby')).toBe(await heading.getAttribute('id'));
+  expect(await field.getAttribute('aria-labelledby')).toBe(await label.getAttribute('id'));
   await expect(page.locator('main label', { hasText: /^\s*API key\s*$/ })).toHaveCount(0);
 });
 
-test('a click on the key gate\'s "Add an API key" heading focuses the key field, and the name stays one (verifier-phase-P17i-UI-FU-1 m2)', async ({ page }) => {
+test('a click on the key gate\'s "Add an API key" label focuses the key field, and the name stays one (verifier-phase-P17i-UI-FU-1 m2)', async ({ page }) => {
   await openApp(page, './');
-  const heading = page.getByRole('heading', { level: 2, name: 'Add an API key' });
+  const label = page.locator('main label', { hasText: /^\s*Add an API key\s*$/ });
   const field = page.locator('main input[type="password"]');
-  await expect(field).toBeFocused();
-  await field.blur();
+  // P25u J11: the gate leads with Browse the results, so the key field no longer takes focus by itself.
   await expect(field).not.toBeFocused();
-  await heading.click();
+  await label.click();
   await expect(field).toBeFocused();
   await expect(field).toHaveAccessibleName('Add an API key');
-  expect(await field.getAttribute('aria-labelledby')).toBe(await heading.getAttribute('id'));
+  expect(await field.getAttribute('aria-labelledby')).toBe(await label.getAttribute('id'));
 });
 
 // UI polish PR 4 (reports/ui-polish-spec.md 4.1 to 4.4): on a closed task row the grader validation

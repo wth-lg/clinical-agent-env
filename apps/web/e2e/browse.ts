@@ -5,7 +5,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // The gate button's name; a spec that waits for the gate uses it (it never clicks it).
-export const GATE = 'Browse without a key';
+export const GATE = 'Browse the results';
 
 // Clicks "Browse without a key" when the gate shows, then waits for the rail; true when it clicked.
 export async function passGate(page: Page): Promise<boolean> {
