@@ -77,8 +77,8 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=attribution` | Trial Attribution tab, criteria table | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=state-diff` | Trial State diff tab: initial hash against the manifest, then the diff | P16 |
 | `/?view=runs&run=session&trial=first-nonpass` | The first non-pass trial this surface started, in the trial detail layout (header, Grading with the Score card, gate checks and rubric table, Attribution with `not human-audited`, State diff, Environment, Raw, trajectory), a short session banner above it and `Back to Live trial`; with no runs in the session, the heading `Trials from this session` and a notice that says where this session's trials are (Your runs in the Live trial view), with an `Open Live trial` link; a trial the surface does not hold says why (`No trial <id> in this session.` and the surface's reason). It reads no published results, so it shows while they load or cannot be read | P15, P16, P25c (builder-330) |
-| `/?view=environment` | Environment: counts, tool catalogue, Try a read tool (Run tool), Check a fresh copy matches | P14 |
-| `/?view=glossary` | How failures are attributed (definitions) | P14 |
+| `/?view=environment` | Environment: today's build (counts), the frozen worlds, tool catalogue, Try a read tool (Run tool), Check a fresh copy matches | P14 |
+| `/?view=glossary` | Glossary: plain terms, then how failures are attributed (definitions) | P14 |
 | `/?view=findings` | Findings, rendered from docs/findings.md and summary.json | P14, P24 (content) |
 | `https://wth-lg.github.io/clinical-agent-env/` | Hosted Pages site, base URL | P25 |
 
@@ -265,7 +265,9 @@ launcher (P15) shows the Run lines.
   k equal to n.
 - `RBC-PHARM-07`: the policy id at the top of renal-dose-review's Policy tab, followed by the
   policy text (content from the task, P17i may revise it).
-- `How failures are attributed`: the glossary page title and the link text that opens it.
+- `How failures are attributed`: the link text that opens the glossary page from Findings and
+  Runs. The page's title is `Glossary` (P25u J7b: the page opens with one
+  plain sentence per term, then the attribution rules; the earlier title named only the rules).
 
 ### P14a, P16: reasons and attribution
 
