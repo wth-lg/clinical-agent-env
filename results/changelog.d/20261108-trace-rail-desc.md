@@ -1,0 +1,1 @@
+- trace.json: the app-shell row (N14) names the rail as the app shows it now: Overview, Tasks, Runs, Live trial, Findings, Environment, Glossary. Docs only.
