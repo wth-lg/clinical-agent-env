@@ -1,7 +1,7 @@
-// Price wording on the Live trial launcher (pre-audit S13, P17j JU6): every Run ×n amount is an
-// upper bound and says "at most $X"; when a committed pilot holds the task, the typical cost of
-// one trial (the pilot's median) shows next to them; with no key, "Add key" is a button there that
-// opens the key gate.
+// Price wording on the Live trial launcher (pre-audit S13, P17j JU6; P25u A7): beside each Run ×n
+// button the typical cost of one trial comes first, from the committed pilot that holds the task,
+// then what the batch holds ("holds up to $X", an upper bound); with no pilot only the hold shows
+// and a line says why; with no key, "Add key" is a button there that opens the key gate.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { browseFrom } from './browse.ts';
@@ -10,28 +10,31 @@ import { RUN_SIZES } from '../src/live/types.ts';
 
 const browse = browseFrom(trialBase);
 
-test('every Run ×n amount reads "at most $X"', async ({ page }) => {
-  await browse(page, './?view=live&task=renal-dose-review');
-  for (const n of RUN_SIZES) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(/^at most \$\d+\.\d{2}$/);
-});
-
-test('the typical cost from the committed pilot shows next to the amounts', async ({ page }) => {
+test('every Run ×n amount leads with the typical cost and reads "holds up to $X"', async ({ page }) => {
   await browse(page, './?view=live&task=renal-dose-review');
   // pilot-pass holds one renal-dose-review trial at $0.88 agent cost and $0 judge cost.
-  await expect(page.getByTestId('typical-cost')).toHaveText('Typical cost: $0.88 a trial (median of 1 trial of this task in pilot-pass).');
+  for (const n of RUN_SIZES) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(/^about \$0\.88 a trial · holds up to \$\d+\.\d{2}$/);
 });
 
-test('with no pilot trial of the task, no typical cost shows', async ({ page }) => {
+test('the line under the buttons says where the typical cost comes from', async ({ page }) => {
+  await browse(page, './?view=live&task=renal-dose-review');
+  await expect(page.getByTestId('typical-cost')).toHaveText('“About $0.88 a trial” is the median of 1 trial of this task in pilot-pass. A batch holds its full amount until its trials end.');
+});
+
+test('with no pilot trial of the task, only the hold shows, and a line says there is no typical cost yet', async ({ page }) => {
   await browse(page, './?view=live&task=crc-care-gap');
-  await expect(page.getByTestId('run-cost-1')).toHaveText(/^at most \$/);
+  await expect(page.getByTestId('run-cost-1')).toHaveText(/^holds up to \$\d+\.\d{2}$/);
   await expect(page.getByTestId('typical-cost')).toHaveCount(0);
+  await expect(page.getByTestId('no-typical')).toHaveText('No pilot has run this task, so there is no typical cost yet. A batch holds its full amount until its trials end.');
 });
 
 test('with no key, "Add key" on the launcher is a button that opens the key gate', async ({ page }) => {
   await browse(page, './?view=live');
   await page.getByTestId('launcher-reason').getByRole('button', { name: 'Add key' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: 'Add an API key' })).toBeVisible();
+  // P25u J11: the key form sits under its own heading; "Add an API key" is the field's label.
+  await expect(page.getByRole('heading', { level: 2, name: 'Run new trials (needs an API key)' })).toBeVisible();
+  await expect(page.getByLabel('Add an API key', { exact: true })).toBeVisible();
 });
 
 test('Live trial with no key: axe finds no serious or critical violation and nothing scrolls sideways, light and dark, 1440 and 390 (verifier JU6-1 F1)', async ({ page }) => {
@@ -41,7 +44,7 @@ test('Live trial with no key: axe finds no serious or critical violation and not
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       await browse(page, './?view=live&task=renal-dose-review');
-      await expect(page.getByTestId('run-cost-20')).toHaveText(/^at most \$/);
+      await expect(page.getByTestId('run-cost-20')).toHaveText(/holds up to \$/);
       const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')}`);
       expect(bad, `${width} ${scheme}`).toEqual([]);
       const { sw, cw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));

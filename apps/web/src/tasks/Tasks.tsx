@@ -4,8 +4,14 @@
 // and a replay of the official run's trials of the task. Run trial opens Live trial; with no key
 // it says it needs one. ?task= opens one task on the tab ?tab= names (TASK_TABS, prompt by
 // default; WAI-ARIA tabs, so arrow keys, Home and End move between them).
+// P25u S2: a card opens from an "Open task" link, so a modified click opens the task in a new tab
+// (J12); its meta line shows the task's k/N and band verdict from the official run, linked to its
+// trials in Runs (J12); the three validation buttons share one bordered style on a closed card and
+// in the Grader validation tab, so the list has no six black buttons (J12, V7); a ?task= no task
+// has says so above the list (J23).
 import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2, Play, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
+import type { TaskSummary } from '../../../../packages/core/summary.ts';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
@@ -14,15 +20,18 @@ import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } 
 import { titleParts } from './title.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
-import { checkTextOf, loadResults } from '../data/results.ts';
+import { checkTextOf, loadResults, useResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, BUTTON_QUIET, CARD, Notice, Page, SECTION_LABEL, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, CARD, LINK, Notice, Page, SECTION_LABEL, SELECT, TAB, TAB_ACTIVE, TAB_IDLE, TAB_STRIP, VerdictChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
-import { navigate, useParams } from '../data/url.ts';
+import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
 
 type Loaded = { task: Task; checks: Check[] };
+
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const inWords = (n: number) => WORDS[n] ?? String(n);
 
 export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const [tasks, setTasks] = useState<Loaded[] | null>(null);
@@ -30,19 +39,25 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   const params = useParams();
   const open = params.get('task');
   const tab = tabOf(params.get('tab'));
+  // The official run's per-task summary, for each card's k/N and verdict; nothing until it loads
+  // or when no official run is published.
+  const results = useResults();
+  const rates = results?.kind === 'ready' ? results.official?.summary?.tasks ?? null : null;
   useEffect(() => {
     // The task files are a large chunk, loaded when Tasks first opens.
     Promise.all([loadTaskList(), import('./matrix-task.ts')])
       .then(([all, { taskChecks }]) => Promise.all(all.map(async (task) => ({ task, checks: await taskChecks(task.id) }))))
       .then(setTasks, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
+  const missing = tasks !== null && open !== null && !tasks.some((t) => t.task.id === open);
   return (
     <Page title="Tasks" headingRef={headingRef} lead="Each task is a prompt, the tools the model may use, the policies it must follow and the checks that grade it. Grader validation runs here with no key.">
       {error !== null && <Notice testId="error-state">The tasks cannot be read: {error}</Notice>}
       {tasks === null && error === null && <Notice>Loading tasks…</Notice>}
+      {missing && <Notice testId="missing-task" role="status" tone="info">No task &quot;{open}&quot;. The {inWords(tasks?.length ?? 0)} tasks are below.</Notice>}
       {tasks !== null && (
         <ul className="space-y-3" data-testid="task-list">
-          {tasks.map((t) => <TaskCard key={t.task.id} t={t} tab={open === t.task.id ? tab : null} />)}
+          {tasks.map((t) => <TaskCard key={t.task.id} t={t} tab={open === t.task.id ? tab : null} rate={rates?.[t.task.id] ?? null} />)}
         </ul>
       )}
     </Page>
@@ -73,7 +88,8 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
       {c.kind === 'gate' && requires !== undefined && <p className="break-words" data-testid="check-requires">Requires {requires}.</p>}
       {question !== null && <p className="break-words" data-testid="check-question">{question}</p>}
       <details className="text-xs text-ink-muted">
-        <summary className="cursor-pointer">Enforces {c.traces_to}: show the text</summary>
+        {/* A tap target on a touch screen (V6a). */}
+        <summary className="cursor-pointer pointer-coarse:py-2.5">Enforces {c.traces_to}: show the text</summary>
         {source !== null ? <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-2 font-sans text-ink" data-testid="check-source">{source}</pre> : <p className="mt-1">This reference names no text in the task.</p>}
       </details>
     </li>
@@ -224,7 +240,8 @@ type TaskTab = (typeof TASK_TABS)[number]['id'];
 const tabOf = (v: string | null): TaskTab => TASK_TABS.find((t) => t.id === v)?.id ?? 'prompt';
 
 // A task card: closed, its header and grader validation; open (tab not null), its header and tabs.
-function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
+// rate: the task's entry in the official run's summary.json, or null.
+function TaskCard({ t, tab, rate }: { t: Loaded; tab: TaskTab | null; rate: TaskSummary | null }) {
   const { task, checks } = t;
   const open = tab !== null;
   const Chevron = open ? ChevronDown : ChevronRight;
@@ -235,21 +252,35 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   // The card holds the validation runs, so a result started on the closed card, or one still
   // running, shows in the Grader validation panel once the card opens (verifier JU9-1 F5).
   const runs = useValidationRuns();
+  // The title is a link that opens the card (?task=) or closes it; its state is in the URL, so a
+  // modified click opens the task in a new tab and a copied link opens the same card (J12).
+  const toggle = { task: open ? null : task.id, tab: null };
+  const toRuns = freshView('runs', { task: task.id });
   return (
     <li data-testid="task-card" data-task={task.id} className={CARD}>
-      {/* The title on its own line and the id, policy codes and counts on a muted line under it, so
-          every closed row has the same height (ui-polish 4.1). The toggle's hit area covers the
-          whole header (after:inset-0), so the row answers a hover anywhere on it. */}
+      {/* The title on its own line, the id, policy codes and counts on a muted line under it, and
+          the pass rate with its verdict on a third line of its own (a verdict's length varies, so
+          it never pushes the meta line onto two), so every closed row has the same height
+          (ui-polish 4.1). The link's hit area covers the whole header (after:inset-0), so the
+          row answers a hover anywhere on it; the rate link sits above that area. */}
       <div className="group relative rounded-t-lg px-4 py-3 hover:bg-canvas/60 dark:hover:bg-canvas/40">
-        <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-start gap-1.5 text-left font-medium text-ink after:absolute after:inset-0 after:rounded-t-lg group-hover:underline">
+        <a href={hrefWith(toggle)} onClick={onNav(toggle)} aria-expanded={open} data-testid="task-open" className="inline-flex items-start gap-1.5 text-left text-title font-medium text-ink after:absolute after:inset-0 after:rounded-t-lg">
           <Chevron aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
-          <span data-testid="task-title">{shown.title}</span>
-        </button>
+          <span data-testid="task-title" className="underline decoration-line-strong underline-offset-2 group-hover:decoration-ink">{shown.title}</span>
+          <span className="ml-1 shrink-0 self-center whitespace-nowrap text-xs font-normal text-ink-muted">{open ? 'Close task' : 'Open task'}</span>
+        </a>
         <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 pl-5.5 text-xs text-ink-muted">
           <code className="break-all">{task.id}</code>
           {shown.codes.length > 0 && <span data-testid="task-codes">{shown.codes.join(', ')}</span>}
           <span>{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
         </p>
+        {rate !== null && rate.trials > 0 && (
+          <p className="relative z-10 mt-0.5 flex flex-wrap items-baseline gap-x-1 pl-5.5 text-xs text-ink-muted" data-testid="task-rate-line">
+            <a href={hrefWith(toRuns)} onClick={onNav(toRuns)} data-testid="task-rate" title="Its trials in Runs" className={LINK}>{rate.passes}/{rate.trials} pass</a>
+            <span aria-hidden>·</span>
+            <VerdictChip task={task.id} passes={rate.passes} trials={rate.trials} />
+          </p>
+        )}
       </div>
       {!open && <Validation id={task.id} runs={runs} closed />}
       {open && (
@@ -324,10 +355,12 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
   return (
     <div className="border-t border-line">
       {/* The tabs wrap onto a second row on a narrow screen, so none hides past the edge
-          (ui-polish 4.3); the line under them is on the wrapper, and a tab's focus ring sits
+          (ui-polish 4.3). The strip and its tabs are S1's shared pill (data/ui.tsx TAB_STRIP,
+          TAB, TAB_ACTIVE, TAB_IDLE), the same as the rail's, so the second row reads as one
+          control (V12b); the line under them is on the wrapper, and a tab's focus ring sits
           inside the tab. */}
       <div className="border-b border-line">
-        <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex flex-wrap gap-x-1 px-2">
+        <div role="tablist" aria-label="Task" onKeyDown={onKey} className={TAB_STRIP}>
           {TASK_TABS.map((x) => (
             <button
               key={x.id}
@@ -342,7 +375,7 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
               aria-controls={`task-panel-${task}-${x.id}`}
               tabIndex={x.id === tab ? 0 : -1}
               onClick={() => go(x.id)}
-              className={`shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-sm focus-visible:-outline-offset-2 ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+              className={`${TAB} ${x.id === tab ? TAB_ACTIVE : TAB_IDLE}`}
             >
               {x.label}
             </button>
@@ -391,15 +424,16 @@ const VALIDATION_HELP = {
 // The matrix's right answers (the oracle, its alternatives and a lever item's read-all-newest agent)
 // must pass; every other probe is a wrong answer and must fail.
 const RIGHT_ANSWERS: readonly string[] = ['oracle', 'alternative', 'read-all-newest'];
+// The one style of the three validation buttons, on a closed card and in the Grader validation tab.
+const VALIDATION_BUTTON = `${BUTTON} max-sm:w-full`;
 
 // The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
 // and carries Run trial; in the Grader validation panel the tab names it and each button has its
-// line. One primary action per row: Run trial when there is a key; with none, Run reference
-// solution, which needs no key. The other validation buttons on a closed row are quiet, so the
-// list reads as one primary per row (verifier-phase-P17i-UI-1-1 F6).
+// line. The three validation buttons share one bordered style in both places (P25u J12, V7: six
+// black "Run reference solution" buttons led the list, and the other two changed style when a
+// card opened). The only primary on a row is Run trial, when there is a key.
 function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
   const { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay } = runs;
-  const keyed = useKeyStatus().kind !== 'none';
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
   const replayTrials = async () => {
     const r = await loadResults();
@@ -416,14 +450,14 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
       {closed ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>
-          {buttons.map((b) => <button key={b.id} type="button" className={`${b.id === 'oracle' && !keyed ? BUTTON_PRIMARY : BUTTON_QUIET} max-sm:w-full`} disabled={busy} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>)}
+          {buttons.map((b) => <button key={b.id} type="button" className={VALIDATION_BUTTON} disabled={busy} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>)}
           <RunTrial id={id} />
         </div>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-3">
           {buttons.map((b) => (
             <li key={b.id} className="flex flex-col items-start gap-1">
-              <button type="button" className={`${b.id === 'oracle' ? BUTTON_PRIMARY : BUTTON} max-sm:w-full`} disabled={busy} aria-describedby={`validation-help-${id}-${b.id}`} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>
+              <button type="button" className={VALIDATION_BUTTON} disabled={busy} aria-describedby={`validation-help-${id}-${b.id}`} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>
               <p id={`validation-help-${id}-${b.id}`} className="text-xs text-ink-muted">{VALIDATION_HELP[b.id]}</p>
             </li>
           ))}

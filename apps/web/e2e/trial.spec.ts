@@ -259,7 +259,7 @@ test('empty and error states', async ({ page }) => {
 test('Back to Runs restores the list with its filters, and history moves between them', async ({ page }) => {
   await browse(page, `./?view=runs&task=renal-dose-review&label=model`);
   const name = TRIALS.failAudited;
-  await page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('button', { name, exact: true }).click();
+  await page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('link', { name, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
   await expect(page.getByTestId('trial-path')).toHaveText(name);
   await page.getByRole('tab', { name: 'Attribution' }).click();
@@ -402,7 +402,7 @@ test('a trial opened from low in the list opens at its header, with focus on its
     const name = (await last.getAttribute('data-trial'))!;
     await last.scrollIntoViewIfNeeded();
     expect(await page.evaluate(() => document.querySelector('main')!.scrollTop)).toBeGreaterThan(0);
-    await last.getByRole('button', { name, exact: true }).click();
+    await last.getByRole('link', { name, exact: true }).click();
     await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
     await expect(page.getByTestId('trial-header')).toBeInViewport();
     await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
@@ -418,10 +418,10 @@ test('Back to Runs returns to the row the trial was opened from, and focus order
     const last = page.getByTestId('trial-list').first().getByTestId('trial-row').last();
     const name = (await last.getAttribute('data-trial'))!;
     await last.scrollIntoViewIfNeeded();
-    await last.getByRole('button', { name, exact: true }).click();
+    await last.getByRole('link', { name, exact: true }).click();
     await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
     await page.getByRole('link', { name: 'Back to Runs' }).click();
-    const button = page.getByTestId('trial-list').first().locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('button', { name, exact: true });
+    const button = page.getByTestId('trial-list').first().locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('link', { name, exact: true });
     await expect(button).toBeInViewport();
     await expect(button).toBeFocused();
   }

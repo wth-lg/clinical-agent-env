@@ -18,7 +18,7 @@ The command clones the repository, installs the dependencies, builds the UI and 
 2. Set the session spend cap if you want a lower or higher one.
 3. Press **Validate**.
 
-The runner holds the key in memory and sends it only to the Anthropic API. It writes the key to no file and to no log. The key chip in the top bar shows the key's state, and **Forget key** drops it. To look at the tasks and the committed results with no key, press **Browse without a key**.
+The runner holds the key in memory and sends it only to the Anthropic API. It writes the key to no file and to no log. The key chip in the top bar shows the key's state, and **Forget key** drops it. To look at the tasks and the committed results with no key, press **Browse the results**.
 
 ## Run a task and watch it
 

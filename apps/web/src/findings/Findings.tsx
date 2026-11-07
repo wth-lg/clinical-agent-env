@@ -16,12 +16,12 @@ import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
-import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
+import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch, VerdictChip } from '../data/ui.tsx';
 import { ChartKey, PilotRateRows, RateAxis } from './pilot.tsx';
 import { whyFailParts } from './counts.ts';
 import { FaultBox, KindBar, Reruns, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
-import { DifficultyHistory, NoFailures, Verdict, VerdictLink } from './verdict.tsx';
+import { DifficultyHistory, NoFailures, VerdictLink } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 
@@ -169,7 +169,7 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
               <li key={id} className="col-span-full grid grid-cols-subgrid items-center">
                 <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.passes}/{t.trials}</span></span>
                 <IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} />
-                <span className="text-xs text-ink-muted"><span data-testid="wilson" className="whitespace-nowrap">{formatInterval(t.wilson95)}</span><Verdict task={id} passes={t.passes} trials={t.trials} className="block" /><PassK task={id} k={t.pass_k} /></span>
+                <span className="text-xs text-ink-muted"><span data-testid="wilson" className="whitespace-nowrap">{formatInterval(t.wilson95)}</span><span className="my-0.5 block"><VerdictChip task={id} passes={t.passes} trials={t.trials} /></span><PassK task={id} k={t.pass_k} /></span>
                 <NotCountedLine task={id} text={notCountedText(notCounted(t))} />
               </li>
             ))}

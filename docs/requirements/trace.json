@@ -634,7 +634,7 @@
       "done_when": [
         1
       ],
-      "note": "P25c fix (builder-326): the graded live trial's Score card is the trial page's (apps/web/src/trial/Grading.tsx SCORE_TITLE), which the UI polish titled 'Rubric score (does not decide pass)'; the pattern follows the screen, as N7's does. P25c re-audit fix (builder-330): on 8e7ff856 no session trial reached the Grading cards. Now the graded live card shows 'Rubric score (does not decide pass) <s>' with 'Open the full grade', and the trial page of run=session renders the session trial in the trial detail layout (Score card, gate checks, rubric table, Attribution with the not-audited marker, trajectory) from the record the runner serves (apps/web/src/trial/session.ts); the row's action and expect are unchanged. The row's snapshot N10-live-trial-graded.ax.txt is still owed by the P25c audit."
+      "note": "P25c fix (builder-326): the graded live trial's Score card is the trial page's (apps/web/src/trial/Grading.tsx SCORE_TITLE), which the UI polish titled 'Rubric score (does not decide pass)'; the pattern follows the screen, as N7's does. P25c re-audit fix (builder-330): on 8e7ff856 no session trial reached the Grading cards. Now the graded live card shows 'Rubric score (does not decide pass) <s>' with 'Open the full grade', and the trial page of run=session renders the session trial in the trial detail layout (Score card, gate checks, rubric table, Attribution with the not-audited marker, trajectory) from the record the runner serves (apps/web/src/trial/session.ts); the row's action and expect are unchanged. The row's snapshot N10-live-trial-graded.ax.txt is still owed by the P25c audit. P25u fix (builder-335, A5): the graded live card keeps the title and value, as 'Rubric score (does not decide pass) <s> of 1. Extra credit only; the pass or fail comes from the gate checks.', so the pattern still matches; the link is now a button named by the outcome, 'See why it failed' or 'See the grade', in place of 'Open the full grade'."
     },
     {
       "id": "N11",
@@ -2028,7 +2028,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=overview",
-        "action": "Read the spend meter in the top bar: session spend against the session cap, below the ledger caps.",
+        "action": "Read the spend meter in the top bar: what the session has committed (spent, plus held for running trials) against the session cap, below the ledger caps.",
         "surface": "any"
       },
       "evidence": [
@@ -2046,10 +2046,11 @@
         {
           "ax_match": {
             "file": "verifier-phase-P25c-1/U15-spend-meter.ax.txt",
-            "pattern": "\\bSession spend \\$[0-9]+\\.[0-9]{2} of \\$[0-9]+\\.[0-9]{2} cap\\b"
+            "pattern": "\\bCommitted \\$[0-9]+\\.[0-9]{2} of \\$[0-9]+\\.[0-9]{2} cap\\b"
           }
         }
       ],
+      "note": "P25u fix (builder-335, A6): the meter reads 'Committed $<a> of $<b> cap' (apps/web/src/spend/SpendMeter.tsx), with the title 'Session spend against the session cap, including the most a running trial can still cost' and the bar's accessible name 'Session spend committed against the cap', so the requirement (the session's spend against the session cap) keeps its meaning. It read 'Session spend $<a> of $<b> cap' before, and during a trial that had cost $0.00 the reserved amount read as money already spent. The figure, its source (GET /api/spend on the local runner, the tab ledger's exposure on the hosted site) and the ledger tests are unchanged; the pattern follows the screen. The row's snapshot is still owed by the next audit.",
       "phase": "P15"
     },
     {

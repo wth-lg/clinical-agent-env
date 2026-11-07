@@ -264,7 +264,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
 
   test('a task opened on Tasks is not a hidden filter on Runs (review-ui-P14-2 F2)', async ({ page }) => {
     await browseAt(page, `${base}?view=tasks`);
-    await page.locator('[data-testid="task-card"][data-task="contrast-ct-prep"]').getByRole('button').first().click();
+    await page.locator('[data-testid="task-card"][data-task="contrast-ct-prep"]').getByRole('link', { name: /Open task$/ }).click();
     await expect(page).toHaveURL(/task=contrast-ct-prep/);
     await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Runs' }).click();
     await expect(page).not.toHaveURL(/task=/);
