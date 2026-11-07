@@ -104,10 +104,13 @@ export const RELAY_ANSWERED = 'The relay answered: ';
 const FROM_ANSWER = /^(HTTP \d{3}(?! without a body$)|stream error |response model )/;
 export const relayLine = (message: string): string => (FROM_ANSWER.test(message) ? RELAY_ANSWERED + message : message);
 
+// P25u A13: a rejected key names its next step on both surfaces.
+export const KEY_NEXT = 'Check that you copied the whole key, or make a new one in the Console, then press Validate again.';
+
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
   if (status === null) return { lead: 'The browser did not send the request to the API.' };
-  if (status === 401) return { lead: 'The API did not accept this key.' };
+  if (status === 401) return { lead: 'The API did not accept this key.', next: KEY_NEXT };
   if (status === 403) return { lead: 'The API does not let this key use the model.' };
   if (status === 404) return { lead: 'The API did not find the model for this key.' };
   if (status === 429) return { lead: 'The API is limiting requests for this key.', next: 'Wait a minute, then press Validate again.' };
@@ -122,7 +125,7 @@ function runnerLead(f: RunnerFailure): { lead: string; next?: string } {
   if (f.cause === 'no-answer') return { lead: 'The local runner did not answer.', next: 'Make sure that the runner is running, then press Validate again.' };
   if (f.cause === 'bad-body') return { lead: 'The local runner sent an answer that this page cannot read.' };
   // The runner relays these three API answers with their own status (apps/runner/server.ts).
-  if (f.status === 401 || f.status === 403 || f.status === 429) return { lead: apiLead(f.status).lead };
+  if (f.status === 401 || f.status === 403 || f.status === 429) return { lead: apiLead(f.status).lead, ...(f.status === 401 ? { next: KEY_NEXT } : {}) };
   if (f.status === 502) return { lead: 'The local runner could not check the key with the API.' };
   if (f.status !== undefined && f.status >= 500) return { lead: 'The local runner had an internal error.' };
   return { lead: 'The local runner did not accept the key.' };

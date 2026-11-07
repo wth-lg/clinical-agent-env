@@ -3,6 +3,9 @@
 // `pnpm donewhen` all use these strings; no other source file writes them out.
 export const LOCAL_START_COMMAND =
   'git clone https://github.com/wth-lg/clinical-agent-env && cd clinical-agent-env && pnpm start';
+// The last step alone, for a computer that already holds the clone (P25u A12): the local-run
+// panel on the runner and the runner-down screen lead with it.
+export const LOCAL_RESTART_COMMAND = 'pnpm start';
 
 // The Node version is engines.node in package.json; scripts/check-node.mjs refuses an older one.
 export const LOCAL_PREREQUISITES = 'Requires Node.js 22.18 or newer and pnpm.';

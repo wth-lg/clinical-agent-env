@@ -63,7 +63,8 @@ export interface LiveRun {
 }
 
 export interface TrialTransport {
-  readonly kind: 'local-runner' | 'browser-direct';
+  // replay (P25u A14): a published trial's events played back at a fixed pace, no API call.
+  readonly kind: 'local-runner' | 'browser-direct' | 'replay';
   start(req: BatchRequest): Promise<StartResult>;
   // What the batch is projected to cost and what the session has already committed, in USD, as
   // start would check them against the session cap.

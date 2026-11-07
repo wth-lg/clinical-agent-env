@@ -11,9 +11,10 @@ const TEXT: Record<Surface['kind'], { title: string; body: string }> = {
     title: 'Run it on your computer',
     body: 'One command starts the environment on your computer and opens this UI there. The key then stays on your computer.',
   },
+  // P25u A12: the reader already has the clone, so the restart comes first.
   'local-runner': {
-    title: 'Start command',
-    body: 'The local runner on this computer serves this page. To start it again, or on another computer, run this command.',
+    title: 'Start the runner again',
+    body: 'The local runner on this computer serves this page. If it stops, start it again.',
   },
 };
 
@@ -30,7 +31,7 @@ export function LocalRunPanel({ surface, id: panelId, className = '' }: { surfac
       </h2>
       <p className="mt-1 text-ink-muted">{body}</p>
       <div className="mt-3">
-        <LocalCommand />
+        <LocalCommand local={surface.kind === 'local-runner'} />
       </div>
     </section>
   );

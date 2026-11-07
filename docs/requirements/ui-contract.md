@@ -53,7 +53,8 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
   `No runs in this session`. The trial page of `run=session` (builder-330) shows a graded trial
   in the trial detail layout from that record and the events the surface kept, with the session
   banner above it and `Back to Live trial`; the graded live card and each Your runs row link
-  there with `Open the full grade`. Owner P15. It includes the P25c forced-fail smoke run
+  there with a button named by the outcome, `See why it failed` on a non-pass and `See the grade`
+  on a PASS (P25u A5; it was `Open the full grade`). Owner P15. It includes the P25c forced-fail smoke run
   (run id `smoke-<n>`, see "P25c follow-ups"), which is a valid FAIL, so `first-nonpass` can
   select it with the one definition above.
 
@@ -95,8 +96,13 @@ accessible name or text node, so they share one line of the snapshot.
   shell. The last was `Attribution` until the P25u UI/UX pass (builder-331, J7a): that word is
   also a trial's tab, so one word pointed at two places; the view id, `?view=glossary`, is
   unchanged, and the trial tab keeps `Attribution`.
-- `Add an API key`: the key gate's heading over the key field (an h2 under the welcome h1 "See an AI
-  model do clinical tasks"), shown when no key is set and again after Forget key.
+- `Add an API key`: the key gate's label over the key field, shown when no key is set and again
+  after Forget key. P25u J11 (builder-335) put `Browse the results` first on the card (the filled
+  primary, with the official run's passes over its trials under it), then the key form under the
+  h2 `Run new trials (needs an API key)`; the label was that h2 before, under the welcome h1 "See
+  an AI model do clinical tasks". Under the field, the hints say where a key comes from
+  (`Get a key at console.anthropic.com under API keys.`, with the cost of one trial from the
+  official run's records) and that `Forget key in the top bar drops it at any time.` (P25u A13).
 - `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted
   site.
 - `through a relay that forwards it and keeps no copy`: the key gate's line on the hosted site
@@ -108,7 +114,11 @@ accessible name or text node, so they share one line of the snapshot.
   apps/web/src/surface/command.ts, shown directly above LOCAL_START_COMMAND on the key gate (both
   surfaces), in the hosted page's local-run panel and on the runner-down screen. U12 checks it
   with the pattern `Requires Node\.js 22\.18 or newer and pnpm\.`, so the sentence itself is
-  written only here, in command.ts and in README.md.
+  written only here, in command.ts and in README.md. On the local runner (P25u A12) the panel and
+  the runner-down screen lead with the restart alone, `In your clinical-agent-env folder, run`
+  `pnpm start` (LOCAL_RESTART_COMMAND, the last step of LOCAL_START_COMMAND) with its own copy
+  button; the sentence stays on screen, and the rows and the clone command wait behind a
+  disclosure, `On another computer`.
 - `https://nodejs.org/en/download` and `https://pnpm.io/installation`: NODE_INSTALL_URL and
   PNPM_INSTALL_URL, the hrefs of the `Install Node.js` and `Install pnpm` links under it. Under
   the sentence, one row per tool (PREREQUISITE_ROWS in command.ts): the requirement, the check
@@ -325,14 +335,22 @@ launcher (P15) shows the Run lines.
   (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in
   the accessibility text. The empty states show the title with no value, which the pattern does
   not match. On the Live trial view the graded card shows the same title and value on one line
-  (builder-330, apps/web/src/live/grade.ts), and the full grade is on the trial page of
-  `run=session`, one click away through `Open the full grade`.
+  (builder-330, apps/web/src/live/grade.ts), as `Rubric score (does not decide pass) <s> of 1.`
+  followed by `Extra credit only; the pass or fail comes from the gate checks.` (P25u A5: a FAIL
+  beside a 1.00 read as a contradiction; a Your runs row shows the short form, up to `of 1`), and
+  the full grade is on the trial page of `run=session`, one click away through the button
+  `See why it failed` (non-pass) or `See the grade` (PASS).
 
 ### P15: live trial
 
 - `claude-opus-5-5`: the model shown in the Run launcher.
-- The spend meter in the top bar reads `Session spend $<a> of $<b> cap`, both in dollars with two
-  decimals, b the session cap. On the local runner a is the runner session's committed spend,
+- The spend meter in the top bar reads `Committed $<a> of $<b> cap`, both in dollars with two
+  decimals, b the session cap, with the title `Session spend against the session cap, including the
+  most a running trial can still cost` and the bar's accessible name `Session spend committed
+  against the cap`, so the meter still says it is the session's spend against the session cap.
+  P25u A6 renamed it from `Session spend $<a> of $<b> cap`: a holds the money reserved for
+  running trials too, so during a trial that had cost $0.00 the old label read as money already
+  spent. On the local runner a is the runner session's committed spend,
   read at load from `GET /api/spend` (`session_spent_usd`, the figure a dry run's projection
   carries), so a reload shows the same amount as the run launcher (P25c, builder-327).
 
@@ -378,7 +396,8 @@ so a repeated item cannot meet the count of another.
   policy line it enforces (row N6). Owner P14.
 - `Rubric score \(does not decide pass\)\s?(?:0\.[0-9]{2}|1\.00)(?![0-9])`: a Score card with a
   value. Owner P16 (trial), P15 (live).
-- `\bSession spend \$[0-9]+\.[0-9]{2} of \$[0-9]+\.[0-9]{2} cap\b`: the spend meter. Owner P15.
+- `\bCommitted \$[0-9]+\.[0-9]{2} of \$[0-9]+\.[0-9]{2} cap\b`: the spend meter (P25u A6; it was
+  `Session spend …`). Owner P15.
 
 ## Result lines in P25c evidence files
 
@@ -568,7 +587,7 @@ each (apps/runner does not exist yet):
 | `GET /api/runs` and the `run=session` token | P15 |
 | `GET /api/spend`, the session's committed spend (`session_spent_usd`) that the spend meter reads at load | P25c (builder-327) |
 | `CLINENV_FORCED_FAIL=1` and the smoke run (`smoke-<n>`, `mock: true`, model `claude-opus-5-5`) | P15 |
-| the spend meter, `Session spend $<a> of $<b> cap` | P15 |
+| the spend meter, `Committed $<a> of $<b> cap` (P25u A6; it was `Session spend $<a> of $<b> cap`) | P15 |
 | the matrix count line, `matrix: <k>/<n> probe verdicts as expected` | P14 |
 | the Runs header, `Official run <run id>`, `All tasks: <k>/<N> pass` and `Wilson 95% <lo>% to <hi>%` | P14 |
 | the three reason forms, including `turn limit reached: <n> turns` and `refused: <first words>` | P14a |

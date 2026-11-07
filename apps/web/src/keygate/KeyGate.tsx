@@ -1,22 +1,18 @@
-import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Fragment, useId, useRef, useState, type FormEvent } from 'react';
+import { useResults } from '../data/results.ts';
 import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
 import { isHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
-import { BUTTON, BUTTON_PRIMARY, CARD, FIELD } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, CARD, FIELD, LINK } from '../data/ui.tsx';
 import { validateDirect } from './direct.ts';
 import { describeFailure, keyFormatProblem, type Failure } from './failure.ts';
+import { CONSOLE_HOST, CONSOLE_KEYS_URL, costRangeText, keyHints, passLine, REMEMBER_HINT } from './hints.ts';
 import { heldByRunner, holdInTab } from './key.ts';
 import { postKey } from './runner.ts';
-
-// Where the key goes, as three short points under the field (ui-polish 5.4).
-const WHERE: Record<Surface['kind'], readonly string[]> = {
-  'local-runner': ['The key goes to the local runner on this machine, which keeps it in memory.', 'The runner sends it only to the Anthropic API.', 'Use a workspace key with a spend limit.'],
-  'browser-direct': ["The key stays in this tab's memory.", 'It is sent only to the Anthropic API, through a relay that forwards it and keeps no copy.', 'Use a workspace key with a spend limit.'],
-};
 
 const field = `${FIELD} h-9 w-full px-3`;
 
@@ -32,8 +28,9 @@ const NO_SAVE = { autoComplete: 'off', 'data-1p-ignore': 'true', 'data-lpignore'
 // input's value into its value attribute, so after a failed Validate the key would sit in the
 // page's markup (review-security-P16h-web-1 M2). State holds only whether the field is filled.
 
-// The first screen: a welcome, then paste a key, Validate, go. Or browse without one. Validate stays
-// the one filled primary; while the field is empty it says "Paste a key to continue" and pressing it
+// The first screen (P25u J11): a welcome, then Browse the results, the one filled primary, with
+// the official run's headline under it; then, under its own heading, the key form: paste a key,
+// Validate, go. While the field is empty Validate says "Paste a key to continue" and pressing it
 // moves focus to the field (ui-polish 5.4). Below the form, outside any error, the local-run panel
 // states the prerequisites and the one command.
 export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surface; onDone: () => void; onBrowse: () => void; notice?: string | undefined }) {
@@ -44,10 +41,14 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   const [capText, setCapText] = useState(String(sessionCap()));
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(notice ? { kind: 'notice', message: notice } : null);
-  const ids = { key: useId(), heading: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId(), empty: useId() };
+  const ids = { key: useId(), label: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId(), empty: useId() };
   const cap = parseCap(capText);
   const rounded = cap !== null && cap !== Number(capText.trim());
   const direct = isHosted(surface);
+  // The official run's headline and the cost of one trial (copy rule C7: from the data).
+  const results = useResults();
+  const summary = results?.kind === 'ready' ? results.official?.summary ?? null : null;
+  const hints = keyHints(surface.kind, summary === null ? null : costRangeText(summary.tasks));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -87,21 +88,25 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <SurfaceChip surface={surface} />
         </div>
         <p data-testid="gate-intro" className="mt-1 text-xs text-ink-muted">A mock health record, six clinical tasks, and a grader that explains each trial.</p>
-        <span aria-hidden className="mt-5 flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-ink dark:bg-line">
-          <KeyRound className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-        <h1 className="mt-3 text-xl font-semibold tracking-tight text-ink">See an AI model do clinical tasks</h1>
+        <h1 className="mt-5 text-xl font-semibold tracking-tight text-ink">See an AI model do clinical tasks</h1>
         <p className="mt-1 text-ink-muted">You can look at everything with no key. Add a key only to run new trials.</p>
 
-        {/* The requirements name this heading (docs/requirements/ui-contract.md, trace U3 and U23).
-            It is the key field's visible label too, so no second label repeats it under it
-            (verifier-phase-P17i-UI-5-1 m4); its text is a <label> for the field, so a click on it
-            focuses the field, while the field's name still comes from the h2 (UI-FU-1 m2). */}
-        <h2 id={ids.heading} className="mt-5 text-sm font-semibold text-ink"><label htmlFor={ids.key} className="block">Add an API key</label></h2>
+        <div className="mt-4">
+          <button type="button" onClick={onBrowse} className={`${BUTTON_PRIMARY} h-9 px-4`}>
+            Browse the results
+          </button>
+          <p data-testid="gate-pass-line" className="mt-2 text-ink-muted">{passLine(summary?.totals ?? null)}</p>
+        </div>
+
+        <h2 className="mt-6 border-t border-line pt-5 text-sm font-semibold text-ink">Run new trials (needs an API key)</h2>
+        {/* The requirements name this label (docs/requirements/ui-contract.md, trace U3 and U23). Its
+            text is a <label> for the field, so a click on it focuses the field, and the field's name
+            comes from it (UI-FU-1 m2). */}
+        <label id={ids.label} htmlFor={ids.key} className="mt-3 block text-sm font-medium text-ink">Add an API key</label>
         <div className="relative mt-2">
           <input
             id={ids.key}
-            aria-labelledby={ids.heading}
+            aria-labelledby={ids.label}
             type={reveal ? 'text' : 'password'}
             ref={keyRef}
             onChange={(e) => setFilled(e.target.value.trim() !== '')}
@@ -109,7 +114,6 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            autoFocus
             placeholder="sk-ant-…"
             aria-invalid={failure !== null && failure.kind !== 'cap'}
             aria-describedby={failure ? `${ids.hint} ${ids.error}` : ids.hint}
@@ -124,8 +128,8 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
             {reveal ? <EyeOff aria-hidden className="h-4 w-4" strokeWidth={1.75} /> : <Eye aria-hidden className="h-4 w-4" strokeWidth={1.75} />}
           </button>
         </div>
-        <ul id={ids.hint} className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-ink-muted">
-          {WHERE[surface.kind].map((line) => <li key={line}>{line}</li>)}
+        <ul id={ids.hint} data-testid="key-hints" className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-ink-muted">
+          {hints.map((line) => <li key={line}><HintLine line={line} /></li>)}
         </ul>
 
         {failure && <FailureNote id={ids.error} failure={failure} panelId={ids.panel} />}
@@ -150,8 +154,9 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
             />
           </div>
           {direct && (
-            <label className="inline-flex items-center gap-2 text-ink-muted sm:mb-1.5">
-              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-3.5 w-3.5 accent-accent" />
+            // P25u V6c and A13: a 16px box in a 44px-tall label, with what Remember keeps as its title.
+            <label className="inline-flex items-center gap-2 py-2 text-ink-muted" title={REMEMBER_HINT}>
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} title={REMEMBER_HINT} className="h-4 w-4 accent-accent" />
               Remember in this tab
             </label>
           )}
@@ -164,18 +169,28 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
             type="submit"
             disabled={busy || cap === null}
             aria-describedby={filled ? undefined : ids.empty}
-            className={`${BUTTON_PRIMARY} h-9 px-4`}
+            className={`${BUTTON} h-9 px-4`}
           >
             {busy ? 'Validating…' : 'Validate'}
           </button>
-          <button type="button" onClick={onBrowse} className={`${BUTTON} h-9`}>
-            Browse without a key
-          </button>
+          {!filled && <span id={ids.empty} className="text-xs text-ink-muted">Paste a key to continue.</span>}
         </div>
-        {!filled && <p id={ids.empty} className="mt-2 text-xs text-ink-muted">Paste a key to continue.</p>}
       </form>
       <LocalRunPanel id={ids.panel} surface={surface} className="w-full max-w-[440px]" />
     </main>
+  );
+}
+
+// A hint line; the one that names the Console links it.
+function HintLine({ line }: { line: string }) {
+  const at = line.indexOf(CONSOLE_HOST);
+  if (at < 0) return line;
+  return (
+    <>
+      {line.slice(0, at)}
+      <a href={CONSOLE_KEYS_URL} target="_blank" rel="noreferrer" className={LINK}>{CONSOLE_HOST}</a>
+      {line.slice(at + CONSOLE_HOST.length)}
+    </>
   );
 }
 

@@ -9,13 +9,14 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const E2E = join(import.meta.dirname, '../e2e');
-const NAME = 'Browse without a key';
+// P25u J11: the gate's primary action, "Browse the results" (it was "Browse without a key").
+const NAME = 'Browse the results';
 // The name as a string literal; comments may still say it.
 const LITERAL = new RegExp(`(['"\`])${NAME}\\1`);
 const code = (file: string) => readFileSync(join(E2E, file), 'utf8').replace(/^\s*\/\/.*$/gm, '');
 
 describe('the key gate in the e2e specs', () => {
-  it('only e2e/browse.ts names "Browse without a key"; it exports GATE, the name the key gate shows', () => {
+  it('only e2e/browse.ts names "Browse the results"; it exports GATE, the name the key gate shows', () => {
     const files = readdirSync(E2E, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.ts') && f !== 'browse.ts');
     expect(files.filter((f) => LITERAL.test(code(f)))).toEqual([]);
     expect(code('browse.ts')).toContain(`export const GATE = '${NAME}';`);

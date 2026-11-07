@@ -4,6 +4,8 @@ A synthetic clinic behind a set of typed tools, six clinical tasks with graders 
 
 ## Quick start
 
+No install: open https://wth-lg.github.io/clinical-agent-env/ and press Browse the results. The steps below run the environment on your computer.
+
 Requires Node.js 22.18 or newer and pnpm. Install [Node.js](https://nodejs.org/en/download) and [pnpm](https://pnpm.io/installation). To see the installed versions, run `node -v` and `pnpm -v`.
 
 1. Open a terminal.
