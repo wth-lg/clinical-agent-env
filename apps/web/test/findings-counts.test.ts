@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
-import { confirmation, kindSegments } from '../src/findings/counts.ts';
+import { confirmation, kindSegments, whyFailParts } from '../src/findings/counts.ts';
 
 const fc = (failures: number, taxonomy: Partial<FaultCounts['taxonomy']>): FaultCounts => ({ failures, taxonomy: { ...(Object.fromEntries(FAILURE_KINDS.map((k) => [k, 0])) as FaultCounts['taxonomy']), ...taxonomy }, label: null, infra_reruns: 0 });
 
@@ -47,5 +47,20 @@ describe('confirmation', () => {
 
   it('no failures: zeros', () => {
     expect(confirmation([trial('PASS', { M5: true })])).toEqual({ failures: 0, record: 0, audit: 0 });
+  });
+});
+
+// F3 (verifier-phase-P17i-P25U-S5-1): a task with no failures but reruns keeps its reruns line.
+describe('whyFailParts', () => {
+  it('with failures: the fault box, which holds the reruns line', () => {
+    expect(whyFailParts({ failures: 3, infra_reruns: 2 })).toEqual({ faultBox: true, reruns: false });
+  });
+
+  it('no failures but reruns: the reruns line on its own', () => {
+    expect(whyFailParts({ failures: 0, infra_reruns: 1 })).toEqual({ faultBox: false, reruns: true });
+  });
+
+  it('no failures and no reruns: nothing under the bar', () => {
+    expect(whyFailParts({ failures: 0, infra_reruns: 0 })).toEqual({ faultBox: false, reruns: false });
   });
 });

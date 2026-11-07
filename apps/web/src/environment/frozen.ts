@@ -36,3 +36,11 @@ export const roleWords = (r: Pick<FrozenRow, 'role' | 'version'>): string =>
 
 // Which world the hash is: today's build, or an earlier one the build has moved on from.
 export const worldWords = (today: boolean): string => (today ? "today's build" : 'an earlier world');
+
+// The count line over the rows: "5 of 6 tasks are frozen on today's build; the other on an
+// earlier world." The verb and "the other(s)" follow the counts.
+export function frozenCountLine(onToday: number, total: number): string {
+  const rest = total - onToday;
+  const tail = rest === 0 ? '.' : rest === 1 ? '; the other on an earlier world.' : '; the others on an earlier world.';
+  return `${onToday} of ${total} task${total === 1 ? '' : 's'} ${onToday === 1 ? 'is' : 'are'} frozen on today's build${tail}`;
+}

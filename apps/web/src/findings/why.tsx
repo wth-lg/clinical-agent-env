@@ -91,10 +91,16 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
         <GlossaryLink anchor="confirmation">Confirmed by the record (M1–M4) and the human audit (M5)</GlossaryLink>:{' '}
         <span data-testid="m1-m4" data-met={c.record} data-failures={c.failures}>the record confirms {c.record} of {n}</span>,{' '}
         <span data-testid="m5" data-agrees={c.audit} data-failures={c.failures}>audit agrees: {c.audit} of {c.failures}</span>.{' '}
-        <span data-testid="infra-reruns" data-count={reruns}>{reruns} trial{reruns === 1 ? '' : 's'} ended by the infrastructure and run again</span>.
+        <Reruns count={reruns} />
       </p>
     </div>
   );
+}
+
+// "2 trials ended by the infrastructure and run again." In the fault box, and on its own under a
+// task with no failures but reruns (F3), so the count is never hidden.
+export function Reruns({ count }: { count: number }) {
+  return <><span data-testid="infra-reruns" data-count={count}>{count} trial{count === 1 ? '' : 's'} ended by the infrastructure and run again</span>.</>;
 }
 
 // The run is blocked (DENOMINATOR_RULE): it has no headline pass rate, so the views show no pass

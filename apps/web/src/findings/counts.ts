@@ -1,8 +1,8 @@
 // The numbers behind the "Why tasks fail" card (P25u V3, J8c), apart from the components so
 // apps/web/test reads them without JSX: the kind bar drawn to scale, and the confirmation counts.
-import { m1ToM4Met, type Explanation } from '../../../../packages/core/explain.ts';
+import type { Explanation } from '../../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../../packages/core/summary.ts';
-import { isFailure, type FailureKind } from '../data/failures.ts';
+import { isFailure, m1m4, type FailureKind } from '../data/failures.ts';
 
 export interface KindSegment {
   kind: FailureKind;
@@ -30,12 +30,20 @@ export interface Confirmation {
 }
 
 // "Confirmed by the record (M1–M4) and the human audit (M5)" (copy rule C5): the counts behind
-// the phrase, over the valid non-pass trials of the explanations given.
+// the phrase, over the valid non-pass trials of the explanations given. The record's count is
+// data/failures.ts m1m4, the one rule (F7: no second copy here).
 export function confirmation(es: readonly Explanation[]): Confirmation {
-  const failed = es.filter(isFailure);
+  const m = m1m4(es);
   return {
-    failures: failed.length,
-    record: failed.filter((e) => m1ToM4Met(e.criteria)).length,
-    audit: failed.filter((e) => e.criteria.find((c) => c.id === 'M5')?.met === true).length,
+    failures: m.failures,
+    record: m.met,
+    audit: es.filter(isFailure).filter((e) => e.criteria.find((c) => c.id === 'M5')?.met === true).length,
   };
+}
+
+// What a task's "Why tasks fail" row shows under its bar (V3, F3): the fault box only with
+// failures; the infrastructure reruns line on its own when a task with no failures still had
+// trials rerun, so that count is never hidden.
+export function whyFailParts(fc: Pick<FaultCounts, 'failures' | 'infra_reruns'>): { faultBox: boolean; reruns: boolean } {
+  return { faultBox: fc.failures > 0, reruns: fc.failures === 0 && fc.infra_reruns > 0 };
 }

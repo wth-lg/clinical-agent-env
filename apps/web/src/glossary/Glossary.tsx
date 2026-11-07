@@ -14,7 +14,7 @@ import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEF
 import { TAXONOMY_TEXT } from '../../../../packages/core/explain.ts';
 import { BAND_VERDICT_RULE, BAND_VERDICTS } from '../../../../packages/core/summary.ts';
 import { kindWords, type FailureKind } from '../data/failures.ts';
-import { Card, Page, PlainRules } from '../data/ui.tsx';
+import { Card, GlossaryLink, Page, PlainRules } from '../data/ui.tsx';
 import { PLAIN_TERMS } from './terms.ts';
 
 export const GLOSSARY_TITLE = 'Glossary';
@@ -22,23 +22,36 @@ export const GLOSSARY_TITLE = 'Glossary';
 // The fault in words for a card title (copy rule C4: infrastructure and environment in full).
 const FAULT_WORDS: Record<Fault, string> = { infra: 'the infrastructure', grader: 'the grader', env: 'the environment', refusal: 'a refusal (the model declined)', model: 'the model' };
 
-// A link to an anchor inside a closed <details> (the Exact rules) must show its target: on load
-// and on every hash change, open the disclosure the target sits in and scroll to it.
+// A link to an anchor inside a closed <details> (the Exact rules) must show its target. Open the
+// disclosure the target sits in: on load and on every hash change (a link from another view
+// mounts the page with the hash set), and on a click on any link to such an anchor while the
+// page is up (F5: GlossaryLink sets the hash with history.replaceState, which fires no
+// hashchange; the click is seen in the capture phase, before the link's own handler scrolls).
 function useOpenOnHash() {
   useEffect(() => {
-    const open = () => {
-      const id = decodeURIComponent(location.hash.slice(1));
+    const reveal = (id: string, scroll: boolean) => {
       if (id === '') return;
       const target = document.getElementById(id);
       const details = target?.closest('details');
       if (target && details && !details.open) {
         details.open = true;
-        target.scrollIntoView({ block: 'start' });
+        if (scroll) target.scrollIntoView({ block: 'start' });
       }
     };
-    open();
-    addEventListener('hashchange', open);
-    return () => removeEventListener('hashchange', open);
+    const onHash = () => reveal(decodeURIComponent(location.hash.slice(1)), true);
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest('a[href]');
+      if (!(a instanceof HTMLAnchorElement)) return;
+      const url = new URL(a.href, location.href);
+      if (url.origin === location.origin && url.hash !== '') reveal(decodeURIComponent(url.hash.slice(1)), false);
+    };
+    onHash();
+    addEventListener('hashchange', onHash);
+    document.addEventListener('click', onClick, true);
+    return () => {
+      removeEventListener('hashchange', onHash);
+      document.removeEventListener('click', onClick, true);
+    };
   }, []);
 }
 
@@ -55,6 +68,7 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
             </div>
           ))}
         </dl>
+        <p className="mt-3 text-xs text-ink-muted" data-testid="plain-terms-exact">The exact pass rule and the fault-label table, with the names the code uses, are under <GlossaryLink anchor="pass">Exact rules</GlossaryLink> at the end of this page.</p>
       </Card>
       {FAULT_PRECEDENCE.map((f) => (
         <Card key={f} title={<span>Fault: {FAULT_WORDS[f]}</span>} id={`fault-${f}`}>

@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { frozenRows, roleWords, worldWords } from '../src/environment/frozen.ts';
+import { frozenCountLine, frozenRows, roleWords, worldWords } from '../src/environment/frozen.ts';
 
 const TODAY = 'a'.repeat(64);
 const OLDER = 'b'.repeat(64);
@@ -47,6 +47,15 @@ describe('frozenRows', () => {
     expect(roleWords({ role: 'superseded', version: 'v1' })).toBe('v1, superseded');
     expect(worldWords(true)).toBe("today's build");
     expect(worldWords(false)).toBe('an earlier world');
+  });
+
+  // F6 (verifier-phase-P17i-P25U-S5-1): "the other" for one task left, "the others" for more.
+  it('the count line follows the counts: the verb, "task(s)", and "the other" or "the others"', () => {
+    expect(frozenCountLine(5, 6)).toBe("5 of 6 tasks are frozen on today's build; the other on an earlier world.");
+    expect(frozenCountLine(4, 6)).toBe("4 of 6 tasks are frozen on today's build; the others on an earlier world.");
+    expect(frozenCountLine(6, 6)).toBe("6 of 6 tasks are frozen on today's build.");
+    expect(frozenCountLine(1, 1)).toBe("1 of 1 task is frozen on today's build.");
+    expect(frozenCountLine(0, 2)).toBe("0 of 2 tasks are frozen on today's build; the others on an earlier world.");
   });
 
   it('every task of the committed results/tasks-final.json gets a current row', () => {

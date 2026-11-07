@@ -20,7 +20,7 @@ import { BUTTON, BUTTON_PRIMARY, Card, ErrorNote, FIELD, GlossaryLink, Hash, Not
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
 import { TRY_EXAMPLES } from './examples.ts';
-import { frozenRows, roleWords, worldWords } from './frozen.ts';
+import { frozenCountLine, frozenRows, roleWords, worldWords } from './frozen.ts';
 
 const TOOLS = toolCatalog();
 const READ = TOOLS.filter((t) => t.kind === 'read');
@@ -85,7 +85,7 @@ function FrozenWorlds({ manifest }: { manifest: string }) {
       {results?.kind === 'ready' && rows.length === 0 && <p className="mt-2 text-ink-muted" data-testid="frozen-worlds-none">No task is frozen yet: the official trials start from today's build.</p>}
       {rows.length > 0 && (
         <>
-          <p className="mt-2 text-xs text-ink-muted" data-testid="frozen-worlds-count">{onToday} of {current.length} tasks {current.length === 1 ? 'is' : 'are'} frozen on today's build{onToday < current.length ? '; the others on an earlier world.' : '.'}</p>
+          <p className="mt-2 text-xs text-ink-muted" data-testid="frozen-worlds-count">{frozenCountLine(onToday, current.length)}</p>
           <ul className="mt-2 divide-y divide-line" data-testid="frozen-worlds">
             {rows.map((r) => (
               <li key={`${r.task}-${r.role}-${r.version ?? ''}`} data-testid="frozen-world" data-task={r.task} data-role={r.role} data-hash={r.hash} data-today={String(r.today)} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">

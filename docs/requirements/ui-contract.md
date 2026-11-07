@@ -263,8 +263,8 @@ launcher (P15) shows the Run lines.
   k equal to n.
 - `RBC-PHARM-07`: the policy id at the top of renal-dose-review's Policy tab, followed by the
   policy text (content from the task, P17i may revise it).
-- `How failures are attributed`: the link text that opens the glossary page from Findings, Runs and
-  a trial's Attribution tab. The page's title is `Glossary` (P25u J7b: the page opens with one
+- `How failures are attributed`: the link text that opens the glossary page from Findings and
+  Runs. The page's title is `Glossary` (P25u J7b: the page opens with one
   plain sentence per term, then the attribution rules; the earlier title named only the rules).
 
 ### P14a, P16: reasons and attribution

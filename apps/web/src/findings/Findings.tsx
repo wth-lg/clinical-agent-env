@@ -18,7 +18,8 @@ import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { ChartKey, PilotRateRows, RateAxis } from './pilot.tsx';
-import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
+import { whyFailParts } from './counts.ts';
+import { FaultBox, KindBar, Reruns, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
 import { DifficultyHistory, NoFailures, Verdict, VerdictLink } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -181,17 +182,22 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
         <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and <GlossaryLink anchor="fault-labels">whose fault each failure is</GlossaryLink> by the human audit. Each link opens those trials in Runs.</p>
         <ul className="mt-3 divide-y divide-line" data-testid="why-fail">
           {/* A task with no failures shows its empty bar and "No failures" alone (P25u V3): no fault
-              box of zero counts and no "No failed check" line. */}
-          {tasks.map(([id, t]) => (
-            <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
-              <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures === 0 ? `no failures in ${t.trials} trials` : `${t.fault_counts.failures} of ${t.trials} trials failed`}</span></span>
-              <div className="min-w-0 space-y-2">
-                <KindBar task={id} fc={t.fault_counts} trials={t.trials} />
-                {t.fault_counts.failures > 0 && <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />}
-              </div>
-              {t.fault_counts.failures > 0 && <TopChecks task={id} top={t.top_failed_checks} textOf={(c) => { const r = checkTextOf(id)?.[c]?.requires; return r ? `requires ${r}` : null; }} />}
-            </li>
-          ))}
+              box of zero counts and no "No failed check" line; its reruns line stays when it had
+              any (counts.ts whyFailParts, F3). */}
+          {tasks.map(([id, t]) => {
+            const parts = whyFailParts(t.fault_counts);
+            return (
+              <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
+                <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures === 0 ? `no failures in ${t.trials} trials` : `${t.fault_counts.failures} of ${t.trials} trials failed`}</span></span>
+                <div className="min-w-0 space-y-2">
+                  <KindBar task={id} fc={t.fault_counts} trials={t.trials} />
+                  {parts.faultBox && <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />}
+                  {parts.reruns && <p className="text-xs text-ink-muted"><Reruns count={t.fault_counts.infra_reruns} /></p>}
+                </div>
+                {parts.faultBox && <TopChecks task={id} top={t.top_failed_checks} textOf={(c) => { const r = checkTextOf(id)?.[c]?.requires; return r ? `requires ${r}` : null; }} />}
+              </li>
+            );
+          })}
         </ul>
         <p className="mt-2 text-xs text-ink-muted"><GlossaryLink anchor="taxonomy">The kinds of model failure</GlossaryLink></p>
       </Card>
