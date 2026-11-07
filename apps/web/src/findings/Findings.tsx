@@ -1,5 +1,5 @@
-// Findings: docs/findings.md, rendered, and the charts it rests on, all from the official run's
-// summary.json: pass rate with its Wilson 95% interval per task and the trials its k/n leaves out
+// Findings: the charts first, then docs/findings.md rendered under "Read the analysis" (P25c: the
+// numbers come before the prose), all from the official run's summary.json: pass rate with its Wilson 95% interval per task and the trials its k/n leaves out
 // (ENV_LIMIT and the other excluded outcomes, with why), why each task fails (P17j JU7:
 // its valid failures by kind as a bar, its top failed checks and its fault box, findings/why.tsx),
 // and mean cost per trial; a run that is blocked says so first; then links to
@@ -54,9 +54,9 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
     <Page title="Findings" headingRef={headingRef} lead={LEAD}>
       {block !== null && <RunBlocked block={block} runId={results.official.runId} />}
       {links}
-      {results.findings !== null && (block === null ? <Markdown text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
       <Charts run={results.official} blocked={block !== null} />
       {block === null && <NoFailures run={results.official} />}
+      {results.findings !== null && (block === null ? <Analysis text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
       <DifficultyHistory runs={[...results.pilots, ...results.probes, ...results.superseded, results.official]} />
     </Page>
   );
@@ -125,9 +125,16 @@ const md = new Marked({
   },
 });
 
-function Markdown({ text }: { text: string }) {
+// The write-up, after the charts, with a line that says what it is.
+function Analysis({ text }: { text: string }) {
   const html = useMemo(() => md.parse(text, { async: false }), [text]);
-  return <article data-testid="findings-md" className={`min-w-0 space-y-3 break-words ${CARD} p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted`} dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <section data-testid="findings-analysis" aria-labelledby="findings-analysis-heading" className="space-y-2">
+      <h2 id="findings-analysis-heading" className="pt-2 font-medium text-ink">Read the analysis</h2>
+      <p className="text-xs text-ink-muted">The write-up of the run, in full: what the numbers above show, what surprised us, what changed and what comes next.</p>
+      <article data-testid="findings-md" className={`min-w-0 space-y-3 break-words ${CARD} p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted`} dangerouslySetInnerHTML={{ __html: html }} />
+    </section>
+  );
 }
 
 // An example trial opens in its own run on the default tab, whatever run or tab the address

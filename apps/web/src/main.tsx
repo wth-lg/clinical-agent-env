@@ -5,7 +5,8 @@ import { dropRemembered, heldByRunner, restoreRemembered } from './keygate/key.t
 import { runnerToken } from './keygate/runner.ts';
 import { App } from './shell/App.tsx';
 import { installLeaveFade } from './shell/fade.ts';
-import { refreshSpent } from './spend/session.ts';
+import { theTransport } from './live/transport/select.ts';
+import { refreshSpent, setSpentSource } from './spend/session.ts';
 import { detect } from './surface/detect.ts';
 import { hostedGuard } from './surface/relay.ts';
 import { RunnerDown } from './surface/RunnerDown.tsx';
@@ -16,14 +17,20 @@ import './styles/app.css';
 installEgressGuard(globalThis, hostedGuard(location.origin));
 
 // The surface is detected once, before the first render, so the gate never shows the wrong
-// key path. A runner that already holds a key skips the gate. The tab ledger is read back
-// before the meter first shows, so a reload keeps the session's spend.
-const [surface] = await Promise.all([detect(runnerToken() !== null), refreshSpent()]);
+// key path. A runner that already holds a key skips the gate. The session's spend is read back
+// from the surface's source before the meter first shows, so a reload keeps it: the tab ledger
+// on the hosted site, the runner's session spend on the local runner.
+const surface = await detect(runnerToken() !== null);
 if (surface.kind === 'local-runner') {
   dropRemembered();
   if (surface.health.key_loaded) heldByRunner();
 } else if (surface.kind === 'browser-direct') {
   restoreRemembered();
+}
+if (surface.kind !== 'runner-down') {
+  const transport = theTransport(surface.kind === 'browser-direct');
+  setSpentSource(() => transport.spent());
+  await refreshSpent();
 }
 
 installLeaveFade();

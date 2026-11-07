@@ -6,7 +6,11 @@
 // trajectory with summarised thinking and one-line tool rows, turn, token and cost meters, the
 // state diff, Stop) and the runs this surface started. It reads trials only through the
 // surface's TrialTransport and shows them only from TrialEvents, so the local runner and the
-// browser look the same. Without a key the launcher is disabled and says why.
+// browser look the same. Without a key the launcher is disabled and says why. The task is the
+// URL's (?task=), so a link to this view with a task always shows that task, in place too
+// (P25c: a remembered selection won over the URL), and choosing one sets the URL. The committed
+// spend the launcher checks a size against is the session store's, the same figure the top bar
+// meter shows.
 import { ChevronDown, ChevronRight, CircleAlert, Dot, Loader2, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
@@ -20,31 +24,28 @@ import { TextRow, TOOL_NAME } from '../trial/Trajectory.tsx';
 import { useResults } from '../data/results.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, FaultLabel, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
-import { hrefWith, onNav } from '../data/url.ts';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, ErrorNote, FaultLabel, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
+import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { liveTaskTitle } from '../tasks/title.ts';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { amountText, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
-import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
+import { refreshSpent, sessionCap, setSessionCap, setSpent, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
 import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { fold, type Item } from './fold.ts';
 import { readEvents } from './store.ts';
-import { runnerTransport } from './transport/runner.ts';
-import { workerTransport } from './transport/worker.ts';
+import { theTransport } from './transport/select.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
-
-// One transport for the page's surface, which does not change after load; the shell shows the
-// runner-down screen instead of any view when the runner does not answer.
-let transport: TrialTransport | undefined;
-const theTransport = (hosted: boolean): TrialTransport => (transport ??= hosted ? workerTransport(sessionCap) : runnerTransport());
 
 const POLL_MS = 1500;
 const usd = (n: number) => `$${n.toFixed(2)}`;
+// Why a launcher control is disabled, in its tooltip.
+const NO_KEY_FIRST = 'Add a key first';
+const CAP_RANGE = `Enter a cap from $0.01 to $${MAX_SESSION_CAP_USD}.`;
 const BROWSER_DIRECT: Surface = { kind: 'browser-direct' };
 
 // The refusals a higher session cap would lift.
@@ -71,8 +72,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const t = theTransport(useHosted());
   const key = useKeyStatus();
   const { tasks } = useTaskList();
-  const params = new URL(location.href).searchParams;
-  const [task, setTask] = useState(params.get('task') ?? '');
+  const task = useParams().get('task') ?? '';
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [current, setCurrent] = useState(currentTrial);
@@ -84,17 +84,18 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }, [tasks, task]);
   const chosen = task || ids[0] || '';
   const noKey = key.kind === 'none';
-  const { cap, spent } = useSessionSpend();
+  const { cap, spent: committed } = useSessionSpend();
   const [costs, setCosts] = useState<Partial<Record<number, number>>>({});
   const [bound, setBound] = useState(true);
-  const [committed, setCommitted] = useState(0);
   const refresh = useCallback(() => {
     t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
+    void refreshSpent();
   }, [t]);
   // Each trial's state: the runner's committed spend changes when one starts or ends.
   const trialStates = (runs ?? []).map((r) => r.rows.map((x) => x.state).join()).join('|');
   useEffect(() => setCosts({}), [chosen]);
-  // Projected again when the tab's spend (browser-direct) or a trial's state (either surface) changes.
+  // Projected again when the session's spend or a trial's state changes. The projection's
+  // committed figure goes to the session store, the meter's source, so both read the same number.
   useEffect(() => {
     if (chosen === '') return;
     let current = true;
@@ -103,13 +104,13 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         if (!current) return;
         setCosts((c) => ({ ...c, [n]: p.usd }));
         setBound(p.bound);
-        setCommitted(p.committed);
+        setSpent(p.committed);
       }, () => undefined);
     }
     return () => {
       current = false;
     };
-  }, [t, chosen, spent, trialStates]);
+  }, [t, chosen, committed, trialStates]);
   // A size is over when its cost with the committed spend crosses the cap, as start checks it.
   const over = RUN_SIZES.filter((n) => costs[n] !== undefined && !admitTrial({ cap, spent: committed, estimate: costs[n] }).ok);
   const costId = useId();
@@ -158,7 +159,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
             <label className="flex min-w-0 max-w-full flex-col gap-1 text-xs text-ink-muted">
               Task
-              <select aria-label="Task" className={SELECT} value={chosen} onChange={(e) => setTask(e.target.value)} disabled={noKey}>
+              <select aria-label="Task" className={SELECT} value={chosen} onChange={(e) => navigate({ task: e.target.value })} disabled={noKey} title={noKey ? NO_KEY_FIRST : undefined}>
                 {ids.map((id) => <option key={id} value={id}>{liveTaskTitle(id, tasks)}</option>)}
               </select>
             </label>
@@ -170,14 +171,15 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {/* The amount sits beside its button, not in it, so the button's name is its visible
                 text (axe label-content-name-mismatch); aria-describedby still reads it out, and the
-                reason a size is disabled after it. Run ×1 is the primary action once there is a key;
-                before that, Add key is. */}
+                reason a size is disabled after it, which its tooltip says in short. Run ×1 is the
+                primary action once there is a key; before that, Add key is. */}
             {RUN_SIZES.map((n) => (
               <span key={n} className="inline-flex items-center gap-1.5">
                 <button
                   type="button"
                   data-testid={`run-x${n}`}
                   aria-describedby={[`${costId}-${n}`, ...(noKey ? [`${costId}-nokey`] : over.includes(n) ? [`${costId}-over`] : [])].join(' ')}
+                  title={noKey ? NO_KEY_FIRST : over.includes(n) ? 'Over the session cap. Raise the cap below.' : busy ? 'A batch is starting' : chosen === '' ? 'Pick a task first' : undefined}
                   className={n === RUN_SIZES[0] && !noKey ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
                   Run ×{n}
                 </button>
@@ -241,9 +243,9 @@ function CapControl({ local }: { local: boolean }) {
           Session cap (USD)
           <input id={id} inputMode="decimal" autoComplete="off" className={`${SELECT} w-28`} value={text} onChange={(e) => setText(e.target.value)} aria-invalid={parsed === null} />
         </label>
-        <button type="submit" className={BUTTON} disabled={parsed === null || parsed === cap}>Set cap</button>
+        <button type="submit" className={BUTTON} disabled={parsed === null || parsed === cap} title={parsed === null ? CAP_RANGE : parsed === cap ? 'This is the current cap' : undefined}>Set cap</button>
       </div>
-      {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
+      {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">{CAP_RANGE}</p>}
       <div data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
         <p>Each batch is checked against this cap before any call, so spend never goes over it. The amount beside each Run button is what that batch reserves.</p>
         <details className="mt-1">
@@ -255,16 +257,6 @@ function CapControl({ local }: { local: boolean }) {
         </details>
       </div>
     </form>
-  );
-}
-
-function ErrorNote({ lead, detail, testId, children }: { lead: string; detail: string | null; testId: string; children?: React.ReactNode }) {
-  return (
-    <div role="alert" data-testid={testId} className="mt-3 rounded-md border border-danger bg-canvas p-3">
-      <p className="font-medium text-danger">{lead}</p>
-      {children}
-      {detail !== null && <p className="mt-2 break-words font-mono text-xs text-ink-muted" data-testid="error-detail">{detail}</p>}
-    </div>
   );
 }
 

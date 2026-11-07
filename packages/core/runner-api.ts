@@ -50,6 +50,9 @@ export const TOKEN_HEADER = 'X-Clinenv-Token';
 export const TOKEN_META = 'clinenv-runner-token';
 export const TRIALS_PATH = 'api/trials';
 export const RUNS_PATH = 'api/runs';
+// GET: what this runner session has committed (ProjectionTerms.session_spent_usd), for the
+// top bar's spend meter after a reload (P25c).
+export const SPEND_PATH = 'api/spend';
 // A key longer than this is not an API key; the runner refuses it before any call.
 export const MAX_KEY_LENGTH = 512;
 // Per task: the final run's N, so the UI can reproduce one task's final run in one batch.
@@ -267,6 +270,12 @@ export interface ProjectionTerms {
   session_spent_usd: number;
 }
 
+// GET api/spend: the session_spent_usd a dry run carries, on its own, so the meter and the
+// launcher read one figure.
+export interface Spend {
+  session_spent_usd: number;
+}
+
 export interface DryRun {
   dry_run: true;
   calls: 0;
@@ -350,6 +359,10 @@ function parseProjection(x: unknown): ProjectionTerms {
     session_cap_usd: num(o, what, 'session_cap_usd'),
     session_spent_usd: num(o, what, 'session_spent_usd'),
   };
+}
+
+export function parseSpend(x: unknown): Spend {
+  return { session_spent_usd: field(object(x, 'spend'), 'spend', 'session_spent_usd', isNumber, 'a number >= 0') };
 }
 
 export function parseDryRun(x: unknown): DryRun {
@@ -485,6 +498,7 @@ export const SAMPLES = {
     }],
   },
   sseEnd: { state: 'error', message: 'batch stopped (actual_cap) before this trial started' },
+  spend: { session_spent_usd: 5.71 },
 } as const satisfies {
   staticHealth: unknown;
   health: Health;
@@ -498,6 +512,7 @@ export const SAMPLES = {
   trialsAccepted: TrialsAccepted;
   dryRun: DryRun;
   trialsRefused: TrialsRefused;
+  spend: Spend;
   trial: TrialView;
   runs: RunsList;
   sseEnd: SseEnd;

@@ -10,6 +10,7 @@ import { useState, type ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
+import { durationSeconds, formatDuration } from '../data/duration.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
@@ -73,13 +74,6 @@ function MetCell({ c }: { c: CheckRow }) {
   );
 }
 
-function duration(started: string | undefined, ended: string | undefined): string | null {
-  if (!started || !ended) return null;
-  const s = Math.round((Date.parse(ended) - Date.parse(started)) / 1000);
-  if (!Number.isFinite(s) || s < 0) return null;
-  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
-}
-
 function Metric({ title, value, testId, note }: { title: string; value: string | null; testId: string; note?: string | undefined }) {
   return (
     <div className="min-w-0 rounded-sm border border-line bg-surface px-3 py-2">
@@ -125,6 +119,7 @@ function found(task: string, c: CheckRow): string | null {
 // decisive: the decisive check's id (explainTrial), marked in the list.
 export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps: readonly Step[] | null; onStep: (n: number) => void; decisive?: string | null }) {
   const r = t.record as Trial['record'] & { usage?: Usage; error?: { check: string | null; message: string } | null };
+  const seconds = durationSeconds(r);
   const g = currentGrade(r);
   const checks = (g.checks ?? []) as readonly CheckRow[];
   // Checks the trial did not meet first (review-ui-P16-1 F7); the sort is stable, so each group keeps the grader's order.
@@ -151,7 +146,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} />
         <Metric title="Cost" value={usd(r.cost_usd + (r.judge_cost_usd ?? 0))} testId="metric-cost" note={`agent ${usd(r.cost_usd)}, judge ${usd(r.judge_cost_usd ?? 0)}`} />
         <Metric title="Tokens" value={r.usage ? `${num(r.usage.input + r.usage.cache_read + r.usage.cache_write)} in, ${num(r.usage.output)} out` : null} testId="metric-tokens" note={r.usage ? `${num(r.usage.cache_read)} read from the cache` : undefined} />
-        <Metric title="Duration" value={duration(r.started, r.ended)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
+        <Metric title="Duration" value={seconds === null ? null : formatDuration(seconds)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
       </div>
       {r.error && (
         <div data-testid="grading-error" role="alert" className="rounded-sm border border-danger bg-surface p-3">

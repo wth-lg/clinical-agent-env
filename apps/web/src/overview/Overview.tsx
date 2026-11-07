@@ -1,8 +1,10 @@
 // Overview. With an official run: one row per task from its summary.json and records: pass k of
 // N valid trials (N read from the run, never a constant), the Wilson 95% interval drawn against
-// the final run's band (FINAL_PASS_BAND), one mark per trial (outcome and fault), mean score and
-// mean cost, pass^3 and pass^5 with the run's model and effort (P17j JU8), and the most common
-// kind of failure (P17j JU7), with the run's fault box under the
+// the final run's band (FINAL_PASS_BAND), one mark per trial (outcome and fault), the most common
+// kind of failure (P17j JU7), mean score and mean cost; under them one quiet line with safe PASS,
+// pass^3 and pass^5 with the run's model and effort (P17j JU8), the refusal-excluded rate and the
+// median duration over the task's records (design section 7; P25c: the four-line pass cell was
+// dense, and the two rates were missing); with the run's fault box under the
 // table; a run with a trial that blocks it (DENOMINATOR_RULE) says so in place of the headline
 // pass rate, and names its false PASSes beside k/n. With none yet: the six tasks, the environment every trial starts from, and the
 // committed pilot runs, which are not counted in the results: each task at the latest pilot that
@@ -15,11 +17,12 @@ import { MODEL } from '../adapters/ledger-browser.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import type { Summary } from '../../../../packages/core/summary.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
+import { formatDuration, medianSeconds } from '../data/duration.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, SECTION_LABEL, Swatch } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, pct, SECTION_LABEL, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
@@ -93,8 +96,8 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
         {Object.entries(summary!.tasks).map(([id, s]) => (
           <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_6.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
             <a href={hrefWith(toRuns(id))} onClick={onNav(toRuns(id))} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
-            <span className="whitespace-nowrap text-right md:text-left">
-              {block === null ? <><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span><PassK task={id} k={s.pass_k} /></> : <span className="text-ink-muted">blocked</span>}
+            <span data-testid="pass-cell" className="whitespace-nowrap text-right md:text-left">
+              {block === null ? <span data-testid="k-of-n">{s.passes}/{s.trials}</span> : <span className="text-ink-muted">blocked</span>}
               {falsePasses(id) > 0 && <span className="block whitespace-normal text-xs text-danger" data-testid="false-pass">{falsePasses(id)} false PASS</span>}
             </span>
             <span className="col-span-2 md:col-span-1">
@@ -112,6 +115,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
             <MostCommon fc={s.fault_counts} />
             <span className="text-xs text-ink-muted md:text-right md:text-sm md:text-ink"><span className="md:hidden">Mean score </span>{s.mean_score === null ? 'n/a' : s.mean_score.toFixed(2)}</span>
             <span className="text-right text-xs text-ink-muted md:text-sm md:text-ink"><span className="md:hidden">Mean cost </span>{money(s.mean_cost_usd)}</span>
+            {block === null && <DetailLine id={id} s={s} records={trials.filter((x) => x.task === id).map((x) => x.record)} />}
           </li>
         ))}
       </ul>
@@ -123,6 +127,24 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
       </Card>
     </Page>
+  );
+}
+
+// The row's quiet second line: safe PASS, pass^3 and pass^5, the pass rate with refusals left out
+// of the denominator (summary.json refusal_excluded_rate), and the median duration over the task's
+// records in the run, each with its meaning in its tooltip.
+function DetailLine({ id, s, records }: { id: string; s: Summary['tasks'][string]; records: ReadonlyArray<{ started?: string | undefined; ended?: string | undefined }> }) {
+  const median = medianSeconds(records);
+  const refusals = s.refusals === 0
+    ? 'No refusals'
+    : s.refusal_excluded_rate === null ? `Every valid trial was a refusal (${s.refusals})` : `Without refusals ${pct(s.refusal_excluded_rate)} (${s.refusals} refusal${s.refusals === 1 ? '' : 's'})`;
+  return (
+    <span data-testid="task-detail-line" className="col-span-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted md:col-span-full">
+      <span data-testid="safe-pass" title="PASS trials with no harm item met">{safePass(s)}</span>
+      <PassK task={id} k={s.pass_k} inline />
+      <span data-testid="refusal-excluded" title="The pass rate with refusals left out of the denominator">{refusals}</span>
+      {median !== null && <span data-testid="median-duration" title={`The median of ${records.length} trials, from the first request to the last reply`}>Median duration {formatDuration(median)}</span>}
+    </span>
   );
 }
 

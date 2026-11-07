@@ -1,14 +1,15 @@
 // Environment: the world every trial starts from (pinned clock, state hash, resources by type, from
 // fixtures/manifest.json), Check a fresh copy matches (a fresh store built in this tab, its state
 // hash shown next to the manifest's), and the tool catalogue with a keyless Try panel that runs one
-// read tool on a scratch store, prefilled with a working example (examples.ts). The catalogue and
+// read tool on a scratch store, prefilled with a working example (examples.ts); an input that is
+// not JSON, or a tool that throws, is an error in the danger colour (P25c). The catalogue and
 // Try go only through packages/core/try-tool.ts.
 import { CircleAlert } from 'lucide-react';
 import { useState, type Ref } from 'react';
 import { loadStore } from '../../../../packages/env/fixture-source.ts';
 import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, FIELD, Hash, Notice, Page, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, ErrorNote, FIELD, Hash, Notice, Page, SELECT } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
 import { TRY_EXAMPLES } from './examples.ts';
@@ -90,13 +91,21 @@ function VerifyReset() {
 function TryPanel() {
   const [name, setName] = useState(READ[0]?.name ?? '');
   const [args, setArgs] = useState(() => example(READ[0]?.name ?? ''));
-  const [state, setState] = useState<{ kind: 'idle' | 'running' } | { kind: 'done'; r: TryResult } | { kind: 'error'; message: string }>({ kind: 'idle' });
+  // An error says first what went wrong in plain words (the input, or the tool), then the message.
+  const [state, setState] = useState<{ kind: 'idle' | 'running' } | { kind: 'done'; r: TryResult } | { kind: 'error'; lead: string; message: string }>({ kind: 'idle' });
+  const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
   const run = async () => {
     setState({ kind: 'running' });
+    let input: unknown;
     try {
-      setState({ kind: 'done', r: await tryReadTool(name, JSON.parse(args) as unknown, worldSource()) });
+      input = JSON.parse(args);
     } catch (e) {
-      setState({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      return setState({ kind: 'error', lead: 'The input is not valid JSON.', message: message(e) });
+    }
+    try {
+      setState({ kind: 'done', r: await tryReadTool(name, input, worldSource()) });
+    } catch (e) {
+      setState({ kind: 'error', lead: 'The tool did not run.', message: message(e) });
     }
   };
   const text = state.kind === 'done' ? JSON.stringify(state.r.result.content, null, 2) : '';
@@ -117,7 +126,7 @@ function TryPanel() {
       </div>
       <button type="button" className={`${BUTTON_PRIMARY} mt-3`} disabled={state.kind === 'running'} onClick={() => void run()}>Run tool</button>
       {state.kind === 'running' && <p className="mt-2 text-ink-muted" role="status">Building a scratch store…</p>}
-      {state.kind === 'error' && <p className="mt-2" role="alert">{state.message}</p>}
+      {state.kind === 'error' && <ErrorNote testId="try-error" lead={state.lead} detail={state.message} />}
       {state.kind === 'done' && (
         <div className="mt-3 space-y-2" data-testid="try-result" data-error={String(state.r.result.is_error)} data-hash-before={state.r.hash_before} data-hash-after={state.r.hash_after}>
           <p className="break-words">Hash before <Hash value={state.r.hash_before} />, after <Hash value={state.r.hash_after} />: <span data-testid="try-unchanged">{state.r.hash_before === state.r.hash_after ? 'unchanged' : 'CHANGED'}</span>.</p>

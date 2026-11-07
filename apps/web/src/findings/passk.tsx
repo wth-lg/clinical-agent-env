@@ -10,12 +10,13 @@ const shown = [3, 5] as const;
 // A tiny chance reads "<0.1%", never "0.0%", which would say it cannot happen.
 const percent = (v: number | null) => (v === null ? 'n/a' : v > 0 && v < 0.0005 ? '<0.1%' : `${(v * 100).toFixed(1)}%`);
 
-// "pass^3 31.9%" and "pass^5 12.9%", one per line; n/a when the task has fewer valid trials than k.
-export function PassK({ task, k }: { task: string; k: TaskSummary['pass_k'] }) {
+// "pass^3 31.9%" and "pass^5 12.9%", one per line, or side by side on a row's secondary line
+// (inline); n/a when the task has fewer valid trials than k.
+export function PassK({ task, k, inline = false }: { task: string; k: TaskSummary['pass_k']; inline?: boolean }) {
   return (
-    <span data-testid="pass-k" data-task={task} className="block text-xs text-ink-muted">
+    <span data-testid="pass-k" data-task={task} className={inline ? 'contents' : 'block text-xs text-ink-muted'}>
       {shown.map((n) => (
-        <span key={n} data-k={n} data-value={k[n] === null ? '' : String(k[n])} title={`The chance that ${n} trials drawn from this task's valid trials all pass`} className="block">
+        <span key={n} data-k={n} data-value={k[n] === null ? '' : String(k[n])} title={`The chance that ${n} trials drawn from this task's valid trials all pass`} className={inline ? 'whitespace-nowrap' : 'block'}>
           pass^{n} {percent(k[n])}
         </span>
       ))}

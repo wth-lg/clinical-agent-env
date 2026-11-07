@@ -3,7 +3,7 @@
 // while 21 trials gets 400.
 import { describe, expect, it } from 'vitest';
 import {
-  parseDryRun, parseHealth, parseKeyState, parseRunnerError, parseRunsList, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialView,
+  parseDryRun, parseHealth, parseKeyState, parseRunnerError, parseRunsList, parseSpend, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialView,
 } from '../../../packages/core/runner-api.ts';
 import { parseEvent } from '../../../packages/core/events.ts';
 import { jsonError, launch, readSse, toyTrial } from './helpers.ts';
@@ -55,6 +55,11 @@ describe('runner responses follow packages/core/runner-api.ts (gate case 8)', ()
       expect(runs.runs.map((r) => r.run_id)).toEqual([accepted.run_id]);
       expect(runs.runs[0]).toMatchObject({ done: true, stopped: null, mock: false, smoke: false });
       expect(parseTrialView((await l.http('DELETE', `/api/trials/${id}`)).json()).state).toBe('graded');
+      // GET /api/spend: what the session has committed, the dry run's session_spent_usd (P25c).
+      const spend = parseSpend((await l.http('GET', '/api/spend')).json());
+      expect(spend.session_spent_usd).toBeGreaterThan(0);
+      expect(spend.session_spent_usd).toBeCloseTo(parseDryRun((await l.http('POST', '/api/trials?dry_run=1', { body: toyTrial() })).json()).projection.session_spent_usd, 9);
+      expect((await l.http('POST', '/api/spend')).status).toBe(405);
 
       for (const [method, path] of [['GET', '/api/trials/nope'], ['GET', '/api/trials/nope/events'], ['DELETE', '/api/trials/nope']] as const) {
         const r = await l.http(method, path);

@@ -10,7 +10,8 @@
 // symlink out of dist) get 404.
 // index.html is served with its built CSP meta unchanged plus a token meta holding this
 // process's 256-bit random token. The API answers at /api/* and at BASE + api/* (the UI
-// resolves api paths against its base), ahead of the static files.
+// resolves api paths against its base), ahead of the static files. GET api/spend gives what the
+// session has committed (committed), the figure the UI's spend meter shows after a reload.
 //
 // Every request passes, in order: Host must be 127.0.0.1:<port> or localhost:<port> (DNS
 // rebinding); an Origin, when present, must be http://<that Host>; Sec-Fetch-Site, when present,
@@ -102,7 +103,7 @@ import { run, type RunOptions } from '../../packages/core/run.ts';
 import { taskVersions, type TaskSource } from '../../packages/core/tasks.ts';
 import {
   ContractError, parseKeyRequest, parseTrialsRequest, RUNNER_APP, sseFrame, SSE_END, TOKEN_HEADER, TOKEN_META, VALIDATE_REQUEST, validateWorstCaseUsd,
-  type Health, type ProjectionTerms, type RunView, type SseEnd, type TrialsRequest, type TrialState, type TrialView,
+  type Health, type ProjectionTerms, type RunView, type Spend, type SseEnd, type TrialsRequest, type TrialState, type TrialView,
 } from '../../packages/core/runner-api.ts';
 import { nodeNow } from '../../cli/adapters/clock-node.ts';
 import { loadTrialObservations, openNodeLedger, readRows, resolveLedgerPath } from '../../cli/adapters/ledger-node.ts';
@@ -254,7 +255,7 @@ const VALIDATE_FAILED = {
 const validateFailed = (status: number | null): string =>
   status === 401 ? VALIDATE_FAILED.unauthorized : status === 403 ? VALIDATE_FAILED.forbidden : status === 429 ? VALIDATE_FAILED.rate_limited : VALIDATE_FAILED.upstream;
 
-const API_ROUTES = new Set(['health', 'key', 'runs', 'trials']);
+const API_ROUTES = new Set(['health', 'key', 'runs', 'trials', 'spend']);
 const TRIAL_ROUTE = /^trials\/([^/]+)(\/events)?$/;
 // An /api route's template (trials/:id), or null for no route.
 const apiTemplate = (route: string): string | null => {
@@ -943,6 +944,12 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     if (route === 'runs') {
       allowed('GET');
       return json(res, 200, { runs: runs.map((r) => r.view) });
+    }
+    // What the session has committed, as a dry run's session_spent_usd gives it: the UI's spend
+    // meter reads it at load, so a reload shows the same figure as the launcher (P25c).
+    if (route === 'spend') {
+      allowed('GET');
+      return json(res, 200, { session_spent_usd: committed(readRows(ledgerPath)) } satisfies Spend);
     }
     if (route === 'trials') {
       allowed('POST');

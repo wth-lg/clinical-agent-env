@@ -26,6 +26,7 @@ import { Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, Not
 import { navigate, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
+import { repeatedReasons } from './repeats.ts';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
 // A false PASS (GR5) has a fault, so it files under its label, not under pass.
@@ -170,6 +171,7 @@ function RunList({ run, matches, filtered, later, heading = false }: { run: RunD
   const shown = run.trials.filter(matches);
   const look = shown.filter((t) => !plainPass(t));
   const passes = shown.filter(plainPass);
+  const repeats = repeatedReasons(look.map((t) => ({ name: t.name, task: t.task, reason: t.explanation.reason, faulted: isFaulted(t) })));
   // A blocked run has no pass count, so its group is not named by one, nor by its size: every row
   // in it is a PASS (verifier-phase-P17i-UI-2-1 B1, UI-2-2 N1).
   const blocked = runBlock(run.trials) !== null;
@@ -196,7 +198,7 @@ function RunList({ run, matches, filtered, later, heading = false }: { run: RunD
       {(look.length > 0 || passes.length === 0 || run.bad.length > 0) && (
         <ul className={`divide-y divide-line ${CARD}`} data-testid="trial-list">
           {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
-          {look.map((t) => <TrialRow key={t.name} t={t} run={run} later={later} />)}
+          {look.map((t) => <TrialRow key={t.name} t={t} run={run} later={later} sameAs={repeats.get(t.name) ?? null} />)}
           {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
         </ul>
       )}
@@ -237,14 +239,19 @@ function usePendingOpen(): Later {
   }, []);
 }
 
+// A non-pass, or a false PASS (GR5), shows its label and reason. A reason a later row of the same
+// task repeats shows once: the later row names the first row and keeps the full sentence a click
+// away (runs/repeats.ts; P25c: the same sentence 15 times for contrast-ct-prep).
+const isFaulted = (t: Trial) => t.explanation.outcome !== 'PASS' || t.explanation.fault !== null;
+
 // Row: the name, outcome, fault chip and decisive check on one line with the cost on the right;
 // under it the fault note, the not-audited marker and any harm, then the reason. A click anywhere
-// on the row that is not on a link or button (or ends a text selection) opens the trial, as its
-// button does, after the wait above.
-function TrialRow({ t, run, later }: { t: Trial; run: RunData; later: Later }) {
+// on the row that is not on a link, a button or a disclosure (or ends a text selection) opens the
+// trial, as its button does, after the wait above. sameAs: the earlier row of this task that shows
+// the same reason, when there is one; then the reason sits in a closed disclosure that names it.
+function TrialRow({ t, run, later, sameAs = null }: { t: Trial; run: RunData; later: Later; sameAs?: string | null }) {
   const e = t.explanation;
-  // A non-pass, or a false PASS (GR5), shows its label and reason.
-  const faulted = e.outcome !== 'PASS' || e.fault !== null;
+  const faulted = isFaulted(t);
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
   const open = () => navigate({ trial: t.name, run: run.runId, tab: null });
   return (
@@ -254,7 +261,7 @@ function TrialRow({ t, run, later }: { t: Trial; run: RunData; later: Later }) {
       data-outcome={e.outcome}
       className="cursor-pointer px-4 py-2.5 hover:bg-canvas/60"
       onClick={(ev) => {
-        const skip = ev.detail > 1 || (ev.target as Element).closest('a, button') !== null || (getSelection()?.toString() ?? '') !== '';
+        const skip = ev.detail > 1 || (ev.target as Element).closest('a, button, summary') !== null || (getSelection()?.toString() ?? '') !== '';
         later(skip ? null : open);
       }}
     >
@@ -274,7 +281,13 @@ function TrialRow({ t, run, later }: { t: Trial; run: RunData; later: Later }) {
         {faulted && <FaultMeta e={e} official={run.official} />}
         <HarmChip items={harmItems(t.record)} />
       </p>
-      {faulted && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
+      {faulted && sameAs === null && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
+      {faulted && sameAs !== null && (
+        <details className="mt-1 pl-5 text-ink-muted">
+          <summary data-testid="reason-repeat" className="cursor-pointer text-xs">Same reason as {sameAs}</summary>
+          <p data-testid="reason" className="mt-1 break-words">{e.reason}</p>
+        </details>
+      )}
       {faulted && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words pl-5 text-xs text-ink-muted">{e.secondary_reason}</p>}
     </li>
   );
