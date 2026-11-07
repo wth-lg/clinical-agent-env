@@ -1,0 +1,1 @@
+- P25u S5 follow-up (builder-333, V11): the Findings chart, the pilot rows and the difficulty history show the band verdict as the one VerdictChip of S1 (a chip with an icon beside the Wilson text), as Overview does; the plain-text Verdict stays only on the Runs header. Same test ids and words; no number changes.
