@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type AuditRow, type ExplainContext, type ExplainRecord } from '../../../packages/core/explain.ts';
 import { blocksTheRun, shownFault } from '../src/data/failures.ts';
-import { BLOCKING_MARKS, faultNote, markOf, NOT_COUNTED_LINE, notCounted, notCountedText } from '../src/data/marks.ts';
+import { BLOCKING_MARKS, faultNote, infraLabel, markOf, NOT_COUNTED_LINE, notCounted, notCountedText } from '../src/data/marks.ts';
+import { infraWords, STOPPED_LABEL } from '../src/live/copy.ts';
 import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h', matrix: null };
@@ -80,6 +81,31 @@ describe('markOf', () => {
     expect(markOf('LIMIT')).toBe('limit');
     expect(markOf('REFUSAL')).toBe('refusal');
     expect(markOf('INFRA')).toBe('infra');
+  });
+});
+
+// P25u follow-up (after S4): the published trial page and Runs take the chip of a trial that is not
+// counted from the same words as the live card (live/copy.ts infraWords), per outcome and the
+// record's detail, so no surface says "API problem" for a harness defect, a spend refusal, a wrong
+// model or a trial the user stopped. Counted outcomes have no infra chip.
+describe('infraLabel', () => {
+  it('is infraWords\' chip for every infra outcome and detail', () => {
+    for (const [outcome, detail] of [['INFRA_API', 'overloaded_error after 4 retries'], ['INFRA_HARNESS', 'unpriced_usage'], ['INFRA_HARNESS', 'client_error'], ['INFRA_HARNESS', 'spend_refused_ceiling'], ['INFRA_HARNESS', 'spend_refused_projected'], ['INVALID', 'model_mismatch'], ['CANCELLED', null]] as const) {
+      expect(infraLabel(outcome, detail), `${outcome} ${detail}`).toBe(infraWords(outcome, detail)!.chip);
+    }
+  });
+
+  it('says what happened, per outcome', () => {
+    expect(infraLabel('INFRA_API', 'overloaded_error after 4 retries')).toBe('API problem: not counted, run again');
+    expect(infraLabel('INFRA_HARNESS', 'unpriced_usage')).toBe('Infrastructure problem: not counted, run again');
+    expect(infraLabel('INFRA_HARNESS', 'spend_refused_ceiling')).toBe('Spend refused: not counted');
+    expect(infraLabel('INVALID', 'model_mismatch')).toBe('Wrong model answered: not counted, the batch stopped');
+    expect(infraLabel('CANCELLED', null)).toBe(STOPPED_LABEL);
+    expect(infraLabel('CANCELLED', undefined)).toBe('Stopped: not counted');
+  });
+
+  it('is null for a counted outcome', () => {
+    for (const o of ['PASS', 'FAIL', 'LIMIT', 'REFUSAL']) expect(infraLabel(o, null), o).toBeNull();
   });
 });
 

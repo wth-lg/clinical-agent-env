@@ -396,7 +396,7 @@ function Header({ t, e, rows, where, onStep, official }: { t: Trial; e: Explanat
       <div data-testid="header-chips" className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
-        {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
+        {nonPass && <FaultLabel e={e} detail={t.record.detail ?? null} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
         {kind !== null && <span data-testid="kind-pill" className={`${CHIP} border-line bg-canvas font-normal text-ink dark:bg-line`}>Kind: {kind}</span>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>

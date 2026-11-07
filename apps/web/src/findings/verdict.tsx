@@ -5,30 +5,16 @@
 // packages/core/summary.ts bandVerdict, the one definition the CLI's result card and summary.json's
 // band_verdict use too, so the three never disagree; the glossary shows its rule (BAND_VERDICT_RULE).
 // The verdict is text, never a colour alone. Over fewer valid trials than the final sample it is
-// labelled provisional, with the count (overview/band.ts verdictLabel). On Findings, the pilot rows
-// and the difficulty history it is data/ui.tsx VerdictChip, the one chip every chart shows (P25u
-// V11, S1); the plain-text Verdict below stays only for the Runs header (runs/Runs.tsx).
-import { bandVerdict } from '../../../../packages/core/summary.ts';
-import { officialRunLabel, verdictLabel } from '../overview/band.ts';
+// labelled provisional, with the count (overview/band.ts verdictLabel). Everywhere it shows, on
+// Overview, the Runs header, the task cards, the Findings charts, the pilot rows and the difficulty
+// history, it is data/ui.tsx VerdictChip, the one chip every chart shows (P25u V11, S1). The
+// plain-text Verdict this file held for the Runs header went with P25u S2's follow-up (#254).
+import { officialRunLabel } from '../overview/band.ts';
 import { noPassCount, runBlock } from '../data/failures.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { Card, GlossaryLink, LINK, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
-
-// "In band", "Above band", "Saturated" or "Below band"; nothing with no valid trials; ", provisional
-// (<v> of 20 valid trials)" after it short of the final sample (then the text may wrap). Used by
-// the Runs header only; the Findings charts use VerdictChip.
-export function Verdict({ task, passes, trials, className = '' }: { task: string; passes: number; trials: number; className?: string }) {
-  const v = bandVerdict(passes, trials);
-  if (v === null) return null;
-  const { label, count } = verdictLabel(v, trials);
-  return (
-    <span data-testid="band-verdict" data-task={task} data-verdict={v} data-provisional={count !== null} title={`${passes}/${trials} against the target band`} className={`${count === null ? 'whitespace-nowrap' : ''} text-xs font-medium text-ink ${className}`}>
-      {label}{count !== null && <span className="font-normal text-ink-muted"> ({count})</span>}
-    </span>
-  );
-}
 
 export const VerdictLink = () => <GlossaryLink anchor="band-verdict">What the verdicts mean</GlossaryLink>;
 

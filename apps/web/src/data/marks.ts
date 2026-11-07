@@ -4,6 +4,13 @@
 import type { Explanation } from '../../../../packages/core/explain.ts';
 import { FAULT, isValid, NEVER_RERUN, NOT_RERUN_REASON, OUTCOMES, RERUN_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { blocksTheRun, isFalsePass } from './failures.ts';
+import { infraWords } from '../live/copy.ts';
+
+// The chip of a trial that is not counted (an infra fault), by its outcome and the record's detail:
+// the live card's words (live/copy.ts infraWords, P25u S4 A1), so the trial page, Runs and the live
+// card say the same: "API problem" only when the API failed, an infrastructure problem for a
+// harness defect, a spend refusal, a wrong model, a stopped trial. Null for a counted outcome.
+export const infraLabel = (outcome: string, detail: string | null | undefined): string | null => infraWords(outcome, detail)?.chip ?? null;
 
 export type Mark = 'pass' | 'model' | 'limit' | 'refusal' | 'environment' | 'grader' | 'infra';
 
