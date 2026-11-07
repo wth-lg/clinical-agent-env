@@ -7,6 +7,14 @@ export interface RubricRow {
   met: unknown;
 }
 
+// The Score card's title, on the Grading tab and on a graded live trial's card: the rubric score
+// never decides a pass (docs/requirements/ui-contract.md, "Strings on screen").
+export const SCORE_TITLE = 'Rubric score (does not decide pass)';
+// The Score card's value for a grade (summary.ts currentGrade): the score to two decimals, or null
+// when the grade has no checks (the trial was not graded) or no score. The Grading tab, the graded
+// live card and each Your runs row show this one text.
+export const scoreText = (g: { checks?: readonly unknown[] | null; score?: number | null }): string | null => ((g.checks ?? []).length === 0 || typeof g.score !== 'number' ? null : g.score.toFixed(2));
+
 export const metText = (met: unknown): string => (met === true ? 'met' : met === false ? 'not met' : String(met));
 // A rubric row's met column: a penalty (negative points) that did not fire is "not triggered", so
 // "not met" never reads as a loss; an item the judge could not answer is "judge unsure" (ui-polish 3.2).

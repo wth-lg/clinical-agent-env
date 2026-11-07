@@ -45,10 +45,15 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
   Overview's task order, then trial index). If the run has no such trial, the trial pane shows
   `No non-pass trial in this run` (for `run=session`, `No non-pass trial in this session`) and
   no trial header.
-- `run=session`: the runs started by this local runner process. The UI builds it from
-  `GET /api/runs`, which lists the runs the runner started since its process began, in start
-  order; a runner restart empties it. On the hosted site, where there is no runner, the Runs
-  view shows `No runs in this session`. Owner P15. It includes the P25c forced-fail smoke run
+- `run=session`: the runs this surface started, as the Live trial view's Your runs lists them.
+  On the local runner the UI builds it from `GET /api/runs`, which lists the runs the runner
+  started since its process began, in start order, and each trial's `GET /api/trials/:id`
+  record; a runner restart empties it. On the hosted site, where there is no runner, it is the
+  trials this browser tab ran (IndexedDB), and with none the Runs view shows
+  `No runs in this session`. The trial page of `run=session` (builder-330) shows a graded trial
+  in the trial detail layout from that record and the events the surface kept, with the session
+  banner above it and `Back to Live trial`; the graded live card and each Your runs row link
+  there with `Open the full grade`. Owner P15. It includes the P25c forced-fail smoke run
   (run id `smoke-<n>`, see "P25c follow-ups"), which is a valid FAIL, so `first-nonpass` can
   select it with the one definition above.
 
@@ -71,7 +76,7 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=grading` | Trial Grading tab: verdict chip, Score card, gate checks, rubric table | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=attribution` | Trial Attribution tab, criteria table | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=state-diff` | Trial State diff tab: initial hash against the manifest, then the diff | P16 |
-| `/?view=runs&run=session&trial=first-nonpass` | Heading `Trials from this session` and a notice that says where this session's trials are (Your runs in the Live trial view), with an `Open Live trial` link; it shows while the published results load or cannot be read. The session run list of `run=session` above is not built yet | P15, P16 |
+| `/?view=runs&run=session&trial=first-nonpass` | The first non-pass trial this surface started, in the trial detail layout (header, Grading with the Score card, gate checks and rubric table, Attribution with `not human-audited`, State diff, Environment, Raw, trajectory), a short session banner above it and `Back to Live trial`; with no runs in the session, the heading `Trials from this session` and a notice that says where this session's trials are (Your runs in the Live trial view), with an `Open Live trial` link; a trial the surface does not hold says why (`No trial <id> in this session.` and the surface's reason). It reads no published results, so it shows while they load or cannot be read | P15, P16, P25c (builder-330) |
 | `/?view=environment` | Environment: today's build (counts), the frozen worlds, tool catalogue, Try a read tool (Run tool), Check a fresh copy matches | P14 |
 | `/?view=glossary` | Glossary: plain terms, then how failures are attributed (definitions) | P14 |
 | `/?view=findings` | Findings, rendered from docs/findings.md and summary.json | P14, P24 (content) |
@@ -315,9 +320,11 @@ launcher (P15) shows the Run lines.
   is checked on the first non-pass trial of `run=session`.
 - The Score card on a trial's Grading tab and on a graded live trial is titled
   `Rubric score (does not decide pass)`. The UI polish gave it that title
-  (apps/web/src/trial/Grading.tsx SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in
+  (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in
   the accessibility text. The empty states show the title with no value, which the pattern does
-  not match.
+  not match. On the Live trial view the graded card shows the same title and value on one line
+  (builder-330, apps/web/src/live/grade.ts), and the full grade is on the trial page of
+  `run=session`, one click away through `Open the full grade`.
 
 ### P15: live trial
 
