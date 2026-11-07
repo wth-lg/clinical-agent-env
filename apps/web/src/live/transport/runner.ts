@@ -4,13 +4,14 @@
 // IndexedDB, so after a reload it shows the kept events and reconnects with Last-Event-ID set to
 // the last one: the runner replays what came after and goes live. A dropped stream reconnects the
 // same way. cancel is DELETE api/trials/:id; runs is GET api/runs and each trial's GET; project is
-// the same POST with ?dry_run=1, which the runner answers with 0 calls. Every call
+// the same POST with ?dry_run=1, which the runner answers with 0 calls; spent is GET api/spend,
+// the same figure as the dry run's session_spent_usd. Every call
 // carries the X-Clinenv-Token from the page and is same-origin; the page never calls the API.
 import { parseEvent, type TrialEvent } from '../../../../../packages/core/events.ts';
 import type { ExplainRecord } from '../../../../../packages/core/explain.ts';
 import {
   MAX_CONCURRENCY, parseDryRun, parseRunnerError, parseRunsList, parseSse, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialView, refusalText,
-  RUNS_PATH, SSE_END, TOKEN_HEADER, TRIALS_PATH, type TrialView,
+  parseSpend, RUNS_PATH, SPEND_PATH, SSE_END, TOKEN_HEADER, TRIALS_PATH, type TrialView,
 } from '../../../../../packages/core/runner-api.ts';
 import { runnerToken } from '../../keygate/runner.ts';
 import { putEvent, readEvents } from '../store.ts';
@@ -57,6 +58,13 @@ export function runnerTransport(token = runnerToken()): TrialTransport {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { projection } = parseDryRun(await json(res));
       return { usd: projection.total_usd, committed: projection.session_spent_usd, bound: allCapped(projection.lines) };
+    },
+
+    async spent() {
+      if (token === null) throw new Error(NO_TOKEN.lead);
+      const res = await call(SPEND_PATH, token);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return parseSpend(await json(res)).session_spent_usd;
     },
 
     async start(req): Promise<StartResult> {

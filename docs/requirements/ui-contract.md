@@ -321,7 +321,9 @@ launcher (P15) shows the Run lines.
 
 - `claude-opus-5-5`: the model shown in the Run launcher.
 - The spend meter in the top bar reads `Session spend $<a> of $<b> cap`, both in dollars with two
-  decimals, b the session cap.
+  decimals, b the session cap. On the local runner a is the runner session's committed spend,
+  read at load from `GET /api/spend` (`session_spent_usd`, the figure a dry run's projection
+  carries), so a reload shows the same amount as the run launcher (P25c, builder-327).
 
 ### P25: hosted site
 
@@ -553,6 +555,7 @@ each (apps/runner does not exist yet):
 | String | Owner |
 |---|---|
 | `GET /api/runs` and the `run=session` token | P15 |
+| `GET /api/spend`, the session's committed spend (`session_spent_usd`) that the spend meter reads at load | P25c (builder-327) |
 | `CLINENV_FORCED_FAIL=1` and the smoke run (`smoke-<n>`, `mock: true`, model `claude-opus-5-5`) | P15 |
 | the spend meter, `Session spend $<a> of $<b> cap` | P15 |
 | the matrix count line, `matrix: <k>/<n> probe verdicts as expected` | P14 |

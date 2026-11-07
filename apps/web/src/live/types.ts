@@ -68,6 +68,10 @@ export interface TrialTransport {
   // What the batch is projected to cost and what the session has already committed, in USD, as
   // start would check them against the session cap.
   project(req: BatchRequest): Promise<Projected>;
+  // What the session has committed, in USD: Projected.committed on its own, for the spend meter
+  // (spend/session.ts reads it at load and after each trial, so a reload shows the same figure as
+  // the launcher).
+  spent(): Promise<number>;
   // Every event of the trial, those kept from before a reload first, then live ones; resolves
   // when the trial ends. A reload reconnects (local runner) or resumes (browser-direct).
   events(trialId: string, onEvent: (e: TrialEvent) => void, signal: AbortSignal): Promise<TrialEnd>;

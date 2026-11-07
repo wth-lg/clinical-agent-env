@@ -19,6 +19,11 @@ export interface FrozenWorld {
   version?: string;
 }
 
+// The task's freezes (data/results.ts FrozenTask) as the worlds worldStatus compares with: the one
+// lookup the trial header's World line and the State diff tab share.
+export const frozenWorlds = (freezes: ReadonlyArray<{ role: FrozenWorld['role']; world_hash: string; frozen_at: { tag: string }; version?: string | undefined }>): FrozenWorld[] =>
+  freezes.map((f) => ({ role: f.role, world_hash: f.world_hash, tag: f.frozen_at.tag, ...(f.version !== undefined ? { version: f.version } : {}) }));
+
 export type WorldKind = 'manifest' | 'frozen' | 'other' | 'none';
 
 export interface WorldStatus {

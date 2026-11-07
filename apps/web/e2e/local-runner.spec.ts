@@ -228,6 +228,28 @@ test('a reload mid-trial reconnects with Last-Event-ID and reaches the same fina
   expect(await storageDump(page)).not.toContain(key);
 });
 
+// P25c (43-local-crc-after-reload): after a reload the meter read $0.00 while the launcher said
+// "$5.71 already committed". Both now read the runner's session spend (GET api/spend, the figure
+// the dry run's session_spent_usd carries), so the meter shows what the session has committed.
+test('after a reload the spend meter shows the runner session\'s committed spend, the launcher\'s figure', async ({ page }) => {
+  await open(page, runner!, '?view=live&task=_toy');
+  await run(page, 1);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  await page.reload();
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  const spend = (await (await api(page, runner!, 'api/spend')).json()) as { session_spent_usd: number };
+  const dry = await fetch(new URL('api/trials?dry_run=1', runner!.url), { method: 'POST', headers: { [TOKEN_HEADER]: (await token(page))!, 'content-type': 'application/json' }, body: JSON.stringify({ ...SAMPLES.trialsRequest, tasks: ['_toy'] }) });
+  const committed = ((await dry.json()) as { projection: { session_spent_usd: number } }).projection.session_spent_usd;
+  expect(committed).toBeGreaterThan(0);
+  expect(spend.session_spent_usd).toBeCloseTo(committed, 9);
+  const text = `Session spend $${committed.toFixed(2)} of $20.00 cap`;
+  await expect(page.getByTestId('spend-meter')).toHaveText(text);
+  // The same figure on a view that runs nothing: the source is read at load, not by the launcher (gate UIP25C-244 M2).
+  await page.goto(new URL('?view=overview', runner!.url).href);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  await expect(page.getByTestId('spend-meter')).toHaveText(text);
+});
+
 test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async ({ page }) => {
   await open(page, runner!, '?view=live&task=_toy', { cap: '500' });
   const posts: Array<{ trials: number; tasks: string[] }> = [];

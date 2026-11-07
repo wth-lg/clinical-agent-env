@@ -8,7 +8,7 @@ import { FINAL_TRIALS_PER_TASK, worstCaseUsd } from '../cost.ts';
 import {
   ContractError, HEALTH_PATH, KEY_PATH, MAX_CONCURRENCY, MAX_TRIALS_PER_TASK, parseDryRun, parseHealth, parseKeyRequest, parseKeyState,
   parseRunnerError, parseRunsList, parseSse, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialsRequest, parseTrialView,
-  REFUSAL_TEXT, refusalText, RUNNER_APP, RUNS_PATH, SAMPLES, sseFrame, SSE_END, TOKEN_HEADER, TOKEN_META, TRIALS_PATH, VALIDATE_REQUEST, validateWorstCaseUsd,
+  REFUSAL_TEXT, refusalText, RUNNER_APP, RUNS_PATH, SAMPLES, SPEND_PATH, parseSpend, sseFrame, SSE_END, TOKEN_HEADER, TOKEN_META, TRIALS_PATH, VALIDATE_REQUEST, validateWorstCaseUsd,
 } from '../runner-api.ts';
 
 const without = (o: object, k: string) => Object.fromEntries(Object.entries(o).filter(([name]) => name !== k));
@@ -96,7 +96,9 @@ describe('runner-api trial, run and SSE contracts (P12b)', () => {
     expect(parseTrialView(SAMPLES.trial)).toEqual(SAMPLES.trial);
     expect(parseRunsList(SAMPLES.runs)).toEqual(SAMPLES.runs);
     expect(parseSseEnd(SAMPLES.sseEnd)).toEqual(SAMPLES.sseEnd);
-    expect([TRIALS_PATH, RUNS_PATH]).toEqual(['api/trials', 'api/runs']);
+    expect(parseSpend(SAMPLES.spend)).toEqual(SAMPLES.spend);
+    expect(() => parseSpend({ session_spent_usd: 'none' })).toThrow(ContractError);
+    expect([TRIALS_PATH, RUNS_PATH, SPEND_PATH]).toEqual(['api/trials', 'api/runs', 'api/spend']);
   });
 
   it('takes 1 to 20 trials per task (the final run N) and 1 to 4 concurrency', () => {

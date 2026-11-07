@@ -256,8 +256,10 @@ test('without a key the Task select is shown disabled', async ({ page }) => {
   await browse(page, './?view=live&task=_toy');
   const select = page.getByLabel('Task');
   await expect(select).toBeDisabled();
-  // Disabled reads as a dashed outline, not opacity, so its text keeps its contrast (ui-polish 1.1).
-  expect(await select.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('dashed');
+  // Disabled is the standard look (a solid muted border, not opacity, so its text keeps its
+  // contrast; P25c: a dashed border read as a drop target), with the reason as its tooltip.
+  expect(await select.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
+  await expect(select).toHaveAttribute('title', 'Add a key first');
 });
 
 test('the trial Worker\'s guard refuses fetch and WebSocket to any origin but its own and the API, and XHR and EventSource to any', async ({ page }) => {

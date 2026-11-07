@@ -1,6 +1,10 @@
-// The session's cap and what the tab ledger has spent against it, as one store the top bar
-// meter and the key gate read. The cap the user set is kept in sessionStorage beside the tab
-// ledger's rows, so a reload changes neither the cap nor the spend.
+// The session's cap and what the session has committed against it, as one store the top bar
+// meter, the key gate and the run launcher read. The cap the user set is kept in sessionStorage
+// beside the tab ledger's rows, so a reload changes neither the cap nor the spend. The spend
+// comes from one source per surface (setSpentSource, main.tsx): the tab ledger's exposure on the
+// hosted site, the runner's session spend (GET api/spend) on the local runner, which is the
+// figure the launcher's projection carries as committed (P25c: after a reload the meter read
+// $0.00 while the launcher said "$5.71 already committed").
 import { useSyncExternalStore } from 'react';
 import { tabLedger } from '../adapters/ledger-browser.ts';
 import { DEFAULT_SESSION_CAP_USD, parseCap } from './cap.ts';
@@ -49,11 +53,28 @@ export function setSessionCap(cap: number): void {
   if (cap !== state.cap) emit({ ...state, cap });
 }
 
-// Re-reads the tab ledger: at load, and after a call settles.
-export async function refreshSpent(): Promise<number> {
-  const spent = (await tabLedger().totals()).exposure;
+let source: () => Promise<number> = async () => (await tabLedger().totals()).exposure;
+
+// Where the spend is read from: the surface's transport (live/types.ts TrialTransport.spent).
+export function setSpentSource(read: () => Promise<number>): void {
+  source = read;
+}
+
+// The figure a projection carries as committed (TrialTransport.project), the same source.
+export function setSpent(spent: number): void {
   if (spent !== state.spent) emit({ ...state, spent });
-  return spent;
+}
+
+// Re-reads the source: at load, and after a call settles or a trial ends. A source that fails
+// (the runner did not answer) leaves the last figure, so the page still renders; the Live trial
+// view shows the runner's errors itself.
+export async function refreshSpent(): Promise<number> {
+  try {
+    setSpent(await source());
+  } catch {
+    // kept: the last figure read
+  }
+  return state.spent;
 }
 
 export function useSessionSpend(): SessionSpend {

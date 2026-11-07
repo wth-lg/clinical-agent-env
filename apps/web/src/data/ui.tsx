@@ -17,8 +17,10 @@ import { BLOCKING_MARKS, faultNote, MARKS, markOf, NOT_COUNTED_LINE, type Mark }
 
 // The shared control classes (ui-polish 1.1). One BUTTON_PRIMARY per surface, for the action the
 // surface is for; BUTTON for the others; BUTTON_QUIET for a small action that should not compete.
-// Disabled is a dashed outline on the page colour, never opacity, so its text keeps its contrast.
-const DISABLED = 'disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
+// Disabled is the standard look: a solid muted border on the page colour, never opacity, so its
+// text keeps its contrast (P25c: a dashed border read as a drop target). A disabled control says
+// why in its title.
+const DISABLED = 'disabled:cursor-not-allowed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
 const CONTROL = `inline-flex h-8 items-center justify-center gap-1.5 rounded-md border px-3 font-medium ${DISABLED}`;
 export const BUTTON = `${CONTROL} border-line-strong bg-surface text-ink hover:bg-canvas`;
 export const BUTTON_PRIMARY = `${CONTROL} border-primary bg-primary text-on-primary hover:bg-primary/90`;
@@ -99,6 +101,17 @@ export function Notice({ children, testId, tone, icon: Icon, action, detail, rol
   );
 }
 
+
+// An error inside a card: the lead in the danger colour, then the raw message in small mono text.
+export function ErrorNote({ lead, detail, testId, children }: { lead: string; detail: string | null; testId: string; children?: ReactNode }) {
+  return (
+    <div role="alert" data-testid={testId} className="mt-3 rounded-md border border-danger bg-canvas p-3">
+      <p className="font-medium text-danger">{lead}</p>
+      {children}
+      {detail !== null && <p className="mt-2 break-words font-mono text-xs text-ink-muted" data-testid="error-detail">{detail}</p>}
+    </div>
+  );
+}
 
 export const NO_RESULTS = 'No results are published yet.';
 
@@ -286,7 +299,7 @@ export function FaultLabel({ e, notCountedShown = false, official = false }: { e
 
 export const counts = (outcome: string) => isValid(outcome);
 
-const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
+export const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 export const formatInterval = (w: Interval | null) => (w === null ? 'no valid trials' : `${pct(w.lo)} to ${pct(w.hi)}`);
 
 // One task's pass rate on a 0-100% axis: the band (shaded), the Wilson 95% interval (whisker)

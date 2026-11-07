@@ -22,7 +22,7 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, frozenFor, fullExplanation, useResults, type RunData, type Trial, type FrozenTask } from '../data/results.ts';
 import { MANIFEST } from '../data/world.ts';
-import { worldLine, worldStatus } from './world.ts';
+import { frozenWorlds, worldLine, worldStatus } from './world.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
@@ -186,7 +186,7 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef }: { t: Trial;
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
-              'state-diff': <StateDiff official={run.official} frozen={frozen} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
+              'state-diff': <StateDiff official={run.official} superseded={run.superseded} frozen={frozen} freezes={freezes} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
             }}
@@ -215,7 +215,7 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef }: { t: Trial;
 // "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep." (trial/world.ts), against
 // every frozen world of the task, whatever the run.
 function WorldLine({ t, freezes, official }: { t: Trial; freezes: readonly FrozenTask[]; official: boolean }) {
-  const worlds = freezes.map((f) => ({ role: f.role, world_hash: f.world_hash, tag: f.frozen_at.tag, ...(f.version !== undefined ? { version: f.version } : {}) }));
+  const worlds = frozenWorlds(freezes);
   const w = worldStatus(t.record.state_hash.initial, MANIFEST.world.state_hash, worlds, official);
   return <span data-testid="trial-world" data-world={w.kind} data-hash={w.hash ?? ''} title={w.hash ?? undefined}>{worldLine(w, t.task, worlds)}</span>;
 }
