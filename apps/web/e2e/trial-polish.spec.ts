@@ -171,7 +171,7 @@ test('3.3: the header leads with a plain headline, then the chips with the kind 
   const h = page.getByTestId('trial-header');
   const headline = h.getByTestId('trial-headline');
   // P25u J2: the headline is plain words, with no check id; the exact check is behind a disclosure.
-  await expect(headline).toHaveText(plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy)!);
+  await expect(headline).toHaveText(plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy, record(TRIALS.failAudited).attribution?.exposure)!);
   await expect(headline).not.toContainText(e.decisive_check!.id);
   // The headline comes before the verdict chip.
   expect(await headline.evaluate((x) => Boolean(x.compareDocumentPosition(document.querySelector('[data-testid="trial-header"] [data-testid="outcome"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
@@ -318,14 +318,17 @@ test('J4: Where lists the steps the slip ran through, in order, each a link, wit
   await expect(page.getByTestId('panel-attribution').getByTestId('where-steps').locator('li')).toHaveCount(kinds.length);
 });
 
-test('J17, J8b: Attribution leads the human audit with a plain sentence, keeps the note behind a disclosure, and uses the shared confirmation phrase', async ({ page }) => {
+test('J17, J8b: Attribution leads the audit with a plain sentence that names the auditor as an LLM session, keeps the note behind a disclosure, and uses the shared confirmation phrase', async ({ page }) => {
   const e = await explain(TRIALS.failAudited);
   const audit = auditOf(TRIALS.failAudited)!;
   await openTrial(page, TRIALS.failAudited, '&tab=attribution');
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
   const p = page.getByTestId('panel-attribution');
-  const headline = plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy)!;
-  await expect(p.getByTestId('audit-plain')).toHaveText(`A person reviewed this trial and agrees it is the model's fault: ${headline.charAt(0).toLowerCase()}${headline.slice(1)}`);
+  const headline = plainHeadline(e, record(TRIALS.failAudited).checks, e.taxonomy, record(TRIALS.failAudited).attribution?.exposure)!;
+  // eval-p25u-1 defect 1: no screen says a person reviewed the trial; the run's reads were LLM sessions.
+  await expect(p.getByTestId('audit-plain')).toHaveText(`The auditor (an LLM session) reviewed this trial and agrees it is the model's fault: ${headline.charAt(0).toLowerCase()}${headline.slice(1)}`);
+  await expect(p.getByTestId('audit-notes')).not.toContainText('person');
+  await expect(page.getByTestId('trial-header').getByTestId('fault-why')).toContainText('the auditor (an LLM session) agrees (M5)');
   if (audit.note) {
     const note = p.getByTestId('audit-note');
     await expect(note).not.toHaveAttribute('open');
@@ -333,8 +336,8 @@ test('J17, J8b: Attribution leads the human audit with a plain sentence, keeps t
     await note.locator('> summary').click();
     await expect(note).toContainText(audit.note);
   }
-  await expect(p.getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4) and the human audit (M5)');
-  await expect(p.getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
+  await expect(p.getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4) and the audit (M5)');
+  await expect(p.getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the audit (M5)');
 });
 
 test('V9: Grading opens with the gate result in the verdict\'s mark, and the rubric score comes last with its gloss', async ({ page }) => {
@@ -483,7 +486,7 @@ test('F4: a trial whose fault is not the model\'s keeps the confirmation definit
   // A model fault keeps the phrase and the heading.
   await openTrial(page, TRIALS.failAudited, '&tab=attribution');
   await expect(page.getByTestId('panel-attribution').getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4)');
-  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
+  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the audit (M5)');
 });
 
 // Gate F6 (latent): the header's Exact check row no longer requires a valid trial, so an excluded

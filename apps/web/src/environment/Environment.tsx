@@ -16,6 +16,7 @@ import { loadStore } from '../../../../packages/env/fixture-source.ts';
 import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
 import { useResults } from '../data/results.ts';
+import { ResultsError } from '../data/results-error.tsx';
 import { BUTTON, BUTTON_PRIMARY, Card, ErrorNote, FIELD, GlossaryLink, Hash, Notice, Page, SELECT } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
@@ -81,7 +82,7 @@ function FrozenWorlds({ manifest }: { manifest: string }) {
     <Card title="Frozen worlds">
       <p className="text-ink-muted">A task is frozen on the world it was tuned on, and its official trials start from that world, so a trial's world hash matches its task's row here and may differ from today's build.</p>
       {results === null && <p className="mt-2 text-ink-muted" role="status">Loading the published results…</p>}
-      {results?.kind === 'error' && <p className="mt-2 text-ink-muted" data-testid="frozen-worlds-error">The published results cannot be read, so the frozen worlds cannot be listed: {results.message}</p>}
+      {results?.kind === 'error' && <div className="mt-2"><ResultsError nested testId="frozen-worlds-error" message={results.message} cannot="the frozen worlds cannot be listed" /></div>}
       {results?.kind === 'ready' && rows.length === 0 && <p className="mt-2 text-ink-muted" data-testid="frozen-worlds-none">No task is frozen yet: the official trials start from today's build.</p>}
       {rows.length > 0 && (
         <>

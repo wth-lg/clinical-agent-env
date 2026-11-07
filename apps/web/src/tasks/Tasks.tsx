@@ -20,7 +20,8 @@ import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } 
 import { titleParts } from './title.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
-import { checkTextOf, loadResults, useResults } from '../data/results.ts';
+import { checkTextOf, loadResults, reloadResults, useResults } from '../data/results.ts';
+import { ResultsError } from '../data/results-error.tsx';
 import { loadTaskList } from '../data/tasks.ts';
 import { BUTTON, BUTTON_PRIMARY, CARD, LINK, Notice, Page, SECTION_LABEL, SELECT, TAB, TAB_ACTIVE, TAB_IDLE, TAB_STRIP, VerdictChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
@@ -40,7 +41,8 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   const open = params.get('task');
   const tab = tabOf(params.get('tab'));
   // The official run's per-task summary, for each card's k/N and verdict; nothing until it loads
-  // or when no official run is published.
+  // or when no official run is published. A load that failed is said (verifier
+  // P25u-final-copy-1 claim 4): the rates are missing from the cards and Replay has nothing.
   const results = useResults();
   const rates = results?.kind === 'ready' ? results.official?.summary?.tasks ?? null : null;
   useEffect(() => {
@@ -53,6 +55,7 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   return (
     <Page title="Tasks" headingRef={headingRef} lead="Each task is a prompt, the tools the model may use, the policies it must follow and the checks that grade it. Grader validation runs here with no key.">
       {error !== null && <Notice testId="error-state">The tasks cannot be read: {error}</Notice>}
+      {results?.kind === 'error' && <ResultsError message={results.message} cannot="each task's pass rate is missing from its card and Replay published trials has nothing to replay" />}
       {tasks === null && error === null && <Notice>Loading tasks…</Notice>}
       {missing && <Notice testId="missing-task" role="status" tone="info">No task &quot;{open}&quot;. The {inWords(tasks?.length ?? 0)} tasks are below.</Notice>}
       {tasks !== null && (
@@ -416,6 +419,9 @@ function useValidationRuns() {
 
 // What each validation button does, in one line under it in the Grader validation panel and read
 // out with it (ui-polish 4.1).
+// The replay error whose message starts with this is a results load that failed (Validation).
+const RESULTS_NOT_LOADED = 'results not loaded: ';
+
 const VALIDATION_HELP = {
   oracle: 'Runs a known-good answer; it must pass.',
   matrix: 'Tries planted wrong answers and other right answers; each must grade as expected.',
@@ -435,9 +441,15 @@ const VALIDATION_BUTTON = `${BUTTON} max-sm:w-full`;
 function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
   const { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay } = runs;
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
+  // Replay reads the published results. A load that failed is a failed replay, said as such
+  // (RESULTS_NOT_LOADED, below), never "no official run": a results load that failed earlier is
+  // tried again first, through reloadResults so every view sees the new state.
+  const results = useResults();
   const replayTrials = async () => {
+    if (results?.kind === 'error') reloadResults();
     const r = await loadResults();
-    if (r.kind !== 'ready' || r.official === null) return [];
+    if (r.kind === 'error') throw new Error(`${RESULTS_NOT_LOADED}${r.message}`);
+    if (r.official === null) return [];
     return validate({ op: 'replay', task: id, dir: r.official.dir, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   const buttons = [
@@ -493,7 +505,11 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
           <details className="mt-1"><summary className="cursor-pointer text-xs text-ink-muted">Matrix report</summary><pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap text-xs">{m.lines.join('\n')}</pre></details>
         </div>
       )} />
-      <Result r={replay} what="replay" render={(rows) => (
+      {replay.state === 'error' && replay.message.startsWith(RESULTS_NOT_LOADED) ? (
+        // Shown while the results are still not loaded; once Retry has loaded them this stale
+        // failure says nothing true, so it goes and Replay published trials runs afresh.
+        results?.kind === 'ready' ? null : <div className="mt-2"><ResultsError nested testId="replay-results-error" message={replay.message.slice(RESULTS_NOT_LOADED.length)} cannot="there is nothing to replay: press Retry, then Replay published trials again" /></div>
+      ) : <Result r={replay} what="replay" render={(rows) => (
         <div data-testid="replay-result">
           {rows.length === 0 ? <p className="text-ink-muted">No official run is published with trials of this task, so there is nothing to replay yet.</p> : (
             <>
@@ -508,7 +524,7 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
             </>
           )}
         </div>
-      )} />
+      )} />}
     </div>
   );
 }

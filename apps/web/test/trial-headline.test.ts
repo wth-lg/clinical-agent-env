@@ -40,11 +40,32 @@ const base = (over: Partial<Explanation>): Explanation => ({
 // records it turns on and, on an event gate, the step the arrival fired at): final-1
 // contrast-ct-prep/0's event_seen.
 const EVENT_CHECKS = [{ id: 'event_seen', items: [{ item: 'Patient/pt-0047', met: false, why: 'event t5-mohr-scr arrived at step 52 and was never read before finish', decisive_ids: ['Observation/obs-07502', 'Observation/obs-07501'], evidence: { arrived_at: 52 } }, { item: 'Patient/pt-0015', met: true }] }];
+// The same record's exposure (attribution.exposure): one of the two results was shown at step 75,
+// the other never.
+const EVENT_EXPOSURE = [{ id: 'Observation/obs-07502', first_exposed_step: 75 }, { id: 'Observation/obs-07501', first_exposed_step: null }];
 const eventCheck = (item: string, why: string, decisive_ids: string[], arrived_at: number, id = 'event_seen') => [{ id, items: [{ item, met: false, why, decisive_ids, evidence: { arrived_at } }] }];
 
 describe('plainHeadline', () => {
   it('opens with the kind of failure in words, then what arrived for whom and at which step on an event gate', () => {
     expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval')).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model did not review them before finishing.');
+  });
+  // eval-p25u-1 defect 2: "did not review them" overstated the miss on contrast-ct-prep/0, where
+  // obs-07502 was shown at step 75 and only obs-07501 never was.
+  it('with the exposure, says which records of the batch the model opened and which it never did (final-1 contrast-ct-prep/0)', () => {
+    expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval', EVENT_EXPOSURE)).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52. The model opened Observation/obs-07502 at step 75 and never opened Observation/obs-07501.');
+  });
+  it('with the exposure, a batch the model never opened at all says so (final-1 results-inbox/4), and one record keeps its line (renal-dose-review/4)', () => {
+    const inbox = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'marchetti_cr_ed (Patient/pt-0064)' } });
+    const checks = eventCheck('marchetti_cr_ed', 'event marchetti-cr-batch arrived at step 49 and was never read before finish', ['Observation/obs-06209', 'Observation/obs-06210'], 49);
+    expect(plainHeadline(inbox, checks, 'retrieval', [{ id: 'Observation/obs-06209', first_exposed_step: null }, { id: 'Observation/obs-06210', first_exposed_step: null }])).toBe('Missed a record it needed: new results for Patient/pt-0064 arrived at step 49, and the model opened none of them before finishing.');
+    // results-inbox/4 as the run holds it: obs-06209 was shown at step 68.
+    expect(plainHeadline(inbox, checks, 'retrieval', [{ id: 'Observation/obs-06209', first_exposed_step: 68 }, { id: 'Observation/obs-06210', first_exposed_step: null }])).toBe('Missed a record it needed: new results for Patient/pt-0064 arrived at step 49. The model opened Observation/obs-06209 at step 68 and never opened Observation/obs-06210.');
+    const renal = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0062 (Norman Fairweather) had an arrival that was never opened before the review finished' } });
+    expect(plainHeadline(renal, eventCheck('Patient/pt-0062', 'event fairweather-scr-batch arrived at step 41 and was never read before finish', ['Observation/obs-04004'], 41), 'retrieval', [{ id: 'Observation/obs-04004', first_exposed_step: null }])).toBe('Missed a record it needed: a new result for Patient/pt-0062 (Norman Fairweather) arrived at step 41, and the model never opened it before finishing.');
+  });
+  it('an exposure that does not cover the batch, or that shows every record, keeps the plain line', () => {
+    expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval', [{ id: 'Observation/obs-07502', first_exposed_step: 75 }])).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model did not review them before finishing.');
+    expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval', [{ id: 'Observation/obs-07502', first_exposed_step: 75 }, { id: 'Observation/obs-07501', first_exposed_step: 80 }])).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model did not review them before finishing.');
   });
   it('names the patient from the found text when that text is a clause, never pasting the clause in (gate F2: renal-dose-review/4, 10, 13, 19)', () => {
     const e = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0062 (Norman Fairweather) had an arrival that was never opened before the review finished' } });
@@ -77,6 +98,29 @@ describe('plainHeadline', () => {
     const line = plainHeadline(e, checks, 'retrieval')!;
     expect(line).toBe('Missed a record it needed: a FIT order for Patient/pt-0022 (Tiny Darline Koss) without a complete screening review ever made.');
     expect(line).not.toContain('crc-b2');
+  });
+  // eval-p25u-1 defect 3: an order written before a complete review (crc-care-gap fit_orders, the
+  // item's evidence names the missing kinds and the order's step) reads as one sentence that says
+  // what the model did and what it never reviewed, not the kind phrase glued onto the found clause.
+  it('an order written before a complete review says what the model wrote, when, and which records it never reviewed (final-1 crc-care-gap/5, /6, /11)', () => {
+    const order = (found: string, item: string, why: string, kind: string, at: number) => plainHeadline(
+      base({ decisive_check: { id: 'fit_orders', traces_to: null, expected: 'one new FIT kit order for each patient with a screening gap', found } }),
+      [{ id: 'fit_orders', items: [{ item, met: false, why, decisive_ids: [item], evidence: { missing_kinds: [kind], unseen: [] }, ids: ['ServiceRequest/sr-t0002'], at }] }],
+      'retrieval',
+    )!;
+    const why5 = "ordered after crc-o1 arrived without the trial ever making a complete review of the patient's Observation from 2024-01-01 records (every one in the window shown, or a complete search showing them absent), what decides the order";
+    const five = order('a FIT order for Patient/pt-0024 (Delaine Evelyn MacGyver) without a complete screening review ever made', 'Patient/pt-0024', why5, 'Observation from 2024-01-01', 82);
+    expect(five).toBe("Missed a record it needed: the model wrote a FIT order for Patient/pt-0024 (Delaine Evelyn MacGyver) at step 82 without a complete review of the patient's results from 2024-01-01 on, the records that decide the order.");
+    expect(five).not.toContain('crc-o1');
+    expect(order('a FIT order for Patient/pt-0009 (Jo Bloggs) without a complete screening review ever made', 'Patient/pt-0009', why5.replace('crc-o1', 'crc-b1').replace('2024', '2026'), 'Observation from 2026-01-01', 84))
+      .toBe("Missed a record it needed: the model wrote a FIT order for Patient/pt-0009 (Jo Bloggs) at step 84 without a complete review of the patient's results from 2026-01-01 on, the records that decide the order.");
+    expect(order('a FIT order for Patient/pt-0022 (Tiny Darline Koss) without a complete screening review ever made', 'Patient/pt-0022', why5.replace('crc-o1', 'crc-b2'), 'Observation from 2024-01-01', 72))
+      .toBe("Missed a record it needed: the model wrote a FIT order for Patient/pt-0022 (Tiny Darline Koss) at step 72 without a complete review of the patient's results from 2024-01-01 on, the records that decide the order.");
+  });
+  it('an order gate whose found text names no order falls back to "an order", and names the records never shown', () => {
+    const e = base({ decisive_check: { id: 'fit_orders', traces_to: null, expected: 'one FIT order per due patient', found: 'Patient/pt-0024 (Delaine Evelyn MacGyver)' } });
+    const checks = [{ id: 'fit_orders', items: [{ item: 'Patient/pt-0024', met: false, why: 'ordered after crc-o1 arrived without the trial ever making a complete review', decisive_ids: ['Patient/pt-0024'], evidence: { missing_kinds: ['Observation from 2024-01-01'], unseen: ['Patient/pt-0024'] }, at: 82 }] }];
+    expect(plainHeadline(e, checks, 'retrieval')).toBe("Missed a record it needed: the model wrote an order for Patient/pt-0024 (Delaine Evelyn MacGyver) at step 82 without a complete review of the patient's results from 2024-01-01 on and without opening Patient/pt-0024, the records that decide the order.");
   });
   it('names the first failed item\'s reason on a gate with items and no arrival', () => {
     const checks = [{ id: 'doac_dose', items: [{ item: 'Patient/pt-0003', met: false, why: 'rivaroxaban 20 mg once daily; the policy dose is 15 mg' }] }];
@@ -126,8 +170,11 @@ describe('plainHeadline', () => {
 });
 
 describe('faultWhy', () => {
-  it('says why the fault is the model\'s from the confirmation criteria that are met', () => {
-    expect(faultWhy(base({}))).toBe("Why it is the model's fault: the records it needed were shown to it or within reach (M1), no tool failed inside the environment (M2), and a person reviewed it and agrees (M5).");
+  // eval-p25u-1 defect 1: the published run's audit reads were LLM sessions (docs/findings.md,
+  // next step 10), so no screen says a person reviewed a trial.
+  it('says why the fault is the model\'s from the confirmation criteria that are met, naming the auditor as an LLM session', () => {
+    expect(faultWhy(base({}))).toBe("Why it is the model's fault: the records it needed were shown to it or within reach (M1), no tool failed inside the environment (M2), and the auditor (an LLM session) agrees (M5).");
+    expect(faultWhy(base({}))).not.toMatch(/person|human/);
   });
   it('leaves out a criterion that is pending or not met, and is null with none met', () => {
     const e = base({ criteria: base({}).criteria.map((c) => (c.id === 'M5' ? { ...c, met: 'pending' } : c)) });
@@ -143,13 +190,13 @@ describe('faultWhy', () => {
 
 describe('confirmationWords', () => {
   const rows = (m: Record<string, unknown>) => ['M1', 'M2', 'M3', 'M4', 'M5'].map((id) => ({ id, met: m[id] ?? true }));
-  it('is the shared phrase when the record and the audit both confirm', () => {
-    expect(confirmationWords(rows({}))).toBe('confirmed by the record (M1–M4) and the human audit (M5)');
-    expect(confirmationWords(rows({ M1: 'n/a' }))).toBe('confirmed by the record (M1–M4) and the human audit (M5)');
+  it('is the shared phrase when the record and the audit both confirm, and never calls the audit human (eval-p25u-1 defect 1)', () => {
+    expect(confirmationWords(rows({}))).toBe('confirmed by the record (M1–M4) and the audit (M5)');
+    expect(confirmationWords(rows({ M1: 'n/a' }))).toBe('confirmed by the record (M1–M4) and the audit (M5)');
   });
   it('says what is pending or not met', () => {
-    expect(confirmationWords(rows({ M5: 'pending' }))).toBe('confirmed by the record (M1–M4) while the human audit (M5) is pending');
-    expect(confirmationWords(rows({ M4: 'pending' }))).toBe('confirmed by the record so far (M4 pending) and the human audit (M5)');
-    expect(confirmationWords(rows({ M3: false, M5: false }))).toBe('not confirmed by the record (M3 not met), and the human audit (M5) disagrees');
+    expect(confirmationWords(rows({ M5: 'pending' }))).toBe('confirmed by the record (M1–M4) while the audit (M5) is pending');
+    expect(confirmationWords(rows({ M4: 'pending' }))).toBe('confirmed by the record so far (M4 pending) and the audit (M5)');
+    expect(confirmationWords(rows({ M3: false, M5: false }))).toBe('not confirmed by the record (M3 not met), and the audit (M5) disagrees');
   });
 });

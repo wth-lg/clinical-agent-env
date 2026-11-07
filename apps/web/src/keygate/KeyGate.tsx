@@ -95,7 +95,9 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <button type="button" onClick={onBrowse} className={`${BUTTON_PRIMARY} h-9 px-4`}>
             Browse the results
           </button>
-          <p data-testid="gate-pass-line" className="mt-2 text-ink-muted">{passLine(summary?.totals ?? null)}</p>
+          {/* The pass count and the cost hint come from the published results; a load that failed
+              is said here in one line (verifier P25u-final-copy-1 claim 4). */}
+          <p data-testid="gate-pass-line" className="mt-2 text-ink-muted">{results?.kind === 'error' ? 'The published results did not load, so the pass count is not shown here. Browse the results and press Retry there.' : passLine(summary?.totals ?? null)}</p>
         </div>
 
         <h2 className={`mt-6 border-t border-line pt-5 ${CARD_TITLE}`}>Run new trials (needs an API key)</h2>

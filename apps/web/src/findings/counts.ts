@@ -25,11 +25,11 @@ export interface Confirmation {
   // The failures the record confirms as a fair test of the model: M1-M4 met or n/a
   // (packages/core/explain.ts m1ToM4Met, the rule audit-check's fault box counts by).
   record: number;
-  // The failures the human audit agrees with: M5 met.
+  // The failures the audit agrees with: M5 met.
   audit: number;
 }
 
-// "Confirmed by the record (M1–M4) and the human audit (M5)" (copy rule C5): the counts behind
+// "Confirmed by the record (M1–M4) and the audit (M5)" (copy rule C5): the counts behind
 // the phrase, over the valid non-pass trials of the explanations given. The record's count is
 // data/failures.ts m1m4, the one rule (F7: no second copy here).
 export function confirmation(es: readonly Explanation[]): Confirmation {

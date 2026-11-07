@@ -348,7 +348,7 @@ export function FaultMeta({ e, notCountedShown = false, official = false }: { e:
   return (
     <>
       {note !== null && <span data-testid="fault-note" className={`text-xs ${(blocksTheRun(e) && official) || e.outcome === 'GRADER_ERROR' ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
-      {!e.audited && <span data-testid="not-audited" title="Not reviewed by a person yet" className={`${CHIP} border-dashed border-line-strong font-normal text-ink-muted`}>{NOT_AUDITED_MARKER}</span>}
+      {!e.audited && <span data-testid="not-audited" title="No audit row for this trial yet" className={`${CHIP} border-dashed border-line-strong font-normal text-ink-muted`}>{NOT_AUDITED_MARKER}</span>}
     </>
   );
 }

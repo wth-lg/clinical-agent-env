@@ -8,6 +8,7 @@ import { FAILURE_LABELS, type FailedCheckCount, type FaultCounts } from '../../.
 import type { Explanation } from '../../../../packages/core/explain.ts';
 import { isFalsePass, kindWords, type FailureLabel, type RunBlock } from '../data/failures.ts';
 import { GlossaryLink, markProps } from '../data/ui.tsx';
+import { AUDIT_BY } from '../trial/headline.ts';
 import { hrefWith, onNav } from '../data/url.ts';
 import { confirmation, kindSegments } from './counts.ts';
 
@@ -59,9 +60,10 @@ export function TopChecks({ task, top, textOf }: { task: string; top: readonly F
 const LABEL_WORDS: Record<FailureLabel, string> = { model: 'model', environment: 'environment', grader: 'grader', unlabelled: 'not yet audited' };
 
 // The fault box: the valid failures by audit label (each a Runs link to those trials) under
-// "Whose fault" (copy rule C4: never a bare label as a verdict), then the one confirmation
-// phrase of every screen (copy rule C5, P25u J8c): "Confirmed by the record (M1–M4) and the
-// human audit (M5)", with the record's count and "audit agrees: n of N" (counts.ts
+// "Whose fault, by the audit (LLM sessions in this run)" (copy rule C4: never a bare label as a
+// verdict; headline.ts AUDIT_BY says who audited, eval-p25u-1 defect 1), then the one
+// confirmation phrase of every screen (copy rule C5, P25u J8c): "Confirmed by the record (M1–M4)
+// and the audit (M5)", with the record's count and "audit agrees: n of N" (counts.ts
 // confirmation), and the infra re-runs. task 'all' sums the tasks; its links are not filtered
 // by task.
 export function FaultBox({ task, fcs, explanations }: { task: string; fcs: readonly FaultCounts[]; explanations: readonly Explanation[] }) {
@@ -78,7 +80,7 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
     <div data-testid="fault-box" data-task={task} className="space-y-1 text-sm">
       {labels ? (
         <p className="flex flex-wrap gap-x-4 gap-y-1">
-          <span className="text-ink-muted">Whose fault, by the human audit:</span>
+          <span className="text-ink-muted">Whose fault, {AUDIT_BY}:</span>
           {FAILURE_LABELS.map((l) => (
             <span key={l} data-testid="fault-label-count" data-label={l} data-count={sum(l)}>
               {sum(l) > 0 ? <RunsLink patch={{ task: scope, audit: l }}>{LABEL_WORDS[l]} {sum(l)}</RunsLink> : <span className="text-ink-muted">{LABEL_WORDS[l]} 0</span>}
@@ -86,9 +88,9 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
             </span>
           ))}
         </p>
-      ) : <p className="text-ink-muted">No human audit is published, so the failures have no fault labels yet.</p>}
+      ) : <p className="text-ink-muted">No audit is published, so the failures have no fault labels yet.</p>}
       <p className="text-xs text-ink-muted">
-        <GlossaryLink anchor="confirmation">Confirmed by the record (M1–M4) and the human audit (M5)</GlossaryLink>:{' '}
+        <GlossaryLink anchor="confirmation">Confirmed by the record (M1–M4) and the audit (M5)</GlossaryLink>:{' '}
         <span data-testid="m1-m4" data-met={c.record} data-failures={c.failures}>the record confirms {c.record} of {n}</span>,{' '}
         <span data-testid="m5" data-agrees={c.audit} data-failures={c.failures}>audit agrees: {c.audit} of {c.failures}</span>.{' '}
         <Reruns count={reruns} />
