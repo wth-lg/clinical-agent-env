@@ -25,7 +25,7 @@ import { bandVerdict, type BandVerdict, type Interval } from '../../../../packag
 import { verdictLabel } from '../overview/band.ts';
 import { hrefWith, onNav } from './url.ts';
 import type { HarmItem } from './harm.ts';
-import { BLOCKING_MARKS, faultNote, MARKS, markOf, NOT_COUNTED_LINE, type Mark } from './marks.ts';
+import { BLOCKING_MARKS, faultNote, infraLabel, MARKS, markOf, NOT_COUNTED_LINE, type Mark } from './marks.ts';
 
 // The shared control classes (ui-polish 1.1). One BUTTON_PRIMARY per surface, for the action the
 // surface is for; BUTTON for the others; BUTTON_QUIET for a small action that should not compete.
@@ -297,8 +297,10 @@ export function HashText({ text }: { text: string }) {
 // FaultChip is the label as a chip ("Fault: model", with the trial's mark) and its help icon;
 // FaultMeta is the note and the not-audited marker. A Runs row shows them on two lines (ui-polish
 // 2.2); FaultLabel shows them together.
+// detail: the record's detail (its INFRA_HARNESS or INVALID reason), which picks the infra chip's
+// words (marks.ts infraLabel); the explanation does not carry it.
 const hasFault = (e: Explanation) => e.fault !== null && (e.fault === 'infra' || shownLabel(e) !== null);
-export function FaultChip({ e }: { e: Explanation }) {
+export function FaultChip({ e, detail = null }: { e: Explanation; detail?: string | null }) {
   const label = shownLabel(e);
   if (!hasFault(e)) return null;
   const name = e.fault === 'infra' ? 'infra' : label!;
@@ -315,10 +317,10 @@ export function FaultChip({ e }: { e: Explanation }) {
     </a>
   );
   if (e.fault === 'infra') {
-    // A trial the user stopped is not an API problem, and nothing runs it again (P25u A1a, copy
-    // rule C4); the chip says so. Every other infra fault is the API's, excluded and rerun.
-    const stopped = e.outcome === 'CANCELLED';
-    return <span className="inline-flex items-center gap-x-1"><span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>{swatch}<span data-testid="label" data-label="infra" data-outcome={e.outcome}>{stopped ? 'Stopped: not counted' : 'API problem: not counted, run again'}</span></span>{help}</span>;
+    // The chip's words come from the one list the live card uses (marks.ts infraLabel, live/copy.ts
+    // infraWords): "API problem" only when the API failed (copy rule C4), else what happened.
+    const words = infraLabel(e.outcome, detail) ?? 'Infrastructure problem: not counted, run again';
+    return <span className="inline-flex items-center gap-x-1"><span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>{swatch}<span data-testid="label" data-label="infra" data-outcome={e.outcome}>{words}</span></span>{help}</span>;
   }
   // An environment or grader label takes the danger tone (JU2); a model label stays neutral.
   const danger = label === 'environment' || label === 'grader';
@@ -351,11 +353,11 @@ export function FaultMeta({ e, notCountedShown = false, official = false }: { e:
   );
 }
 
-export function FaultLabel({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
+export function FaultLabel({ e, detail = null, notCountedShown = false, official = false }: { e: Explanation; detail?: string | null; notCountedShown?: boolean; official?: boolean }) {
   if (!hasFault(e)) return null;
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-      <FaultChip e={e} />
+      <FaultChip e={e} detail={detail} />
       <FaultMeta e={e} notCountedShown={notCountedShown} official={official} />
     </span>
   );

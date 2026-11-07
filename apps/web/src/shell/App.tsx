@@ -11,7 +11,7 @@ import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { Rail } from './Rail.tsx';
 import { BASE_TITLE, documentTitle } from './title.ts';
 import { TopBar } from './TopBar.tsx';
-import { viewFromUrl, viewHref } from './views.ts';
+import { railViewFromUrl, viewFromUrl, viewHref } from './views.ts';
 
 // "Browse without a key", remembered for this tab, so a reload or a shared ?view= link opened in
 // it goes straight to the view (a per-tab convenience: storage may be unavailable, and then the
@@ -141,7 +141,7 @@ export function App({ surface }: { surface: Surface }) {
         <TopBar surface={surface} status={status} onForget={onForget} onAdd={() => setGate(true)} busy={busy} />
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           <Rail
-            active={view}
+            active={railViewFromUrl(href)}
             onNavigate={(id) => {
               // popstate, as data/url.ts navigate() sends it: the shell sets the view, and every
               // other reader of the URL (Runs, the trial detail) reads it again, even when the view

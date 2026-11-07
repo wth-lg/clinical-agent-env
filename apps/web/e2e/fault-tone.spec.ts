@@ -160,6 +160,38 @@ test('A1a: a trial the user stopped (CANCELLED) is labelled "Stopped: not counte
   await expect(row.getByTestId('label')).toHaveText('Stopped: not counted');
 });
 
+// P25u follow-up (after S4): the trial page and Runs give a trial that is not counted the same chip
+// as the live card (live/copy.ts infraWords), by outcome and detail, so "API problem" is said only
+// when the API failed. The fixture's INFRA_API record stands in for each case through a route.
+const INFRA_CASES = [
+  { outcome: 'INFRA_HARNESS', detail: 'unpriced_usage', chip: 'Infrastructure problem: not counted, run again' },
+  { outcome: 'INFRA_HARNESS', detail: 'spend_refused_ceiling', chip: 'Spend refused: not counted' },
+  { outcome: 'INVALID', detail: 'model_mismatch', chip: 'Wrong model answered: not counted, the batch stopped' },
+  { outcome: 'INFRA_API', detail: 'overloaded_error after 4 retries', chip: 'API problem: not counted, run again' },
+] as const;
+for (const c of INFRA_CASES) {
+  test(`a ${c.outcome} (${c.detail}) trial reads "${c.chip}" on its page and in Runs, with the help icon's description kept`, async ({ page }) => {
+    await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.infra}.json`, async (route) => {
+      const res = await route.fetch();
+      const record = JSON.parse(await res.text()) as { outcome: string; status: string; detail: string | null };
+      record.outcome = c.outcome;
+      record.status = c.outcome;
+      record.detail = c.detail;
+      await route.fulfill({ response: res, body: JSON.stringify(record) });
+    });
+    await openTrial(page, TRIALS.infra);
+    const header = page.getByTestId('trial-header');
+    await expect(header.getByTestId('outcome')).toContainText(c.outcome);
+    await expect(header.getByTestId('label')).toHaveText(c.chip);
+    await expect(header.getByTestId('label')).toHaveAttribute('data-outcome', c.outcome);
+    if (c.outcome !== 'INFRA_API') await expect(header).not.toContainText('API problem');
+    // Trace U30: the help icon's description is unchanged.
+    await expect(header.getByRole('link', { name: 'How the infra label is given' })).toHaveAttribute('title', 'How failures are attributed');
+    await browse(page, new URL(`./?view=runs&run=${RUN_ID}`, await trialBase(test.info().project.use.baseURL!)).href);
+    await expect(page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.infra}"]`).getByTestId('label')).toHaveText(c.chip);
+  });
+}
+
 test('dark: the FAIL mark is at least 3:1 against its card', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await openTrial(page, TRIALS.failAudited);
