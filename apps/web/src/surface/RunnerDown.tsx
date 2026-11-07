@@ -1,6 +1,6 @@
 import { RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { BUTTON_PRIMARY } from '../data/ui.tsx';
+import { BUTTON_PRIMARY, PAGE_TITLE } from '../data/ui.tsx';
 import { RUNNER_STOPPED } from '../live/copy.ts';
 import { detectSurface } from './detect.ts';
 import { LocalCommand } from './LocalCommand.tsx';
@@ -47,7 +47,7 @@ export function RunnerDown() {
     <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
       <section className="w-full max-w-[440px] rounded-sm border border-line bg-surface p-6" aria-labelledby="runner-down">
         <span className="text-xs text-ink-muted">Riverbend clinical agent environment</span>
-        <h1 id="runner-down" className="mt-4 text-base font-semibold text-ink">
+        <h1 id="runner-down" className={`mt-4 ${PAGE_TITLE}`}>
           Local runner not responding
         </h1>
         <p className="mt-1 text-ink-muted">

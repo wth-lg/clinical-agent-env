@@ -192,7 +192,9 @@ test('a trial streams over SSE and grades, with no request to the API and no CSP
   await run(page, 1);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
   await expect(trial(page).getByTestId('outcome')).toHaveText('PASS');
-  await expect(trial(page).getByTestId('tool-row')).toHaveCount(4);
+  // P25u A8: the live rows are the trial page's, numbered as steps.
+  await expect(trial(page).getByTestId('step')).toHaveCount(4);
+  await expect(trial(page).getByTestId('step').last()).toContainText('Step 4');
   const id = (await trial(page).getAttribute('data-trial'))!;
   const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: { state_hash: { final: string } } };
   await expect(trial(page).getByTestId('final-hash')).toHaveText(view.record.state_hash.final);

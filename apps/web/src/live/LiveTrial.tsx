@@ -18,7 +18,7 @@
 // stopped says so (A1b). The card's and each row's explanation is the session trial page's (A4),
 // the grade is one button named by the outcome (A5), a finished card offers Run again (A16), and
 // Your runs shows the latest five runs, one line per trial (A15).
-import { ChevronDown, ChevronRight, CircleAlert, CircleHelp, Dot, Loader2, Play, Square } from 'lucide-react';
+import { CircleAlert, CircleHelp, Loader2, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, type Explanation, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
@@ -26,12 +26,12 @@ import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { shownFault, shownLabel } from '../data/failures.ts';
 import { isValid } from '../../../../packages/core/outcomes.ts';
 import { markLabel, markOf } from '../data/marks.ts';
-import { TextRow, TOOL_NAME } from '../trial/Trajectory.tsx';
+import { RowItem } from '../trial/Trajectory.tsx';
 import { fetchEvents, useResults, type RunData } from '../data/results.ts';
 import { medianDuration } from '../data/duration.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, CHIP, ErrorNote, FaultLabel, GlossaryLink, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, CARD_TITLE, CHIP, ErrorNote, FaultLabel, GlossaryLink, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { liveTaskTitle } from '../tasks/title.ts';
@@ -48,9 +48,10 @@ import {
   durationWords, gradeButtonLabel, infraWords, overCapText, REPLAY_STOPPED, RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, RUNNER_STOPPED_SHORT, runsErrorLead, runsShown, scoreLine, STATE_UNKNOWN, STOPPED_LABEL, STOPPED_REASON, writeWords,
 } from './copy.ts';
 import { liveExplanation } from './explain.ts';
-import { fold, type Item } from './fold.ts';
+import { fold } from './fold.ts';
 import { liveScore, sessionTrialPatch } from './grade.ts';
 import { replayBanner, replayCandidate, replayTransport, type ReplayCandidate } from './replay.ts';
+import { elapsedText, liveRows } from './rows.ts';
 import { readEvents } from './store.ts';
 import { theTransport } from './transport/select.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
@@ -360,16 +361,16 @@ function CapControl({ local }: { local: boolean }) {
 
 // The card's explanation (A4): the full one, as the session trial page builds it, once the trial
 // has ended and the task's checks have loaded; the record alone until then.
-function useExplanation(record: ExplainRecord | null, events: readonly TrialEvent[], task: string, settled: boolean): Explanation | null {
+function useExplanation(record: ExplainRecord | null, events: readonly TrialEvent[], task: string, settled: boolean, trialId: string): Explanation | null {
   const [full, setFull] = useState<Explanation | null>(null);
   useEffect(() => {
     if (!settled || record === null) return;
     let live = true;
-    liveExplanation(record, events, task).then((x) => live && setFull(x), () => undefined);
+    liveExplanation(record, events, task, trialId).then((x) => live && setFull(x), () => undefined);
     return () => {
       live = false;
     };
-  }, [settled, record, events, task]);
+  }, [settled, record, events, task, trialId]);
   return full ?? (record ? explainTrial(record, null, { events }) : null);
 }
 
@@ -414,11 +415,13 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
     };
   }, [t, id, onEnd, onLost]);
   const f = useMemo(() => fold(events), [events]);
+  // A8: the trial page's rows, with Turn dividers, the prompt and the elapsed time.
+  const live = useMemo(() => liveRows(events), [events]);
   const running = end === null;
   // A2: the runner's process is gone; the card stays as it was, Stop disabled, and says so.
   const lost = end?.message === RUNNER_STOPPED;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
-  const explanation = useExplanation(record, events, task, !running);
+  const explanation = useExplanation(record, events, task, !running, id);
   // A1: a trial that is not counted, in words that agree with its outcome (gate F1); CANCELLED is
   // the user's Stop (A1b).
   const infra = explanation === null ? null : infraWords(explanation.outcome, record?.detail);
@@ -458,13 +461,14 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
       )}
       <header className={`flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-canvas/60 px-4 py-3 dark:bg-canvas/40 ${replay ? '' : 'rounded-t-lg'}`}>
         <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
-          <h2 title={id} className="break-words text-sm font-semibold text-ink">{name}</h2>
+          <h2 title={id} className={`break-words ${CARD_TITLE}`}>{name}</h2>
           <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-xs text-ink-muted">
             <code data-testid="trial-id" className="min-w-0 break-words font-mono">{breakable(id)}</code>
             <span role="status" className="font-medium text-ink">{status}</span>
           </p>
         </div>
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
+        <Meter label="Elapsed" value={elapsedText(live.elapsedSeconds)} testId="meter-elapsed" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
         <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
         {wasResumed(record) && <Resumed />}
@@ -479,14 +483,26 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
       </header>
       <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <ol className="min-w-0 space-y-1.5" data-testid="trajectory">
-          {f.items.map((item) => <ItemRow key={item.key} item={item} />)}
+          {/* A8: the trial page's rows (RowItem: "Step n", the target, writes in words, the
+              arguments and result behind the row) and a divider where the turn changes. */}
+          {live.prompt !== null && (
+            <li>
+              <details className="rounded-sm bg-canvas px-3 py-2 text-xs text-ink-muted">
+                <summary className="cursor-pointer text-ink pointer-coarse:py-2.5">Task prompt</summary>
+                <p className="mt-1 whitespace-pre-wrap break-words">{live.prompt}</p>
+              </details>
+            </li>
+          )}
+          {live.rows.map((row) => (row.kind === 'turn'
+            ? <li key={row.key} data-testid="turn-divider" className="flex items-center gap-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted"><span>Turn {row.turn}</span><span aria-hidden className="h-px flex-1 bg-line" /></li>
+            : <RowItem key={row.key} row={row} />))}
           {running && (
             <li data-testid="running-line" className="flex items-center gap-1.5 text-xs text-ink-muted">
               <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" strokeWidth={1.75} />
               {events.length === 0 ? 'Starting…' : 'Running…'}
             </li>
           )}
-          {!running && !lost && f.items.length === 0 && <li className="text-xs text-ink-muted">No reply came from the model.</li>}
+          {!running && !lost && live.rows.length === 0 && <li className="text-xs text-ink-muted">No reply came from the model.</li>}
         </ol>
         {/* A9: what the model changed, in words; the hashes behind a disclosure. */}
         <aside className="min-w-0 space-y-2 text-xs" data-testid="state-diff">
@@ -642,38 +658,6 @@ function Meter({ label, value, testId }: { label: string; value: string; testId:
   );
 }
 
-function ItemRow({ item }: { item: Item }) {
-  const [open, setOpen] = useState(false);
-  if (item.kind !== 'tool') {
-    return <TextRow kind={item.kind} text={item.text} />;
-  }
-  const Chevron = open ? ChevronDown : ChevronRight;
-  return (
-    <li data-testid="tool-row" data-tool={item.name} data-error={String(item.error !== null)}>
-      {/* At least 24px tall (WCAG 2.5.8; copy rule C10), 44px under a coarse pointer. */}
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full min-w-0 min-h-6 items-center gap-1.5 rounded-sm px-1 py-0.5 text-left pointer-coarse:py-2.5 hover:bg-canvas">
-        <Chevron aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
-        <code data-testid="tool-name" className={TOOL_NAME}>{item.name}</code>
-        <span className="min-w-0 truncate text-xs text-ink-muted">{item.target}</span>
-        {/* A18: the icon is the row's only word for the error, so it is an image with a name. */}
-        {item.error !== null && <CircleAlert role="img" aria-label={`error ${item.error}`} className="h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.75} />}
-        {item.written.length > 0 && (
-          <span className="inline-flex min-w-0 items-center text-xs">
-            <Dot aria-hidden className="h-4 w-4 shrink-0 text-accent" />
-            <span data-testid="written" title={item.written.join(', ')} className="truncate text-ink underline decoration-accent underline-offset-2">{item.written.join(', ')}</span>
-          </span>
-        )}
-        {!item.executed && <span className="text-xs text-ink-muted">(not run)</span>}
-      </button>
-      {open && (
-        <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-2 font-mono text-xs text-ink">
-          {JSON.stringify({ input: item.input, result: item.result }, null, 2)}
-        </pre>
-      )}
-    </li>
-  );
-}
-
 // A15: the run's heading, with its raw id in the title only, then one line per trial. down (gate
 // F5): the runner is gone, so a run or a row that was running is of unknown state, not running.
 function RunRows({ run, name, current, onOpen, down }: { run: LiveRun; name: string; current: string | null; onOpen: (id: string) => void; down: boolean }) {
@@ -702,7 +686,7 @@ function LiveRow({ row, runName, current, onOpen, down }: { row: LiveRun['rows']
   useEffect(() => {
     if (row.record !== null) void readEvents(row.trialId).then(setEvents, () => undefined);
   }, [row.trialId, row.record]);
-  const e = useExplanation(row.record, events, row.taskId, row.record !== null);
+  const e = useExplanation(row.record, events, row.taskId, row.record !== null, row.trialId);
   const infra = e === null ? null : infraWords(e.outcome, row.record?.detail);
   const cancelled = e?.outcome === 'CANCELLED';
   const score = row.state === 'graded' && row.record !== null ? liveScore(row.record) : null;
