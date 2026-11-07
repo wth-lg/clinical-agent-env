@@ -478,9 +478,12 @@ test('F4: a trial whose fault is not the model\'s keeps the confirmation definit
   const summary = page.getByTestId('trial-header').getByTestId('header-criteria-summary');
   await expect(summary).toContainText(/^\d of 5 confirmed/);
   await expect(summary).not.toContainText('by the record');
-  // A model fault keeps the phrase.
+  // Gate P25U-S3-2 N3: the criteria heading is neutral for a fault that is not the model's.
+  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation-criteria').locator('h4')).toContainText('Attribution criteria (M1–M5)');
+  // A model fault keeps the phrase and the heading.
   await openTrial(page, TRIALS.failAudited, '&tab=attribution');
   await expect(page.getByTestId('panel-attribution').getByTestId('confirmation')).toContainText('confirmed by the record (M1–M4)');
+  await expect(page.getByTestId('panel-attribution').getByTestId('confirmation-criteria').locator('h4')).toContainText('Confirmed by the record (M1–M4) and the human audit (M5)');
 });
 
 // Gate F6 (latent): the header's Exact check row no longer requires a valid trial, so an excluded
@@ -510,6 +513,10 @@ test('A19: on a session trial page the rail marks Live trial, not Runs', async (
   // A published trial keeps Runs.
   await browseDefault(page, './?view=runs&run=final-1&trial=first-nonpass');
   await expect(rail.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
+  // Gate P25U-S3-2 N4: the session runs list with no trial open is the Runs view.
+  await browseDefault(page, './?view=runs&run=session');
+  await expect(rail.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(rail.getByRole('link', { name: 'Live trial' })).not.toHaveAttribute('aria-current', 'page');
 });
 
 test.describe('coarse pointer at 390', () => {
