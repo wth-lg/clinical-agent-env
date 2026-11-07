@@ -156,7 +156,7 @@ test('on the hosted site the key validates and one renal-dose-review trial runs 
     await expect(trial).toHaveAttribute('data-state', 'running', { timeout: 60_000 });
     const id = (await trial.getAttribute('data-trial'))!;
     say(`pages-live: trial ${id} running`);
-    await expect(trial.getByTestId('tool-row').first()).toBeVisible({ timeout: 5 * 60_000 });
+    await expect(trial.getByTestId('step').first()).toBeVisible({ timeout: 5 * 60_000 });
     await expect(trial).not.toHaveAttribute('data-state', 'running', { timeout: TRIAL_MS });
     await expect(trial).toHaveAttribute('data-state', 'graded');
 

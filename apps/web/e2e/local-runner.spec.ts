@@ -503,6 +503,9 @@ test('Stop records CANCELLED', async ({ page }) => {
     await expect(row).not.toContainText('API problem');
     const view = (await (await api(page, stall, `api/trials/${encodeURIComponent(id)}`)).json()) as { state: string; record: { outcome: string } };
     expect([view.state, view.record.outcome]).toEqual(['cancelled', 'CANCELLED']);
+    // Gate P25U-S4F-1: the card's Cost is the record's (agent plus judge), as the session page shows it.
+    const r = view.record as unknown as { cost_usd: number; judge_cost_usd?: number | null };
+    await expect(trial(page).getByTestId('meter-cost')).toHaveText(`$${(r.cost_usd + (r.judge_cost_usd ?? 0)).toFixed(2)}`);
   } finally {
     await stopRunner(stall);
   }

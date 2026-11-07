@@ -51,7 +51,7 @@ import { liveExplanation } from './explain.ts';
 import { fold } from './fold.ts';
 import { liveScore, sessionTrialPatch } from './grade.ts';
 import { replayBanner, replayCandidate, replayTransport, type ReplayCandidate } from './replay.ts';
-import { elapsedText, liveRows } from './rows.ts';
+import { cardCost, elapsedSince, elapsedText, finishedSeconds, firstTimestamp, liveRows, startTicker } from './rows.ts';
 import { readEvents } from './store.ts';
 import { theTransport } from './transport/select.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
@@ -418,9 +418,19 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
   // A8: the trial page's rows, with Turn dividers, the prompt and the elapsed time.
   const live = useMemo(() => liveRows(events), [events]);
   const running = end === null;
+  // The Elapsed meter ticks once a second while the trial runs (gate P25U-S4F-1 M1) and freezes
+  // at the record's duration once it ends.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    return startTicker(() => setNow(Date.now()));
+  }, [running]);
   // A2: the runner's process is gone; the card stays as it was, Stop disabled, and says so.
   const lost = end?.message === RUNNER_STOPPED;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
+  const first = firstTimestamp(events);
+  const elapsed = running ? (first === null ? null : elapsedSince(first, now)) : finishedSeconds(record as { started?: string; ended?: string } | null, events);
   const explanation = useExplanation(record, events, task, !running, id);
   // A1: a trial that is not counted, in words that agree with its outcome (gate F1); CANCELLED is
   // the user's Stop (A1b).
@@ -468,9 +478,9 @@ function Trial({ t, id, name, task, onEnd, onLost, onRunAgain, replay }: {
           </p>
         </div>
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
-        <Meter label="Elapsed" value={elapsedText(live.elapsedSeconds)} testId="meter-elapsed" />
+        <Meter label="Elapsed" value={elapsedText(elapsed)} testId="meter-elapsed" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
-        <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
+        <Meter label="Cost" value={usd(cardCost(record as { cost_usd?: number | null; judge_cost_usd?: number | null } | null, f.cost))} testId="meter-cost" />
         {wasResumed(record) && <Resumed />}
         {/* Stop while the trial runs; disabled once the runner is gone (A2); a finished card offers
             Run again and the grade in its footer instead (A16). */}

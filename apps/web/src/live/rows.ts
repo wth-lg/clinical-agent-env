@@ -4,6 +4,7 @@
 // the seconds from the first event to the latest. Pure; LiveTrial renders the rows with
 // Trajectory's RowItem, so the live card and the trial page read the same.
 import type { TrialEvent } from '../../../../packages/core/events.ts';
+import { durationSeconds } from '../data/duration.ts';
 import { trajectoryOf, type Row } from '../trial/steps.ts';
 
 export interface TurnDivider { kind: 'turn'; key: string; turn: number }
@@ -56,3 +57,28 @@ export function elapsedText(s: number | null): string {
   const n = Math.max(0, Math.round(s ?? 0));
   return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 }
+
+// The Elapsed meter (gate P25U-S4F-1 M1): while the trial runs it counts from the first event
+// with a clock (startTicker, once a second), so it moves between events; once the trial ends it
+// freezes at the record's started-to-ended duration, the trial page's Duration (data/duration.ts),
+// else at the span of the events.
+export const firstTimestamp = (events: readonly TrialEvent[]): number | null => {
+  const t = events.length === 0 ? Number.NaN : Date.parse(events[0]!.ts);
+  return Number.isNaN(t) ? null : t;
+};
+
+export const elapsedSince = (firstMs: number, nowMs: number): number => Math.max(0, Math.round((nowMs - firstMs) / 1000));
+
+export const finishedSeconds = (record: { started?: string | undefined; ended?: string | undefined } | null, events: readonly TrialEvent[]): number | null =>
+  (record === null ? null : durationSeconds(record)) ?? liveRows(events).elapsedSeconds;
+
+export function startTicker(onTick: () => void, intervalMs = 1000): () => void {
+  const timer = setInterval(onTick, intervalMs);
+  return () => clearInterval(timer);
+}
+
+// The Cost meter: the record's agent plus judge cost once the trial has one, as the trial page's
+// Cost card shows it; before that, the usage events' cost (a stopped trial's events may hold no
+// usage event, so its card read $0.00 while its page read the record's cost).
+export const cardCost = (record: { cost_usd?: number | null; judge_cost_usd?: number | null } | null, usageUsd: number): number =>
+  (typeof record?.cost_usd === 'number' ? record.cost_usd + (record.judge_cost_usd ?? 0) : usageUsd);

@@ -2,9 +2,9 @@
 // trajectoryOf, rendered with Trajectory's RowItem, so each tool call that ran has its "Step n"),
 // a "Turn n" divider where the turn changes, the task prompt, and the elapsed time from the first
 // event to the latest one.
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrialEvent } from '../../../packages/core/events.ts';
-import { elapsedText, liveRows } from '../src/live/rows.ts';
+import { cardCost, elapsedSince, elapsedText, finishedSeconds, firstTimestamp, liveRows, startTicker } from '../src/live/rows.ts';
 
 const at = (s: number) => new Date(Date.UTC(2026, 10, 8, 10, 0, s)).toISOString();
 const base = (seq: number, turn: number, s: number) => ({ v: 1, seq, turn, ts: at(s) });
@@ -37,6 +37,50 @@ describe('liveRows', () => {
 
   it('is empty, with no divider, for no events', () => {
     expect(liveRows([])).toEqual({ rows: [], prompt: null, elapsedSeconds: null });
+  });
+});
+
+// Gate P25U-S4F-1 M1: while the trial runs the meter counts from the first event with a clock,
+// not only when an event arrives; once it ends it freezes at the record's duration, the trial
+// page's Duration.
+describe('elapsed while running and at the end', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('counts from the first event to now while the trial runs', () => {
+    const first = firstTimestamp(events)!;
+    expect(first).toBe(Date.parse(at(0)));
+    expect(elapsedSince(first, Date.parse(at(0)) + 7500)).toBe(8);
+    expect(elapsedSince(first, first - 1000)).toBe(0);
+    expect(firstTimestamp([])).toBeNull();
+  });
+
+  it('freezes at the record\'s started-to-ended duration, the page\'s Duration, else at the events\' span', () => {
+    expect(finishedSeconds({ started: at(0), ended: at(170) }, events)).toBe(170);
+    expect(finishedSeconds({}, events)).toBe(65);
+    expect(finishedSeconds(null, events)).toBe(65);
+    expect(finishedSeconds(null, [])).toBeNull();
+  });
+
+  it('the ticker calls back once a second until stopped', () => {
+    vi.useFakeTimers();
+    const ticks: number[] = [];
+    const stop = startTicker(() => ticks.push(1));
+    vi.advanceTimersByTime(3200);
+    expect(ticks).toHaveLength(3);
+    stop();
+    vi.advanceTimersByTime(5000);
+    expect(ticks).toHaveLength(3);
+  });
+});
+
+// Gate P25U-S4F-1: a stopped trial's card read Cost $0.00 while its session page read $0.72; the
+// card shows the record's cost, agent plus judge, as the page's Cost card does.
+describe('cardCost', () => {
+  it('is the record\'s agent plus judge cost once there is a record, else the events\' usage cost', () => {
+    expect(cardCost({ cost_usd: 0.72, judge_cost_usd: 0.08 }, 0)).toBeCloseTo(0.8, 9);
+    expect(cardCost({ cost_usd: 0.72 }, 0)).toBe(0.72);
+    expect(cardCost(null, 0.31)).toBe(0.31);
+    expect(cardCost({}, 0.31)).toBe(0.31);
   });
 });
 
