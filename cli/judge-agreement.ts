@@ -43,11 +43,12 @@
 //   says so, since such a kappa carries no information about the raters.
 //   --json prints the result object on stdout, the lines on stderr. --write puts the result into
 //   <run>/summary.json (judge_agreement, or kappa with --double-label; packages/core/summary.ts
-//   Summary), only when every check holds, and leaves the rest of the file as it is; run after
+//   Summary), only when every check holds, atomically (cli/adapters/result-sink-node.ts
+//   writeJson), and leaves the rest of the file as it is; run after
 //   `pnpm cli summary <run> --write`, which carries them through a later rewrite (cli/summary.ts
 //   CARRIED_FIELDS).
 // Exit 2 on a usage error.
-import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
@@ -55,7 +56,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABELS, PASS_CONFIRMED } from '../packages/core/outcomes.ts';
 import { currentGrade, trialName } from '../packages/core/summary.ts';
 import type { JudgeCacheEntry } from '../packages/grader/judge.ts';
-import { settledRecords } from './adapters/result-sink-node.ts';
+import { settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { readLabels, rowLabel } from './audit-check.ts';
 import type { AuditorOutput } from './audit-llm.ts';
 
@@ -359,16 +360,18 @@ export function doubleLabel(dir: string, records: ReadonlyMap<string, BatchRecor
   return { double_label: { ...double, seed, sample_n: sampleN }, builder_vs_auditor: auditor, disagreements, violations };
 }
 
-// Puts `fields` into <run>/summary.json, which must exist; false when it does not.
+// Puts `fields` into <run>/summary.json, which must exist (a violation when it does not), through
+// writeJson (a temp file beside it, then a rename), so a failure mid-write leaves the old file
+// intact; a file that already holds the result is left alone.
 function writeSummary(dir: string, fields: Record<string, unknown>, violations: string[]): void {
   const file = join(dir, 'summary.json');
   if (!existsSync(file)) {
     violations.push('summary.json is missing; run pnpm cli summary <run> --write first');
     return;
   }
-  const s = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
-  const text = `${JSON.stringify({ ...s, ...fields }, null, 2)}\n`;
-  if (readFileSync(file, 'utf8') !== text) writeFileSync(file, text);
+  const before = readFileSync(file, 'utf8');
+  const merged = { ...(JSON.parse(before) as Record<string, unknown>), ...fields };
+  if (before !== `${JSON.stringify(merged, null, 2)}\n`) writeJson(file, merged);
 }
 
 export async function main(args: string[], deps: Deps): Promise<number> {
