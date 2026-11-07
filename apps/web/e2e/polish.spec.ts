@@ -100,17 +100,17 @@ test('a key that does not start with sk-ant- is refused in the page with no netw
   expect(requests).toEqual([]);
 });
 
-// UI polish PR 1 (reports/ui-polish-spec.md 1.1, 1.5, 1.6): one primary action per task row, the
-// no-key reason read out with each Run button, the phone nav strip under the top bar with a skip
-// link, and touch-sized icon buttons on a coarse pointer.
-test('a closed task row has exactly one primary button, and with no key it is Run reference solution', async ({ page }) => {
+// UI polish PR 1 (reports/ui-polish-spec.md 1.1, 1.5, 1.6): at most one primary action per task
+// row, the no-key reason read out with each Run button, the phone nav strip under the top bar with
+// a skip link, and touch-sized icon buttons on a coarse pointer. P25u J12 and V7: with no key a
+// closed row has no primary at all; the validation buttons share one bordered style (tasks-polish.spec).
+test('a closed task row has no primary button with no key', async ({ page }) => {
   await browse(page, './?view=tasks');
   const rows = page.getByTestId('task-card');
   await expect(rows).toHaveCount(6);
   for (let i = 0; i < 6; i++) {
-    const primary = rows.nth(i).getByTestId('validation').locator('button.bg-primary');
-    await expect(primary).toHaveCount(1);
-    await expect(primary).toHaveText('Run reference solution');
+    await expect(rows.nth(i).getByTestId('validation').getByRole('button', { name: 'Run reference solution' })).toBeVisible();
+    await expect(rows.nth(i).getByTestId('validation').locator('button.bg-primary')).toHaveCount(0);
   }
 });
 
@@ -425,22 +425,23 @@ test('a click on the key gate\'s "Add an API key" heading focuses the key field,
 });
 
 // UI polish PR 4 (reports/ui-polish-spec.md 4.1 to 4.4): on a closed task row the grader validation
-// buttons are quiet, with icons, beside the one primary; each button in the Grader validation tab
-// says in one line what it does; the reference solution's result reads in plain words; the task
-// tabs wrap on a phone; and the Environment Try panel fills in a working example for each tool.
+// buttons carry icons (P25u J12 and V7: all three bordered, none primary; quiet before); each button
+// in the Grader validation tab says in one line what it does; the reference solution's result reads
+// in plain words; the task tabs wrap on a phone; and the Environment Try panel fills in a working
+// example for each tool.
 test.describe('task rows at 1440', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('the validation buttons on a closed row are quiet, with icons; Run trial says it needs a key; every row is the same height', async ({ page }) => {
+  test('the validation buttons on a closed row are bordered, with icons; Run trial says it needs a key; every row is the same height', async ({ page }) => {
     await browse(page, './?view=tasks');
     const rows = page.getByTestId('task-card');
     await expect(rows).toHaveCount(6);
     for (let i = 0; i < 6; i++) {
       const v = rows.nth(i).getByTestId('validation');
-      for (const name of ['Check the grader', 'Replay published trials']) {
+      for (const name of ['Run reference solution', 'Check the grader', 'Replay published trials']) {
         const b = v.getByRole('button', { name });
         await expect(b).not.toHaveClass(/\bbg-primary\b/);
-        expect(await b.evaluate((el) => getComputedStyle(el).borderTopColor), name).toBe('rgba(0, 0, 0, 0)');
+        expect(await b.evaluate((el) => getComputedStyle(el).borderTopColor), name).not.toBe('rgba(0, 0, 0, 0)');
       }
       for (const name of ['Run reference solution', 'Check the grader', 'Replay published trials']) await expect(v.getByRole('button', { name }).locator('svg')).toHaveCount(1);
       await expect(v.getByRole('button', { name: 'Run trial' })).toHaveAccessibleDescription('Needs an API key');

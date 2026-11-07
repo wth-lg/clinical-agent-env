@@ -113,7 +113,7 @@ test('a published trial opens on its Grading tab with the rubric breakdown', asy
   const row = page.getByTestId('trial-row').first();
   await expect(row).toBeVisible({ timeout: LOAD_MS });
   const name = (await row.getAttribute('data-trial'))!;
-  await row.getByRole('button', { name, exact: true }).click();
+  await row.getByRole('link', { name, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
   await expect(page.getByRole('tab', { name: 'Grading' })).toHaveAttribute('aria-selected', 'true');
   const grading = page.getByTestId('panel-grading');
@@ -144,7 +144,7 @@ test('no asset the app loads on any view holds a key-shaped string', async ({ pa
   await page.goto(at('./?view=runs'));
   const row = page.getByTestId('trial-row').first();
   await expect(row).toBeVisible({ timeout: LOAD_MS });
-  await row.getByRole('button', { name: (await row.getAttribute('data-trial'))!, exact: true }).click();
+  await row.getByRole('link', { name: (await row.getAttribute('data-trial'))!, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toBeVisible();
   await page.getByRole('tab', { name: 'State diff' }).click();
   await expect(page.getByTestId('panel-state-diff')).toBeVisible();
