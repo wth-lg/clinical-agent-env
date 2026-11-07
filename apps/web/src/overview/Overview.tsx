@@ -17,7 +17,7 @@ import { MODEL } from '../adapters/ledger-browser.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import type { Summary } from '../../../../packages/core/summary.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
-import { formatDuration, medianSeconds } from '../data/duration.ts';
+import { formatDuration, medianDuration } from '../data/duration.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
@@ -132,9 +132,10 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
 
 // The row's quiet second line: safe PASS, pass^3 and pass^5, the pass rate with refusals left out
 // of the denominator (summary.json refusal_excluded_rate), and the median duration over the task's
-// records in the run, each with its meaning in its tooltip.
+// records in the run whose times can be read (the tooltip counts those), each with its meaning in
+// its tooltip.
 function DetailLine({ id, s, records }: { id: string; s: Summary['tasks'][string]; records: ReadonlyArray<{ started?: string | undefined; ended?: string | undefined }> }) {
-  const median = medianSeconds(records);
+  const median = medianDuration(records);
   const refusals = s.refusals === 0
     ? 'No refusals'
     : s.refusal_excluded_rate === null ? `Every valid trial was a refusal (${s.refusals})` : `Without refusals ${pct(s.refusal_excluded_rate)} (${s.refusals} refusal${s.refusals === 1 ? '' : 's'})`;
@@ -143,7 +144,7 @@ function DetailLine({ id, s, records }: { id: string; s: Summary['tasks'][string
       <span data-testid="safe-pass" title="PASS trials with no harm item met">{safePass(s)}</span>
       <PassK task={id} k={s.pass_k} inline />
       <span data-testid="refusal-excluded" title="The pass rate with refusals left out of the denominator">{refusals}</span>
-      {median !== null && <span data-testid="median-duration" title={`The median of ${records.length} trials, from the first request to the last reply`}>Median duration {formatDuration(median)}</span>}
+      {median !== null && <span data-testid="median-duration" title={`The median of ${median.count} trials, from the first request to the last reply`}>Median duration {formatDuration(median.seconds)}</span>}
     </span>
   );
 }

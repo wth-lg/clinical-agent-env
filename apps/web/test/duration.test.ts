@@ -1,7 +1,7 @@
 // Trial durations on screen (P25c, Overview): a duration in words, and the median over a task's
 // records from each record's started and ended.
 import { describe, expect, it } from 'vitest';
-import { formatDuration, medianSeconds } from '../src/data/duration.ts';
+import { formatDuration, medianDuration } from '../src/data/duration.ts';
 
 describe('formatDuration', () => {
   it('reads seconds under a minute, else minutes and seconds', () => {
@@ -12,15 +12,15 @@ describe('formatDuration', () => {
   });
 });
 
-describe('medianSeconds', () => {
+describe('medianDuration', () => {
   const rec = (s: number) => ({ started: '2026-10-23T12:00:00.000Z', ended: new Date(Date.parse('2026-10-23T12:00:00.000Z') + s * 1000).toISOString() });
-  it('is the middle value of an odd count and the mean of the two middle values of an even count', () => {
-    expect(medianSeconds([rec(10), rec(30), rec(20)])).toBe(20);
-    expect(medianSeconds([rec(10), rec(40), rec(30), rec(20)])).toBe(25);
+  it('is the middle value of an odd count and the mean of the two middle values of an even count, with the count', () => {
+    expect(medianDuration([rec(10), rec(30), rec(20)])).toEqual({ seconds: 20, count: 3 });
+    expect(medianDuration([rec(10), rec(40), rec(30), rec(20)])).toEqual({ seconds: 25, count: 4 });
   });
-  it('leaves out a record whose times it cannot read, and is null with none', () => {
-    expect(medianSeconds([rec(10), { started: 'soon', ended: 'later' }, { started: undefined, ended: undefined }])).toBe(10);
-    expect(medianSeconds([])).toBeNull();
-    expect(medianSeconds([{ started: 'soon', ended: 'later' }])).toBeNull();
+  it('leaves out a record whose times it cannot read, counting only the readable ones, and is null with none (gate UIP25C-244 M3)', () => {
+    expect(medianDuration([rec(10), { started: 'soon', ended: 'later' }, { started: undefined, ended: undefined }])).toEqual({ seconds: 10, count: 1 });
+    expect(medianDuration([])).toBeNull();
+    expect(medianDuration([{ started: 'soon', ended: 'later' }])).toBeNull();
   });
 });

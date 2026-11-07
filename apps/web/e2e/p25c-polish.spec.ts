@@ -159,4 +159,15 @@ test('Findings: the chart and the per-task cards come before the write-up prose'
   expect(chart.y).toBeLessThan(prose.y);
   expect(why.y).toBeLessThan(prose.y);
   await expect(page.getByTestId('findings-md').getByRole('heading', { level: 1 })).toHaveText('Findings (sample run)');
+  // The prose is a disclosure, open at first, that closes and opens again (gate UIP25C-244 S1).
+  const analysis = page.getByTestId('findings-analysis');
+  await expect(analysis).toHaveAttribute('open', '');
+  const toggle = analysis.locator('summary');
+  await expect(toggle).toHaveText('Read the analysis');
+  await toggle.click();
+  await expect(analysis).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('findings-md')).toBeHidden();
+  await toggle.click();
+  await expect(analysis).toHaveAttribute('open', '');
+  await expect(page.getByTestId('findings-md')).toBeVisible();
 });

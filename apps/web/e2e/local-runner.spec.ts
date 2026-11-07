@@ -242,7 +242,12 @@ test('after a reload the spend meter shows the runner session\'s committed spend
   const committed = ((await dry.json()) as { projection: { session_spent_usd: number } }).projection.session_spent_usd;
   expect(committed).toBeGreaterThan(0);
   expect(spend.session_spent_usd).toBeCloseTo(committed, 9);
-  await expect(page.getByTestId('spend-meter')).toHaveText(`Session spend $${committed.toFixed(2)} of $20.00 cap`);
+  const text = `Session spend $${committed.toFixed(2)} of $20.00 cap`;
+  await expect(page.getByTestId('spend-meter')).toHaveText(text);
+  // The same figure on a view that runs nothing: the source is read at load, not by the launcher (gate UIP25C-244 M2).
+  await page.goto(new URL('?view=overview', runner!.url).href);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
+  await expect(page.getByTestId('spend-meter')).toHaveText(text);
 });
 
 test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async ({ page }) => {

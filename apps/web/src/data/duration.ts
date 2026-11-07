@@ -14,10 +14,10 @@ export function durationSeconds(r: { started?: string | undefined; ended?: strin
   return Number.isFinite(s) && s >= 0 ? s : null;
 }
 
-// The median over the records whose times can be read; null with none.
-export function medianSeconds(records: ReadonlyArray<{ started?: string | undefined; ended?: string | undefined }>): number | null {
+// The median over the records whose times can be read, with how many that is; null with none.
+export function medianDuration(records: ReadonlyArray<{ started?: string | undefined; ended?: string | undefined }>): { seconds: number; count: number } | null {
   const v = records.map(durationSeconds).filter((s): s is number => s !== null).sort((a, b) => a - b);
   if (v.length === 0) return null;
   const mid = Math.floor(v.length / 2);
-  return v.length % 2 === 1 ? v[mid]! : (v[mid - 1]! + v[mid]!) / 2;
+  return { seconds: v.length % 2 === 1 ? v[mid]! : (v[mid - 1]! + v[mid]!) / 2, count: v.length };
 }
