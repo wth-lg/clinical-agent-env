@@ -26,6 +26,7 @@ import { ResultsError } from '../data/results-error.tsx';
 import { useTaskList } from '../data/tasks.ts';
 import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
+import { RUBRIC_NOTE } from '../trial/rubric.ts';
 import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, LINK, markLabel, MarkLegend, markOf, Notice, Page, pct, SECTION_LABEL, Swatch, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
@@ -53,9 +54,8 @@ const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const TOOL_COUNT = toolCatalog().length;
 // The task the intro's Start here list opens.
 const START_TASK = 'renal-dose-review';
-// The one sentence beside the rubric score (copy rule C2).
-const RUBRIC_NOTE = 'extra credit; does not decide pass';
-const RUBRIC_TITLE = `The mean rubric score over the task's valid trials, 0 to 1. Extra credit; does not decide pass: the pass or fail comes from the gate checks only.`;
+// The one sentence beside the rubric score (copy rule C2; trial/rubric.ts RUBRIC_NOTE).
+const RUBRIC_TITLE = `The mean rubric score over the task's valid trials, 0 to 1. Rubric items add points and penalty items subtract them. The score does not decide pass: the pass or fail comes from the gate checks only.`;
 
 export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
@@ -157,7 +157,7 @@ function OfficialOverview({ run, superseded, writeup, headingRef }: { run: RunDa
         })}
       </ul>
       <MarkLegend />
-      <p className="text-xs text-ink-muted"><span data-testid="rubric-note">Rubric score is {RUBRIC_NOTE}: a trial passes only when it meets every gate check.</span> Each task's title opens the task; its trials open in Runs.{block === null && <> <PassKLink /> <VerdictLink /></>}</p>
+      <p className="text-xs text-ink-muted"><span data-testid="rubric-note">Rubric score: {RUBRIC_NOTE}. A trial passes only when it meets every gate check.</span> Each task's title opens the task; its trials open in Runs.{block === null && <> <PassKLink /> <VerdictLink /></>}</p>
       <SupersededLines summary={summary!} />
       <Card title="Who is at fault, all tasks">
         {/* The fault box (findings/why.tsx, S5's) carries the audit's count in the one
@@ -243,7 +243,7 @@ function DetailLine({ id, s, records }: { id: string; s: Summary['tasks'][string
     : s.refusal_excluded_rate === null ? `Every valid trial was a refusal (${s.refusals})` : `Without refusals ${pct(s.refusal_excluded_rate)} (${s.refusals} refusal${s.refusals === 1 ? '' : 's'})`;
   return (
     <span data-testid="task-detail-line" className="col-span-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted md:col-span-full">
-      <span data-testid="safe-pass" title="PASS trials with no harm item met">{safePass(s)}</span>
+      <span data-testid="safe-pass" title="PASS trials with no harm item met or left unknown">{safePass(s)}</span>
       <PassK task={id} k={s.pass_k} inline />
       <span data-testid="refusal-excluded" title="The pass rate with refusals left out of the denominator">{refusals}</span>
       {median !== null && <span data-testid="median-duration" title={`The median of ${median.count} trials, from the first request to the last reply`}>Median duration {formatDuration(median.seconds)}</span>}
@@ -334,8 +334,8 @@ function IntroCard() {
     <Card title="What this is" testId="intro-card">
       <p data-testid="intro-text" className="text-ink">
         An AI model does clinical tasks in a mock health record: it reads the chart and writes orders, notes and messages. Riverbend Family Medicine is
-        a fictional clinic, and every patient record is synthetic. Each trial starts from the same synthetic patient records, in the FHIR R4
-        health-record format. The grader checks what the model changed, and a trial passes when it meets every <GlossaryLink anchor="pass">gate check</GlossaryLink>.
+        a fictional clinic, and every patient record is synthetic. Each final-run trial of a task starts from that task's frozen copy of the synthetic
+        patient records, in the FHIR R4 health-record format. The grader checks what the model read and what it changed, and a trial passes when it meets every <GlossaryLink anchor="pass">gate check</GlossaryLink>.
       </p>
       <p className={`mt-3 ${SECTION_LABEL}`} id="start-here">Start here</p>
       <ol data-testid="start-here" aria-labelledby="start-here" className="mt-1 list-decimal space-y-0.5 pl-5 marker:text-ink-muted">

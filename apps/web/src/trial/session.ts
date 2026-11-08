@@ -29,7 +29,7 @@ export type SessionResolved =
 export const missingText = (id: string, hosted: boolean): string =>
   `No trial ${id} in this session. ${hosted
     ? 'A trial run on the hosted site is kept only in the browser tab that ran it, and this tab has no record of it.'
-    : 'The local runner keeps the trials it started only while it runs: after a restart they are gone, and another runner\'s trials are not here.'}`;
+    : 'The local runner lists the trials it started only while it runs: after a restart this page no longer shows them, and another runner\'s trials are not here. Their records stay in the runner\'s runs directory (~/.clinenv/runs by default).'}`;
 
 // A live row's trial as the TrialPage reads one: its id is its name, it has no audit row and no
 // trajectory file (the transport keeps its events), and its explanation reads the record alone,
@@ -44,7 +44,7 @@ function sessionTrial(row: LiveTrialRow, record: NonNullable<LiveTrialRow['recor
 export function sessionRun(run: LiveRun): RunData {
   const trials = run.rows.flatMap((row) => (row.record === null ? [] : [sessionTrial(row, row.record)]));
   const graders = [...new Set(trials.flatMap((t) => (typeof t.record.grader_version === 'string' ? [t.record.grader_version] : [])))].sort();
-  return { runId: run.runId, dir: `${SESSION_RUN}/${run.runId}`, official: false, kind: 'session', superseded: null, manifest: null, grading: { graders, olderWorld: 0, frozenWorld: 0, trials: trials.length, frozenTasks: [], regrade: null }, summary: null, trials, bad: [], warnings: [] };
+  return { runId: run.runId, dir: `${SESSION_RUN}/${run.runId}`, official: false, kind: 'session', superseded: null, manifest: null, grading: { graders, current: graders, olderWorld: 0, frozenWorld: 0, trials: trials.length, frozenTasks: [], regrade: null }, summary: null, trials, bad: [], warnings: [] };
 }
 
 export function resolveSessionTrial(runs: readonly LiveRun[], trial: string, hosted: boolean): SessionResolved {

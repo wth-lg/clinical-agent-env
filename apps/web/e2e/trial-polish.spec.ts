@@ -351,7 +351,7 @@ test('V9: Grading opens with the gate result in the verdict\'s mark, and the rub
   // The gate tile comes before the score tile, which comes after cost, tokens and duration.
   const order = await p.locator('[data-testid="metric-gates"], [data-testid="metric-cost"], [data-testid="metric-tokens"], [data-testid="metric-duration"], [data-testid="score-card"]').evaluateAll((els) => els.map((x) => x.getAttribute('data-testid')));
   expect(order).toEqual(['metric-gates', 'metric-cost', 'metric-tokens', 'metric-duration', 'score-card']);
-  await expect(p.getByTestId('score-card-gloss')).toHaveText('extra credit; does not decide pass');
+  await expect(p.getByTestId('score-card-gloss')).toHaveText('penalties can lower it; does not decide pass');
   // The tile carries the FAIL mark.
   await expect(p.getByTestId('metric-gates').locator('span[aria-hidden]')).toHaveCount(1);
   // A pass says every check is met.

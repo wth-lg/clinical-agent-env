@@ -18,7 +18,7 @@ test('every Run ×n amount leads with the typical cost and reads "holds up to $X
 
 test('the line under the buttons says where the typical cost comes from', async ({ page }) => {
   await browse(page, './?view=live&task=renal-dose-review');
-  await expect(page.getByTestId('typical-cost')).toHaveText('“About $0.88 a trial (pilot median)” is the median of 1 trial of this task in pilot-pass. A batch holds its full amount until its trials end.');
+  await expect(page.getByTestId('typical-cost')).toHaveText('“About $0.88 a trial (pilot median)” is the median agent and judge cost of 1 trial of this task in pilot-pass. A batch holds its full amount until its trials end.');
 });
 
 test('with no pilot trial of the task, only the hold shows, and a line says there is no typical cost yet', async ({ page }) => {
@@ -26,6 +26,25 @@ test('with no pilot trial of the task, only the hold shows, and a line says ther
   await expect(page.getByTestId('run-cost-1')).toHaveText(/^holds up to \$\d+\.\d{2}$/);
   await expect(page.getByTestId('typical-cost')).toHaveCount(0);
   await expect(page.getByTestId('no-typical')).toHaveText('No pilot has run this task, so there is no typical cost yet. A batch holds its full amount until its trials end.');
+});
+
+// Claim audit (verifier-1 addendum 2, must-fix 3): while the published results load, the line said
+// "No pilot has run this task" for a task that pilots ran. It says the cost is loading until the
+// load completes, and the typical cost replaces it when it does.
+test('while the published results load, the line says the typical cost is loading, never that no pilot ran', async ({ page }) => {
+  let release = (): void => undefined;
+  const held = new Promise<void>((r) => (release = r));
+  await page.route('**/data/index.json', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await browse(page, './?view=live&task=renal-dose-review');
+  await expect(page.getByTestId('typical-loading')).toHaveText('Loading the typical cost from the pilot runs… A batch holds its full amount until its trials end.');
+  await expect(page.getByTestId('no-typical')).toHaveCount(0);
+  release();
+  await expect(page.getByTestId('typical-cost')).toContainText('in pilot-pass');
+  await expect(page.getByTestId('typical-loading')).toHaveCount(0);
+  await expect(page.getByTestId('no-typical')).toHaveCount(0);
 });
 
 test('with no key, "Add key" on the launcher is a button that opens the key gate', async ({ page }) => {

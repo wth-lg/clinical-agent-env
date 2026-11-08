@@ -9,7 +9,8 @@ export const LOCAL_RUN_PANEL_ID = 'local-run';
 const TEXT: Record<Surface['kind'], { title: string; body: string }> = {
   'browser-direct': {
     title: 'Run it on your computer',
-    body: 'One command starts the environment on your computer and opens this UI there. The key then stays on your computer.',
+    // Claim audit: the command prints the URL of this UI; it does not open a browser (apps/runner/main.ts).
+    body: 'One command starts the environment on your computer and prints the URL of this UI there. The key then stays on your computer.',
   },
   // P25u A12: the reader already has the clone, so the restart comes first.
   'local-runner': {

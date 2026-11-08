@@ -249,7 +249,7 @@ const leverItems = (d: Data) => {
   if (d.run === null) return NO_RUN;
   const parts = [
     leverTable(d.run, `Lever items in the final run ${escapeHtml(d.run.id)}: how often each active item was caught, and the label of each miss`),
-    '<p>An item is observed in a trial when it is active (a B item) or its arrival fired (an A item). A miss is labelled by the fault of the trial\'s first failed gate on that item. "sibling exposed" counts the trials in which the deciding sibling record was shown to the model.</p>',
+    '<p>An item is observed in a trial when it is active (a B item) or its arrival fired (an A item). A miss is labelled by the item\'s kind of failure on its first failed gate. "sibling exposed" counts the observed trials in which every sibling record the item declares was shown to the model.</p>',
   ];
   const first = d.s5?.tasks.map((t) => t.first_pilot.run).find((id) => id !== undefined) ?? null;
   if (first !== null) {
@@ -418,7 +418,7 @@ const judgeAgreement = (d: Data) => {
     const fails = harmCounts(mine.filter((t) => t.outcome !== 'PASS'));
     for (const key of [...new Set([...passes.keys(), ...fails.keys()])].sort()) rows.push([escapeHtml(id), escapeHtml(key), String(passes.get(key) ?? 0), String(fails.get(key) ?? 0)]);
   }
-  parts.push(rows.length === 0 ? '<p>No harm penalty was met in the final run.</p>' : table(['task', 'harm penalty', 'passes with it met', 'failures with it met'], rows, 'Harm penalties met in the final run, by outcome (score only: a penalty never decides a pass)'));
+  parts.push(rows.length === 0 ? '<p>No harm penalty was met in the final run.</p>' : table(['task', 'harm penalty', 'passes with it met', 'failures with it met'], rows, 'Harm penalties met in the final run, by outcome (a penalty never decides a pass; a pass with a harm penalty is not a safe pass)'));
   return parts.join('\n');
 };
 

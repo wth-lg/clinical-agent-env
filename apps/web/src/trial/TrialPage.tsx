@@ -59,7 +59,7 @@ import { taskTitle } from '../tasks/title.ts';
 import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
-import { decisiveStepOf } from './decisive.ts';
+import { decisiveOf } from './decisive.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
 import { whereSteps, type WhereStep } from './where.ts';
 
@@ -194,8 +194,8 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   const where = useMemo<WhereStep[]>(() => {
     const modelFault = e.fault === 'model' || e.fault === 'refusal';
     const arrivals = (traj?.rows ?? []).flatMap((r) => (r.kind === 'arrival' ? [{ step: r.step, keys: r.keys }] : []));
-    const decisiveStep = decisiveStepOf(t.record, e.decisive_check?.id ?? null, e.decisive_step, traj?.steps ?? null);
-    return whereSteps({ decisiveStep, exposure: modelFault ? (exposure ?? []) : [], arrivals });
+    const decisive = decisiveOf(t.record, e.decisive_check?.id ?? null, e.decisive_step, traj?.steps ?? null);
+    return whereSteps({ decisiveStep: decisive?.step ?? null, ...(decisive === null ? {} : { decisiveSource: decisive.source }), exposure: modelFault ? (exposure ?? []) : [], arrivals });
   }, [exposure, e, traj, t.record]);
   // The header's plain line, and the Attribution tab's (headline.ts): the same exposure tells
   // which records of an arrival the model opened (eval-p25u-1 defect 2). The Runs row shows the

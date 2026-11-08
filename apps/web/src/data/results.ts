@@ -154,11 +154,15 @@ export const onFrozenWorld = (t: Pick<Trial, 'task' | 'record'>, frozen: Freezes
 
 async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[], frozen: Freezes): Promise<Grading> {
   const graders = [...new Set(trials.map((t) => t.record.grader_version ?? 'unknown'))].sort();
+  const current = [...new Set(trials.map((t) => {
+    const last = (t.record as { regrades?: ReadonlyArray<{ grader_version?: unknown }> }).regrades?.at(-1);
+    return last === undefined ? (t.record.grader_version ?? 'unknown') : String(last.grader_version ?? 'unknown');
+  }))].sort();
   const onFrozen = trials.filter((t) => onFrozenWorld(t, frozen));
   const frozenWorld = onFrozen.length;
   const frozenTasks = [...new Set(onFrozen.map((t) => t.task))].sort();
   const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash && !onFrozenWorld(t, frozen)).length;
-  const counts = { graders, olderWorld, frozenWorld, trials: trials.length, frozenTasks };
+  const counts = { graders, current, olderWorld, frozenWorld, trials: trials.length, frozenTasks };
   const prefix = `${runDir}/regrade/trials/`;
   const regraded = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
   if (regraded.length === 0) return { ...counts, regrade: null };

@@ -120,15 +120,18 @@ export function GraderFixNote({ counted, superseded, href }: { counted: Fixes; s
   const old = superseded.filter((s) => s.trials > 0);
   const oldTrials = old.reduce((n, s) => n + s.trials, 0);
   if (counted.trials === 0 && oldTrials === 0) return null;
-  const graders = [...new Set([...counted.graders, ...old.flatMap((s) => s.graders)])].sort();
+  // The regrade's grader version, not "fixed in grader N": R48 changed message-queue's grader with
+  // no version bump, so its regrade is grader 22 like R41's (claim audit). A superseded version was
+  // replaced by a changed version of its task, not by a rerun of the same one (R42).
+  const oldGraders = [...new Set(old.flatMap((s) => s.graders))].sort();
   const plural = (n: number) => `${n} ${n === 1 ? 'trial' : 'trials'}`;
   const named = counted.names.length === counted.trials && counted.trials <= NAMED_MAX ? ` (${counted.names.join(', ')})` : '';
   return (
     // A span, so it can sit inside the Runs fault line's paragraph.
     <span data-testid="grader-fix-note" data-trials={counted.trials} data-superseded-trials={oldTrials} className="mt-1 block text-xs text-ink-muted">
-      Why 0 grader: {GRADER_FAULTS_FIXED} grader faults were found in clinical reads and fixed in grader {graders.join(' and ')}, then the affected trials were regraded offline with no model call.{' '}
-      {counted.trials > 0 ? <>In this run that moved {counted.trials} counted {counted.trials === 1 ? 'trial' : 'trials'}{named} from FAIL to PASS.</> : <>In this run that moved no counted trial.</>}
-      {old.length > 0 && <>{' '}The other {SUPERSEDED_FAULTS} faults were in {old.map((s) => s.label).join(' and ')}, where the regrade moved {plural(oldTrials)} to PASS; {old.length === 1 ? 'that version was' : 'those versions were'} superseded by a rerun and {old.length === 1 ? 'is' : 'are'} not counted.</>}
+      Why 0 grader: {GRADER_FAULTS_FIXED} grader faults were found in clinical reads and fixed in the grader, then the affected trials were regraded offline with no model call.{' '}
+      {counted.trials > 0 ? <>In this run a regrade with grader {counted.graders.join(' and ')} moved {counted.trials} counted {counted.trials === 1 ? 'trial' : 'trials'}{named} from FAIL to PASS.</> : <>In this run the regrade moved no counted trial.</>}
+      {old.length > 0 && <>{' '}The other {SUPERSEDED_FAULTS} faults were in {old.map((s) => s.label).join(' and ')}, where a regrade with grader {oldGraders.join(' and ')} moved {plural(oldTrials)} to PASS. {old.length === 1 ? 'That version was replaced by a changed version of the task, and only the changed version is counted.' : 'Those versions were replaced by changed versions of their tasks, and only the changed versions are counted.'}</>}
       {href !== null && <>{' '}<a href={href} className={link}>How failures are attributed</a></>}
     </span>
   );

@@ -28,6 +28,9 @@ export interface BadRecord {
 export interface Grading {
   // The grader versions the records were graded at, sorted.
   graders: string[];
+  // The grader versions of the records' current grades (the last regrade kept in a record, else
+  // the recorded grade), sorted.
+  current: string[];
   // Records whose initial state hash is not today's manifest's, nor their task's frozen world.
   olderWorld: number;
   // Records that started from their task's frozen world (results/tasks-final.json), when that

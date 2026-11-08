@@ -166,7 +166,7 @@ test('a graded hosted trial shows its rubric score on the card, and its session 
   const score = `Rubric score (does not decide pass) ${record.score.toFixed(2)}`;
   // P25u A5: the card says the score is out of 1 and that the gate checks decide pass; the Your runs
   // row keeps the short form; the grade is a button on the outcome line, named by the outcome.
-  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Extra credit only; the pass or fail comes from the gate checks.`);
+  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Penalties can lower it; the pass or fail comes from the gate checks.`);
   await expect(page.getByTestId('live-row').getByTestId('live-score')).toHaveText(`${score} of 1`);
   await expect(page.getByTestId('live-row').getByRole('link', { name: 'See the grade' })).toBeVisible();
   // P25u A16: a finished card has no Stop; Run again starts the same task once more.

@@ -357,7 +357,7 @@ test('a graded live trial shows its rubric score on the card, and the grade butt
   const e = explainTrial(r, null, explainContext({ record: r, events, text: renalCheckText }));
   const score = `Rubric score (does not decide pass) ${r.score.toFixed(2)}`;
   // P25u A5: the card says the score is out of 1 and that the gate checks decide pass.
-  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Extra credit only; the pass or fail comes from the gate checks.`);
+  await expect(trial(page).getByTestId('live-score')).toHaveText(`${score} of 1. Penalties can lower it; the pass or fail comes from the gate checks.`);
   // The Your runs row shows the same score beside its own link (gate N10-245 S1).
   const row = page.locator(`[data-testid="live-row"][data-trial="${id}"]`);
   await expect(row.getByTestId('live-score')).toHaveText(`${score} of 1`);
@@ -461,7 +461,7 @@ test('run=session resolves first-nonpass to the first non-pass trial of this ses
   await expect(page.getByText('first-nonpass')).toHaveCount(0);
   await page.goto(new URL('?view=runs&run=session&trial=nope.renal-dose-review.9', runner!.url).href);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
-  await expect(page.getByTestId('session-missing')).toHaveText('No trial nope.renal-dose-review.9 in this session. The local runner keeps the trials it started only while it runs: after a restart they are gone, and another runner\'s trials are not here. Open Live trial');
+  await expect(page.getByTestId('session-missing')).toHaveText('No trial nope.renal-dose-review.9 in this session. The local runner lists the trials it started only while it runs: after a restart this page no longer shows them, and another runner\'s trials are not here. Their records stay in the runner\'s runs directory (~/.clinenv/runs by default). Open Live trial');
   await expect(page.getByTestId('trial-detail')).toHaveCount(0);
 });
 

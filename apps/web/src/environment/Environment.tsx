@@ -80,7 +80,9 @@ function FrozenWorlds({ manifest }: { manifest: string }) {
   const onToday = current.filter((r) => r.today).length;
   return (
     <Card title="Frozen worlds">
-      <p className="text-ink-muted">A task is frozen on the world it was tuned on, and its official trials start from that world, so a trial's world hash matches its task's row here and may differ from today's build.</p>
+      {/* Claim audit: not "the world it was tuned on": renal-dose-review was re-frozen on a later
+          world before its final run (results/tasks-final.json, R40). */}
+      <p className="text-ink-muted">A task is frozen on one world before its final run, and its official trials start from that world, so a trial's world hash matches its task's row here and may differ from today's build.</p>
       {results === null && <p className="mt-2 text-ink-muted" role="status">Loading the published results…</p>}
       {results?.kind === 'error' && <div className="mt-2"><ResultsError nested testId="frozen-worlds-error" message={results.message} cannot="the frozen worlds cannot be listed" /></div>}
       {results?.kind === 'ready' && rows.length === 0 && <p className="mt-2 text-ink-muted" data-testid="frozen-worlds-none">No task is frozen yet: the official trials start from today's build.</p>}

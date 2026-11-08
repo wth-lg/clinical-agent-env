@@ -44,19 +44,21 @@ test('Overview opens with a plain intro card: 3-4 sentences of 25 words or fewer
 // lead, each row shows the task's title and links, the swatches sit in rows of ten, and the
 // verdict is a chip. (The fault card's audit count, J8a, is S5's FaultBox: findings.spec.)
 test.describe('Overview after the UI/UX audit', () => {
-  test('J1: the score column reads Rubric score, extra credit that does not decide pass; "Mean score" is gone', async ({ page }) => {
+  // Claim audit: not "extra credit", since a penalty item lowers the score.
+  test('J1: the score column reads Rubric score, which penalties can lower and which does not decide pass; "Mean score" is gone', async ({ page }) => {
     await browse(page, './?view=overview');
     const table = page.getByTestId('overview-table');
     const head = table.locator('li').first();
     await expect(head).toContainText('Rubric score');
-    await expect(head).toContainText('extra credit; does not decide pass');
+    await expect(head).toContainText('penalties can lower it; does not decide pass');
+    await expect(page.locator('main')).not.toContainText('extra credit');
     expect(await page.locator('main').innerText()).not.toContain('Mean score');
     const cell = page.locator('[data-testid="overview-row"][data-task="contrast-ct-prep"] [data-testid="rubric-score"]');
     const score = summary.tasks['contrast-ct-prep']!.mean_score!.toFixed(2);
     await expect(cell).toHaveText(score, { useInnerText: true });
     await expect(cell).toHaveAttribute('title', /does not decide pass/);
     // The sentence is on the screen itself, not only in a tooltip (copy rule C2).
-    await expect(page.getByTestId('rubric-note')).toContainText('extra credit');
+    await expect(page.getByTestId('rubric-note')).toContainText('penalties can lower it');
     await expect(page.getByTestId('rubric-note')).toContainText('does not decide pass');
     // On a phone the header is hidden, so each row carries the label.
     await page.setViewportSize({ width: 375, height: 812 });
@@ -197,6 +199,10 @@ test('V2a: the mark legend says what a red outline means', async ({ page }) => {
 test('the intro card links "gate check" to the pass rule in the glossary, and names FHIR R4 as the record format (verifier JU5-1 M1, M5)', async ({ page }) => {
   await browse(page, './?view=overview');
   const card = page.getByTestId('intro-card');
+  // Claim audit: the final run's tasks start from their own frozen worlds (contrast-ct-prep on an
+  // earlier one), so the card never says every trial starts from the same records.
+  await expect(card.getByTestId('intro-text')).toContainText("Each final-run trial of a task starts from that task's frozen copy of the synthetic patient records");
+  await expect(card.getByTestId('intro-text')).not.toContainText('the same synthetic patient records');
   await expect(card.getByRole('heading', { level: 2, name: 'What this is' })).toBeVisible();
   await expect(card.getByTestId('intro-text')).toContainText('in the FHIR R4 health-record format');
   await card.getByRole('link', { name: 'gate check' }).click();

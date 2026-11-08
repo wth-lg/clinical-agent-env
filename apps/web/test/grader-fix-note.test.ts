@@ -20,7 +20,7 @@ describe('GraderFixNote', () => {
   it('on final-1: 1 counted trial named, the superseded version apart and not counted', () => {
     const html = renderToStaticMarkup(createElement(GraderFixNote, { counted, superseded: [crc], href: null }));
     expect(text(html)).toBe(
-      'Why 0 grader: three grader faults were found in clinical reads and fixed in grader 22, then the affected trials were regraded offline with no model call. In this run that moved 1 counted trial (message-queue/10) from FAIL to PASS. The other two faults were in crc-care-gap v1, where the regrade moved 12 trials to PASS; that version was superseded by a rerun and is not counted.',
+      'Why 0 grader: three grader faults were found in clinical reads and fixed in the grader, then the affected trials were regraded offline with no model call. In this run a regrade with grader 22 moved 1 counted trial (message-queue/10) from FAIL to PASS. The other two faults were in crc-care-gap v1, where a regrade with grader 22 moved 12 trials to PASS. That version was replaced by a changed version of the task, and only the changed version is counted.',
     );
     expect(html).toContain('data-trials="1"');
     expect(html).toContain('data-superseded-trials="12"');
