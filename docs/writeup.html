@@ -45,8 +45,10 @@ h2 { font-size: 1.125rem; font-weight: 600; margin: 2.5rem 0 0.75rem; padding-to
 h3 { font-size: 1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
 h4 { font-size: 0.875rem; font-weight: 600; margin: 1rem 0 0.25rem; }
 p, li { max-width: 70ch; }
-a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
-a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* Links are ink with an underline, as in apps/web (trial/Attribution.tsx LINK): the accent is 3.24:1 on the light page, under the 4.5:1 WCAG AA asks of text (verifier-1 addendum 3). */
+a { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--color-ink); }
+a:focus-visible, pre:focus-visible, .table-wrap:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 3px; padding: 0 0.25em; }
 pre { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 4px; padding: 0.75rem; overflow-x: auto; }
 pre code { border: 0; padding: 0; background: none; }
@@ -96,7 +98,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="start-the-local-app" data-src="docs/writeup/10-instructions.md:5">Start the local app</h3>
 <!-- docs-gen:begin prerequisites -->
 <p>Requires Node.js 22.18 or newer and pnpm. <a href="https://nodejs.org/en/download">Install Node.js</a> and <a href="https://pnpm.io/installation">install pnpm</a>. To see the installed versions, run <code>node -v</code> and <code>pnpm -v</code>.</p>
-<pre><code>git clone https://github.com/wth-lg/clinical-agent-env &amp;&amp; cd clinical-agent-env &amp;&amp; pnpm start</code></pre>
+<pre tabindex="0"><code>git clone https://github.com/wth-lg/clinical-agent-env &amp;&amp; cd clinical-agent-env &amp;&amp; pnpm start</code></pre>
 <!-- docs-gen:end prerequisites -->
 <ol data-src="docs/writeup/10-instructions.md:9">
 <li data-src="docs/writeup/10-instructions.md:9">Open a terminal.</li>
@@ -144,7 +146,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="run-from-the-cli" data-src="docs/writeup/10-instructions.md:57">Run from the CLI</h3>
 <p data-src="docs/writeup/10-instructions.md:59">Set <code>ANTHROPIC_API_KEY</code> in the environment, then run one of these commands from the repository root. The command below runs the final sample of trials for every task and writes the run directory.</p>
 <!-- docs-gen:begin cli-command -->
-<pre><code>pnpm cli run --task all --model claude-opus-5-5 --out results/runs/&lt;run id&gt;</code></pre>
+<pre tabindex="0"><code>pnpm cli run --task all --model claude-opus-5-5 --out results/runs/&lt;run id&gt;</code></pre>
 <!-- docs-gen:end cli-command -->
 <p data-src="docs/writeup/10-instructions.md:63">To project the cost first, add <code>--dry-run</code>. To run one task, name it after <code>--task</code>. To run one trial and print its record, use <code>pnpm cli run-one --task &lt;id&gt; --model claude-opus-5-5 --json</code>. Every call is metered in the ledger at <code>~/.clinenv/spend.jsonl</code>. <code>pnpm cli spend --where</code> prints the ledger path, and <code>pnpm cli spend --check</code> says what the caps allow. After a run, <code>pnpm cli summary &lt;run dir&gt;</code> prints the pass rates, <code>pnpm cli replay &lt;run dir&gt;</code> checks each trial reproduces, and <code>pnpm cli audit-check &lt;run dir&gt;</code> checks that every failure is labelled.</p>
 <h2 id="findings" data-src="docs/findings.md:1">Findings</h2>
@@ -158,7 +160,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/findings.md:17"><strong>The judge changes the score, never a verdict.</strong> Judged rubric items change the score of a trial and never decide a pass. The judge is the same model as the agent, and its calibration measures stability on authored answers, not clinician agreement. One judge false positive is known, and one judged penalty was left unknown. Neither decides a pass. The full writeup describes both in its section &quot;Judge agreement and harm penalties&quot;, under Pass rates, beside the agreement rates the audit phase reports.</p>
 <h2 id="how-the-lever-was-tuned" data-src="docs/findings.md:19">How the lever was tuned</h2>
 <p data-src="docs/findings.md:21">Difficulty was tuned on pilot data from the same model. The rule, S5, was written into the decision log before the first lever pilot trial. It gave each item's predicted catch rate and each task's predicted pass. The numbers are in the table &quot;How difficulty was set&quot; under Pass rates. Pilot trials are never counted in the final run.</p>
-<p data-src="docs/findings.md:23">The rule as pre-registered. Each of the four lever tasks built two items and a third held in reserve, and ran one pilot with both items active. From that pilot, the rule estimated each item's catch rate and the rate of everything else. One pass and one failure were added to each count. It predicted the pass rate of each set of items as the product, and picked the set nearest the middle of the range. A task whose selected set was the one it had piloted froze on it. Any other task ran a confirm pilot on its selected set and froze when the count landed inside the range. Otherwise one retune round, of at most two tasks, could toggle an item or apply one pre-declared softening. The retuned version froze on its pilot result whatever it was. The final run used each task's latest frozen version, never an older one because its rate looked better.</p>
+<p data-src="docs/findings.md:23">The rule as pre-registered. It covered four lever tasks: renal-dose-review, results-inbox, discharge-medrec and message-queue. Each built two items and a third held in reserve, and ran one pilot with both items active. From that pilot, the rule estimated each item's catch rate and the rate of everything else. One pass and one failure were added to each count. It predicted the pass rate of each set of items as the product, and picked the set nearest the middle of the range. A task whose selected set was the one it had piloted froze on it. Any other task ran a confirm pilot on its selected set and froze when the count landed inside the range. Otherwise one retune round, of at most two tasks, could toggle an item or apply one pre-declared softening. The retuned version froze on its pilot result whatever it was. The final run used each task's latest frozen version, never an older one because its rate looked better.</p>
 <p data-src="docs/findings.md:25">The departures from it, each ruled when it arose and recorded with its date:</p>
 <ul data-src="docs/findings.md:27">
 <li data-src="docs/findings.md:27"><strong>A straddle.</strong> The rule covered a set inside the range, every prediction above it and every prediction below it. It did not cover predictions on both sides with none inside. For a straddle the rule took the set nearest the range, with an exact tie broken by the measured item cost. Two tasks met this case.</li>
@@ -218,7 +220,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h2 id="how-failures-are-attributed" data-src="docs/writeup/60-attribution.md:1">How failures are attributed</h2>
 <p data-src="docs/writeup/60-attribution.md:3">Every trial gets one outcome. A trial that did not pass gets the fault whose criterion holds first in the order below. The fault gives its label: model, environment or grader. The definitions below are rendered from <code>packages/core/outcomes.ts</code>. The UI's Glossary page and the CLI's audit check read the same file, and a test fails on a copy written anywhere else.</p>
 <!-- docs-gen:begin outcomes -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Each fault and the label it gives">
 <table><caption>Each fault and the label it gives</caption>
 <thead><tr><th scope="col">fault</th><th scope="col">label</th></tr></thead>
 <tbody>
@@ -311,7 +313,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:begin pass-rates -->
 <p>Run <code>final-1</code>: model claude-opus-5-5, effort high, 120 valid trials in 6 tasks, $205.11 settled. Rendered from <code>results/runs/final-1/summary.json</code>.</p>
 <p>The target band is 20% to 70% of 20 valid trials, both ends included.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Pass rate per task at the current grade">
 <table><caption>Pass rate per task at the current grade</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass rate</th><th scope="col">Wilson 95%</th><th scope="col">verdict</th><th scope="col">safe passes</th><th scope="col">refusals</th><th scope="col">rate without refusals</th><th scope="col">ENV_ERROR raw</th><th scope="col">ENV_LIMIT</th><th scope="col">GRADER_ERROR (earlier)</th></tr></thead>
 <tbody>
@@ -332,7 +334,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="the-lever-items" data-src="docs/writeup/70-pass-rates.md:15">The lever items</h3>
 <p data-src="docs/writeup/70-pass-rates.md:17">Each lever task carries one or two record-integrity items. Item A is a result filed silently beside the one the inbox names. Item B is a chart record whose deciding line a shallow read misreads. The first table reads the final run. The second reads the first lever pilot, where both items were active in each of its four tasks. It checks the two mechanism predictions made before any lever pilot trial. A is caught less often than B, and a missed A is a retrieval miss with the sibling never shown.</p>
 <!-- docs-gen:begin lever-items -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Lever items in the final run final-1: how often each active item was caught, and the label of each miss">
 <table><caption>Lever items in the final run final-1: how often each active item was caught, and the label of each miss</caption>
 <thead><tr><th scope="col">task</th><th scope="col">item (kind)</th><th scope="col">event</th><th scope="col">caught / observed</th><th scope="col">Wilson 95%</th><th scope="col">retrieval</th><th scope="col">reasoning</th><th scope="col">process</th><th scope="col">other</th><th scope="col">sibling exposed</th><th scope="col">trials passing every base item</th></tr></thead>
 <tbody>
@@ -346,7 +348,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </table>
 </div>
 <p>An item is observed in a trial when it is active (a B item) or its arrival fired (an A item). A miss is labelled by the item's kind of failure on its first failed gate. "sibling exposed" counts the observed trials in which every sibling record the item declares was shown to the model.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Lever items in pilot-5a, both items active: the pre-registered mechanism check (A caught less often than B; A misses retrieval)">
 <table><caption>Lever items in pilot-5a, both items active: the pre-registered mechanism check (A caught less often than B; A misses retrieval)</caption>
 <thead><tr><th scope="col">task</th><th scope="col">item (kind)</th><th scope="col">event</th><th scope="col">caught / observed</th><th scope="col">Wilson 95%</th><th scope="col">retrieval</th><th scope="col">reasoning</th><th scope="col">process</th><th scope="col">other</th><th scope="col">sibling exposed</th><th scope="col">trials passing every base item</th></tr></thead>
 <tbody>
@@ -365,7 +367,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="pass-rate-without-the-silent-sibling-item" data-src="docs/writeup/70-pass-rates.md:21">Pass rate without the silent-sibling item</h3>
 <p data-src="docs/writeup/70-pass-rates.md:23">Five of the six tasks share one failure route: a result filed silently beside the one the inbox names. The record-integrity lever copied that device from the contrast CT task into four tasks. The table counts a trial as a pass when its only failed gates are on that item. It shows how much of each rate rests on the one device.</p>
 <!-- docs-gen:begin without-lever -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="The pass rate when a trial whose every failed gate names only the silent-sibling item A counts as a pass">
 <table><caption>The pass rate when a trial whose every failed gate names only the silent-sibling item A counts as a pass</caption>
 <thead><tr><th scope="col">task</th><th scope="col">item A</th><th scope="col">k/n as graded</th><th scope="col">k/n without item A</th><th scope="col">trials moved</th></tr></thead>
 <tbody>
@@ -384,7 +386,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/70-pass-rates.md:29">A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum. A pass with a harm item met or left unknown is not counted as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none.</p>
 <p data-src="docs/writeup/70-pass-rates.md:31">The outcome-only sensitivity grades the chart the trial left and nothing else. Under it, a trial whose action was right but whose review was incomplete counts as a pass. The seen and process gates fail such trials in the grade above. One grader fix of that family moved twelve trials of the colorectal task's first version.</p>
 <!-- docs-gen:begin outcome-only -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="The pass rate when only the chart the trial left is graded: a trial fails only on a gate that reads that chart">
 <table><caption>The pass rate when only the chart the trial left is graded: a trial fails only on a gate that reads that chart</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n as graded</th><th scope="col">k/n outcome only</th><th scope="col">trials moved</th></tr></thead>
 <tbody>
@@ -400,9 +402,9 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p>The review gates are <code>event_seen</code>, <code>decisive_seen</code>, <code>delivered_seen</code>, <code>seen_before_change</code>, <code>gap_seen_before_order</code>, <code>evidence_before_orders</code>, <code>result_seen_before_action</code>, and an action gate whose evidence names unreviewed items and no missing, late, extra or failed item. A trial moves when every gate it failed is one of these. A trial that acted on the handed value and left the wrong order, dose or closure stays a failure under both readings.</p>
 <!-- docs-gen:end outcome-only -->
 <h3 id="how-difficulty-was-set" data-src="docs/writeup/70-pass-rates.md:35">How difficulty was set</h3>
-<p data-src="docs/writeup/70-pass-rates.md:37">The five lever tasks were tuned on pilot data from the same model, under a rule written down before the first lever pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.</p>
+<p data-src="docs/writeup/70-pass-rates.md:37">Five tasks carry the lever: four tasks with two items each, and the second version of crc-care-gap with one item. Each was tuned on pilot data from the same model, under a rule written down before the first lever pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.</p>
 <!-- docs-gen:begin lever-rule -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="S5 as pre-registered: the priors, the predictions and the first pilot">
 <table><caption>S5 as pre-registered: the priors, the predictions and the first pilot</caption>
 <thead><tr><th scope="col">task</th><th scope="col">pre-registered on</th><th scope="col">priors (b, catch of A, catch of B)</th><th scope="col">predicted pass</th><th scope="col">set the rule picks from the priors</th><th scope="col">first pilot, both items active</th></tr></thead>
 <tbody>
@@ -414,7 +416,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </tbody>
 </table>
 </div>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="S5 as run: the selection, the confirmation, the one retune round and the final run">
 <table><caption>S5 as run: the selection, the confirmation, the one retune round and the final run</caption>
 <thead><tr><th scope="col">task</th><th scope="col">selection (S5-2)</th><th scope="col">confirm pilot (S5-4)</th><th scope="col">retune (S5-5)</th><th scope="col">retune pilot</th><th scope="col">frozen version: final k/n (verdict)</th></tr></thead>
 <tbody>
@@ -431,7 +433,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="the-second-item-of-the-results-inbox-against-safe-passes" data-src="docs/writeup/70-pass-rates.md:41">The second item of the results inbox against safe passes</h3>
 <p data-src="docs/writeup/70-pass-rates.md:43">The results inbox task has a second lever item, a fax filed to the wrong chart. The selection rule turned it off before the final run. The table reports it in the pilots that ran it, against safe passes as well as passes. A message that repeats the fax's finding without citing it would be a harm that the gates cannot see. The safe-pass count is the stricter reading.</p>
 <!-- docs-gen:begin inbox-item-b -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="results-inbox item B in the pilots it was active in: passes, safe passes and what the lost safe passes carried">
 <table><caption>results-inbox item B in the pilots it was active in: passes, safe passes and what the lost safe passes carried</caption>
 <thead><tr><th scope="col">pilot</th><th scope="col">active set</th><th scope="col">PASS</th><th scope="col">safe PASS</th><th scope="col">item B caught / observed</th><th scope="col">harm penalties met on passes</th></tr></thead>
 <tbody>
@@ -445,7 +447,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <h3 id="judge-agreement-and-harm-penalties" data-src="docs/writeup/70-pass-rates.md:47">Judge agreement and harm penalties</h3>
 <p data-src="docs/writeup/70-pass-rates.md:49">The judge never gates. The audit phase samples judged items and extractions from the final run and reports the agreement. An LLM builder session labels the sample with the judge's answers hidden. In this run, a builder is an LLM session given one unit of work, such as a task, a grader fix or the audit data. A builder session also wrote the failure labels. Two more LLM sessions read those labels, and the two kappas are reported. One is a second labeller, blinded to the builder's labels. The other is an LLM auditor, also blinded. No human clinician reviewed the trials, the labels or the audit in this run. A human clinical read is listed under Next steps.</p>
 <!-- docs-gen:begin judge-agreement -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Judge agreement: an LLM builder session's labels (results/judge-calibration/hand-labels.jsonl), written with the judge's answers hidden, against the answers the records cached">
 <table><caption>Judge agreement: an LLM builder session's labels (results/judge-calibration/hand-labels.jsonl), written with the judge's answers hidden, against the answers the records cached</caption>
 <thead><tr><th scope="col">LLM session labels against the cached answers</th><th scope="col">agree / n</th><th scope="col">agreement</th></tr></thead>
 <tbody>
@@ -454,7 +456,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </tbody>
 </table>
 </div>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Failure labels: the blinded double label, and the builder's labels against the LLM auditor (every labeller is an LLM session)">
 <table><caption>Failure labels: the blinded double label, and the builder's labels against the LLM auditor (every labeller is an LLM session)</caption>
 <thead><tr><th scope="col">labels</th><th scope="col">agree / n</th><th scope="col">agreement</th><th scope="col">Cohen's kappa</th><th scope="col">categories</th><th scope="col">note</th></tr></thead>
 <tbody>
@@ -464,7 +466,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </table>
 </div>
 <p>The double label row is a blinded second LLM session's label of a seeded sample of failures. The auditor row covers every trial the LLM auditor read: 32 failures and 3 passes with a penalty met or left unknown. A penalty is any rubric item with negative points, harm or not.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Harm penalties met in the final run, by outcome (a penalty never decides a pass; a pass with a harm penalty is not a safe pass)">
 <table><caption>Harm penalties met in the final run, by outcome (a penalty never decides a pass; a pass with a harm penalty is not a safe pass)</caption>
 <thead><tr><th scope="col">task</th><th scope="col">harm penalty</th><th scope="col">passes with it met</th><th scope="col">failures with it met</th></tr></thead>
 <tbody>
@@ -478,7 +480,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/70-pass-rates.md:57">The band is a check on a point estimate. Twenty trials tell apart a task the model mostly passes from one it mostly fails, and little more. The table below says how often a task with a given true pass rate lands in the band.</p>
 <!-- docs-gen:begin band-resolution -->
 <p>At n = 20 the band 20% to 70% is 4 to 14 passes. The Wilson 95% interval at the lower edge, 4/20, is [0.08, 0.42]; at the upper edge, 14/20, it is [0.48, 0.85] (<code>wilson</code>, packages/core/summary.ts).</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="How often a task with a given true pass rate reads In band over 20 trials (exact binomial)">
 <table><caption>How often a task with a given true pass rate reads In band over 20 trials (exact binomial)</caption>
 <thead><tr><th scope="col">true pass rate</th><th scope="col">chance that k of 20 lands in 4 to 14</th></tr></thead>
 <tbody>
@@ -497,7 +499,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/70-pass-rates.md:61">Infrastructure outcomes are excluded from the denominator and rerun, as tau2-bench excludes infrastructure-errored calls from its denominators. An environment or grader fault is never excluded that way. It blocks the run until the fault is fixed and the run is regraded, or the affected trials are rerun. The final run holds no such fault.</p>
 <h3 id="pass-k" data-src="docs/writeup/70-pass-rates.md:63">pass^k</h3>
 <!-- docs-gen:begin pass-k -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="pass^k: the chance that k trials drawn without replacement from the task's valid trials all pass">
 <table><caption>pass^k: the chance that k trials drawn without replacement from the task's valid trials all pass</caption>
 <thead><tr><th scope="col">task</th><th scope="col">k/n</th><th scope="col">pass^1</th><th scope="col">pass^3</th><th scope="col">pass^5</th></tr></thead>
 <tbody>
@@ -514,7 +516,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:end pass-k -->
 <h3 id="cost-per-trial" data-src="docs/writeup/70-pass-rates.md:67">Cost per trial</h3>
 <!-- docs-gen:begin cost -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Cost per trial, trial calls and judge calls included, from each record's settled cost">
 <table><caption>Cost per trial, trial calls and judge calls included, from each record's settled cost</caption>
 <thead><tr><th scope="col">task</th><th scope="col">mean cost per trial</th><th scope="col">records</th></tr></thead>
 <tbody>
@@ -531,7 +533,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:end cost -->
 <h3 id="example-trajectories" data-src="docs/writeup/70-pass-rates.md:71">Example trajectories</h3>
 <!-- docs-gen:begin exemplars -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="One trial of each kind per task, on the hosted site">
 <table><caption>One trial of each kind per task, on the hosted site</caption>
 <thead><tr><th scope="col">task</th><th scope="col">a pass</th><th scope="col">a failure</th></tr></thead>
 <tbody>
@@ -550,7 +552,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/70-pass-rates.md:77">Each sentence of the assignment and each user modification has a row in <code>docs/requirements/trace.json</code>. The row names the code, the tests, the evidence and an expect that checks it. <code>pnpm cli trace-check</code> runs in CI.</p>
 <!-- docs-gen:begin trace -->
 <p>69 rows, one per sentence of the assignment and per user modification, each with code, tests, evidence and an expect (<code>pnpm cli trace-check</code>). The assignment text is pinned by sha256 <code>d4b59ac91014</code>. Done phases: P9t, Prn, P11, P12b, P12c, P12n, P13, P14, P15, P16.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Requirement trace by section">
 <table><caption>Requirement trace by section</caption>
 <thead><tr><th scope="col">section</th><th scope="col">rows</th><th scope="col">needs a UI screen</th><th scope="col">with evidence named</th><th scope="col">with a path still pending</th><th scope="col">superseded or amended</th></tr></thead>
 <tbody>
@@ -562,7 +564,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 </tbody>
 </table>
 </div>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Rows that carry each done-when clause">
 <table><caption>Rows that carry each done-when clause</caption>
 <thead><tr><th scope="col">done-when clause</th><th scope="col">rows</th></tr></thead>
 <tbody>
@@ -580,7 +582,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <!-- docs-gen:end trace -->
 <h2 id="how-the-environment-differs-from-a-real-ehr" data-src="docs/writeup/80-ehr.md:1">How the environment differs from a real EHR</h2>
 <p data-src="docs/writeup/80-ehr.md:3">The store is an in-memory FHIR R4 store behind eighteen typed tools, nine that read and nine that write. The tools are MCP-shaped definitions: a name, a description and an input schema, in the fixed order the model sees. No MCP server ships; a stdio adapter is a next step. The simplifications below are deliberate and kept.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Table: area, this environment, a real server">
 <table data-src="docs/writeup/80-ehr.md:5">
 <thead><tr><th scope="col">area</th><th scope="col">this environment</th><th scope="col">a real server</th></tr></thead>
 <tbody>
@@ -606,7 +608,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/85-audit.md:5">The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-Bench and CHI-Bench both have one, and CHI-Bench serves its handbook through MCP tools. Four things are narrow-new here. The fault criteria per trial are built on exposure tags. Among the clinical systems compared, only this one gives each trap a grader mutant, with alternatives that prove path independence. The FHIR store runs in process with a canonical hash and replay. The judge never gates. MedHarnessBench separates harness from agent faults with perturbations at benchmark level, and MedicalHarness decomposes variance across harnesses. Neither labels a single trial.</p>
 <h3 id="clinical-agent-benchmarks" data-src="docs/writeup/85-audit.md:7">Clinical agent benchmarks</h3>
 <!-- docs-check:allow-numbers published results of other benchmarks, each with its source and date -->
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Table: benchmark, date, what the agent does, grading, reported result">
 <table data-src="docs/writeup/85-audit.md:11">
 <thead><tr><th scope="col">benchmark</th><th scope="col">date</th><th scope="col">what the agent does</th><th scope="col">grading</th><th scope="col">reported result</th></tr></thead>
 <tbody>
@@ -630,7 +632,7 @@ footer { color: var(--color-ink-muted); font-size: 0.75rem; padding: 2rem 1rem 3
 <p data-src="docs/writeup/85-audit.md:29">PhysicianBench's tasks take between a quarter and a third as many tool calls as this environment's final-run trials. Opus 5.5 at max effort scores near the upper edge of the band on them. That anchor says why trap-dense tasks can still land above the band at effort high, and why change during the trial was needed.</p>
 <h3 id="public-agent-environment-repositories" data-src="docs/writeup/85-audit.md:31">Public agent-environment repositories</h3>
 <p data-src="docs/writeup/85-audit.md:33">The table reads each repository at its latest release on 2026-11-05, or at its last commit on main where it has no release. Our row reads origin/main at commit ad740dae of 2026-11-04.</p>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0" role="region" aria-label="Table: repository, release (date), task layout (instruction, tests, solution), tool interface, grader, repeatable state">
 <table data-src="docs/writeup/85-audit.md:35">
 <thead><tr><th scope="col">repository</th><th scope="col">release (date)</th><th scope="col">task layout (instruction, tests, solution)</th><th scope="col">tool interface</th><th scope="col">grader</th><th scope="col">repeatable state</th></tr></thead>
 <tbody>

@@ -111,7 +111,7 @@ describe('docs-gen', () => {
     const { writeup } = generate(docsRoot());
     const tables = writeup.match(/<table\b/g) ?? [];
     expect(tables.length).toBeGreaterThan(5);
-    expect(writeup.match(/<div class="table-wrap">\n?<table\b/g) ?? []).toHaveLength(tables.length);
+    expect(writeup.match(/<div class="table-wrap"[^>]*>\n?<table\b/g) ?? []).toHaveLength(tables.length);
     expect(writeup.match(/<\/table>\n?<\/div>/g) ?? []).toHaveLength(tables.length);
   });
 

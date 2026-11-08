@@ -26,7 +26,7 @@ import {
 } from '../packages/core/outcomes.ts';
 import { disclosedVerdictText, parseDisclosures, type Disclosure } from '../packages/core/disclosure.ts';
 import { BAND_VERDICT_RULE, currentGrade, isHarmItem, PASS_K, trialName, wilson, type Summary, type SummaryCheck, type TaskSummary } from '../packages/core/summary.ts';
-import { escapeHtml, nowrapNumbers, parseMarkdown, renderBlocks, WRITEUP_SECTIONS, type Block } from './docs-lib.ts';
+import { escapeHtml, nowrapNumbers, parseMarkdown, renderBlocks, tableWrapAttrs, WRITEUP_SECTIONS, type Block } from './docs-lib.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const WRITEUP = 'docs/writeup.html';
@@ -50,9 +50,10 @@ const interval = (k: number, n: number) => {
   return w === null ? 'n/a' : `[${w.lo.toFixed(2)}, ${w.hi.toFixed(2)}]`;
 };
 // Every table sits in a scroll container, so a wide one scrolls inside its box and the page never
-// scrolls sideways on a phone (verifier P24A-227 F1).
+// scrolls sideways on a phone (verifier P24A-227 F1). The container and every <pre> take keyboard
+// focus, so a keyboard user can scroll them (axe scrollable-region-focusable, verifier-1 addendum 3).
 const table = (head: string[], rows: string[][], caption?: string) =>
-  `<div class="table-wrap">\n<table>${caption ? `<caption>${caption}</caption>` : ''}\n<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>\n<tbody>\n${rows.map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${nowrapNumbers(c)}</th>` : `<td>${nowrapNumbers(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
+  `<div ${tableWrapAttrs(caption, head)}>\n<table>${caption ? `<caption>${caption}</caption>` : ''}\n<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>\n<tbody>\n${rows.map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${nowrapNumbers(c)}</th>` : `<td>${nowrapNumbers(c)}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
 const trialUrl = (run: string, trial: string) => `${HOSTED_URL}?view=runs&run=${encodeURIComponent(run)}&trial=${encodeURIComponent(trial)}`;
 
 // A trial at its current grade (packages/core/summary.ts currentGrade: the last regrade's outcome
@@ -515,9 +516,9 @@ const traceBlock = (d: Data) => {
 
 const capsBlock = () => `The ledger refuses a batch whose projection would take the total past ${money(PROJECTED_CAP_USD)}, and it stops every call once settled spend reaches ${money(ACTUAL_CAP_USD)}.`;
 
-const prerequisites = () => `<p>${escapeHtml(LOCAL_PREREQUISITES)} <a href="${NODE_INSTALL_URL}">Install Node.js</a> and <a href="${PNPM_INSTALL_URL}">install pnpm</a>. To see the installed versions, run <code>node -v</code> and <code>pnpm -v</code>.</p>\n<pre><code>${escapeHtml(LOCAL_START_COMMAND)}</code></pre>`;
+const prerequisites = () => `<p>${escapeHtml(LOCAL_PREREQUISITES)} <a href="${NODE_INSTALL_URL}">Install Node.js</a> and <a href="${PNPM_INSTALL_URL}">install pnpm</a>. To see the installed versions, run <code>node -v</code> and <code>pnpm -v</code>.</p>\n<pre tabindex="0"><code>${escapeHtml(LOCAL_START_COMMAND)}</code></pre>`;
 
-const cliCommand = () => `<pre><code>pnpm cli run --task all --model ${MODEL} --out results/runs/&lt;run id&gt;</code></pre>`;
+const cliCommand = () => `<pre tabindex="0"><code>pnpm cli run --task all --model ${MODEL} --out results/runs/&lt;run id&gt;</code></pre>`;
 
 // Each block id, the wrapper name it is written under, and its renderer.
 const BLOCKS: Record<string, { name: string; render: (d: Data) => string }> = {
@@ -621,8 +622,10 @@ h2 { font-size: 1.125rem; font-weight: 600; margin: 2.5rem 0 0.75rem; padding-to
 h3 { font-size: 1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
 h4 { font-size: 0.875rem; font-weight: 600; margin: 1rem 0 0.25rem; }
 p, li { max-width: 70ch; }
-a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
-a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* Links are ink with an underline, as in apps/web (trial/Attribution.tsx LINK): the accent is 3.24:1 on the light page, under the 4.5:1 WCAG AA asks of text (verifier-1 addendum 3). */
+a { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--color-ink); }
+a:focus-visible, pre:focus-visible, .table-wrap:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 3px; padding: 0 0.25em; }
 pre { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 4px; padding: 0.75rem; overflow-x: auto; }
 pre code { border: 0; padding: 0; background: none; }

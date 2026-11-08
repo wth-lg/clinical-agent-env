@@ -246,7 +246,7 @@ function RunList({ run, matches, filtered, later, fold }: { run: RunData; matche
   const shown = run.trials.filter(matches);
   const look = shown.filter((t) => !plainPass(t));
   const passes = shown.filter(plainPass);
-  const repeats = repeatedReasons(look.map((t) => ({ name: t.name, task: t.task, reason: t.explanation.reason, faulted: isFaulted(t) })));
+  const repeats = repeatedReasons(look.map((t) => ({ name: t.name, task: t.task, reason: t.explanation.reason, lead: isFaulted(t) ? trialLead(t.explanation, t.record) : null, faulted: isFaulted(t) })));
   // A blocked run has no pass count, so its group is not named by one, nor by its size: every row
   // in it is a PASS (verifier-phase-P17i-UI-2-1 B1, UI-2-2 N1).
   const blocked = runBlock(run.trials) !== null;
