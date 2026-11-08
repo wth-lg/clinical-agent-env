@@ -1,0 +1,1 @@
+- pages-smoke: the Findings test counts the six final-1 intervals in the chart, then opens the closed "Read the analysis" disclosure (P25u J18) before it reads the write-up. Tests only.
