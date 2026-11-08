@@ -44,7 +44,7 @@ function sessionTrial(row: LiveTrialRow, record: NonNullable<LiveTrialRow['recor
 export function sessionRun(run: LiveRun): RunData {
   const trials = run.rows.flatMap((row) => (row.record === null ? [] : [sessionTrial(row, row.record)]));
   const graders = [...new Set(trials.flatMap((t) => (typeof t.record.grader_version === 'string' ? [t.record.grader_version] : [])))].sort();
-  return { runId: run.runId, dir: `${SESSION_RUN}/${run.runId}`, official: false, kind: 'session', superseded: null, manifest: null, grading: { graders, olderWorld: 0, frozenWorld: 0, regrade: null }, summary: null, trials, bad: [], warnings: [] };
+  return { runId: run.runId, dir: `${SESSION_RUN}/${run.runId}`, official: false, kind: 'session', superseded: null, manifest: null, grading: { graders, olderWorld: 0, frozenWorld: 0, trials: trials.length, frozenTasks: [], regrade: null }, summary: null, trials, bad: [], warnings: [] };
 }
 
 export function resolveSessionTrial(runs: readonly LiveRun[], trial: string, hosted: boolean): SessionResolved {

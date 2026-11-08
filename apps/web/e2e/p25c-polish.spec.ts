@@ -10,6 +10,7 @@ import { browse, browseFrom } from './browse.ts';
 import { explain, records, sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 import { okResponse } from '../src/harness/scenarios.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
+import { exactReason } from '../src/trial/lead.ts';
 
 const sample = browseFrom(sampleBase);
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
@@ -135,7 +136,7 @@ test('Runs: a reason repeated by a later row of the same task shows once, and is
   const pair = [...groups.values()].find((v) => v.length > 1);
   expect(pair).toBeDefined();
   const [first, second] = pair!;
-  const reason = explain(records.find((r) => `${r.task_id}/${r.index}` === first)!).reason;
+  const reason = exactReason(explain(records.find((r) => `${r.task_id}/${r.index}` === first)!).reason);
   await sample(page, './?view=runs');
   const a = page.locator(`[data-testid="trial-row"][data-trial="${first}"]`);
   const b = page.locator(`[data-testid="trial-row"][data-trial="${second}"]`);
@@ -196,5 +197,5 @@ test('State diff: a superseded version\'s trial names the version, its frozen wo
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
   // The trial header's world line agrees.
-  await expect(page.getByTestId('trial-world')).toHaveText(`World ${freeze.world_hash.slice(0, 12)}…: matches the frozen world of crc-care-gap ${freeze.version} (superseded).`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${freeze.world_hash.slice(0, 12)}…: matches the frozen world of crc-care-gap ${freeze.version} (superseded), not today's build.`);
 });

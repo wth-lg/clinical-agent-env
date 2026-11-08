@@ -45,9 +45,13 @@ describe('worldStatus and worldLine', () => {
     // `matches the manifest` kept (S5, builder-333, chose the words).
     expect(worldLine(worldStatus(MANIFEST, MANIFEST, [], true), task)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest, today's build.`);
     expect(worldLine(worldStatus(MANIFEST, MANIFEST, all, true), task, all)).toBe(`World ${shortHash(MANIFEST)}: matches the manifest, today's build, not the frozen world of ${task} (${shortHash(EARLIER)}).`);
-    expect(worldLine(worldStatus(EARLIER, MANIFEST, all, false), task)).toBe(`World ${shortHash(EARLIER)}: matches the frozen world of ${task}.`);
-    expect(worldLine(worldStatus(SUP, MANIFEST, all, false), task)).toBe(`World ${shortHash(SUP)}: matches the frozen world of ${task} v1 (superseded).`);
-    expect(worldLine(worldStatus(OLDER, MANIFEST, all, true), task)).toBe(`World ${shortHash(OLDER)}: matches the frozen world of ${task} before its re-freeze (tag freeze-t1).`);
+    // eval-p25u-2 S12: every trial that matches its task's frozen world says so in the same words,
+    // whether or not that world is today's build, and then says which.
+    const today: FrozenWorld = { role: 'current', world_hash: MANIFEST, tag: 'freeze-t1' };
+    expect(worldLine(worldStatus(MANIFEST, MANIFEST, [today], true), task, [today])).toBe(`World ${shortHash(MANIFEST)}: matches the frozen world of ${task} and the manifest, today's build.`);
+    expect(worldLine(worldStatus(EARLIER, MANIFEST, all, false), task)).toBe(`World ${shortHash(EARLIER)}: matches the frozen world of ${task}, not today's build.`);
+    expect(worldLine(worldStatus(SUP, MANIFEST, all, false), task)).toBe(`World ${shortHash(SUP)}: matches the frozen world of ${task} v1 (superseded), not today's build.`);
+    expect(worldLine(worldStatus(OLDER, MANIFEST, all, true), task)).toBe(`World ${shortHash(OLDER)}: matches the frozen world of ${task} before its re-freeze (tag freeze-t1), not today's build.`);
     expect(worldLine(worldStatus('e'.repeat(64), MANIFEST, all, true), task)).toBe(`World ${shortHash('e'.repeat(64))}: matches neither today's build nor a frozen world of ${task}.`);
     expect(worldLine(worldStatus(null, MANIFEST, all, true), task)).toBe('World not recorded.');
     expect(shortHash(EARLIER)).toBe(`${'b'.repeat(12)}…`);

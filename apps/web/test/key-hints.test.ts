@@ -17,16 +17,18 @@ describe('J11: the line under Browse the results', () => {
 describe('A13: the hint lines under the key field', () => {
   const tasks = { a: { mean_cost_usd: 1.2 }, b: { mean_cost_usd: 2.37 }, c: { mean_cost_usd: 1.9 } };
 
-  it('the cost of one trial is the range of the tasks\' mean costs, to the cent', () => {
-    expect(costRangeText(tasks)).toBe('about $1.20 to $2.37');
-    expect(costRangeText({ a: { mean_cost_usd: 1.5 } })).toBe('about $1.50');
+  // eval-p25u-2 S5: the range says its basis, the final run's mean per task, beside the Live
+  // trial's pilot median.
+  it('the cost of one trial is the range of the tasks\' mean costs, to the cent, with its basis', () => {
+    expect(costRangeText(tasks)).toBe('about $1.20 to $2.37 (final-run mean per task)');
+    expect(costRangeText({ a: { mean_cost_usd: 1.5 } })).toBe('about $1.50 (final-run mean)');
     expect(costRangeText({})).toBeNull();
   });
 
   it('says where to get a key and what a trial costs, then how to forget the key, after where the key goes', () => {
     const lines = keyHints('local-runner', costRangeText(tasks));
     expect(lines.slice(-2)).toEqual([
-      'Get a key at console.anthropic.com under API keys. One trial costs about $1.20 to $2.37.',
+      'Get a key at console.anthropic.com under API keys. One trial costs about $1.20 to $2.37 (final-run mean per task).',
       'Forget key in the top bar drops it at any time.',
     ]);
     expect(lines[0]).toMatch(/local runner/);

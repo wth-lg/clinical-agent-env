@@ -22,13 +22,14 @@ export const REMEMBER_HINT = 'Keeps the key if you reload this tab; closing the 
 export const passLine = (totals: { passes: number; trials: number } | null): string =>
   (totals === null ? 'See the tasks, the published trials and why each failure happened.' : `${totals.passes} of ${totals.trials} trials pass; see why each failure happened.`);
 
-// The cost of one trial: the range of the tasks' mean costs in the official run, to the cent.
+// The cost of one trial: the range of the tasks' mean costs in the official run, to the cent,
+// with its basis (eval-p25u-2 S5: the Live trial's figure is a pilot median and says so).
 export function costRangeText(tasks: Readonly<Record<string, { mean_cost_usd: number | null }>>): string | null {
   const costs = Object.values(tasks).map((t) => t.mean_cost_usd).filter((c): c is number => c !== null && Number.isFinite(c));
   if (costs.length === 0) return null;
   const lo = Math.min(...costs).toFixed(2);
   const hi = Math.max(...costs).toFixed(2);
-  return lo === hi ? `about $${lo}` : `about $${lo} to $${hi}`;
+  return lo === hi ? `about $${lo} (final-run mean)` : `about $${lo} to $${hi} (final-run mean per task)`;
 }
 
 // The lines under the key field: where the key goes, where a key comes from and what a trial

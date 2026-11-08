@@ -8,7 +8,7 @@ import { FAILURE_LABELS, type FailedCheckCount, type FaultCounts } from '../../.
 import type { Explanation } from '../../../../packages/core/explain.ts';
 import { isFalsePass, kindWords, type FailureLabel, type RunBlock } from '../data/failures.ts';
 import { GlossaryLink, markProps } from '../data/ui.tsx';
-import { AUDIT_BY } from '../trial/headline.ts';
+import { FAULT_BY } from '../trial/headline.ts';
 import { hrefWith, onNav } from '../data/url.ts';
 import { confirmation, kindSegments } from './counts.ts';
 
@@ -59,9 +59,10 @@ export function TopChecks({ task, top, textOf }: { task: string; top: readonly F
 
 const LABEL_WORDS: Record<FailureLabel, string> = { model: 'model', environment: 'environment', grader: 'grader', unlabelled: 'not yet audited' };
 
-// The fault box: the valid failures by audit label (each a Runs link to those trials) under
-// "Whose fault, by the audit (LLM sessions in this run)" (copy rule C4: never a bare label as a
-// verdict; headline.ts AUDIT_BY says who audited, eval-p25u-1 defect 1), then the one
+// The fault box: the valid failures by label (each a Runs link to those trials) under "Whose
+// fault, as the record decides and the audit (LLM sessions in this run) confirms" (copy rule C4:
+// never a bare label as a verdict; headline.ts FAULT_BY says who decides and who audited,
+// eval-p25u-1 defect 1 and eval-p25u-2 S11), then the one
 // confirmation phrase of every screen (copy rule C5, P25u J8c): "Confirmed by the record (M1–M4)
 // and the audit (M5)", with the record's count and "audit agrees: n of N" (counts.ts
 // confirmation), and the infra re-runs. task 'all' sums the tasks; its links are not filtered
@@ -80,7 +81,7 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
     <div data-testid="fault-box" data-task={task} className="space-y-1 text-sm">
       {labels ? (
         <p className="flex flex-wrap gap-x-4 gap-y-1">
-          <span className="text-ink-muted">Whose fault, {AUDIT_BY}:</span>
+          <span className="text-ink-muted">Whose fault, {FAULT_BY}:</span>
           {FAILURE_LABELS.map((l) => (
             <span key={l} data-testid="fault-label-count" data-label={l} data-count={sum(l)}>
               {sum(l) > 0 ? <RunsLink patch={{ task: scope, audit: l }}>{LABEL_WORDS[l]} {sum(l)}</RunsLink> : <span className="text-ink-muted">{LABEL_WORDS[l]} 0</span>}
@@ -96,6 +97,40 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
         <Reruns count={reruns} />
       </p>
     </div>
+  );
+}
+
+// Beside "0 grader" on Overview and Runs (eval-p25u-2 S10): the grader faults found after the run
+// were fixed before the final grade, so the count is 0 after the fix, not because none was found.
+// The official run's regraded trials are counted apart from a superseded version's, which are not
+// counted (verifier-phase-P25u-decisive-1 claim 2). The trial counts, names and graders come from
+// the records (counts.ts regradeFigures). The fault counts are not in the records: they are the
+// writeup's ("Three grader faults came out of clinical reads of the final run", docs/findings.md),
+// R41's two in crc-care-gap v1 and R48's one in message-queue (results/tasks-final.json regrades),
+// so GRADER_FAULTS_FIXED and SUPERSEDED_FAULTS hold them. Shown only when a regrade fixed a trial;
+// the callers show it only beside a grader count of 0. href: the writeup's "How failures are
+// attributed", null when the build has no writeup.
+export const GRADER_FAULTS_FIXED = 'three';
+export const SUPERSEDED_FAULTS = 'two';
+export const WRITEUP_ATTRIBUTION = 'writeup.html#how-failures-are-attributed';
+// Up to this many counted trials are named in the note; more are only counted.
+const NAMED_MAX = 3;
+type Fixes = { trials: number; graders: readonly string[]; names: readonly string[] };
+export function GraderFixNote({ counted, superseded, href }: { counted: Fixes; superseded: ReadonlyArray<Fixes & { label: string }>; href: string | null }) {
+  const old = superseded.filter((s) => s.trials > 0);
+  const oldTrials = old.reduce((n, s) => n + s.trials, 0);
+  if (counted.trials === 0 && oldTrials === 0) return null;
+  const graders = [...new Set([...counted.graders, ...old.flatMap((s) => s.graders)])].sort();
+  const plural = (n: number) => `${n} ${n === 1 ? 'trial' : 'trials'}`;
+  const named = counted.names.length === counted.trials && counted.trials <= NAMED_MAX ? ` (${counted.names.join(', ')})` : '';
+  return (
+    // A span, so it can sit inside the Runs fault line's paragraph.
+    <span data-testid="grader-fix-note" data-trials={counted.trials} data-superseded-trials={oldTrials} className="mt-1 block text-xs text-ink-muted">
+      Why 0 grader: {GRADER_FAULTS_FIXED} grader faults were found in clinical reads and fixed in grader {graders.join(' and ')}, then the affected trials were regraded offline with no model call.{' '}
+      {counted.trials > 0 ? <>In this run that moved {counted.trials} counted {counted.trials === 1 ? 'trial' : 'trials'}{named} from FAIL to PASS.</> : <>In this run that moved no counted trial.</>}
+      {old.length > 0 && <>{' '}The other {SUPERSEDED_FAULTS} faults were in {old.map((s) => s.label).join(' and ')}, where the regrade moved {plural(oldTrials)} to PASS; {old.length === 1 ? 'that version was' : 'those versions were'} superseded by a rerun and {old.length === 1 ? 'is' : 'are'} not counted.</>}
+      {href !== null && <>{' '}<a href={href} className={link}>How failures are attributed</a></>}
+    </span>
   );
 }
 

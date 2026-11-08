@@ -105,13 +105,13 @@ test('a pilot trial and a superseded version\'s trial on a frozen world of their
   expect(pilot.state_hash.initial).toBe(frozen['contrast-ct-prep']!.world_hash);
   await browseDefault(page, './?view=runs&run=pilot-4a&trial=contrast-ct-prep%2F0');
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'contrast-ct-prep/0');
-  await expect(page.getByTestId('trial-world')).toHaveText(`World ${pilot.state_hash.initial.slice(0, 12)}…: matches the frozen world of contrast-ct-prep.`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${pilot.state_hash.initial.slice(0, 12)}…: matches the frozen world of contrast-ct-prep, not today's build.`);
   await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'frozen');
   const sup = JSON.parse(readFileSync(new URL('../../../results/runs/final-1/superseded/crc-care-gap-v1/trials/crc-care-gap/0.json', import.meta.url), 'utf8')) as { state_hash: { initial: string } };
   expect(sup.state_hash.initial).toBe(frozen['crc-care-gap']!.superseded!.world_hash);
   await browseDefault(page, './?view=runs&run=crc-care-gap-v1&trial=crc-care-gap%2F0');
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'crc-care-gap/0');
-  await expect(page.getByTestId('trial-world')).toHaveText(`World ${sup.state_hash.initial.slice(0, 12)}…: matches the frozen world of crc-care-gap v1 (superseded).`);
+  await expect(page.getByTestId('trial-world')).toHaveText(`World ${sup.state_hash.initial.slice(0, 12)}…: matches the frozen world of crc-care-gap v1 (superseded), not today's build.`);
   await expect(page.getByTestId('trial-world')).toHaveAttribute('data-world', 'frozen');
 });
 
@@ -159,7 +159,7 @@ test('an official trial on its task\'s frozen world says so, names the replay ta
   await expect(line).toHaveText(`Initial world hash ${EARLIER.slice(0, 12)}… matches the frozen world of ${task} (results/tasks-final.json), not today's build (${MANIFEST.slice(0, 12)}…). Its records are historical and are reproduced at tag final-1-test (${commit.slice(0, 12)}), not here.`);
   await expect(line).toHaveAttribute('data-tone', 'frozen');
   const world = page.getByTestId('trial-world');
-  await expect(world).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches the frozen world of ${task}.`);
+  await expect(world).toHaveText(`World ${EARLIER.slice(0, 12)}…: matches the frozen world of ${task}, not today's build.`);
   await expect(world).toHaveAttribute('data-hash', EARLIER);
   await expect(world).toHaveAttribute('data-world', 'frozen');
   await expect(line).not.toHaveAttribute('role', 'alert');
@@ -167,7 +167,7 @@ test('an official trial on its task\'s frozen world says so, names the replay ta
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
   // The Runs list says the run was graded on the frozen world, not an older one.
   await page.getByRole('link', { name: 'Back to Runs' }).click();
-  await expect(page.locator(`[data-testid="run"][data-run="${RUN_ID}"] [data-testid="grading-line"]`)).toContainText('on the frozen world of its task (1 trial, results/tasks-final.json)');
+  await expect(page.locator(`[data-testid="run"][data-run="${RUN_ID}"] [data-testid="grading-line"]`)).toContainText(`1 of the ${records.length} trials (${task}) started from its task's frozen world, not today's build (results/tasks-final.json)`);
 });
 
 test('an official trial on another world keeps the alert and its Replay', async ({ page }) => {

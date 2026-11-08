@@ -123,9 +123,12 @@ test('with no key, each Run button is described by its cost and the no-key reaso
   const run = page.getByTestId('run-x1');
   await expect(run).toHaveText('Run ×1');
   expect((await run.getAttribute('aria-describedby'))!.split(' ')).toContain(id);
-  // One primary on the launcher: with no key it is Add key, since every Run button is disabled.
-  await expect(page.getByTestId('launcher').locator('button.bg-primary')).toHaveCount(0);
+  // One primary that works: with no key it is Add key. Run ×1 keeps the primary style
+  // (eval-p25u-2 S7) but is disabled, and a disabled control has the one disabled look.
+  await expect(page.getByTestId('launcher').locator('button.bg-primary')).toHaveCount(1);
+  await expect(page.getByTestId('launcher').locator('button.bg-primary')).toBeDisabled();
   await expect(reason.locator('button.bg-primary')).toHaveText('Add key');
+  await expect(reason.locator('button.bg-primary')).toBeEnabled();
 });
 
 test.describe('phone shell at 390', () => {

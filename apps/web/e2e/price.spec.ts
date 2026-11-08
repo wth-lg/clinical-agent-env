@@ -13,12 +13,12 @@ const browse = browseFrom(trialBase);
 test('every Run ×n amount leads with the typical cost and reads "holds up to $X"', async ({ page }) => {
   await browse(page, './?view=live&task=renal-dose-review');
   // pilot-pass holds one renal-dose-review trial at $0.88 agent cost and $0 judge cost.
-  for (const n of RUN_SIZES) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(/^about \$0\.88 a trial · holds up to \$\d+\.\d{2}$/);
+  for (const n of RUN_SIZES) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(/^about \$0\.88 a trial \(pilot median\) · holds up to \$\d+\.\d{2}$/);
 });
 
 test('the line under the buttons says where the typical cost comes from', async ({ page }) => {
   await browse(page, './?view=live&task=renal-dose-review');
-  await expect(page.getByTestId('typical-cost')).toHaveText('“About $0.88 a trial” is the median of 1 trial of this task in pilot-pass. A batch holds its full amount until its trials end.');
+  await expect(page.getByTestId('typical-cost')).toHaveText('“About $0.88 a trial (pilot median)” is the median of 1 trial of this task in pilot-pass. A batch holds its full amount until its trials end.');
 });
 
 test('with no pilot trial of the task, only the hold shows, and a line says there is no typical cost yet', async ({ page }) => {

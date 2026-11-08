@@ -21,7 +21,7 @@ import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/cor
 import { FAILURE_KINDS, type Summary } from '../../../../packages/core/summary.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { formatDuration, medianDuration } from '../data/duration.ts';
-import { checkTextOf, pilotRates, useResults, type RunData } from '../data/results.ts';
+import { checkTextOf, dataUrl, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { ResultsError } from '../data/results-error.tsx';
 import { useTaskList } from '../data/tasks.ts';
 import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
@@ -31,7 +31,8 @@ import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, noPassCount, runBlock, shownFault } from '../data/failures.ts';
-import { FaultBox, RunBlocked } from '../findings/why.tsx';
+import { FaultBox, GraderFixNote, RunBlocked, WRITEUP_ATTRIBUTION } from '../findings/why.tsx';
+import { regradeFigures } from '../findings/counts.ts';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { LatestPilotRows, PilotRateRows } from '../findings/pilot.tsx';
 import { latestHolding } from '../data/pilot-order.ts';
@@ -59,7 +60,7 @@ const RUBRIC_TITLE = `The mean rubric score over the task's valid trials, 0 to 1
 export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
-  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
+  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} superseded={results.superseded} writeup={results.files.has('writeup.html')} headingRef={headingRef} />;
   // A load that failed gets the plain notice with Retry (data/results-error.tsx); a summary that
   // is not one is said as it is.
   const failed = results.kind === 'error' ? results.message : null;
@@ -84,7 +85,7 @@ function useTitles(): ReadonlyMap<string, string> | null {
   return list === null ? null : new Map(list.map((t) => [t.id, taskTitle(t)]));
 }
 
-function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+function OfficialOverview({ run, superseded, writeup, headingRef }: { run: RunData; superseded: readonly RunData[]; writeup: boolean; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const { summary, trials, runId } = run;
   const [lo, hi] = FINAL_PASS_BAND;
   const t = summary!.totals;
@@ -162,6 +163,10 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
         {/* The fault box (findings/why.tsx, S5's) carries the audit's count in the one
             confirmation phrase, "audit agrees: n of N" (P25u J8a, copy rule C5); this card only places it. */}
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
+        {/* S10: beside a grader count of 0, the grader faults fixed before the final grade. */}
+        {Object.values(summary!.tasks).every((x) => x.fault_counts.label !== null && x.fault_counts.label.grader === 0) && (
+          <GraderFixNote {...regradeFigures(run, superseded)} href={writeup ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
+        )}
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
       </Card>
     </Page>

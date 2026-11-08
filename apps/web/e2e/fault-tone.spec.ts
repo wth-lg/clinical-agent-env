@@ -11,6 +11,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 import { browse } from './browse.ts';
 import { explain, RUN_ID, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { exactReason } from '../src/trial/lead.ts';
 
 async function openTrial(page: Page, name: string) {
   await browse(page, new URL(`./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
@@ -85,7 +86,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.envLimit}"]`);
     await expect(row.getByTestId('label')).toHaveText('environment');
     await expect(row.getByTestId('fault-note')).toHaveText(`Not counted; it is not run again: ${NOT_RERUN_REASON.ENV_LIMIT}.`);
-    await expect(row.getByTestId('reason')).toHaveText(e.reason);
+    await expect(row.getByTestId('reason')).toHaveText(exactReason(e.reason));
     await expect(row).not.toContainText('it is run again');
   });
 

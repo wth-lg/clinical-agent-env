@@ -47,3 +47,29 @@ export function confirmation(es: readonly Explanation[]): Confirmation {
 export function whyFailParts(fc: Pick<FaultCounts, 'failures' | 'infra_reruns'>): { faultBox: boolean; reruns: boolean } {
   return { faultBox: fc.failures > 0, reruns: fc.failures === 0 && fc.infra_reruns > 0 };
 }
+
+// The trials a grader fix turned from FAIL to PASS by an offline regrade (eval-p25u-2 S10): the
+// records whose recorded outcome is FAIL and whose last regrade entry passes, over the runs given,
+// with the graders of those regrades and the trials' names. The callers count the official run
+// apart from its superseded versions, which are not counted (verifier-phase-P25u-decisive-1
+// claim 2); the note beside "0 grader" reads both, so a run with no such regrade shows no note.
+type Regraded = { name?: string; record: { outcome: string; regrades?: ReadonlyArray<{ outcome?: unknown; grader_version?: unknown }> } };
+export interface GraderFixes { trials: number; graders: string[]; names: string[] }
+export function graderFixes(runs: ReadonlyArray<{ trials: readonly Regraded[] }>): GraderFixes {
+  const fixed = runs.flatMap((r) => r.trials.map((t) => ({ name: t.name, outcome: t.record.outcome, last: t.record.regrades?.at(-1) }))).filter((t) => t.outcome === 'FAIL' && t.last?.outcome === 'PASS');
+  return {
+    trials: fixed.length,
+    graders: [...new Set(fixed.map((t) => String(t.last!.grader_version ?? 'unknown')))].sort(),
+    names: fixed.flatMap((t) => (t.name === undefined ? [] : [t.name])).sort(),
+  };
+}
+
+// The note's two figures: the official run's regraded trials (counted), and each superseded
+// version of one of its tasks, labelled "<task> <version>", with its own (not counted).
+type Run = { runId: string; superseded: { of: string; task: string; version: string } | null; trials: readonly Regraded[] };
+export function regradeFigures(run: Run, superseded: readonly Run[]): { counted: GraderFixes; superseded: Array<GraderFixes & { label: string }> } {
+  return {
+    counted: graderFixes([run]),
+    superseded: superseded.flatMap((r) => (r.superseded?.of === run.runId ? [{ label: `${r.superseded.task} ${r.superseded.version}`, ...graderFixes([r]) }] : [])),
+  };
+}

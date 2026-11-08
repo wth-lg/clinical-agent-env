@@ -154,11 +154,14 @@ export const onFrozenWorld = (t: Pick<Trial, 'task' | 'record'>, frozen: Freezes
 
 async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[], frozen: Freezes): Promise<Grading> {
   const graders = [...new Set(trials.map((t) => t.record.grader_version ?? 'unknown'))].sort();
-  const frozenWorld = trials.filter((t) => onFrozenWorld(t, frozen)).length;
+  const onFrozen = trials.filter((t) => onFrozenWorld(t, frozen));
+  const frozenWorld = onFrozen.length;
+  const frozenTasks = [...new Set(onFrozen.map((t) => t.task))].sort();
   const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash && !onFrozenWorld(t, frozen)).length;
+  const counts = { graders, olderWorld, frozenWorld, trials: trials.length, frozenTasks };
   const prefix = `${runDir}/regrade/trials/`;
   const regraded = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
-  if (regraded.length === 0) return { graders, olderWorld, frozenWorld, regrade: null };
+  if (regraded.length === 0) return { ...counts, regrade: null };
   const byFile = new Map(trials.map((t) => [t.file.slice(`${runDir}/trials/`.length), t]));
   const rows = await Promise.all(regraded.map(async (f) => {
     try {
@@ -171,9 +174,7 @@ async function gradingOf(files: readonly string[], runDir: string, trials: Trial
   }));
   const ok = rows.filter((x) => x !== null);
   return {
-    graders,
-    olderWorld,
-    frozenWorld,
+    ...counts,
     regrade: {
       graders: [...new Set(ok.map((x) => String(x.g.grader_version ?? 'unknown')))].sort(),
       records: ok.length,
@@ -182,17 +183,8 @@ async function gradingOf(files: readonly string[], runDir: string, trials: Trial
   };
 }
 
-// One plain line on how a run was graded, when it is not plainly today's grader on today's world:
-// "Graded with grader 3 on an older world; a regrade with grader 4 gives the same outcomes."
-// Trials on their task's frozen world are said so, apart from an older world (R37).
-export function gradingLine(g: Grading): string | null {
-  if (g.olderWorld === 0 && g.frozenWorld === 0 && g.regrade === null) return null;
-  const worlds = [...(g.olderWorld > 0 ? ['an older world than today\'s'] : []), ...(g.frozenWorld > 0 ? [`the frozen world of ${g.frozenWorld === 1 ? 'its task' : 'their tasks'} (${g.frozenWorld} trial${g.frozenWorld === 1 ? '' : 's'}, results/tasks-final.json)`] : [])];
-  const graded = `Graded with grader ${g.graders.join(' and ')}${worlds.length > 0 ? ` on ${worlds.join(' and ')}` : ''}`;
-  if (g.regrade === null) return `${graded}.`;
-  const changed = g.regrade.changed;
-  return `${graded}; a regrade with grader ${g.regrade.graders.join(' and ')} gives ${changed.length === 0 ? 'the same outcomes' : `a different outcome for ${changed.join(', ')}`}.`;
-}
+// The run's grading line (grading-line.ts), re-exported for the views.
+export { gradingLine } from './grading-line.ts';
 
 // A pilot run's pass rate per task over its valid trials, with the Wilson 95% interval, as
 // summary.ts computes it for an official run; never counted in the results.
