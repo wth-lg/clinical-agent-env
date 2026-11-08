@@ -10,7 +10,23 @@ import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { currentGrade } from '../../../packages/core/summary.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
-import { decisiveStepOf } from '../src/trial/decisive.ts';
+import { decisiveOf, decisiveStepOf } from '../src/trial/decisive.ts';
+
+// Claim audit: the page says where the step comes from, since one sentence covered a failing
+// item's write (crc-care-gap/5) and the grader's finish call (contrast-ct-prep/0).
+describe('decisiveOf names the source of the step', () => {
+  it('crc-care-gap/5: the failing item\'s write; contrast-ct-prep/0: the finish call', () => {
+    const crc = load('crc-care-gap/5');
+    expect(decisiveOf(crc.record, crc.check, crc.graderStep, crc.steps)).toEqual({ step: 82, source: 'item' });
+    const ct = load('contrast-ct-prep/0');
+    expect(ct.check).toBe('event_seen');
+    expect(decisiveOf(ct.record, ct.check, ct.graderStep, ct.steps)).toEqual({ step: 104, source: 'finish' });
+    expect(ct.steps.find((s) => s.n === 104)?.tool).toBe('finish');
+    // Before the trajectory loads the tool is not known: the grader's step, named as the grader's.
+    expect(decisiveOf(ct.record, ct.check, ct.graderStep, null)).toEqual({ step: 104, source: 'grader' });
+    expect(decisiveOf(ct.record, ct.check, null, ct.steps)).toBeNull();
+  });
+});
 
 const FINAL = join(repoRoot, 'results/runs/final-1');
 const load = (name: string) => {

@@ -116,7 +116,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
           Replay
         </button>
         <p data-testid="replay-note" className="text-xs text-ink-muted">
-          {canReplay ? 'Runs the tool calls again on a fresh copy of the world, in this tab. It needs no key and makes no API call.' : 'Replay needs the trajectory, which is not published for this trial.'}
+          {canReplay ? 'Runs the tool calls again on a fresh copy of today\'s build, in this tab. It needs no key and makes no API call.' : 'Replay needs the trajectory, which is not published for this trial.'}
           {canReplay && otherWorld && ' This trial started from another world, so the replayed final hash is expected to differ from the record.'}
         </p>
         {run.state === 'running' && <p className="text-ink-muted">Replaying…</p>}

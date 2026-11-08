@@ -77,7 +77,8 @@ export const gradeButtonLabel = (outcome: string): string => (outcome === 'PASS'
 // A5: the score line keeps the Score card's title (trace row N10) and says the score is out of 1;
 // the first time on a screen (the card) it says what decides pass, since a FAIL beside a 1.00
 // read as a contradiction.
-export const RUBRIC_GLOSS = 'Extra credit only; the pass or fail comes from the gate checks.';
+// Not "extra credit": a penalty item lowers the score (claim audit).
+export const RUBRIC_GLOSS = 'Penalties can lower it; the pass or fail comes from the gate checks.';
 export const scoreLine = (score: string, gloss = true): string => `${SCORE_TITLE} ${score} of 1${gloss ? `. ${RUBRIC_GLOSS}` : ''}`;
 
 // A7: why the sizes in `over` (ascending) are disabled: the smallest names the whole-dollar cap

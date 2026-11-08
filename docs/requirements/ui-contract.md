@@ -358,16 +358,21 @@ launcher (P15) shows the Run lines.
   by an offline regrade with no model call. The note counts the official run's regraded trials
   apart from a superseded version's, which are not counted: in final-1, 1 counted trial
   (message-queue/10) moved from FAIL to PASS, and 12 trials of the superseded crc-care-gap v1. The
-  counts and trial names come from the records (apps/web/src/findings/counts.ts regradeFigures)
-  (eval-p25u-2 S10; verifier-phase-P25u-decisive-1 claim 2).
+  counts, the trial names and the regrade's grader version come from the records
+  (apps/web/src/findings/counts.ts regradeFigures) (eval-p25u-2 S10; verifier-phase-P25u-decisive-1
+  claim 2). The note names the regrade's grader version, not a version the fix went into, because
+  R48 changed message-queue's grader with no version bump. It says the superseded version was
+  replaced by a changed version of the task, not by a rerun (R42). Reason: claim audit
+  (verifier-1 addendum 2, must-fix 5 and a should-fix). The requirement is unchanged.
 - The Score card on a trial's Grading tab and on a graded live trial is titled
   `Rubric score (does not decide pass)`. The UI polish gave it that title
   (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in
   the accessibility text. The empty states show the title with no value, which the pattern does
   not match. On the Live trial view the graded card shows the same title and value on one line
   (builder-330, apps/web/src/live/grade.ts), as `Rubric score (does not decide pass) <s> of 1.`
-  followed by `Extra credit only; the pass or fail comes from the gate checks.` (P25u A5: a FAIL
-  beside a 1.00 read as a contradiction; a Your runs row shows the short form, up to `of 1`), and
+  followed by `Penalties can lower it; the pass or fail comes from the gate checks.` (P25u A5: a FAIL
+  beside a 1.00 read as a contradiction; a Your runs row shows the short form, up to `of 1`; the
+  claim audit replaced "Extra credit only", which a penalty item makes false), and
   the full grade is on the trial page of `run=session`, one click away through the button
   `See why it failed` (non-pass) or `See the grade` (PASS).
 

@@ -26,7 +26,7 @@ The novelty claims are narrow. A policy served as a tool is not new: CliniCARE-B
 
 <!-- docs-check:end-allow-numbers -->
 
-PhysicianBench's tasks are about one and a half times longer than this environment's by tool calls. Opus 5.5 at max effort scores well above the band on them. That anchor says why short, trap-dense tasks can still land above the band at effort high, and why change during the trial was needed.
+PhysicianBench's tasks take between a quarter and a third as many tool calls as this environment's final-run trials. Opus 5.5 at max effort scores near the upper edge of the band on them. That anchor says why trap-dense tasks can still land above the band at effort high, and why change during the trial was needed.
 
 ## Public agent-environment repositories
 
@@ -48,7 +48,7 @@ What this environment can claim, against these six systems and as of 2026-11-05:
 - Among the clinical systems compared, it is the only one that delivers chart arrivals between the agent's writes. It grades whether the agent noticed and amended. tau2-bench has a dynamic user, but no unannounced arrivals.
 - Among the clinical systems, it is the only one where every task ships mutants that must fail and alternatives that must pass. The matrix checks them before any trial.
 - It runs without a container and without a live FHIR server. Every clinical comparator depends on a HAPI image or containers, and those HAPI images are tagged latest.
-- Its judged rubric items need a verbatim quote and are cached for offline regrading, and pass or fail is decided by code gates alone. CHI-Bench's pass depends on its judge.
+- Its judged rubric items need a quote that the grader finds in the text, and their answers are cached for offline regrading. Code gates alone decide pass or fail. CHI-Bench's pass depends on its judge.
 - Its scope is primary care and pharmacy operations under written clinic policies, which differs from the scope of MedAgentBench, CHI-Bench and FHIR-AgentEval.
 
 What it does not claim:

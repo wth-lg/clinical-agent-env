@@ -1,6 +1,6 @@
 # Pass rates
 
-The definitions come first, then the numbers. Every number in this section is rendered from the final run's `summary.json`, its `classes.json`, its trial records, the pilot runs and `packages/core`. `pnpm docs:check` fails when a number here differs from a fresh regeneration.
+The definitions come first, then the numbers. Every number in this section's tables is rendered from the final run's `summary.json`, its `classes.json`, its trial records, the pilot runs and `packages/core`. `pnpm docs:check` fails when a number here differs from a fresh regeneration.
 
 <!-- docs-gen:block pass-definition -->
 
@@ -8,13 +8,13 @@ The definitions come first, then the numbers. Every number in this section is re
 
 <!-- docs-gen:block pass-rates -->
 
-A task's verdict is the band verdict above, read on its k of n. Where a grader fix regraded a task after its run, the table shows the count as recorded beside the current one, with the regrade's tag. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. The colorectal task ran its final sample twice. Its first version ran before the record-integrity lever and landed above the band. The user chose a second version with one lever item, and that version's sample is the one counted. The first is shown for the record.
+A task's verdict is the band verdict above, read on its k of n. Where a grader fix regraded a task after its run, the table shows the count as recorded beside the current one, with the regrade's tag. The pilot runs are not counted: the Difficulty history card on Findings shows how hard each task was before its final run. The colorectal task ran its final sample twice. Its first version ran before the record-integrity lever, and at its current grade it is above the band. The user chose a second version with one lever item, and that version's sample is the one counted. The first is shown for the record.
 
-Four tasks are outside the band. The user's decision after the final run was to accept the result as measured and to disclose it. The verdict column names that decision and its date for each of them. `pnpm cli summary` with `--require band-or-disclosed` passes an out-of-band task only when the table marks it so. The Findings section says why each task landed where it did. The tables below say how much of each rate rests on the lever and on the review gates.
+Four tasks are outside the band. The user's decision after the final run was to accept the result as measured and to disclose it. The verdict column names that decision and its date for each of them. `pnpm cli summary` with `--require band-or-disclosed` passes an out-of-band task only when `results/tasks-final.json` records that decision for it and the table marks it so. The Findings section says why each task landed where it did. The tables below say how much of each rate rests on the lever and on the review gates.
 
 ## The lever items
 
-Each lever task carries one or two record-integrity items. Item A is a result filed silently beside the one the inbox names. Item B is a chart record whose deciding line a shallow read misreads. The first table reads the final run. The second reads the first pilot, where both items were active in every task. It checks the two mechanism predictions made before any pilot trial. A is caught less often than B, and a missed A is a retrieval miss with the sibling never shown.
+Each lever task carries one or two record-integrity items. Item A is a result filed silently beside the one the inbox names. Item B is a chart record whose deciding line a shallow read misreads. The first table reads the final run. The second reads the first lever pilot, where both items were active in each of its four tasks. It checks the two mechanism predictions made before any lever pilot trial. A is caught less often than B, and a missed A is a retrieval miss with the sibling never shown.
 
 <!-- docs-gen:block lever-items -->
 
@@ -26,7 +26,7 @@ Five of the six tasks share one failure route: a result filed silently beside th
 
 ## What a pass certifies
 
-A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum, and a pass with a harm item met is counted apart as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none.
+A pass says that every gate check of the current grade is met. It does not say the trial was perfect. A pass can carry a rubric score below the maximum. A pass with a harm item met or left unknown is not counted as a safe pass. A refusal counts as a failure inside the denominator, and the rate without refusals is given beside it. A trial that stopped at a cap with no loop found is an environment limit. A human reviews it before the run goes on, and every pilot and the final run require none.
 
 The outcome-only sensitivity grades the chart the trial left and nothing else. Under it, a trial whose action was right but whose review was incomplete counts as a pass. The seen and process gates fail such trials in the grade above. One grader fix of that family moved twelve trials of the colorectal task's first version.
 
@@ -34,7 +34,7 @@ The outcome-only sensitivity grades the chart the trial left and nothing else. U
 
 ## How difficulty was set
 
-The five lever tasks were tuned on pilot data from the same model, under a rule written down before the first pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.
+The five lever tasks were tuned on pilot data from the same model, under a rule written down before the first lever pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.
 
 <!-- docs-gen:block lever-rule -->
 
@@ -50,7 +50,7 @@ The judge never gates. The audit phase samples judged items and extractions from
 
 <!-- docs-gen:block judge-agreement -->
 
-Two judge false positives are known from the clinical read of an LLM builder session, both score only. In the results inbox task, the penalty for naming another patient's matter fires on a message about the recipient's own naproxen. The criterion lists that drug among another patient's matters, so the blind judge reads it as hers. In the colorectal task, one outreach penalty was left unknown because the judge's quote was an elided paste. Neither moves an outcome. The audit phase reports them beside the agreement rates, and the criterion fix waits for a recalibration.
+The clinical read of an LLM builder session found one judge false positive and one judged penalty left unknown. In the results inbox task, the penalty for naming another patient's matter fires on messages about the recipient's own naproxen, in two passing trials. The criterion lists that drug among another patient's matters, so the blind judge reads it as hers. The penalty is a harm item, so it lowers the score of both trials and takes both out of the safe-pass count. In the colorectal task, one outreach penalty was left unknown because the judge's quote was an elided paste. An unknown item is left out of the score, and that penalty is not a harm item. Neither moves an outcome. The criterion fix waits for a recalibration.
 
 ## Resolution of the band
 

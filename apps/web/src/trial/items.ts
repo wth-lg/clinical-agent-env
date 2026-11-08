@@ -13,6 +13,9 @@ export interface ItemLabel {
   item: string;
   gate: string;
   auto: string;
+  // The step each of the item's deciding records was first returned to the model (the record's
+  // attribution.items[].exposure), when the grade stored it.
+  exposure?: ReadonlyArray<{ id: string; first_exposed_step: number | null }>;
 }
 
 export interface FailedItem {
@@ -45,12 +48,34 @@ export const itemsMetText = (items: readonly ItemRow[]): string => {
   return `${real.filter((i) => i.met).length} of ${real.length} items met`;
 };
 
+const and = (xs: readonly string[]): string => (xs.length < 2 ? xs.join('') : xs.length === 2 ? `${xs[0]} and ${xs[1]}` : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`);
+
+// The grader's event_seen sentence (packages/grader/events.ts) says an event "was never read"
+// when the seen rule failed, though a tool result may have shown some of its records. The trial
+// page's Where block lists each record shown and never shown, so the item line says the same from
+// the same exposure (claim audit, verifier-1 addendum 2 must-fix 4): the records shown with their
+// first step, then the records never shown. With no exposure, or when every record was shown
+// (the seen rule failed on what the results showed), the grader's words stay.
+const NEVER_READ = /^(event \S+ arrived at step \d+) and was never read before finish$/;
+export function itemWhy(why: string, exposure: ItemLabel['exposure'] | undefined): string {
+  const m = NEVER_READ.exec(why);
+  if (m === null || exposure === undefined || exposure.length === 0) return why;
+  const never = exposure.filter((x) => x.first_exposed_step === null).map((x) => x.id);
+  if (never.length === 0) return why;
+  const shown = exposure.filter((x) => x.first_exposed_step !== null).map((x) => `${x.id} was first shown to the model at step ${x.first_exposed_step}`);
+  const notShown = `${and(never)} ${never.length === 1 ? 'was' : 'were'} never shown to the model before finish`;
+  return `${m[1]}; ${shown.length === 0 ? notShown : `${and(shown)}, and ${notShown}`}`;
+}
+
 export function failedItems(gate: string, items: readonly ItemRow[], labels: readonly ItemLabel[] | null): FailedItem[] {
-  return items.filter((i) => !i.met).map((i) => ({
-    item: i.item,
-    name: i.item === OUTSIDE ? 'outside the list' : i.item,
-    why: i.why ?? 'not met',
-    ids: i.ids ?? [],
-    label: labels?.find((l) => l.item === i.item && l.gate === gate)?.auto ?? null,
-  }));
+  return items.filter((i) => !i.met).map((i) => {
+    const l = labels?.find((x) => x.item === i.item && x.gate === gate);
+    return {
+      item: i.item,
+      name: i.item === OUTSIDE ? 'outside the list' : i.item,
+      why: itemWhy(i.why ?? 'not met', l?.exposure),
+      ids: i.ids ?? [],
+      label: l?.auto ?? null,
+    };
+  });
 }

@@ -10,6 +10,10 @@ export interface RubricRow {
 // The Score card's title, on the Grading tab and on a graded live trial's card: the rubric score
 // never decides a pass (docs/requirements/ui-contract.md, "Strings on screen").
 export const SCORE_TITLE = 'Rubric score (does not decide pass)';
+// The one gloss beside a rubric score (copy rule C2). Not "extra credit": a penalty item has
+// negative points, so the score can fall (claim audit; tasks/results-inbox/tests/rubric.ts
+// reply_names_other_patient at -8).
+export const RUBRIC_NOTE = 'penalties can lower it; does not decide pass';
 // The Score card's value for a grade (summary.ts currentGrade): the score to two decimals, or null
 // when the grade has no checks (the trial was not graded) or no score. The Grading tab, the graded
 // live card and each Your runs row show this one text.

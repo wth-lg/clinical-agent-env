@@ -16,7 +16,7 @@ import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, markOf, markProps, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemLabelsOf, itemsMetText, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
-import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, scoreText, totalText, type RubricMark } from './rubric.ts';
+import { metText, RUBRIC_NOTE, rubricGood, rubricMark, rubricMetText, rubricTotal, SCORE_TITLE, scoreNote, scoreText, totalText, type RubricMark } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -76,7 +76,7 @@ function MetCell({ c }: { c: CheckRow }) {
 
 // A stat tile. mark: the outcome's mark before the value (the Gate checks tile, V9), so the tile
 // that decides pass reads in the verdict's own style. gloss: a second small line under the note
-// ("extra credit; does not decide pass" on the rubric tile, copy rule C2).
+// (rubric.ts RUBRIC_NOTE on the rubric tile, copy rule C2).
 function Metric({ title, value, testId, note, mark, gloss, className = '' }: { title: string; value: string | null; testId: string; note?: string | undefined; mark?: { className: string; style?: CSSProperties } | undefined; gloss?: string | undefined; className?: string }) {
   return (
     <div className={`min-w-0 rounded-sm border border-line bg-surface px-3 py-2 ${className}`}>
@@ -153,7 +153,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       {/* The gate result first, in the verdict's mark, because it decides pass; the rubric score
-          last, as extra credit (P25u V9, copy rule C2). */}
+          last, since it never decides pass (P25u V9, copy rule C2). */}
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         {gates.length > 0 && (
           <Metric
@@ -168,7 +168,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         <Metric title="Cost" value={usd(r.cost_usd + (r.judge_cost_usd ?? 0))} testId="metric-cost" note={`agent ${usd(r.cost_usd)}, judge ${usd(r.judge_cost_usd ?? 0)}`} />
         <Metric title="Tokens" value={r.usage ? `${num(r.usage.input + r.usage.cache_read + r.usage.cache_write)} in, ${num(r.usage.output)} out` : null} testId="metric-tokens" note={r.usage ? `${num(r.usage.cache_read)} read from the cache` : undefined} />
         <Metric title="Duration" value={seconds === null ? null : formatDuration(seconds)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
-        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} gloss={score === null ? undefined : 'extra credit; does not decide pass'} />
+        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} gloss={score === null ? undefined : RUBRIC_NOTE} />
       </div>
       {r.error && (
         <div data-testid="grading-error" role="alert" className="rounded-sm border border-danger bg-surface p-3">
@@ -237,7 +237,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         </Section>
       )}
       {rubric.length > 0 && (
-        <Section title="Rubric" lead="Rubric items add to the score; they never decide a pass.">
+        <Section title="Rubric" lead="Rubric items add points, and penalty items subtract them; they never decide a pass.">
           <table className={`${CARD_TABLE} sm:table-fixed sm:break-words`}>
             <thead className="text-xs text-ink-muted">
               <tr>

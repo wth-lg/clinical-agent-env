@@ -93,7 +93,7 @@ describe('A5: the grade button and the score line', () => {
   });
 
   it('keeps the Score card title, says the score is out of 1, and that the gate checks decide pass', () => {
-    expect(scoreLine('1.00')).toBe('Rubric score (does not decide pass) 1.00 of 1. Extra credit only; the pass or fail comes from the gate checks.');
+    expect(scoreLine('1.00')).toBe('Rubric score (does not decide pass) 1.00 of 1. Penalties can lower it; the pass or fail comes from the gate checks.');
     expect(scoreLine('0.80', false)).toBe('Rubric score (does not decide pass) 0.80 of 1');
   });
 });

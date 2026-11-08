@@ -12,13 +12,25 @@ import type { Step } from '../../../../packages/grader/check.ts';
 
 interface ItemLike { met?: unknown; at?: unknown; ids?: readonly string[] }
 
-export function decisiveStepOf(record: Parameters<typeof currentGrade>[0], check: string | null, graderStep: number | null, steps: readonly Step[] | null): number | null {
-  if (graderStep === null || check === null) return graderStep;
+// Where the step comes from, so the page says what it is (claim audit: the step came from the
+// failing item on crc-care-gap/5 and from the grader's finish on contrast-ct-prep/0, under one
+// sentence): a failing item's write ('item'), the grader's step when it is the trial's finish call
+// ('finish'), else the grader's step, its last write to a record of the check ('grader').
+export type DecisiveSource = 'item' | 'finish' | 'grader';
+
+export function decisiveOf(record: Parameters<typeof currentGrade>[0], check: string | null, graderStep: number | null, steps: readonly Step[] | null): { step: number; source: DecisiveSource } | null {
+  if (graderStep === null) return null;
+  const grader = { step: graderStep, source: steps?.find((s) => s.n === graderStep)?.tool === 'finish' ? 'finish' as const : 'grader' as const };
+  if (check === null) return grader;
   const gate = (currentGrade(record).checks ?? []).find((c) => c.id === check) as { items?: readonly ItemLike[] } | undefined;
   const at = (gate?.items ?? []).filter((i) => i.met === false).flatMap((i) => {
     if (typeof i.at === 'number') return [i.at];
     const w = steps === null || i.ids === undefined ? null : lastWrite(steps, i.ids);
     return w === null ? [] : [w];
   });
-  return at.length === 0 ? graderStep : Math.min(...at);
+  return at.length === 0 ? grader : { step: Math.min(...at), source: 'item' };
+}
+
+export function decisiveStepOf(record: Parameters<typeof currentGrade>[0], check: string | null, graderStep: number | null, steps: readonly Step[] | null): number | null {
+  return decisiveOf(record, check, graderStep, steps)?.step ?? null;
 }

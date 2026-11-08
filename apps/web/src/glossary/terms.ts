@@ -17,16 +17,19 @@ const BAND = `${FINAL_PASS_BAND[0] * 100}% to ${FINAL_PASS_BAND[1] * 100}%`;
 
 export const PLAIN_TERMS: readonly PlainTerm[] = [
   { id: 'term-trial', term: 'trial', text: `One attempt by the model at one task, from a fresh copy of the world to its finish: the official run has ${N} trials per task.` },
-  { id: 'term-gate-check', term: 'gate check', text: 'A yes-or-no check on what the trial left in the record, and a trial passes only when every gate check is met.' },
-  { id: 'term-rubric-item', term: 'rubric item', text: 'A point of care quality a judge scores on the trial, counted as extra credit: the rubric score does not decide pass.' },
+  { id: 'term-gate-check', term: 'gate check', text: 'A yes-or-no check on what the trial read and what it left in the record, and a trial passes only when every gate check is met.' },
+  // Claim audit: rubric items are code, hybrid and judged, and a penalty item subtracts points.
+  { id: 'term-rubric-item', term: 'rubric item', text: 'A scored point of care quality, checked by code or by a judge: most items add points, a penalty item subtracts them, and the rubric score never decides pass.' },
   { id: 'term-counted', term: 'counted trial', text: 'A trial that ended in a pass, a fail, a refusal or a stop at a limit: a trial broken by the infrastructure, the environment or the grader is not counted.' },
   { id: 'term-pass-rate', term: 'pass rate', text: 'The passes out of a task\'s counted trials, shown as passes of trials beside its interval and its verdict.' },
   { id: 'term-wilson', term: 'Wilson 95% interval', text: `The range of true pass rates that the counted trials make plausible, and it is wide because ${N} trials is a small sample.` },
   { id: 'term-band', term: 'band', text: `The target range for a task's pass rate, ${BAND}: a task was tuned until the model failed often enough to study and passed often enough to show the task can be done.` },
   { id: 'term-band-verdict', term: 'band verdict', text: 'Where a task\'s pass rate landed against the band: In band, Below band, Above band, or Saturated when the whole interval sits above it.' },
   { id: 'term-pass-k', term: 'pass^k', text: 'The chance that k trials of a task, drawn at random from its counted trials, all pass: pass^3 and pass^5 say how reliable a pass is, not only how often.' },
-  { id: 'term-safe-pass', term: 'safe PASS', text: 'A passing trial in which no harm item was met, counted over the task\'s counted trials.' },
-  { id: 'term-harm-item', term: 'harm item', text: 'A rubric item that marks something harmful the model did, such as an unsafe order, so a pass that meets one is a PASS with harm.' },
+  // Claim audit: packages/core/summary.ts isHarmItem counts a met or unknown item of HARM_POINTS
+  // (-5) or fewer points.
+  { id: 'term-safe-pass', term: 'safe PASS', text: 'A passing trial in which no harm item was met or left unknown by the judge, counted over the task\'s counted trials.' },
+  { id: 'term-harm-item', term: 'harm item', text: 'A penalty rubric item of -5 points or fewer, such as a message that names another patient\'s matter, so a pass that meets one is not a safe PASS.' },
   { id: 'term-kind', term: 'kind of failure', text: 'The nearest cause of a model failure, such as retrieval (a needed record was never read) or reasoning (every record was read and the decision was still wrong).' },
   { id: 'term-fault', term: 'fault', text: 'Whose failure a non-pass trial is: the model\'s, the environment\'s, the grader\'s or the infrastructure\'s, and only the model\'s fault counts against the model.' },
   // M5 names who audited (eval-p25u-1 defect 1): the published run's audit reads were LLM

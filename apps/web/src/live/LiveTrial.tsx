@@ -276,12 +276,16 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         </div>
         {typical !== null ? (
           <p data-testid="typical-cost" className="mt-2 text-ink-muted">
-            “About {usd(typical.usd)} a trial ({TYPICAL_BASIS})” is the median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}. {HOLD_NOTE}
+            “About {usd(typical.usd)} a trial ({TYPICAL_BASIS})” is the median agent and judge cost of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}. {HOLD_NOTE}
           </p>
         ) : results?.kind === 'error' ? (
           // The typical cost and the duration come from the published results; a load that
           // failed is said, not shown as "no pilot" (verifier P25u-final-copy-1 claim 4).
           <p data-testid="results-failed" className="mt-2 text-ink-muted">The published results did not load, so the typical cost and the duration of a trial are missing here. <button type="button" className={`${LINK} text-ink`} onClick={reloadResults}>Retry</button> {HOLD_NOTE}</p>
+        ) : results === null ? (
+          // Still loading: "no pilot" would be a false fact for a task that pilots ran (claim
+          // audit, verifier-1 addendum 2 must-fix 3).
+          <p data-testid="typical-loading" className="mt-2 text-ink-muted">Loading the typical cost from the pilot runs… {HOLD_NOTE}</p>
         ) : (
           <p data-testid="no-typical" className="mt-2 text-ink-muted">No pilot has run this task, so there is no typical cost yet. {HOLD_NOTE}</p>
         )}

@@ -43,7 +43,7 @@ A trial passes when every gate check is met. Rubric items change the score and n
 1. Open the trial's **State diff** tab.
 2. Press **Replay**.
 
-Replay runs the trial's tool calls again on a fresh copy of the world, in the tab. It needs no key and makes no API call. The tab shows the recorded initial hash, the final hash, the replayed final hash and the resources the trial wrote.
+Replay runs the trial's tool calls again on a fresh copy of today's world, in the tab. It needs no key and makes no API call. The tab shows the recorded initial hash, the final hash, the replayed final hash and the resources the trial wrote. A trial that started from an earlier frozen world, such as a contrast CT trial of the final run, does not reproduce on today's world. For such a trial, the tab names the tag and the commit that reproduce it.
 
 ## Browse the hosted site and run a live trial there
 

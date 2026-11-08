@@ -65,16 +65,25 @@ describe('whereSteps', () => {
   const exposure = [{ id: 'Observation/obs-07502', first_exposed_step: 75 }, { id: 'Observation/obs-07501', first_exposed_step: null }];
   const arrivals = [{ step: 52, keys: ['Observation/obs-07501', 'Observation/obs-07502', 'Task/inbox-a0001'] }, { step: 60, keys: ['DocumentReference/doc-02501', 'Task/inbox-a0003'] }];
   it('lists the arrival, the first showing, the record never shown, and the decisive step, in order', () => {
-    expect(whereSteps({ decisiveStep: 104, exposure, arrivals })).toEqual([
+    expect(whereSteps({ decisiveStep: 104, decisiveSource: 'finish', exposure, arrivals })).toEqual([
       { step: 52, kind: 'arrival', text: 'Observation/obs-07501 and Observation/obs-07502 arrived in the queues' },
       { step: 75, kind: 'shown', text: 'Observation/obs-07502 was first shown to the model' },
-      { step: 104, kind: 'decisive', text: 'the step the failed check points at' },
+      { step: 104, kind: 'decisive', text: 'the finish call, since the failed check judged no write' },
       { step: null, kind: 'never', text: 'Observation/obs-07501 was never shown to the model' },
     ]);
   });
   it('is the decisive step alone with no exposure and no arrival, and empty with neither', () => {
-    expect(whereSteps({ decisiveStep: 64, exposure: [], arrivals: [] })).toEqual([{ step: 64, kind: 'decisive', text: 'the step the failed check points at' }]);
+    expect(whereSteps({ decisiveStep: 64, exposure: [], arrivals: [] })).toEqual([{ step: 64, kind: 'decisive', text: 'the last write to a record the failed check names' }]);
+    expect(whereSteps({ decisiveStep: 64, decisiveSource: 'item', exposure: [], arrivals: [] })).toEqual([{ step: 64, kind: 'decisive', text: 'the write the failed check judged' }]);
     expect(whereSteps({ decisiveStep: null, exposure: [], arrivals })).toEqual([]);
+  });
+  // Claim audit (verifier-1 addendum 2 should-fix): renal-dose-review/4's lead named obs-04003 and
+  // enc-04001 of the step-41 arrival while Where said only obs-04004 arrived.
+  it('names every chart record of an arrival that holds a decisive record, not its inbox Task', () => {
+    const renal = [{ step: 41, keys: ['Encounter/enc-04001', 'Observation/obs-04003', 'Observation/obs-04004', 'Task/inbox-a0002'] }];
+    expect(whereSteps({ decisiveStep: null, exposure: [{ id: 'Observation/obs-04004', first_exposed_step: null }], arrivals: renal })[0]).toEqual(
+      { step: 41, kind: 'arrival', text: 'Encounter/enc-04001, Observation/obs-04003, and Observation/obs-04004 arrived in the queues' },
+    );
   });
   it('ignores an arrival that put no decisive record in the queues', () => {
     expect(whereSteps({ decisiveStep: null, exposure: [{ id: 'Observation/obs-01322', first_exposed_step: 80 }], arrivals }).map((w) => w.kind)).toEqual(['shown']);

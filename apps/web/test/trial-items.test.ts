@@ -34,6 +34,33 @@ describe('item lines of a gate check', () => {
   });
 });
 
+// Claim audit (verifier-1 addendum 2, must-fix 4): the grader's "event X arrived at step N and was
+// never read before finish" sat beside a Where block that showed one of the event's records opened
+// (final-1 contrast-ct-prep/0: obs-07502 at step 75, obs-07501 never; results-inbox/4: obs-06209 at
+// 68, obs-06210 never). The item line names each deciding record shown and not shown, from the
+// item's exposure on the current grade's attribution, the data the Where block reads.
+describe('an event item that was never read, against its exposure', () => {
+  const why = 'event t5-mohr-scr arrived at step 52 and was never read before finish';
+  const row = [{ item: 'Patient/pt-0047', met: false, why, ids: [] }];
+  const label = (exposure: Array<{ id: string; first_exposed_step: number | null }>) => [{ item: 'Patient/pt-0047', gate: 'event_seen', auto: 'retrieval', exposure }];
+  it('names the record shown, with its step, and the record never shown', () => {
+    expect(failedItems('event_seen', row, label([{ id: 'Observation/obs-07502', first_exposed_step: 75 }, { id: 'Observation/obs-07501', first_exposed_step: null }]))[0]!.why).toBe(
+      'event t5-mohr-scr arrived at step 52; Observation/obs-07502 was first shown to the model at step 75, and Observation/obs-07501 was never shown to the model before finish',
+    );
+  });
+  it('names every record never shown when none was', () => {
+    expect(failedItems('event_seen', row, label([{ id: 'Observation/obs-04004', first_exposed_step: null }]))[0]!.why).toBe(
+      'event t5-mohr-scr arrived at step 52; Observation/obs-04004 was never shown to the model before finish',
+    );
+  });
+  it('keeps the grader\'s words with no exposure, on another gate, or when every record was shown', () => {
+    expect(failedItems('event_seen', row, null)[0]!.why).toBe(why);
+    expect(failedItems('event_seen', row, [{ item: 'Patient/pt-0047', gate: 'event_seen', auto: 'retrieval' }])[0]!.why).toBe(why);
+    expect(failedItems('amended', row, label([{ id: 'Observation/obs-07501', first_exposed_step: null }]))[0]!.why).toBe(why);
+    expect(failedItems('event_seen', row, label([{ id: 'Observation/obs-07502', first_exposed_step: 75 }]))[0]!.why).toBe(why);
+  });
+});
+
 // verifier-phase-P17i-S0-208-1 S1: the trial page reads its labels from the current grade. A regrade
 // stores the attribution of the grade it computes (cli/regrade.ts), so a FAIL that stays a FAIL
 // under a grader fix shows the new labels, not the replaced grade's and not none (pilot-4a

@@ -64,7 +64,8 @@ describe('resolveSessionTrial', () => {
   it('says why a trial is not here, in the words of the surface', () => {
     const local = resolveSessionTrial(runs, 'ui-9._toy.0', false);
     expect(local).toEqual({ kind: 'missing', message: missingText('ui-9._toy.0', false) });
-    expect(missingText('ui-9._toy.0', false)).toBe('No trial ui-9._toy.0 in this session. The local runner keeps the trials it started only while it runs: after a restart they are gone, and another runner\'s trials are not here.');
+    // Claim audit: the runner writes each record to its runs directory, so a restart drops the list, not the records.
+    expect(missingText('ui-9._toy.0', false)).toBe('No trial ui-9._toy.0 in this session. The local runner lists the trials it started only while it runs: after a restart this page no longer shows them, and another runner\'s trials are not here. Their records stay in the runner\'s runs directory (~/.clinenv/runs by default).');
     expect(missingText('ui-9._toy.0', true)).toBe('No trial ui-9._toy.0 in this session. A trial run on the hosted site is kept only in the browser tab that ran it, and this tab has no record of it.');
     expect(resolveSessionTrial(runs, 'ui-9._toy.0', true)).toEqual({ kind: 'missing', message: missingText('ui-9._toy.0', true) });
   });
