@@ -354,9 +354,12 @@ launcher (P15) shows the Run lines.
   (every screen names the M5 confirmation and its count the same way) is unchanged. The fault
   box's lead said `by the audit`, which made the audit the decider; the record decides the fault
   (MF1) and the audit confirms it (M5), as the trial page says (eval-p25u-2 S11). Beside a grader
-  count of 0, Overview and Runs say that three grader faults were found after the run and fixed
-  by an offline regrade before the final grade, with the regraded trial count from the records
-  (eval-p25u-2 S10).
+  count of 0, Overview and Runs say that three grader faults were found in clinical reads and fixed
+  by an offline regrade with no model call. The note counts the official run's regraded trials
+  apart from a superseded version's, which are not counted: in final-1, 1 counted trial
+  (message-queue/10) moved from FAIL to PASS, and 12 trials of the superseded crc-care-gap v1. The
+  counts and trial names come from the records (apps/web/src/findings/counts.ts regradeFigures)
+  (eval-p25u-2 S10; verifier-phase-P25u-decisive-1 claim 2).
 - The Score card on a trial's Grading tab and on a graded live trial is titled
   `Rubric score (does not decide pass)`. The UI polish gave it that title
   (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in

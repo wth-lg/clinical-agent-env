@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { confirmation, graderFixes, kindSegments, whyFailParts } from '../src/findings/counts.ts';
 
 const fc = (failures: number, taxonomy: Partial<FaultCounts['taxonomy']>): FaultCounts => ({ failures, taxonomy: { ...(Object.fromEntries(FAILURE_KINDS.map((k) => [k, 0])) as FaultCounts['taxonomy']), ...taxonomy }, label: null, infra_reruns: 0 });
@@ -68,19 +68,22 @@ describe('whyFailParts', () => {
 });
 
 // eval-p25u-2 S10: beside "0 grader", the trials an offline regrade moved from FAIL to PASS after
-// a grader fix, over the official run and its superseded versions, read from the records'
-// regrades (results/runs/final-1: message-queue/10 under grader 22, and 12 trials of
-// crc-care-gap v1 under grader 22).
+// a grader fix, read from the records' regrades. The official run is counted apart from its
+// superseded versions (verifier-phase-P25u-decisive-1 claim 2): results/runs/final-1 has
+// message-queue/10 under grader 22 counted, and 12 trials of crc-care-gap v1 under grader 22 in a
+// superseded version that is not counted.
 describe('graderFixes', () => {
-  const rec = (outcome: string, regrades?: Array<{ outcome: string; grader_version: string }>) => ({ record: { outcome, ...(regrades ? { regrades } : {}) } });
-  it('counts the FAIL records whose last regrade passes, with the regrade graders', () => {
-    expect(graderFixes([{ trials: [rec('FAIL', [{ outcome: 'PASS', grader_version: '22' }]), rec('FAIL', [{ outcome: 'FAIL', grader_version: '22' }]), rec('PASS')] }])).toEqual({ trials: 1, graders: ['22'] });
-    expect(graderFixes([{ trials: [rec('FAIL')] }])).toEqual({ trials: 0, graders: [] });
+  const rec = (outcome: string, regrades?: Array<{ outcome: string; grader_version: string }>, name?: string) => ({ ...(name ? { name } : {}), record: { outcome, ...(regrades ? { regrades } : {}) } });
+  it('counts the FAIL records whose last regrade passes, with the regrade graders and trial names', () => {
+    expect(graderFixes([{ trials: [rec('FAIL', [{ outcome: 'PASS', grader_version: '22' }], 'a/1'), rec('FAIL', [{ outcome: 'FAIL', grader_version: '22' }], 'a/2'), rec('PASS', undefined, 'a/3')] }])).toEqual({ trials: 1, graders: ['22'], names: ['a/1'] });
+    expect(graderFixes([{ trials: [rec('FAIL')] }])).toEqual({ trials: 0, graders: [], names: [] });
   });
 
-  it('on final-1 and its superseded crc-care-gap v1: 13 trials, grader 22', () => {
+  it('on final-1: 1 counted trial (message-queue/10), 12 in the superseded crc-care-gap v1, grader 22', () => {
     const dir = new URL('../../../results/runs/final-1/', import.meta.url);
-    const read = (sub: string) => ({ trials: readdirSync(new URL(sub, dir), { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => ({ record: JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as { outcome: string } })) });
-    expect(graderFixes([read('trials/'), read('superseded/crc-care-gap-v1/trials/')])).toEqual({ trials: 13, graders: ['22'] });
+    const read = (sub: string) => ({ trials: readdirSync(new URL(sub, dir), { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => ({ name: `${basename(e.parentPath)}/${e.name.replace(/\.json$/, '')}`, record: JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as { outcome: string } })) });
+    expect(graderFixes([read('trials/')])).toEqual({ trials: 1, graders: ['22'], names: ['message-queue/10'] });
+    const sup = graderFixes([read('superseded/crc-care-gap-v1/trials/')]);
+    expect({ trials: sup.trials, graders: sup.graders }).toEqual({ trials: 12, graders: ['22'] });
   });
 });

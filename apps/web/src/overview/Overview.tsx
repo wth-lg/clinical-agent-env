@@ -32,7 +32,7 @@ import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, GraderFixNote, RunBlocked, WRITEUP_ATTRIBUTION } from '../findings/why.tsx';
-import { graderFixes } from '../findings/counts.ts';
+import { regradeFigures } from '../findings/counts.ts';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { LatestPilotRows, PilotRateRows } from '../findings/pilot.tsx';
 import { latestHolding } from '../data/pilot-order.ts';
@@ -165,7 +165,7 @@ function OfficialOverview({ run, superseded, writeup, headingRef }: { run: RunDa
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         {/* S10: beside a grader count of 0, the grader faults fixed before the final grade. */}
         {Object.values(summary!.tasks).every((x) => x.fault_counts.label !== null && x.fault_counts.label.grader === 0) && (
-          <GraderFixNote fixes={graderFixes([run, ...superseded.filter((r) => r.superseded?.of === runId)])} href={writeup ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
+          <GraderFixNote {...regradeFigures(run, superseded)} href={writeup ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
         )}
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
       </Card>

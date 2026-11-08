@@ -35,7 +35,7 @@ import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shown
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { ModelLine } from '../findings/passk.tsx';
 import { GraderFixNote, RunBlocked, WRITEUP_ATTRIBUTION } from '../findings/why.tsx';
-import { graderFixes } from '../findings/counts.ts';
+import { regradeFigures } from '../findings/counts.ts';
 import { BLOCKING_MARKS, Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, IntervalRow, LINK, markOf, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
@@ -118,7 +118,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
         {official && block === null && (
           <div className="mb-3 space-y-1">
             <ModelLine run={official} />
-            <FaultSummary rows={taskRows} fixes={graderFixes([official, ...superseded.filter((r) => r.superseded?.of === official.runId)])} href={results.files.has('writeup.html') ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
+            <FaultSummary rows={taskRows} fixes={regradeFigures(official, superseded)} href={results.files.has('writeup.html') ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
           </div>
         )}
         {official && block === null && <TaskRows tasks={official.summary!.tasks} />}
@@ -188,7 +188,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
 // the audit has not labelled yet; with no audit published, it says so. The words are the labels'
 // (packages/core/summary.ts FAILURE_LABELS), the counts summary.json's fault_counts.label. Beside
 // a grader count of 0, the note on the grader faults fixed before the final grade (S10).
-function FaultSummary({ rows, fixes, href }: { rows: readonly TaskSummary[]; fixes: { trials: number; graders: readonly string[] }; href: string | null }) {
+function FaultSummary({ rows, fixes, href }: { rows: readonly TaskSummary[]; fixes: ReturnType<typeof regradeFigures>; href: string | null }) {
   const labelled = rows.length > 0 && rows.every((t) => t.fault_counts.label !== null);
   const sum = (l: (typeof FAILURE_LABELS)[number]) => rows.reduce((n, t) => n + (t.fault_counts.label?.[l] ?? 0), 0);
   return (
@@ -199,7 +199,7 @@ function FaultSummary({ rows, fixes, href }: { rows: readonly TaskSummary[]; fix
         : <span className="text-ink-muted">no audit is published, so the failures have no fault labels yet</span>}
       {/* The link keeps its underline (V4): a className replaces LINK, so it carries it. */}
       {' '}<GlossaryLink anchor="fault-labels" className={`${LINK} text-xs`}>What the labels mean</GlossaryLink>
-      {labelled && sum('grader') === 0 && <GraderFixNote fixes={fixes} href={href} />}
+      {labelled && sum('grader') === 0 && <GraderFixNote {...fixes} href={href} />}
     </p>
   );
 }

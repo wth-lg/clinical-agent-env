@@ -102,19 +102,33 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
 
 // Beside "0 grader" on Overview and Runs (eval-p25u-2 S10): the grader faults found after the run
 // were fixed before the final grade, so the count is 0 after the fix, not because none was found.
-// The fault count is the writeup's ("Three grader faults came out of clinical reads of the final
-// run", docs/findings.md; R41's two in crc-care-gap v1 and R48's one in message-queue,
-// results/tasks-final.json regrades); the trials and the grader come from the records (counts.ts
-// graderFixes). Shown only when a regrade fixed a trial; the callers show it only beside a grader
-// count of 0. href: the writeup's "How failures are attributed", null when the build has no writeup.
+// The official run's regraded trials are counted apart from a superseded version's, which are not
+// counted (verifier-phase-P25u-decisive-1 claim 2). The trial counts, names and graders come from
+// the records (counts.ts regradeFigures). The fault counts are not in the records: they are the
+// writeup's ("Three grader faults came out of clinical reads of the final run", docs/findings.md),
+// R41's two in crc-care-gap v1 and R48's one in message-queue (results/tasks-final.json regrades),
+// so GRADER_FAULTS_FIXED and SUPERSEDED_FAULTS hold them. Shown only when a regrade fixed a trial;
+// the callers show it only beside a grader count of 0. href: the writeup's "How failures are
+// attributed", null when the build has no writeup.
 export const GRADER_FAULTS_FIXED = 'three';
+export const SUPERSEDED_FAULTS = 'two';
 export const WRITEUP_ATTRIBUTION = 'writeup.html#how-failures-are-attributed';
-export function GraderFixNote({ fixes, href }: { fixes: { trials: number; graders: readonly string[] }; href: string | null }) {
-  if (fixes.trials === 0) return null;
+// Up to this many counted trials are named in the note; more are only counted.
+const NAMED_MAX = 3;
+type Fixes = { trials: number; graders: readonly string[]; names: readonly string[] };
+export function GraderFixNote({ counted, superseded, href }: { counted: Fixes; superseded: ReadonlyArray<Fixes & { label: string }>; href: string | null }) {
+  const old = superseded.filter((s) => s.trials > 0);
+  const oldTrials = old.reduce((n, s) => n + s.trials, 0);
+  if (counted.trials === 0 && oldTrials === 0) return null;
+  const graders = [...new Set([...counted.graders, ...old.flatMap((s) => s.graders)])].sort();
+  const plural = (n: number) => `${n} ${n === 1 ? 'trial' : 'trials'}`;
+  const named = counted.names.length === counted.trials && counted.trials <= NAMED_MAX ? ` (${counted.names.join(', ')})` : '';
   return (
     // A span, so it can sit inside the Runs fault line's paragraph.
-    <span data-testid="grader-fix-note" data-trials={fixes.trials} className="mt-1 block text-xs text-ink-muted">
-      Why 0 grader: {GRADER_FAULTS_FIXED} grader faults were found after the run and fixed in grader {fixes.graders.join(' and ')}. An offline regrade, with no rerun, then moved {fixes.trials} trial{fixes.trials === 1 ? '' : 's'} from FAIL to PASS before the final grade.
+    <span data-testid="grader-fix-note" data-trials={counted.trials} data-superseded-trials={oldTrials} className="mt-1 block text-xs text-ink-muted">
+      Why 0 grader: {GRADER_FAULTS_FIXED} grader faults were found in clinical reads and fixed in grader {graders.join(' and ')}, then the affected trials were regraded offline with no model call.{' '}
+      {counted.trials > 0 ? <>In this run that moved {counted.trials} counted {counted.trials === 1 ? 'trial' : 'trials'}{named} from FAIL to PASS.</> : <>In this run that moved no counted trial.</>}
+      {old.length > 0 && <>{' '}The other {SUPERSEDED_FAULTS} faults were in {old.map((s) => s.label).join(' and ')}, where the regrade moved {plural(oldTrials)} to PASS; {old.length === 1 ? 'that version was' : 'those versions were'} superseded by a rerun and {old.length === 1 ? 'is' : 'are'} not counted.</>}
       {href !== null && <>{' '}<a href={href} className={link}>How failures are attributed</a></>}
     </span>
   );
