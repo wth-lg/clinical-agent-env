@@ -17,7 +17,7 @@ import { noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { ResultsError } from '../data/results-error.tsx';
-import { AUDIT_BY } from '../trial/headline.ts';
+import { FAULT_BY } from '../trial/headline.ts';
 import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch, VerdictChip } from '../data/ui.tsx';
 import { ChartKey, PilotRateRows, RateAxis } from './pilot.tsx';
 import { whyFailParts } from './counts.ts';
@@ -181,7 +181,7 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
         <p className="mt-2 text-xs text-ink-muted"><ChartKey /> <PassKLink /> <VerdictLink /></p>
       </Card>}
       <Card title="Why tasks fail">
-        <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and <GlossaryLink anchor="fault-labels">whose fault each failure is</GlossaryLink> {AUDIT_BY}. Each link opens those trials in Runs.</p>
+        <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and <GlossaryLink anchor="fault-labels">whose fault each failure is</GlossaryLink>, {FAULT_BY}. Each link opens those trials in Runs.</p>
         <ul className="mt-3 divide-y divide-line" data-testid="why-fail">
           {/* A task with no failures shows its empty bar and "No failures" alone (P25u V3): no fault
               box of zero counts and no "No failed check" line; its reruns line stays when it had

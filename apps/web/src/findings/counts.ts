@@ -47,3 +47,13 @@ export function confirmation(es: readonly Explanation[]): Confirmation {
 export function whyFailParts(fc: Pick<FaultCounts, 'failures' | 'infra_reruns'>): { faultBox: boolean; reruns: boolean } {
   return { faultBox: fc.failures > 0, reruns: fc.failures === 0 && fc.infra_reruns > 0 };
 }
+
+// The trials a grader fix turned from FAIL to PASS by an offline regrade (eval-p25u-2 S10): the
+// records whose recorded outcome is FAIL and whose last regrade entry passes, over the runs given
+// (the official run and its superseded versions), with the graders of those regrades. The note
+// beside "0 grader" reads it, so a run with no such regrade shows no note.
+type Regraded = { record: { outcome: string; regrades?: ReadonlyArray<{ outcome?: unknown; grader_version?: unknown }> } };
+export function graderFixes(runs: ReadonlyArray<{ trials: readonly Regraded[] }>): { trials: number; graders: string[] } {
+  const fixed = runs.flatMap((r) => r.trials.map((t) => ({ outcome: t.record.outcome, last: t.record.regrades?.at(-1) }))).filter((t) => t.outcome === 'FAIL' && t.last?.outcome === 'PASS');
+  return { trials: fixed.length, graders: [...new Set(fixed.map((t) => String(t.last!.grader_version ?? 'unknown')))].sort() };
+}

@@ -249,14 +249,17 @@ launcher (P15) shows the Run lines.
   (P25u J3, copy rule C3; the Environment view and the trial page use the same words), so the
   contract string reads `matches the manifest, today's build`. The trial header's run line names
   the world on every trial (apps/web/src/trial/world.ts). On today's world it reads
-  `World <hash>…: matches the manifest, today's build.`.
+  `World <hash>…: matches the manifest, today's build.`. When the task's current freeze is
+  today's world too, it reads `World <hash>…: matches the frozen world of <task> and the
+  manifest, today's build.`, so equal hashes read alike on every task (eval-p25u-2 S12; the
+  meaning is unchanged: the line names the world the trial started from).
   On an official trial whose initial hash is its task's frozen world in results/tasks-final.json
-  (R37) it reads `World <hash>…: matches the frozen world of <task>.`. The State diff line then
+  (R37) it reads `World <hash>…: matches the frozen world of <task>, not today's build.`. The State diff line then
   reads `Initial world hash <hash>… matches the frozen world of <task> (results/tasks-final.json),
   not today's build (<hash>…).` with the replay tag and commit. The hash is compared with every
   frozen world of the task, whatever the run: a superseded version's world reads
-  `matches the frozen world of <task> v1 (superseded).`, and the world a re-frozen task kept under
-  `previous` reads `matches the frozen world of <task> before its re-freeze (tag <tag>).`. An
+  `matches the frozen world of <task> v1 (superseded), not today's build.`, and the world a re-frozen task kept under
+  `previous` reads `matches the frozen world of <task> before its re-freeze (tag <tag>), not today's build.`. An
   official trial on today's manifest whose task is frozen on another world reads
   `matches the manifest, today's build, not the frozen world of <task> (<hash>…).`. On any other world it reads
   `World <hash>…: matches neither today's build nor a frozen world of <task>.`, and with no
@@ -304,6 +307,10 @@ launcher (P15) shows the Run lines.
   a LIMIT or REFUSAL with a failed gate check: its limit or refusal sentence first,
   then `; <check id> failed: expected <value>, found <value>`, the expected value cut to fit.
   One pattern under Patterns matches all three forms.
+  On a Runs row the trial page's plain lead comes first (apps/web/src/trial/lead.ts), and the
+  sentence follows it, still with no click, without its `; Kind: …` suffix: the lead says the
+  kind in words and the row's fault chip names an environment or grader fault (eval-p25u-2 S9).
+  The trial header keeps the whole sentence. The pattern still matches each row's sentence.
 - An ENV_LIMIT at a turn, cost or working-time cap (criterion E8) gives rule P-L's facts in its
   reason, the same on the Runs row and the trial header, read from the facts the grader recorded
   on the trial (`progress`), never "no trajectory": `ENV_LIMIT: <cap> limit; last 20 calls: <n>
@@ -338,13 +345,18 @@ launcher (P15) shows the Run lines.
   step 10; results/runs/final-1/README.md P23), so the copy says so where M5 is explained: the
   trial header's "Why it is the model's fault" and the Attribution tab's plain line name
   `the auditor (an LLM session)`, the fault box on Findings and Overview reads
-  `Whose fault, by the audit (LLM sessions in this run)`, copy rule C5's phrase reads
+  `Whose fault, as the record decides and the audit (LLM sessions in this run) confirms`, copy rule C5's phrase reads
   `confirmed by the record (M1–M4) and the audit (M5)`, and the glossary's M1–M5 term and its
   "Confirming a label" card say who performed the audit. One constant holds the words
-  (apps/web/src/trial/headline.ts AUDITOR, AUDIT_BY), so a run with a clinician's read changes one
+  (apps/web/src/trial/headline.ts AUDITOR, FAULT_BY), so a run with a clinician's read changes one
   line. The marker `not human-audited` keeps its contract text: it is true of a trial with no
   audit row. Reason: eval-p25u-1 defect 1 (must-fix, false statement on screen). The requirement
-  (every screen names the M5 confirmation and its count the same way) is unchanged.
+  (every screen names the M5 confirmation and its count the same way) is unchanged. The fault
+  box's lead said `by the audit`, which made the audit the decider; the record decides the fault
+  (MF1) and the audit confirms it (M5), as the trial page says (eval-p25u-2 S11). Beside a grader
+  count of 0, Overview and Runs say that three grader faults were found after the run and fixed
+  by an offline regrade before the final grade, with the regraded trial count from the records
+  (eval-p25u-2 S10).
 - The Score card on a trial's Grading tab and on a graded live trial is titled
   `Rubric score (does not decide pass)`. The UI polish gave it that title
   (apps/web/src/trial/rubric.ts SCORE_TITLE). Its value s, from 0.00 to 1.00 in two decimals, follows the title in

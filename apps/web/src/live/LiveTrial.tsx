@@ -37,7 +37,7 @@ import { freshView } from '../shell/views.ts';
 import { liveTaskTitle } from '../tasks/title.ts';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
-import { costLine, typicalCost } from './typical.ts';
+import { costLine, TYPICAL_BASIS, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, neededCap, parseCap, raiseTo } from '../spend/cap.ts';
 import { refreshSpent, sessionCap, setSessionCap, setSpent, useSessionSpend } from '../spend/session.ts';
 import { runnerGone, type Surface } from '../surface/detect.ts';
@@ -45,7 +45,7 @@ import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { useRunnerRetry } from '../surface/RunnerDown.tsx';
 import {
-  durationWords, gradeButtonLabel, infraWords, overCapText, REPLAY_STOPPED, RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, RUNNER_STOPPED_SHORT, runsErrorLead, runsShown, scoreLine, STATE_UNKNOWN, STOPPED_LABEL, STOPPED_REASON, writeWords,
+  durationWords, gradeButtonLabel, infraWords, launcherStatus, overCapText, REPLAY_STOPPED, RUNNER_STOPPED, RUNNER_STOPPED_LEAD, RUNNER_STOPPED_NEXT, RUNNER_STOPPED_SHORT, runsErrorLead, runsShown, scoreLine, STATE_UNKNOWN, STOPPED_LABEL, STOPPED_REASON, writeWords,
 } from './copy.ts';
 import { liveExplanation } from './explain.ts';
 import { fold } from './fold.ts';
@@ -103,6 +103,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const [showAll, setShowAll] = useState(false);
   const [replay, setReplay] = useState<Replay | null>(null);
   const [replayBusy, setReplayBusy] = useState(false);
+  // S8: the size of the last batch that started, for the launcher's status region.
+  const [started, setStarted] = useState<number | null>(null);
   const ids = useMemo(() => {
     const listed = (tasks ?? []).map((x) => x.id);
     return task !== '' && !listed.includes(task) ? [task, ...listed] : listed;
@@ -169,9 +171,11 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
     if (busy || taskId === '') return;
     setBusy(true);
     setRefusal(null);
+    setStarted(null);
     try {
       const r = await t.start({ task: taskId, trials: n, sessionCap: sessionCap() });
       if (!r.ok) return setRefusal({ lead: r.lead, detail: r.detail });
+      setStarted(n);
       open(r.trialIds[0]!);
       refresh();
     } finally {
@@ -208,10 +212,20 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
 
   const onLost = useCallback(() => setDown(true), []);
   const { shown, hidden } = runsShown(runs ?? [], showAll);
+  // S8: one sentence for screen readers on the launcher's state; the trial card's own status line
+  // takes over for running, graded and stopped.
+  const status = launcherStatus({
+    noKey, busy, started, down,
+    refusal: refusal?.lead ?? null,
+    runsError,
+    task: chosen === '' ? null : liveTaskTitle(chosen, tasks),
+    fits: over.length < RUN_SIZES.length,
+  });
 
   return (
     <Page title="Live trial" headingRef={headingRef} lead={`Pick a task and run it. You see each step the model takes, then the grade.${t.kind === 'local-runner' ? ' Trials run in the local runner on this computer.' : ''}`}>
       <Card title="Run a task">
+        <p role="status" data-testid="launcher-status" className="sr-only">{status}</p>
         {/* With no key, the one thing to do comes first (ui-polish 5.2): Add key, the launcher's
             primary; beside it a recorded trial to watch (A14), which needs no key. */}
         {noKey && (
@@ -243,7 +257,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
             {/* The amount sits beside its button, not in it, so the button's name is its visible
                 text (axe label-content-name-mismatch); aria-describedby still reads it out, and the
                 reason a size is disabled after it, which its tooltip says in short. Run ×1 is the
-                primary action once there is a key; before that, Add key is. */}
+                primary button, ×3, ×10 and ×20 secondary (eval-p25u-2 S7); with no key it is
+                disabled and Add key, above it, is the one primary button that works. */}
             {RUN_SIZES.map((n) => (
               <span key={n} className="inline-flex items-center gap-1.5">
                 <button
@@ -251,7 +266,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
                   data-testid={`run-x${n}`}
                   aria-describedby={[`${costId}-${n}`, ...(noKey ? [`${costId}-nokey`] : over.includes(n) ? [`${costId}-over`] : [])].join(' ')}
                   title={noKey ? NO_KEY_FIRST : over.includes(n) ? 'Over the session cap. Raise the cap below.' : busy ? 'A batch is starting' : chosen === '' ? 'Pick a task first' : undefined}
-                  className={n === RUN_SIZES[0] && !noKey ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
+                  className={n === RUN_SIZES[0] ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
                   Run ×{n}
                 </button>
                 <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : costLine(typical?.usd ?? null, costs[n], bound)}</span>
@@ -261,7 +276,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         </div>
         {typical !== null ? (
           <p data-testid="typical-cost" className="mt-2 text-ink-muted">
-            “About {usd(typical.usd)} a trial” is the median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}. {HOLD_NOTE}
+            “About {usd(typical.usd)} a trial ({TYPICAL_BASIS})” is the median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}. {HOLD_NOTE}
           </p>
         ) : results?.kind === 'error' ? (
           // The typical cost and the duration come from the published results; a load that

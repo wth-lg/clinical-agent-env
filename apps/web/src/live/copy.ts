@@ -21,6 +21,33 @@ export const RUNNER_STOPPED_SHORT = 'The local runner stopped';
 // on the local runner every page comes from the runner.
 export const runsErrorLead = (hosted: boolean): string => (hosted ? 'Your runs did not load. The other pages still work.' : 'Your runs did not load.');
 
+// eval-p25u-2 S8: what the launcher's live region (role status) says, one sentence per state:
+// errors first (the runner is gone, the batch was refused, Your runs did not load), then no key,
+// starting, started, and ready. Once a batch starts, the trial card's own status line says
+// running, graded or stopped, so this region does not repeat it. task: the chosen task's title;
+// fits: some batch size fits the session cap.
+export interface LauncherState {
+  noKey: boolean;
+  busy: boolean;
+  started: number | null;
+  refusal: string | null;
+  runsError: string | null;
+  down: boolean;
+  task: string | null;
+  fits: boolean;
+}
+export function launcherStatus(s: LauncherState): string {
+  if (s.down) return RUNNER_STOPPED;
+  if (s.refusal !== null) return `The batch did not start: ${s.refusal}`;
+  if (s.runsError !== null) return runsErrorLead(false);
+  if (s.noKey) return 'No API key yet. Add a key to run trials.';
+  if (s.busy) return 'Starting the batch.';
+  if (s.started !== null) return s.started === 1 ? 'Started 1 trial. Its status is in the trial card below.' : `Started ${s.started} trials. Their status is in the trial card below.`;
+  if (s.task === null) return 'Pick a task to run.';
+  if (!s.fits) return 'No batch size fits the session cap. Raise the cap to run.';
+  return `Ready to run ${s.task}.`;
+}
+
 // A14: a replay the viewer stopped.
 export const REPLAY_STOPPED = 'Replay stopped';
 

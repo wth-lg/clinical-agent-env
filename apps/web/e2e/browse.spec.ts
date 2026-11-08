@@ -14,6 +14,7 @@ import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PAS
 import { trialName } from '../../../packages/core/summary.ts';
 import { kindWords, shownFault } from '../src/data/failures.ts';
 import { markOf } from '../src/data/ui.tsx';
+import { exactReason } from '../src/trial/lead.ts';
 import { CHECK_TEXT, cliCriteria, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 const browse = browseFrom(sampleBase);
@@ -133,7 +134,7 @@ test('Runs: every non-pass row shows outcome, label, decisive check and reason w
     await expect(row.getByTestId('outcome')).toHaveText(e.outcome);
     seen.add(e.outcome);
     if (e.outcome === 'PASS') continue;
-    await expect(row.getByTestId('reason')).toHaveText(e.reason);
+    await expect(row.getByTestId('reason')).toHaveText(exactReason(e.reason));
     if (e.decisive_check) await expect(row.getByTestId('decisive')).toHaveText(e.decisive_check.id);
     if (e.fault === 'infra') {
       await expect(row.getByTestId('label')).toHaveText('API problem: not counted, run again');

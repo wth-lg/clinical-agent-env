@@ -6,10 +6,31 @@
 // runs shows the latest five runs (A15).
 import { describe, expect, it } from 'vitest';
 import {
-  durationWords, gradeButtonLabel, infraWords, overCapText, RUNNER_STOPPED, runsErrorLead, runsShown, scoreLine, STOPPED_LABEL, STOPPED_REASON, writeWords,
+  durationWords, gradeButtonLabel, infraWords, launcherStatus, overCapText, RUNNER_STOPPED, runsErrorLead, runsShown, scoreLine, STOPPED_LABEL, STOPPED_REASON, writeWords,
 } from '../src/live/copy.ts';
 import { costLine } from '../src/live/typical.ts';
 import { neededCap, raiseTo } from '../src/spend/cap.ts';
+
+// eval-p25u-2 S8: the launcher's status region announces each state the launcher is in; the
+// trial card's own status line announces running, graded and stopped once a card is open.
+describe('S8: the launcher status the live region announces', () => {
+  const idle = { noKey: false, busy: false, started: null, refusal: null, runsError: null, down: false, task: 'Practice task', fits: true };
+  it('names the no-key, ready, starting and started states', () => {
+    expect(launcherStatus({ ...idle, noKey: true })).toBe('No API key yet. Add a key to run trials.');
+    expect(launcherStatus(idle)).toBe('Ready to run Practice task.');
+    expect(launcherStatus({ ...idle, task: null })).toBe('Pick a task to run.');
+    expect(launcherStatus({ ...idle, fits: false })).toBe('No batch size fits the session cap. Raise the cap to run.');
+    expect(launcherStatus({ ...idle, busy: true })).toBe('Starting the batch.');
+    expect(launcherStatus({ ...idle, started: 1 })).toBe('Started 1 trial. Its status is in the trial card below.');
+    expect(launcherStatus({ ...idle, started: 3 })).toBe('Started 3 trials. Their status is in the trial card below.');
+  });
+
+  it('errors come first: a dead runner, a refused batch, runs that did not load', () => {
+    expect(launcherStatus({ ...idle, down: true, refusal: 'x' })).toBe(RUNNER_STOPPED);
+    expect(launcherStatus({ ...idle, refusal: 'The session cap is reached.', started: 1 })).toBe('The batch did not start: The session cap is reached.');
+    expect(launcherStatus({ ...idle, runsError: 'HTTP 500' })).toBe('Your runs did not load.');
+  });
+});
 
 describe('A1b: a trial the user stopped', () => {
   it('says the user stopped it, that it is not counted, and that it says nothing about the model', () => {
@@ -78,13 +99,15 @@ describe('A5: the grade button and the score line', () => {
 });
 
 describe('A7: the cost beside each Run button', () => {
-  it('leads with the typical cost of one trial, then what the batch holds', () => {
-    expect(costLine(1.66, 7.9, true)).toBe('about $1.66 a trial · holds up to $7.90');
+  // eval-p25u-2 S5: the typical cost says its basis (a pilot median), as the key gate's range
+  // says its own (the final run's mean per task), so the two figures never read as one.
+  it('leads with the typical cost of one trial and its basis, then what the batch holds', () => {
+    expect(costLine(1.66, 7.9, true)).toBe('about $1.66 a trial (pilot median) · holds up to $7.90');
     expect(costLine(null, 7.9, true)).toBe('holds up to $7.90');
   });
 
   it('an amount priced from a pilot p90 is an estimate, not a hold', () => {
-    expect(costLine(1.66, 7.9, false)).toBe('about $1.66 a trial · about $7.90 (pilot p90)');
+    expect(costLine(1.66, 7.9, false)).toBe('about $1.66 a trial (pilot median) · about $7.90 (pilot p90)');
     expect(costLine(null, 7.9, false)).toBe('about $7.90 (pilot p90)');
   });
 

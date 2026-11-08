@@ -347,7 +347,7 @@ test('the key gate leads with Browse the results, then the key form with its hin
   await expect(page.getByLabel('Add an API key', { exact: true })).toBeVisible();
   const hints = page.getByTestId('key-hints');
   await expect(hints).toContainText('through a relay that forwards it and keeps no copy');
-  await expect(hints).toContainText(/Get a key at console\.anthropic\.com under API keys\. One trial costs about \$\d+\.\d{2} to \$\d+\.\d{2}\./);
+  await expect(hints).toContainText(/Get a key at console\.anthropic\.com under API keys\. One trial costs about \$\d+\.\d{2} to \$\d+\.\d{2} \(final-run mean per task\)\./);
   await expect(hints.getByRole('link', { name: 'console.anthropic.com' })).toHaveAttribute('href', 'https://console.anthropic.com/settings/keys');
   await expect(hints).toContainText('Forget key in the top bar drops it at any time.');
   const remember = page.getByLabel('Remember in this tab');
@@ -585,4 +585,26 @@ test('a size whose projection with the spend already committed crosses the cap i
   await x3.click();
   await expect(page.getByTestId('live-run')).toHaveCount(1);
   await expect(page.getByTestId('run-refusal')).toHaveCount(0);
+});
+
+// eval-p25u-2 S7 and S8: Run ×1 is the primary button and ×3, ×10 and ×20 are secondary, with or
+// without a key; the launcher's status region (role status) announces no key, ready, a started
+// batch, and the trial card's own status line then says running and graded.
+test('Run ×1 is the primary button, and the status regions announce no key, ready, started and graded', async ({ page }) => {
+  await mockToy(page);
+  await browse(page, './?view=live&task=_toy');
+  const status = page.getByTestId('launcher-status');
+  await expect(status).toHaveAttribute('role', 'status');
+  await expect(status).toHaveText('No API key yet. Add a key to run trials.');
+  const primary = /\bbg-primary\b/;
+  await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toHaveClass(primary);
+  for (const n of [3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).not.toHaveClass(primary);
+  await page.getByTestId('launcher-reason').getByRole('button', { name: 'Add key' }).click();
+  await enterKey(page, sentinelKey(), '250');
+  await expect(status).toHaveText(/^Ready to run .+\.$/);
+  await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toHaveClass(primary);
+  await run(page, 1);
+  await expect(status).toHaveText('Started 1 trial. Its status is in the trial card below.');
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  await expect(trial(page).getByRole('status')).toHaveText('Finished: PASS');
 });

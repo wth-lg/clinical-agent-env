@@ -33,6 +33,9 @@ export interface Grading {
   // Records that started from their task's frozen world (results/tasks-final.json), when that
   // is not today's manifest's.
   frozenWorld: number;
+  // The run's records, and the tasks of the frozenWorld records, sorted (grading-line.ts).
+  trials: number;
+  frozenTasks: string[];
   // The run's offline regrade, when it holds one: its grader version and the records whose
   // outcome it changes.
   regrade: { graders: string[]; records: number; changed: string[] } | null;

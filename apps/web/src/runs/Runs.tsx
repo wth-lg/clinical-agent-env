@@ -28,17 +28,19 @@ import { useCallback, useEffect, useRef, useState, type Ref } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { AUDIT_LABELS, OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { FAILURE_LABELS, wilson, type TaskSummary } from '../../../../packages/core/summary.ts';
-import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
+import { dataUrl, gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { ResultsError } from '../data/results-error.tsx';
 import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { ModelLine } from '../findings/passk.tsx';
-import { RunBlocked } from '../findings/why.tsx';
+import { GraderFixNote, RunBlocked, WRITEUP_ATTRIBUTION } from '../findings/why.tsx';
+import { graderFixes } from '../findings/counts.ts';
 import { BLOCKING_MARKS, Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, IntervalRow, LINK, markOf, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP, VerdictChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
+import { exactReason, trialLead } from '../trial/lead.ts';
 import { shownCountLine } from './count.ts';
 import { repeatedReasons } from './repeats.ts';
 
@@ -116,7 +118,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
         {official && block === null && (
           <div className="mb-3 space-y-1">
             <ModelLine run={official} />
-            <FaultSummary rows={taskRows} />
+            <FaultSummary rows={taskRows} fixes={graderFixes([official, ...superseded.filter((r) => r.superseded?.of === official.runId)])} href={results.files.has('writeup.html') ? dataUrl(WRITEUP_ATTRIBUTION) : null} />
           </div>
         )}
         {official && block === null && <TaskRows tasks={official.summary!.tasks} />}
@@ -184,8 +186,9 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
 
 // The valid failures in scope by audit label, "32 model, 0 environment, 0 grader", plus the ones
 // the audit has not labelled yet; with no audit published, it says so. The words are the labels'
-// (packages/core/summary.ts FAILURE_LABELS), the counts summary.json's fault_counts.label.
-function FaultSummary({ rows }: { rows: readonly TaskSummary[] }) {
+// (packages/core/summary.ts FAILURE_LABELS), the counts summary.json's fault_counts.label. Beside
+// a grader count of 0, the note on the grader faults fixed before the final grade (S10).
+function FaultSummary({ rows, fixes, href }: { rows: readonly TaskSummary[]; fixes: { trials: number; graders: readonly string[] }; href: string | null }) {
   const labelled = rows.length > 0 && rows.every((t) => t.fault_counts.label !== null);
   const sum = (l: (typeof FAILURE_LABELS)[number]) => rows.reduce((n, t) => n + (t.fault_counts.label?.[l] ?? 0), 0);
   return (
@@ -196,6 +199,7 @@ function FaultSummary({ rows }: { rows: readonly TaskSummary[] }) {
         : <span className="text-ink-muted">no audit is published, so the failures have no fault labels yet</span>}
       {/* The link keeps its underline (V4): a className replaces LINK, so it carries it. */}
       {' '}<GlossaryLink anchor="fault-labels" className={`${LINK} text-xs`}>What the labels mean</GlossaryLink>
+      {labelled && sum('grader') === 0 && <GraderFixNote fixes={fixes} href={href} />}
     </p>
   );
 }
@@ -330,7 +334,8 @@ function usePendingOpen(): Later {
 const isFaulted = (t: Trial) => t.explanation.outcome !== 'PASS' || t.explanation.fault !== null;
 
 // Row: the name, outcome, fault chip and decisive check on one line with the cost on the right;
-// under it the fault note, the not-audited marker and any harm, then the reason. The name is a
+// under it the fault note, the not-audited marker and any harm, then the trial page's plain lead
+// and the exact grader sentence without its "; Kind" suffix (lead.ts, eval-p25u-2 S9). The name is a
 // link to the trial (J10): a plain click opens it in place, a modified click in a new tab. A
 // click anywhere on the row that is not on a link, a button or a disclosure (or ends a text
 // selection) opens the trial too, after the wait above. sameAs: the earlier row of this task that
@@ -346,6 +351,8 @@ const edgeOf = (e: Trial['explanation']): string => {
 function TrialRow({ t, run, later, sameAs = null }: { t: Trial; run: RunData; later: Later; sameAs?: string | null }) {
   const e = t.explanation;
   const faulted = isFaulted(t);
+  // S9: the trial page's plain lead, then the exact grader sentence (U31) under it.
+  const lead = faulted ? trialLead(e, t.record) : null;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
   const patch = { trial: t.name, run: run.runId, tab: null };
   const open = () => navigate(patch);
@@ -376,12 +383,13 @@ function TrialRow({ t, run, later, sameAs = null }: { t: Trial; run: RunData; la
         {faulted && <FaultMeta e={e} official={run.official} />}
         <HarmChip items={harmItems(t.record)} />
       </p>
-      {faulted && sameAs === null && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
+      {faulted && lead !== null && <p data-testid="row-lead" className="mt-1 break-words pl-5 text-ink">{lead}</p>}
+      {faulted && sameAs === null && <p data-testid="reason" className={`break-words pl-5 text-ink-muted ${lead === null ? 'mt-1' : 'mt-0.5 text-xs'}`}>{exactReason(e.reason)}</p>}
       {faulted && sameAs !== null && (
         <details className="mt-1 pl-5 text-ink-muted">
           {/* A tap target on a touch screen (V6a). */}
           <summary data-testid="reason-repeat" className="cursor-pointer text-xs pointer-coarse:py-2.5">Same reason as {sameAs}</summary>
-          <p data-testid="reason" className="mt-1 break-words">{e.reason}</p>
+          <p data-testid="reason" className="mt-1 break-words">{exactReason(e.reason)}</p>
         </details>
       )}
       {faulted && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words pl-5 text-xs text-ink-muted">{e.secondary_reason}</p>}

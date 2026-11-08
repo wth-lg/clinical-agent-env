@@ -48,8 +48,9 @@ import { freshView } from '../shell/views.ts';
 import { useHosted } from '../surface/hosted.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink, WhereList } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
-import { Grading, tidyCheckText, type CheckRow } from './Grading.tsx';
-import { confirmationWords, faultWhy, isModelFault, plainHeadline } from './headline.ts';
+import { Grading, tidyCheckText } from './Grading.tsx';
+import { confirmationWords, faultWhy, isModelFault } from './headline.ts';
+import { trialLead } from './lead.ts';
 import { useRubricQuestions } from './questions.ts';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
@@ -58,6 +59,7 @@ import { taskTitle } from '../tasks/title.ts';
 import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
+import { decisiveStepOf } from './decisive.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
 import { whereSteps, type WhereStep } from './where.ts';
 
@@ -185,17 +187,20 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
   // The steps that explain the failure (where.ts, J4): the exposure of the decisive ids from the
-  // current grade's attribution, the arrivals from the trajectory, and the decisive step; shown
-  // under Where in the header and on the Attribution tab.
+  // current grade's attribution, the arrivals from the trajectory, and the decisive step, the step
+  // of the decisive check's failing item (decisive.ts, eval-p25u-2 MF-2); shown under Where in the
+  // header and on the Attribution tab.
   const exposure = useMemo(() => (fittingAttribution(t.record as ExplainRecord) as { exposure?: Array<{ id: string; first_exposed_step: number | null }> } | null)?.exposure ?? null, [t.record]);
   const where = useMemo<WhereStep[]>(() => {
     const modelFault = e.fault === 'model' || e.fault === 'refusal';
     const arrivals = (traj?.rows ?? []).flatMap((r) => (r.kind === 'arrival' ? [{ step: r.step, keys: r.keys }] : []));
-    return whereSteps({ decisiveStep: e.decisive_step, exposure: modelFault ? (exposure ?? []) : [], arrivals });
-  }, [exposure, e, traj]);
+    const decisiveStep = decisiveStepOf(t.record, e.decisive_check?.id ?? null, e.decisive_step, traj?.steps ?? null);
+    return whereSteps({ decisiveStep, exposure: modelFault ? (exposure ?? []) : [], arrivals });
+  }, [exposure, e, traj, t.record]);
   // The header's plain line, and the Attribution tab's (headline.ts): the same exposure tells
-  // which records of an arrival the model opened (eval-p25u-1 defect 2).
-  const headline = plainHeadline(e, t.record.checks as CheckRow[] | null | undefined, shownKind(e) === null ? null : e.taxonomy, exposure);
+  // which records of an arrival the model opened (eval-p25u-1 defect 2). The Runs row shows the
+  // same lead (lead.ts, eval-p25u-2 S9).
+  const headline = trialLead(e, t.record);
   return (
     <Frame title={<TrialHeading t={t} run={run} />} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
       {run.kind === 'session' && <SessionBanner />}
@@ -247,7 +252,7 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   );
 }
 
-// "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep." (trial/world.ts), against
+// "World ba0b02069ab4…: matches the frozen world of contrast-ct-prep, not today's build." (trial/world.ts), against
 // every frozen world of the task, whatever the run.
 function WorldLine({ t, freezes, official }: { t: Trial; freezes: readonly FrozenTask[]; official: boolean }) {
   const worlds = frozenWorlds(freezes);

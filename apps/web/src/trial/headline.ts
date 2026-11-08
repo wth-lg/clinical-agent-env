@@ -24,8 +24,10 @@ export type HeadlineExposure = ReadonlyArray<{ id: string; first_exposed_step: n
 // Attribution tab). One constant, so every screen says the same and a run with a human read
 // changes one line (eval-p25u-1 defect 1: no screen may say a person reviewed a trial).
 export const AUDITOR = 'the auditor (an LLM session)';
-// The same fact beside a count of the audit's labels: "Whose fault, by the audit (LLM sessions in this run)".
-export const AUDIT_BY = 'by the audit (LLM sessions in this run)';
+// The same fact beside a count of the fault labels: "Whose fault, as the record decides and the
+// audit (LLM sessions in this run) confirms". The record decides the fault (MF1 for the model) and
+// the audit confirms it (M5), as the trial page says; the audit is not the decider (eval-p25u-2 S11).
+export const FAULT_BY = 'as the record decides and the audit (LLM sessions in this run) confirms';
 
 // What each kind of model failure means, as the first words of the headline (TAXONOMY_TEXT says
 // the same at length on the Attribution tab and in the glossary).
