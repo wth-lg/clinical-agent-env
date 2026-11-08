@@ -1,6 +1,6 @@
 # Decisions
 
-The design and run decisions behind the environment, in the order they were made. Each user decision carries its date. The rulings are the coordinator's, made when a gate or a probe found a case the plan did not cover. Each applies to every task from its date on. The writeup's Findings section says what the final run showed; this page says what was decided and why.
+The design and run decisions behind the environment, in the order they were made. Each user decision carries its date. The rulings are the coordinator's, made when a gate or a probe found a case the plan did not cover. The coordinator is the LLM session that ran this build's orchestration. Each applies to every task from its date on. The writeup's Findings section says what the final run showed; this page says what was decided and why.
 
 ## User decisions
 
@@ -36,7 +36,7 @@ Written into the decision log on 2026-11-04, before the first lever pilot trial,
 - Each item's catch rate is estimated as its passes plus one over its observations plus two. The rate of everything else is estimated the same way over trials. A set's predicted pass is the product.
 - The set nearest the middle of the range is selected. A task whose selected set is the one it piloted freezes on it. Any other task runs a confirm pilot and freezes when the count lands inside the range.
 - Otherwise one retune round, of at most two tasks, may toggle an item or apply one pre-declared softening. A retuned version freezes on its pilot result whatever it is.
-- A lever item that fails more than three fifths of its observations gets a fairness audit before the rule runs. A clinician read labels every failure.
+- A lever item that fails more than three fifths of its observations gets a fairness audit before the rule runs. A clinical read labels every failure. In this run, LLM sessions did those reads, not a human clinician.
 - The final run uses each task's latest frozen version, never an older one because its rate looks better. Reruns happen only by the re-queue rules.
 - Two mechanism predictions are reported, not used. Item A is caught less often than item B in every task, and a missed A is a retrieval miss.
 

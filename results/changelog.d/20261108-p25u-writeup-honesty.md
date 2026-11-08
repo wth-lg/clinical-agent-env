@@ -1,0 +1,1 @@
+- Writeup: every clinical read, label and audit is named as an LLM session's (builder, blinded second labeller, LLM auditor, coordinator), no human clinician reviewed this run, the auditor row's 35 trials are 32 failures and 3 penalised passes, and a stale "the block fills" placeholder is gone. Docs only.

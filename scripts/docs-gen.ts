@@ -387,12 +387,28 @@ const judgeAgreement = (d: Data) => {
       const a = s.judge_agreement;
       // The labels file as a repository path: judge-agreement --write may record the absolute path it was given.
       const labels = a.labels.replace(/^.*?(?=results\/)/, '');
-      parts.push(table(['hand labels against the cached answers', 'agree / n', 'agreement'], [['judged items', kn(a.judge_agree, a.n_judge), a.judge_agreement === null ? 'n/a' : a.judge_agreement.toFixed(2)], ['extractions', kn(a.extract_agree, a.n_extract), a.extract_agreement === null ? 'n/a' : a.extract_agreement.toFixed(2)]], `Judge agreement: hand labels (${escapeHtml(labels)}) against the answers the records cached`));
+      parts.push(table(['LLM session labels against the cached answers', 'agree / n', 'agreement'], [['judged items', kn(a.judge_agree, a.n_judge), a.judge_agreement === null ? 'n/a' : a.judge_agreement.toFixed(2)], ['extractions', kn(a.extract_agree, a.n_extract), a.extract_agreement === null ? 'n/a' : a.extract_agreement.toFixed(2)]], `Judge agreement: an LLM builder session's labels (${escapeHtml(labels)}), written with the judge's answers hidden, against the answers the records cached`));
     }
     if (s.kappa !== undefined) {
       const k = s.kappa;
       const row = (name: string, x: Kappa) => [name, kn(x.agree, x.n), x.agreement === null ? 'n/a' : x.agreement.toFixed(2), x.kappa === null ? 'n/a' : x.kappa.toFixed(2), escapeHtml(x.categories.join(', ')), escapeHtml(x.note ?? '')];
-      parts.push(table(['labels', 'agree / n', 'agreement', 'Cohen\'s kappa', 'categories', 'note'], [row('double label', k.double_label), row('builder against the LLM auditor', k.builder_vs_auditor)], 'Failure labels: the blinded double label, and the builder\'s labels against the LLM auditor'));
+      parts.push(table(['labels', 'agree / n', 'agreement', 'Cohen\'s kappa', 'categories', 'note'], [row('double label', k.double_label), row('builder against the LLM auditor', k.builder_vs_auditor)], 'Failure labels: the blinded double label, and the builder\'s labels against the LLM auditor (every labeller is an LLM session)'));
+      // What the auditor row counts: every trial the LLM auditor read (cli/audit-llm.ts targets),
+      // a valid failure or a PASS with a penalty met or unknown, from its verdict files.
+      const auditorDir = join(run.dir, 'auditor');
+      if (existsSync(auditorDir)) {
+        let fails = 0;
+        let passes = 0;
+        for (const task of readdirSync(auditorDir).filter((t) => statSync(join(auditorDir, t)).isDirectory())) {
+          for (const f of readdirSync(join(auditorDir, task)).filter((f) => f.endsWith('.json'))) {
+            const v = JSON.parse(readFileSync(join(auditorDir, task, f), 'utf8')) as { outcome?: string; verdict?: { label?: unknown } | null };
+            if (typeof v.verdict?.label !== 'string') continue;
+            if (v.outcome === 'PASS') passes++;
+            else fails++;
+          }
+        }
+        parts.push(`<p>The double label row is a blinded second LLM session's label of a seeded sample of failures. The auditor row covers every trial the LLM auditor read: ${fails} failures and ${passes} passes with a harm penalty met or left unknown.</p>`);
+      }
     }
   }
   const rows: string[][] = [];

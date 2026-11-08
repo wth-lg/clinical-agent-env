@@ -46,11 +46,11 @@ The results inbox task has a second lever item, a fax filed to the wrong chart. 
 
 ## Judge agreement and harm penalties
 
-The judge never gates. The audit phase samples judged items and extractions from the final run, labels them by hand with the judge's answers hidden, and reports the agreement. A blinded second labeller and an LLM auditor read the failure labels, and the two kappas are reported. The block fills from `summary.json` once that phase has written it.
+The judge never gates. The audit phase samples judged items and extractions from the final run and reports the agreement. An LLM builder session labels the sample with the judge's answers hidden. In this run, a builder is an LLM session given one unit of work, such as a task, a grader fix or the audit data. A builder session also wrote the failure labels. Two more LLM sessions read those labels, and the two kappas are reported. One is a second labeller, blinded to the builder's labels. The other is an LLM auditor, also blinded. No human clinician reviewed the trials, the labels or the audit in this run. A human clinical read is listed under Next steps.
 
 <!-- docs-gen:block judge-agreement -->
 
-Two judge false positives are known from the clinician read, both score only. In the results inbox task, the penalty for naming another patient's matter fires on a message about the recipient's own naproxen. The criterion lists that drug among another patient's matters, so the blind judge reads it as hers. In the colorectal task, one outreach penalty was left unknown because the judge's quote was an elided paste. Neither moves an outcome. The audit phase reports them beside the agreement rates, and the criterion fix waits for a recalibration.
+Two judge false positives are known from the clinical read of an LLM builder session, both score only. In the results inbox task, the penalty for naming another patient's matter fires on a message about the recipient's own naproxen. The criterion lists that drug among another patient's matters, so the blind judge reads it as hers. In the colorectal task, one outreach penalty was left unknown because the judge's quote was an elided paste. Neither moves an outcome. The audit phase reports them beside the agreement rates, and the criterion fix waits for a recalibration.
 
 ## Resolution of the band
 
