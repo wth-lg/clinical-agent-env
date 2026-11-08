@@ -143,6 +143,15 @@ export function proseInline(text: string): string {
 export const nowrapNumbers = (html: string): string =>
   html.split(/(<[^>]+>)/).map((part, i) => (i % 2 === 1 ? part : part.replace(/\[[^\]<>]*\d[^\]<>]*\]|\S*\d\S*/g, (m) => `<span class="nw">${m}</span>`))).join('');
 
+// The attributes of a table's scroll box. A box that scrolls must take keyboard focus, and a
+// focusable box needs a name: the table's caption, else its column headers (axe
+// scrollable-region-focusable, verifier-1 addendum 3). Both arguments are HTML.
+export const tableWrapAttrs = (caption: string | undefined, head: readonly string[]): string => {
+  const text = (html: string) => html.replace(/<[^>]+>/g, '').replace(/"/g, '&quot;').replace(/\s+/g, ' ').trim();
+  const label = caption !== undefined && text(caption) !== '' ? text(caption) : `Table: ${head.map(text).join(', ')}`;
+  return `class="table-wrap" tabindex="0" role="region" aria-label="${label}"`;
+};
+
 export const slug = (text: string) => text.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // Blocks to HTML. A markdown heading of level n becomes h(n + shift); the writeup's sections
@@ -160,9 +169,9 @@ export function renderBlocks(blocks: readonly Block[], file: string, shift = 1):
       case 'list':
         return `<${b.ordered ? 'ol' : 'ul'}${src(b.line)}>\n${b.items.map((it) => `<li${src(it.line)}>${renderInline(it.text)}</li>`).join('\n')}\n</${b.ordered ? 'ol' : 'ul'}>`;
       case 'code':
-        return `<pre${src(b.line)}><code>${escapeHtml(b.text)}</code></pre>`;
+        return `<pre tabindex="0"${src(b.line)}><code>${escapeHtml(b.text)}</code></pre>`;
       case 'table':
-        return `<div class="table-wrap">\n<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${nowrapNumbers(renderInline(c))}</th>` : `<td>${nowrapNumbers(renderInline(c))}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
+        return `<div ${tableWrapAttrs(undefined, b.header.map(renderInline))}>\n<table${src(b.line)}>\n<thead><tr>${b.header.map((h) => `<th scope="col">${renderInline(h)}</th>`).join('')}</tr></thead>\n<tbody>\n${b.rows.map((r) => `<tr>${r.map((c, j) => (j === 0 ? `<th scope="row">${nowrapNumbers(renderInline(c))}</th>` : `<td>${nowrapNumbers(renderInline(c))}</td>`)).join('')}</tr>`).join('\n')}\n</tbody>\n</table>\n</div>`;
       case 'html':
         return b.text;
     }

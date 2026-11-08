@@ -34,7 +34,7 @@ The outcome-only sensitivity grades the chart the trial left and nothing else. U
 
 ## How difficulty was set
 
-The five lever tasks were tuned on pilot data from the same model, under a rule written down before the first lever pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.
+Five tasks carry the lever: four tasks with two items each, and the second version of crc-care-gap with one item. Each was tuned on pilot data from the same model, under a rule written down before the first lever pilot trial. The Findings section describes the rule and every departure from it. The tables below hold its numbers: the priors, the predictions, each pilot's count and the final count.
 
 <!-- docs-gen:block lever-rule -->
 

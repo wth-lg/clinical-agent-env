@@ -98,6 +98,28 @@ test.describe('Overview after the UI/UX audit', () => {
     expect(href.searchParams.get('trial')).toBe('first-nonpass');
   });
 
+  // verifier-1 addendum 3: "event_seen (27)" sums the check over every task, but its link opened
+  // one task's trials (15). Each takeaway check link opens Runs with as many trials as its label.
+  test('J5: each check link in the takeaway opens Runs on as many trials as its label counts, across every task', async ({ page }) => {
+    await browse(page, './?view=overview');
+    const box = page.getByTestId('takeaway-checks');
+    const text = await box.innerText();
+    const n = await box.getByRole('link').count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      await browse(page, './?view=overview');
+      const link = page.getByTestId('takeaway-checks').getByRole('link').nth(i);
+      const check = (await link.innerText()).trim();
+      const count = Number(new RegExp(`${check} \\((\\d+)\\)`).exec(text)![1]);
+      const to = new URL((await link.getAttribute('href'))!, 'https://example.test').searchParams;
+      expect(to.get('check'), check).toBe(check);
+      expect(to.get('task'), check).toBeNull();
+      await link.click();
+      await expect(page.getByTestId('shown-count')).toContainText(`Showing ${count} of `);
+      await expect(page.getByTestId('trial-row')).toHaveCount(count);
+    }
+  });
+
   test('J6: each row shows the task title linked to the task, the id under it, and an "N trials" link to its trials in Runs', async ({ page }) => {
     await browse(page, './?view=overview');
     for (const id of TASK_IDS) {

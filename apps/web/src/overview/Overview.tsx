@@ -49,7 +49,8 @@ const toRuns = (task: string | null) => ({ view: 'runs', task, label: null, tria
 // The task itself, at its prompt (P25u J6: the row's name opened Runs, not the task).
 const toTask = (task: string) => ({ view: 'tasks', task, tab: 'prompt', label: null, trial: null, check: null, audit: null });
 // The trials of the official run a check decided, in Runs (the filter Findings' links set, P17j JU7).
-const toCheck = (task: string, check: string) => ({ view: 'runs', task, check, run: null, label: null, trial: null, audit: null });
+// task null lists them across every task, as the takeaway's count sums them (verifier-1 addendum 3).
+const toCheck = (task: string | null, check: string) => ({ view: 'runs', task, check, run: null, label: null, trial: null, audit: null });
 const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const TOOL_COUNT = toolCatalog().length;
 // The task the intro's Start here list opens.
@@ -188,6 +189,7 @@ function Takeaway({ summary, titles, runId }: { summary: Summary; titles: Readon
   const labelled = tasks.every(([, s]) => s.fault_counts.label !== null);
   const label = (l: 'model' | 'environment' | 'grader' | 'unlabelled') => sum(tasks.map(([, s]) => s.fault_counts.label?.[l] ?? 0));
   const kinds = FAILURE_KINDS.map((kind) => ({ kind, count: sum(tasks.map(([, s]) => s.fault_counts.taxonomy[kind])) })).filter((k) => k.count > 0).sort((a, b) => b.count - a.count);
+  // Each check's count sums every task's, so its link opens Runs on every task (toCheck(null, ...)).
   const checks = new Map<string, { count: number; task: string }>();
   for (const [id, s] of tasks) for (const c of s.top_failed_checks) checks.set(c.check, { count: (checks.get(c.check)?.count ?? 0) + c.count, task: checks.get(c.check)?.task ?? id });
   const top = [...checks].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]));
@@ -220,7 +222,7 @@ function Takeaway({ summary, titles, runId }: { summary: Summary; titles: Readon
             {shown.map(([check, c], i) => (
               <span key={check}>
                 {i > 0 && ', '}
-                <a href={hrefWith(toCheck(c.task, check))} onClick={onNav(toCheck(c.task, check))} className={LINK} title={checkTextOf(c.task)?.[check]?.requires === undefined ? undefined : `requires ${checkTextOf(c.task)![check]!.requires}`}><code className="text-xs">{check}</code></a> ({c.count})
+                <a href={hrefWith(toCheck(null, check))} onClick={onNav(toCheck(null, check))} className={LINK} title={checkTextOf(c.task)?.[check]?.requires === undefined ? undefined : `requires ${checkTextOf(c.task)![check]!.requires}`}><code className="text-xs">{check}</code></a> ({c.count})
               </span>
             ))}
             {top.length > shown.length ? ` and ${top.length - shown.length} more` : ''}.
