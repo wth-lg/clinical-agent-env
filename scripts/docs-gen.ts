@@ -407,7 +407,7 @@ const judgeAgreement = (d: Data) => {
             else fails++;
           }
         }
-        parts.push(`<p>The double label row is a blinded second LLM session's label of a seeded sample of failures. The auditor row covers every trial the LLM auditor read: ${fails} failures and ${passes} passes with a harm penalty met or left unknown.</p>`);
+        parts.push(`<p>The double label row is a blinded second LLM session's label of a seeded sample of failures. The auditor row covers every trial the LLM auditor read: ${fails} failures and ${passes} passes with a penalty met or left unknown. A penalty is any rubric item with negative points, harm or not.</p>`);
       }
     }
   }

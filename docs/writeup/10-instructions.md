@@ -36,7 +36,7 @@ The Live trial view shows the trajectory as it streams. Each tool call takes one
 3. Open the **Grading** tab for the gate checks and the rubric items.
 4. Open the **Attribution** tab for the criteria table.
 
-A trial passes when every gate check is met. Rubric items change the score and never decide a pass. The Attribution tab lists each criterion of the trial's fault with the evidence it read. The page **Attribution** in the rail gives every definition. Those definitions are rendered from `packages/core/outcomes.ts`, the one place they are written.
+A trial passes when every gate check is met. Rubric items change the score and never decide a pass. The Attribution tab lists each criterion of the trial's fault with the evidence it read. The **Glossary** page in the rail gives every definition. Those definitions are rendered from `packages/core/outcomes.ts`, the one place they are written.
 
 ## Replay a trial
 
@@ -48,7 +48,7 @@ Replay runs the trial's tool calls again on a fresh copy of the world, in the ta
 ## Browse the hosted site and run a live trial there
 
 1. Open https://wth-lg.github.io/clinical-agent-env/ in a Chromium browser such as Chrome or Brave, or in Firefox.
-2. Browse Overview, Tasks, Runs, Findings, Environment and Attribution with no key.
+2. Browse Overview, Tasks, Runs, Findings, Environment and Glossary with no key.
 3. To run a live trial, paste a key and press **Validate**.
 4. Open a task and press **Run trial**.
 
