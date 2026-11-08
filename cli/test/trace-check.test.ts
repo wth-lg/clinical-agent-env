@@ -500,3 +500,61 @@ describe('trace-check: pending only for a later phase (JD1 part 2)', () => {
     expect(text).toMatch(/^trace: done_phases is not a list of phase ids; fix: /m);
   });
 });
+
+describe('trace-check: a command expect may carry its own timeout (trace-row-timeout)', () => {
+  const REASON = 'the suite runs every mutant; it takes longer than the default';
+  const commandOf = (r: TraceRow, i?: number) => ((i === undefined ? r.expect : (r.expect as unknown[])[i]) as { command: Record<string, unknown> }).command;
+
+  it('--final runs a command with its timeout_ms; a command without one keeps the 900 000 ms default', async () => {
+    const dir = copy();
+    editRows(dir, (rows) => {
+      Object.assign(commandOf(row(rows, 'A1')), { cmd: 'slow-A1', timeout_ms: 2_400_000, timeout_reason: REASON });
+      Object.assign(commandOf(row(rows, 'H1')), { cmd: 'plain-H1' });
+    });
+    const calls = new Map<string, number | undefined>();
+    const lines: string[] = [];
+    const code = await main(['--root', dir, ...final(dir)], {
+      out: (l) => lines.push(l),
+      run: (cmd, _cwd, timeoutMs) => {
+        calls.set(cmd, timeoutMs);
+        // The fixture's N2 command expects exit 3 (it runs process.exit(3)).
+        return { exit: cmd.includes('process.exit(3)') ? 3 : 0, output: '' };
+      },
+    });
+    expect(lines.join('\n')).toMatch(/trace-check: OK/);
+    expect(code).toBe(0);
+    expect(calls.get('slow-A1')).toBe(2_400_000);
+    expect(calls.get('plain-H1')).toBe(900_000);
+  });
+
+  it('exits 1, naming the row, on a timeout_ms that is not a positive integer of at most 3 600 000', async () => {
+    for (const bad of [0, -5, 1.5, '900000', 3_600_001, null]) {
+      const dir = copy();
+      editRows(dir, (rows) => {
+        Object.assign(commandOf(row(rows, 'W1'), 0), { timeout_ms: bad, timeout_reason: REASON });
+      });
+      const { code, text } = await check(dir);
+      expect(code, JSON.stringify(bad)).toBe(1);
+      expect(text, JSON.stringify(bad)).toMatch(/^W1: expect\[0\] command timeout_ms .* is not a positive integer of at most 3600000; fix: /m);
+    }
+    const dir = copy();
+    editRows(dir, (rows) => {
+      Object.assign(commandOf(row(rows, 'W1'), 0), { timeout_ms: 3_600_000, timeout_reason: REASON });
+    });
+    expect(await check(dir)).toMatchObject({ code: 0 });
+  });
+
+  it('exits 1, naming the row, on a timeout_ms with no reason, an empty reason, or a reason with no timeout_ms', async () => {
+    const dir = copy();
+    editRows(dir, (rows) => {
+      Object.assign(commandOf(row(rows, 'A1')), { timeout_ms: 2_400_000 });
+      Object.assign(commandOf(row(rows, 'H1')), { timeout_ms: 2_400_000, timeout_reason: '  ' });
+      Object.assign(commandOf(row(rows, 'W1'), 0), { timeout_reason: REASON });
+    });
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^A1: expect command timeout_ms has no timeout_reason; fix: /m);
+    expect(text).toMatch(/^H1: expect command timeout_ms has no timeout_reason; fix: /m);
+    expect(text).toMatch(/^W1: expect\[0\] command timeout_reason has no timeout_ms; fix: /m);
+  });
+});

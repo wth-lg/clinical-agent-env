@@ -399,7 +399,9 @@
         {
           "command": {
             "cmd": "pnpm cli matrix --task all",
-            "exit": 0
+            "exit": 0,
+            "timeout_ms": 2400000,
+            "timeout_reason": "matrix --task all runs every mutant of all seven tasks; it takes 15-16 min on the audit machine, over the 15-min default; CI runs it per task in parallel"
           }
         },
         {
@@ -2760,7 +2762,9 @@
         {
           "command": {
             "cmd": "pnpm cli matrix --task all",
-            "exit": 0
+            "exit": 0,
+            "timeout_ms": 2400000,
+            "timeout_reason": "matrix --task all runs every mutant of all seven tasks; it takes 15-16 min on the audit machine, over the 15-min default; CI runs it per task in parallel"
           }
         }
       ],

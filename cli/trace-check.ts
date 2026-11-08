@@ -14,6 +14,8 @@
 //   - a row lacks code, tests, evidence, expect or phase, or its kind does not fit its section
 //   - an N or W row has ui_required false, a ui_required row lacks ui.route or ui.action, a ui
 //     lacks a surface (local, hosted or any), or a row with a UI snapshot (.ax.txt) has no ui
+//   - a command's timeout_ms (default 900 000) is not a positive integer of at most 3 600 000,
+//     or timeout_ms and a non-empty timeout_reason do not come together
 //   - an expect element is not one of ax_text, ax_match or command, an ax_* file is not in the
 //     row's evidence list, or an ax_match pattern does not compile; expect may be a list, and
 //     every element must hold; a ui_required row needs at least one ax_text or ax_match element
@@ -31,7 +33,7 @@
 //   - with --final, any code, test or evidence path does not exist, a route holds a placeholder
 //     ('<'), or an expect element does not hold: the ax_text is absent from the snapshot under
 //     --evidence-root, the ax_match pattern matches fewer than min_matches times (default 1), or
-//     the command, run in the repo root, exits with another code
+//     the command, run in the repo root within its timeout, exits with another code
 // Paths in code and tests are relative to --root (default the repo root), evidence relative to
 // --evidence-root. Exit codes: 0 ok, 1 failure, 2 usage error.
 import { spawnSync } from 'node:child_process';
@@ -43,8 +45,11 @@ import { fileURLToPath } from 'node:url';
 const REPO = fileURLToPath(new URL('../', import.meta.url));
 const USAGE = 'usage: pnpm cli trace-check [--plan <plan.md>] [--done <phase ids>] [--final --evidence-root <dir>] [--root <dir>] [--source <file>] [--trace <file>] [--contract <file>]';
 const WITH_VALUE = new Set(['--plan', '--done', '--evidence-root', '--root', '--source', '--trace', '--contract']);
-// A command expect runs the suite or check it names; a whole-repo command can take minutes.
-const COMMAND_TIMEOUT_MS = 15 * 60_000;
+// A command expect runs the suite or check it names; a whole-repo command can take minutes. The
+// timeout guards against a hang; a command that needs longer sets timeout_ms with a
+// timeout_reason, up to the cap.
+export const COMMAND_TIMEOUT_MS = 15 * 60_000;
+export const MAX_COMMAND_TIMEOUT_MS = 60 * 60_000;
 
 export const SECTIONS = ['A', 'N', 'W', 'H', 'U'] as const;
 // The assignment's own sections; pdf_block_sha256 pins their text. U rows may grow.
@@ -69,7 +74,7 @@ const SENTENCE_END = /[.!?]+["'”’)\]]*(?=$|\s+["'“‘(]?[A-Z])/g;
 export type Expect =
   | { ax_text: { file: string; text: string } }
   | { ax_match: { file: string; pattern: string; min_matches?: number } }
-  | { command: { cmd: string; exit: number } };
+  | { command: { cmd: string; exit: number; timeout_ms?: number; timeout_reason?: string } };
 
 export interface TraceRow {
   id: string;
@@ -107,8 +112,9 @@ export interface SourceLine {
 
 export interface Deps {
   out: (line: string) => void;
-  // Runs a command expect in the repo root and returns its exit code and output.
-  run?: (cmd: string, cwd: string) => { exit: number; output: string };
+  // Runs a command expect in the repo root, killing it after timeoutMs, and returns its exit code
+  // and output.
+  run?: (cmd: string, cwd: string, timeoutMs: number) => { exit: number; output: string };
 }
 
 type Failure = { id: string; problem: string; fix: string };
@@ -202,7 +208,7 @@ function checkRow(r: TraceRow, src: SourceLine, failures: Failure[]): void {
   }
 }
 
-type LooseExpect = Partial<{ ax_text: { file?: unknown; text?: unknown }; ax_match: { file?: unknown; pattern?: unknown; min_matches?: unknown }; command: { cmd?: unknown; exit?: unknown } }>;
+type LooseExpect = Partial<{ ax_text: { file?: unknown; text?: unknown }; ax_match: { file?: unknown; pattern?: unknown; min_matches?: unknown }; command: { cmd?: unknown; exit?: unknown; timeout_ms?: unknown; timeout_reason?: unknown } }>;
 
 // Each element with its label in failures: `expect` for a single object, `expect[i]` in a list.
 const expectElements = (e: unknown): [string, LooseExpect][] =>
@@ -238,12 +244,17 @@ function checkExpect(r: TraceRow, label: string, e: LooseExpect, fail: (problem:
     }
     if (m.min_matches !== undefined && !(Number.isInteger(m.min_matches) && (m.min_matches as number) >= 1)) fail(`${label} ax_match min_matches is not a positive integer`, 'set min_matches to the count the screen must show, or leave it out for 1');
   } else if (e.command) {
-    if (!nonEmpty(e.command.cmd) || !Number.isInteger(e.command.exit)) fail(`${label} command needs cmd and an integer exit`, 'name the repo command and its expected exit code');
+    const c = e.command;
+    if (!nonEmpty(c.cmd) || !Number.isInteger(c.exit)) fail(`${label} command needs cmd and an integer exit`, 'name the repo command and its expected exit code');
+    if (c.timeout_ms !== undefined) {
+      if (!(Number.isInteger(c.timeout_ms) && (c.timeout_ms as number) >= 1 && (c.timeout_ms as number) <= MAX_COMMAND_TIMEOUT_MS)) fail(`${label} command timeout_ms ${JSON.stringify(c.timeout_ms)} is not a positive integer of at most ${MAX_COMMAND_TIMEOUT_MS}`, `set timeout_ms in milliseconds, at most ${MAX_COMMAND_TIMEOUT_MS}, or leave it out for the ${COMMAND_TIMEOUT_MS} default`);
+      if (!nonEmpty(c.timeout_reason)) fail(`${label} command timeout_ms has no timeout_reason`, 'say in timeout_reason why the command needs longer than the default, or remove timeout_ms');
+    } else if (c.timeout_reason !== undefined) fail(`${label} command timeout_reason has no timeout_ms`, 'set timeout_ms, or remove timeout_reason');
   }
 }
 
-function defaultRun(cmd: string, cwd: string): { exit: number; output: string } {
-  const r = spawnSync(cmd, { cwd, shell: true, encoding: 'utf8', timeout: COMMAND_TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 });
+function defaultRun(cmd: string, cwd: string, timeoutMs: number): { exit: number; output: string } {
+  const r = spawnSync(cmd, { cwd, shell: true, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024 });
   return { exit: r.status ?? -1, output: `${r.stdout ?? ''}${r.stderr ?? ''}${r.error ? `\n${r.error.message}` : ''}` };
 }
 
@@ -377,7 +388,10 @@ export async function main(args: string[], deps: Deps = { out: (l) => process.st
           const got = snapshot === undefined ? want : (snapshot.match(new RegExp(e.ax_match.pattern, 'g'))?.length ?? 0);
           if (got < want) failures.push({ id: r.id, problem: `${label} ax_match not met: expected at least ${want} match${want === 1 ? '' : 'es'} of /${e.ax_match.pattern}/ in ${e.ax_match.file}, observed ${got}`, fix: 'fix the screen so every item shows the text, or retake the snapshot on the right screen' });
         } else if (e.command && nonEmpty(e.command.cmd)) {
-          const got = run(e.command.cmd, root);
+          // checkRow reports a bad timeout_ms; a run still uses the default then.
+          const t = e.command.timeout_ms;
+          const timeoutMs = Number.isInteger(t) && (t as number) >= 1 && (t as number) <= MAX_COMMAND_TIMEOUT_MS ? (t as number) : COMMAND_TIMEOUT_MS;
+          const got = run(e.command.cmd, root, timeoutMs);
           const said = tail(got.output, 3).slice(0, 300);
           if (got.exit !== e.command.exit) failures.push({ id: r.id, problem: `${label} command not met: \`${e.command.cmd}\` expected exit ${String(e.command.exit)}, observed exit ${got.exit}${said ? ` (${said})` : ''}`, fix: 'fix what the command checks, then run it again' });
         }

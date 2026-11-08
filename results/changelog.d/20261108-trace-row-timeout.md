@@ -1,0 +1,1 @@
+- trace-check: a command expect may set timeout_ms (at most 3 600 000) with a timeout_reason in place of the 900 000 ms default; the N5 and U32 `pnpm cli matrix --task all` commands take 2 400 000 ms.
