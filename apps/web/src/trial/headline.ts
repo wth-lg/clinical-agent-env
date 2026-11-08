@@ -10,12 +10,19 @@ import type { Explanation } from '../../../../packages/core/explain.ts';
 // (evidence.missing_kinds, evidence.unseen).
 export interface HeadlineCheck {
   id: string;
-  items?: readonly { item: string; met: boolean; why?: string; decisive_ids?: readonly string[]; ids?: readonly string[]; evidence?: Record<string, unknown>; at?: unknown }[];
+  items?: readonly { item: string; met: boolean; why?: string; decisive_ids?: readonly string[]; ids?: readonly string[]; evidence?: Record<string, unknown>; at?: unknown; event?: string }[];
 }
 
 // The exposure of the decisive ids (the record's attribution.exposure): the step each was first
 // returned to the model, null when it never was.
 export type HeadlineExposure = ReadonlyArray<{ id: string; first_exposed_step: number | null }>;
+
+// The arrivals of the trajectory (lead.ts arrivalsOf): each event spec with the records it filed
+// and the first step after the arrival that showed each one to the model, null when none did. The
+// record's exposure covers only the ids the item turns on, so on renal-dose-review it named the
+// silent obs-04004 and not the notified obs-04003 the model read and acted on (eval-p25u-final-F2
+// must-fix 1); the arrival names both.
+export type HeadlineArrival = { spec: string; records: ReadonlyArray<{ id: string; opened_step: number | null }> };
 
 // Who performs the audit (M5) in the published run: LLM sessions, not clinicians. docs/findings.md
 // next step 10 says it ("The reads in this run were LLM sessions"), and the run's README names
@@ -95,7 +102,7 @@ function orderWords(found: string, item: string): string {
 // the model wrote, at which step, and what it never reviewed (defect 3). On any other gate over a
 // worklist: the check text's found value when it is a sentence; the subject and the item's reason
 // when it is a name. Else the found value, else the check's name. Never an event's id (F5).
-function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, exposure: HeadlineExposure | null | undefined): string {
+function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, exposure: HeadlineExposure | null | undefined, arrivals: readonly HeadlineArrival[] | null | undefined): string {
   const d = e.decisive_check!;
   const failed = checks?.find((c) => c.id === d.id)?.items?.find((i) => !i.met);
   const found = d.found.trim();
@@ -109,6 +116,22 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
     const who = patientIn(found) ?? patientIn(failed?.item ?? '') ?? subject;
     const { words, plural } = arrivalWords(ids);
     const what = who !== null ? `${words} for ${who}` : ids.length > 0 ? `${words} (${andList(ids)})` : words;
+    // The arrival as the trajectory holds it: what the model opened of everything it filed, in
+    // step order, and which of the records the item turns on it never opened.
+    const arrival = arrivals?.find((a) => a.spec === failed?.event) ?? null;
+    if (arrival !== null) {
+      const opened = arrival.records.filter((r) => r.opened_step !== null).toSorted((a, b) => a.opened_step! - b.opened_step!);
+      const missed = ids.filter((id) => arrival.records.find((r) => r.id === id)?.opened_step === null);
+      if (opened.length > 0 && missed.length > 0) {
+        const all = arrival.records.map((r) => r.id);
+        const batch = arrivalWords(all).words;
+        const whatAll = who !== null ? `${batch} for ${who}` : `${batch} (${andList(all)})`;
+        const openedWords = andList(opened.map((r) => `${r.id} at step ${r.opened_step}`));
+        return opened.length > 1
+          ? `${whatAll} arrived at step ${arrived}. The model opened ${openedWords}. It never opened ${andList(missed)}`
+          : `${whatAll} arrived at step ${arrived}. The model opened ${openedWords} and never opened ${andList(missed)}`;
+      }
+    }
     // The batch's exposure, when it covers every record that arrived.
     const seen = ids.map((id) => exposure?.find((x) => x.id === id)).filter((x) => x !== undefined);
     if (plural && seen.length === ids.length) {
@@ -116,6 +139,11 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
       const missed = seen.filter((x) => x.first_exposed_step === null);
       if (opened.length > 0 && missed.length > 0) return `${what} arrived at step ${arrived}. The model opened ${andList(opened.map((x) => `${x.id} at step ${x.first_exposed_step}`))} and never opened ${andList(missed.map((x) => x.id))}`;
       if (missed.length === ids.length) return `${what} arrived at step ${arrived}, and the model opened none of them before finishing`;
+    }
+    // One record that the exposure says was never shown: name it, and do not say the whole arrival
+    // went unread, since the record alone cannot tell what else the arrival filed.
+    if (!plural && ids.length === 1 && seen.length === 1 && seen[0]!.first_exposed_step === null) {
+      return `the model never opened ${ids[0]}, ${who !== null ? `${words} for ${who}` : words} that arrived at step ${arrived}`;
     }
     return `${what} arrived at step ${arrived}, and the model ${plural ? 'did not review them' : 'never opened it'} before finishing`;
   }
@@ -139,14 +167,15 @@ function specific(e: Explanation, checks: readonly HeadlineCheck[] | null | unde
 
 // The headline above the verdict chips. taxonomy: the kind of failure the header shows, null when
 // the audit relabelled the trial (data/failures.ts shownKind) or the record has none. exposure:
-// the record's attribution.exposure when the caller has it (TrialPage fittingAttribution). Null
+// the record's attribution.exposure when the caller has it (TrialPage fittingAttribution).
+// arrivals: the trajectory's arrivals when the caller has loaded it (the trial page). Null
 // on an excluded trial, whose "Not counted" line leads instead.
-export function plainHeadline(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, taxonomy: string | null, exposure?: HeadlineExposure | null): string | null {
+export function plainHeadline(e: Explanation, checks: readonly HeadlineCheck[] | null | undefined, taxonomy: string | null, exposure?: HeadlineExposure | null, arrivals?: readonly HeadlineArrival[] | null): string | null {
   if (!e.valid) return null;
   if (e.outcome === 'PASS') return e.fault === 'grader' ? 'Passed, but the grader was wrong: an audit found a false PASS.' : 'Passed every gate check.';
   if (e.outcome === 'REFUSAL') return 'The model refused the task.';
   if (e.outcome === 'LIMIT') return 'The model did not finish: the trial stopped at a limit.';
-  if (e.decisive_check) return sentence(`${(taxonomy !== null && KIND_LEAD[taxonomy]) || 'Failed a gate check'}: ${specific(e, checks, exposure)}`);
+  if (e.decisive_check) return sentence(`${(taxonomy !== null && KIND_LEAD[taxonomy]) || 'Failed a gate check'}: ${specific(e, checks, exposure, arrivals)}`);
   return `The trial ended ${e.outcome}.`;
 }
 

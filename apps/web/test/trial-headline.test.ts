@@ -54,14 +54,37 @@ describe('plainHeadline', () => {
   it('with the exposure, says which records of the batch the model opened and which it never did (final-1 contrast-ct-prep/0)', () => {
     expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval', EVENT_EXPOSURE)).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52. The model opened Observation/obs-07502 at step 75 and never opened Observation/obs-07501.');
   });
-  it('with the exposure, a batch the model never opened at all says so (final-1 results-inbox/4), and one record keeps its line (renal-dose-review/4)', () => {
+  it('with the exposure, a batch the model never opened at all says so (final-1 results-inbox/4)', () => {
     const inbox = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'marchetti_cr_ed (Patient/pt-0064)' } });
     const checks = eventCheck('marchetti_cr_ed', 'event marchetti-cr-batch arrived at step 49 and was never read before finish', ['Observation/obs-06209', 'Observation/obs-06210'], 49);
     expect(plainHeadline(inbox, checks, 'retrieval', [{ id: 'Observation/obs-06209', first_exposed_step: null }, { id: 'Observation/obs-06210', first_exposed_step: null }])).toBe('Missed a record it needed: new results for Patient/pt-0064 arrived at step 49, and the model opened none of them before finishing.');
     // results-inbox/4 as the run holds it: obs-06209 was shown at step 68.
     expect(plainHeadline(inbox, checks, 'retrieval', [{ id: 'Observation/obs-06209', first_exposed_step: 68 }, { id: 'Observation/obs-06210', first_exposed_step: null }])).toBe('Missed a record it needed: new results for Patient/pt-0064 arrived at step 49. The model opened Observation/obs-06209 at step 68 and never opened Observation/obs-06210.');
-    const renal = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0062 (Norman Fairweather) had an arrival that was never opened before the review finished' } });
-    expect(plainHeadline(renal, eventCheck('Patient/pt-0062', 'event fairweather-scr-batch arrived at step 41 and was never read before finish', ['Observation/obs-04004'], 41), 'retrieval', [{ id: 'Observation/obs-04004', first_exposed_step: null }])).toBe('Missed a record it needed: a new result for Patient/pt-0062 (Norman Fairweather) arrived at step 41, and the model never opened it before finishing.');
+  });
+  // eval-p25u-final-F2 must-fix 1: renal-dose-review/4, /10, /13 and /19 said the model never
+  // opened the arrival. The batch fairweather-scr-batch filed enc-04001, obs-04003 and obs-04004;
+  // the model read the notified obs-04003 (step 74 in /4) and changed the apixaban dose at step 83,
+  // and only the silent obs-04004, the one record the item turns on, was never shown.
+  const renal = base({ decisive_check: { id: 'event_seen', traces_to: null, expected: 'each arrival read', found: 'Patient/pt-0062 (Norman Fairweather) had an arrival that was never opened before the review finished' } });
+  const renalItem = (at: number) => [{ id: 'event_seen', items: [{ item: 'Patient/pt-0062', met: false, why: `event fairweather-scr-batch arrived at step ${at} and was never read before finish`, decisive_ids: ['Observation/obs-04004'], evidence: { arrived_at: at }, event: 'fairweather-scr-batch' }] }];
+  const renalExposure = [{ id: 'Observation/obs-04004', first_exposed_step: null }];
+  const batch = (enc: number | null, obs3: number) => [{ spec: 'fairweather-scr-batch', records: [{ id: 'Encounter/enc-04001', opened_step: enc }, { id: 'Observation/obs-04003', opened_step: obs3 }, { id: 'Observation/obs-04004', opened_step: null }] }];
+  it('with the trajectory\'s arrival, names the records of the batch the model opened and the deciding one it never opened (final-1 renal-dose-review/4, /10, /13, /19)', () => {
+    expect(plainHeadline(renal, renalItem(41), 'retrieval', renalExposure, batch(78, 74))).toBe('Missed a record it needed: new records for Patient/pt-0062 (Norman Fairweather) arrived at step 41. The model opened Observation/obs-04003 at step 74 and Encounter/enc-04001 at step 78. It never opened Observation/obs-04004.');
+    expect(plainHeadline(renal, renalItem(30), 'retrieval', renalExposure, batch(null, 74))).toBe('Missed a record it needed: new records for Patient/pt-0062 (Norman Fairweather) arrived at step 30. The model opened Observation/obs-04003 at step 74 and never opened Observation/obs-04004.');
+    expect(plainHeadline(renal, renalItem(39), 'retrieval', renalExposure, batch(75, 71))).toBe('Missed a record it needed: new records for Patient/pt-0062 (Norman Fairweather) arrived at step 39. The model opened Observation/obs-04003 at step 71 and Encounter/enc-04001 at step 75. It never opened Observation/obs-04004.');
+    expect(plainHeadline(renal, renalItem(40), 'retrieval', renalExposure, batch(87, 82))).toBe('Missed a record it needed: new records for Patient/pt-0062 (Norman Fairweather) arrived at step 40. The model opened Observation/obs-04003 at step 82 and Encounter/enc-04001 at step 87. It never opened Observation/obs-04004.');
+  });
+  it('with the record alone, names the one deciding record never opened and does not say the arrival was never opened (renal-dose-review/4 on the Runs row)', () => {
+    const line = plainHeadline(renal, renalItem(41), 'retrieval', renalExposure)!;
+    expect(line).toBe('Missed a record it needed: the model never opened Observation/obs-04004, a new result for Patient/pt-0062 (Norman Fairweather) that arrived at step 41.');
+    expect(line).not.toContain('never opened it');
+  });
+  it('an arrival for another event, or one whose deciding records were all opened, leaves the line to the exposure', () => {
+    expect(plainHeadline(renal, renalItem(41), 'retrieval', renalExposure, [{ spec: 'pellegrino-scr-new', records: [{ id: 'Observation/obs-04001', opened_step: 75 }] }])).toBe('Missed a record it needed: the model never opened Observation/obs-04004, a new result for Patient/pt-0062 (Norman Fairweather) that arrived at step 41.');
+    // contrast-ct-prep/0 with its arrival (obs-07501, obs-07502): the same line the exposure gives.
+    const contrast = [{ ...EVENT_CHECKS[0]!, items: [{ ...EVENT_CHECKS[0]!.items[0]!, event: 't5-mohr-scr' }] }];
+    expect(plainHeadline(base({}), contrast, 'retrieval', EVENT_EXPOSURE, [{ spec: 't5-mohr-scr', records: [{ id: 'Observation/obs-07501', opened_step: null }, { id: 'Observation/obs-07502', opened_step: 75 }] }])).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52. The model opened Observation/obs-07502 at step 75 and never opened Observation/obs-07501.');
   });
   it('an exposure that does not cover the batch, or that shows every record, keeps the plain line', () => {
     expect(plainHeadline(base({}), EVENT_CHECKS, 'retrieval', [{ id: 'Observation/obs-07502', first_exposed_step: 75 }])).toBe('Missed a record it needed: new results for Patient/pt-0047 (Britt Vincenzo Mohr, 08:00) arrived at step 52, and the model did not review them before finishing.');

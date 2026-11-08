@@ -200,7 +200,7 @@ function Detail({ t, run, files, frozen, freezes, tab, headingRef, source, back 
   // The header's plain line, and the Attribution tab's (headline.ts): the same exposure tells
   // which records of an arrival the model opened (eval-p25u-1 defect 2). The Runs row shows the
   // same lead (lead.ts, eval-p25u-2 S9).
-  const headline = trialLead(e, t.record);
+  const headline = trialLead(e, t.record, traj);
   return (
     <Frame title={<TrialHeading t={t} run={run} />} headingRef={headingRef} from={{ run: run.runId, trial: t.name }} {...(back === undefined ? {} : { back })}>
       {run.kind === 'session' && <SessionBanner />}
